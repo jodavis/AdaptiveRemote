@@ -1,0 +1,7 @@
+﻿@inject Services.IRemoteDefinitionService RemoteDefinitions
+
+<RemoteLayout LayoutElement="@RemoteDefinitions.GetRoot(RemoteDefinitions.RemoteNames.First())" />
+
+@code {
+
+}
