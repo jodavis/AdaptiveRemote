@@ -1,0 +1,16 @@
+﻿@inject Services.ICommandExecutionService CommandExecution;
+
+<button class="btn-primary" id="@Command?.ID" @onclick="Invoke">@Command?.Label</button>
+
+@code {
+    [Parameter]
+    public Models.Command? Command { get; set; }
+
+    private void Invoke()
+    {
+        if (Command is not null)
+        {
+            _ = CommandExecution.ExecuteAsync(Command);
+        }
+    }
+}

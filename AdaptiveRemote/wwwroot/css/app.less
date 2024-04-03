@@ -1,0 +1,190 @@
+﻿html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0;
+}
+
+h1:focus {
+    outline: none;
+}
+
+a, .btn-link {
+    color: #0071c1;
+}
+
+@btn-color: #1b6ec2;
+
+.btn-primary {
+    color: #fff;
+    background-color: @btn-color;
+    border-color: darken(@btn-color, 20%);
+    border-radius: 10px;
+    font-size: 36pt;
+    font-weight: bold;
+
+    &:hover {
+        background-color: lighten(@btn-color, 10%)
+    }
+
+    &:active {
+        background-color: lighten(@btn-color, 30%)
+    }
+}
+
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid red;
+}
+
+.validation-message {
+    color: red;
+}
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+.position(@row, @column) {
+    grid-row: @row;
+    grid-column: @column;
+}
+
+.define-grid(@rows, @columns) {
+    display: grid;
+    grid-template-rows: @rows;
+    grid-template-columns: @columns;
+    grid-gap: 10px;
+}
+
+@wpadding: 1vw;
+@hpadding: 2vh;
+
+#ROOT {
+    .define-grid(6fr 3fr 1fr, 3fr 2fr);
+    grid-gap: 20px;
+    width: (100vw-@wpadding*2);
+    height: (100vh-@hpadding*2);
+    padding: @hpadding @wpadding;
+
+    #DPAD {
+        .position(1, 1);
+        .define-grid(repeat(3, 1fr), repeat(3, 1fr));
+
+        #UP {
+            .position(1, 2)
+        }
+
+        #DOWN {
+            .position(3, 2)
+        }
+
+        #LEFT {
+            .position(2, 1)
+        }
+
+        #RIGHT {
+            .position(2, 3)
+        }
+
+        #SELECT {
+            .position(2, 2)
+        }
+
+        #BACK {
+            .position(3, 1);
+            margin: 20px;
+        }
+    }
+
+    #WELL {
+        .position(1, 2);
+        .define-grid(repeat(5, 1fr), repeat(2, 1fr));
+
+        #TIVO {
+            .position(1, 1)
+        }
+
+        #NETFLIX {
+            .position(1, 2)
+        }
+
+        #GUIDE {
+            .position(2, 1)
+        }
+    }
+
+    #PLAYBACK {
+        .position(2, 1);
+        .define-grid(repeat(2, 1fr), repeat(5, 1fr));
+
+        #REPLAY {
+            .position(1, 1)
+        }
+
+        #PLAY {
+            .position(1, 2)
+        }
+
+        #PAUSE {
+            .position(1, 3)
+        }
+
+        #RECORD {
+            .position(1, 4)
+        }
+
+        #SKIP {
+            .position(1, 5)
+        }
+    }
+
+    #CHANNEL {
+        .position(2, 2);
+        .define-grid(36pt 1fr 1fr, 1);
+        padding: 0 200px;
+        &:before {
+            font-size: 36pt;
+            font-weight: bold;
+            color: black;
+            content: "Channel";
+            text-align: center;
+        }
+
+        #CHANNELUP {
+            .position(2, 1);
+        }
+
+        #CHANNELDOWN {
+            .position(3, 1);
+        }
+    }
+
+    #GUTTER {
+        grid-row: 3;
+        grid-column-start: 1;
+        grid-column-end: span 2;
+        grid-gap: 20px;
+        .define-grid(1, repeat(8, 1fr));
+
+        #EXIT {
+            .position(1, 8);
+        }
+    }
+}
