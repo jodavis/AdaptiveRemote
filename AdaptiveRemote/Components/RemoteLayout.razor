@@ -1,5 +1,4 @@
-﻿
-@switch (LayoutElement)
+﻿@switch (LayoutElement)
 {
     case Models.Command command:
         <CommandButton Command="@command" />
@@ -8,18 +7,16 @@
         <div id="@nestedGroup.ID">
             @foreach (Models.RemoteLayoutElement element in nestedGroup.Elements)
             {
-              <RemoteLayout LayoutElement="@element" />  
+                <RemoteLayout LayoutElement="@element" />
             }
         </div>
+        break;
+    case Models.Listening listening:
+        <ListeningUI Listening="@listening" />
         break;
 }
 
 @code {
     [Parameter]
     public Models.RemoteLayoutElement? LayoutElement { get; set; }
-
-    private void Invoke(Models.Command command)
-    {
-        
-    }
 }

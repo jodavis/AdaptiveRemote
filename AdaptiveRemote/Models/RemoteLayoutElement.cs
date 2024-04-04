@@ -1,6 +1,8 @@
-﻿namespace AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Mvvm;
 
-public abstract class RemoteLayoutElement
+namespace AdaptiveRemote.Models;
+
+public abstract class RemoteLayoutElement : MvvmObject
 {
     public string Group { get; }
     public string ID { get; }
