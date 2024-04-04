@@ -1,0 +1,39 @@
+﻿@using Mvvm;
+@inherits MvvmComponent
+
+@if (IsListening)
+{
+    <div class="listening-on">I'm listening...</div>
+}
+else
+{
+    <div class="listening-off">Say "Hey Remote" to start listening</div>
+}
+
+@code {
+    private static readonly MvvmProperty<bool> IsListeningProperty = new(nameof(IsListening));
+    private static readonly MvvmProperty<Models.Listening?> ListeningProperty = new(nameof(ListeningUI));
+
+    private IDisposable? _binding = null;
+
+#pragma warning disable BL0007
+    [Parameter]
+    public Models.Listening? Listening
+#pragma warning restore BL0007
+    {
+        get => GetValue(ListeningProperty);
+        set
+        {
+            _binding?.Dispose();
+            SetValue(ListeningProperty, value);
+            _binding = value is null ? null
+                : Bind(IsListeningProperty, value, Models.Listening.IsListeningProperty);
+        }
+    }
+
+    private bool IsListening
+    {
+        get => GetValue(IsListeningProperty);
+        set => SetValue(IsListeningProperty, value);
+    }
+}

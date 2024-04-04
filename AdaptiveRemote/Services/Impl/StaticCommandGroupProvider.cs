@@ -36,6 +36,7 @@ internal class StaticCommandGroupProvider : IRemoteDefinitionService
         }),
         new LayoutGroup("ROOT", "GUTTER", new List<RemoteLayoutElement>
         {
+            new Listening("GUTTER"),
             new ExitCommand("GUTTER")
         })
     });
