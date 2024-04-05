@@ -54,6 +54,7 @@ public class MvvmObject : INotifyPropertyChanging, INotifyPropertyChanged
             _targetProperty = targetProperty;
 
             _source.PropertyChanged += OnPropertyChanged;
+            _target.SetValue(_targetProperty, _source.GetValue(_sourceProperty));
         }
 
         public void Dispose()

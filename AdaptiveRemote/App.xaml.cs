@@ -1,7 +1,18 @@
-﻿using System.Windows;
+﻿using System;
+using System.Configuration;
+using System.Data;
+using System.Net.NetworkInformation;
+using System.Runtime.CompilerServices;
+using System.Transactions;
+using System.Windows;
+using System.Windows.Automation.Peers;
+using System.Windows.Input;
+using System.Windows.Shell;
+using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Windows.Themes;
 
 namespace AdaptiveRemote;
 /// <summary>
@@ -22,7 +33,7 @@ public partial class App : Application
         Host.CreateDefaultBuilder()
             .ConfigureServices(services => services.AddWpfBlazorWebView())
             .AddRemoteServices()
-            .AddTraceLogging()
+            .AddSpeechServices()
             .ConfigureServices(services => services.AddSingleton<MainWindow>())
             .Build();
 
