@@ -16,7 +16,7 @@ public partial class App : Application
         base.OnStartup(e);
     }
 
-    private static async Task StartApplicationLoop()
+    private async Task StartApplicationLoop()
     {
         IHost host =
         Host.CreateDefaultBuilder()
@@ -26,7 +26,11 @@ public partial class App : Application
             .ConfigureServices(services => services.AddSingleton<MainWindow>())
             .Build();
 
+        // TODO: What does the restart cycle look like?
         MainWindow window = host.Services.GetRequiredService<MainWindow>();
+
+        IServiceScope scope = host.Services.CreateScope();
+        MainWindow.Resources["services"] = scope.ServiceProvider;
 
         window.Show();
         await host.RunAsync();
