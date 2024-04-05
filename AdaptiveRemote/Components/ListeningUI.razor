@@ -1,33 +1,31 @@
 ﻿@using Mvvm;
 @inherits MvvmComponent
+@inject Services.ISpeechController SpeechController
 
-@if (IsListening)
-{
-    <div class="listening-on">I'm listening...</div>
-}
-else
-{
-    <div class="listening-off">Say "Hey Remote" to start listening</div>
-}
+<div class="@(IsListening ? "listening-on" : "listening-off")">@StatusMessage</div>
 
 @code {
     private static readonly MvvmProperty<bool> IsListeningProperty = new(nameof(IsListening));
-    private static readonly MvvmProperty<Models.Listening?> ListeningProperty = new(nameof(ListeningUI));
+    private static readonly MvvmProperty<string> StatusMessageProperty = new(nameof(StatusMessage));
+    private static readonly MvvmProperty<Models.Listening?> ViewModelProperty = new(nameof(ViewModel));
 
     private IDisposable? _binding = null;
+    private IDisposable? _binding2 = null;
 
 #pragma warning disable BL0007
     [Parameter]
-    public Models.Listening? Listening
-#pragma warning restore BL0007
+    public Models.Listening? ViewModel
     {
-        get => GetValue(ListeningProperty);
+        get => GetValue(ViewModelProperty);
         set
         {
             _binding?.Dispose();
-            SetValue(ListeningProperty, value);
+            _binding2?.Dispose();
+            SetValue(ViewModelProperty, value);
             _binding = value is null ? null
                 : Bind(IsListeningProperty, value, Models.Listening.IsListeningProperty);
+            _binding2 = value is null ? null
+                : Bind(StatusMessageProperty, value, Models.Listening.StatusMessageProperty);
         }
     }
 
@@ -35,5 +33,18 @@ else
     {
         get => GetValue(IsListeningProperty);
         set => SetValue(IsListeningProperty, value);
+    }
+
+    private string StatusMessage
+    {
+        get => GetValue(StatusMessageProperty);
+        set => SetValue(StatusMessageProperty, value);
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        SpeechController.Start();
     }
 }
