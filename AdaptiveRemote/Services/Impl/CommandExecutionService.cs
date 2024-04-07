@@ -14,9 +14,9 @@ internal class CommandExecutionService : ICommandExecutionService
 
     Task ICommandExecutionService.ExecuteAsync(Command command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Executing {Name} {ID}", command.GetType().Name, command.ID);
+        _logger.LogInformation("Executing {Name} {ID}", command.GetType().Name, command.CSSID);
 
-        if (command is ExitCommand)
+        if (command is ApplicationCommand)
         {
             System.Windows.Application.Current.Shutdown();
         }

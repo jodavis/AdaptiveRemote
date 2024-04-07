@@ -1,8 +1,8 @@
 ﻿namespace AdaptiveRemote.Models;
 
-internal class TvCommand : Command
+public class ApplicationCommand : Command
 {
-    public TvCommand(
+    public ApplicationCommand(
         string name,
         string? placement = null,
         string? label = null,
@@ -10,5 +10,6 @@ internal class TvCommand : Command
         string? glyph = null,
         string[]? alternates = null)
         : base(name, placement, label, cssid, glyph, alternates)
-    { }
+    {
+    }
 }

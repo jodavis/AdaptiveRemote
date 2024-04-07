@@ -1,6 +1,6 @@
 ﻿@inject Services.ICommandExecutionService CommandExecution;
 
-<button class="btn-primary" id="@Command?.ID" @onclick="Invoke">@Command?.Label</button>
+<button class="btn-primary" id="@Command?.CSSID" @onclick="Invoke">@Command?.Name</button>
 
 @code {
     [Parameter]

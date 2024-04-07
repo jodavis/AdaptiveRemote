@@ -12,11 +12,13 @@ internal static class SpeechHostBuilderExtensions
     internal static IServiceCollection AddSpeechServices(IServiceCollection services)
         => services
             .AddScoped<ISpeechController, SpeechController>()
+            .AddScoped<ISpeechRecognition, SpeechRecognition>()
+            .AddScoped<ISpeechSynthesis, SpeechSynthesis>()
             .AddScoped(GetListeningViewModel);
 
     private static Models.Listening GetListeningViewModel(IServiceProvider provider)
     {
         IRemoteDefinitionService definition = provider.GetRequiredService<IRemoteDefinitionService>();
-        return definition.GetElement<Models.Listening>(definition.RemoteNames.First());
+        return definition.GetElement<Models.Listening>();
     }
 }

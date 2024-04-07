@@ -17,6 +17,9 @@ templates for [bug reports](../.github/ISSUE_TEMPLATE/bug_report.md) and
 - **Coding Standards:**
   - Follow the code style and naming conventions defined in the `.editorconfig` file.
   - Write clear, maintainable, and well-documented code.
+- **Testing:**
+  - Add or update unit tests as appropriate for your changes.
+  - All tests must pass before your pull request will be considered.
 - **Accessibility:**
   - Prioritize vision accessibility, speech recognition, and eye-gaze input.
   - Keyboard/mouse accessibility is less critical, but do not introduce regressions.

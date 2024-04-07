@@ -4,20 +4,20 @@ namespace AdaptiveRemote.Services;
 
 internal static class IRemoteDefinitionServiceExtensions
 {
-    internal static IEnumerable<Command> GetCommands(this IRemoteDefinitionService service, string remoteName)
+    internal static IEnumerable<Command> GetCommands(this IRemoteDefinitionService service)
     {
-        return service.GetAllElements(remoteName).OfType<Command>();
+        return service.GetAllElements().OfType<Command>();
     }
 
-    internal static ElementType GetElement<ElementType>(this IRemoteDefinitionService service, string remoteName)
+    internal static ElementType GetElement<ElementType>(this IRemoteDefinitionService service)
     {
-        return service.GetAllElements(remoteName).OfType<ElementType>().First();
+        return service.GetAllElements().OfType<ElementType>().First();
     }
 
-    private static IEnumerable<RemoteLayoutElement> GetAllElements(this IRemoteDefinitionService service, string remoteName)
+    private static IEnumerable<RemoteLayoutElement> GetAllElements(this IRemoteDefinitionService service)
     {
         Stack<IEnumerator<RemoteLayoutElement>> stack = new();
-        IEnumerator<RemoteLayoutElement> currentIter = new[] { service.GetRoot(remoteName) }.AsEnumerable().GetEnumerator();
+        IEnumerator<RemoteLayoutElement> currentIter = new[] { service.RemoteRoot }.AsEnumerable().GetEnumerator();
 
         while (true)
         {
