@@ -20,3 +20,6 @@ The project requires Windows OS and [.NET8](https://dotnet.microsoft.com/en-us/d
 To build and run the application, clone the repository and `dotnet run` from the
 `AdaptiveRemote` project directory. You can also open the solution in Visual Studio 
 2022 or later and run the project.
+
+Unit tests are in the `AdaptiveRemote.Tests` project. You can run them using `dotnet test` 
+from that directory or through Visual Studio's Test Explorer.

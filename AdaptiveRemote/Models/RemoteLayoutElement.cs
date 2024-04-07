@@ -4,12 +4,14 @@ namespace AdaptiveRemote.Models;
 
 public abstract class RemoteLayoutElement : MvvmObject
 {
-    public string Group { get; }
-    public string ID { get; }
+    public string Placement { get; }
+    public string CSSID { get; }
 
-    public RemoteLayoutElement(string group, string id)
+    public RemoteLayoutElement(string id, string? placement = null)
     {
-        Group = group;
-        ID = id;
+        Placement = placement ?? "N/A";
+        CSSID = id;
     }
+
+    public override abstract string ToString();
 }

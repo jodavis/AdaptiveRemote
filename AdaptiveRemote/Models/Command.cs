@@ -1,16 +1,43 @@
-﻿namespace AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Mvvm;
+
+namespace AdaptiveRemote.Models;
 
 public abstract class Command : RemoteLayoutElement
 {
-    protected Command(string group, string label)
-        : this(group, label, label.ToUpperInvariant())
-    { }
+    public static readonly MvvmProperty<bool> IsActiveProperty = new(nameof(IsActive));
+    public static readonly MvvmProperty<bool> IsVisibleProperty = new(nameof(IsVisible));
 
-    protected Command(string group, string label, string id)
-        : base(group, id)
+    protected Command(
+        string name,
+        string? placement,
+        string? label,
+        string? cssid,
+        string? glyph,
+        string[]? alternates)
+        : base(cssid ?? name.ToUpperInvariant(), placement)
     {
-        Label = label;
+        Name = name;
+        Label = label ?? name;
+        Glyph = glyph;
+        Alternates = alternates ?? Array.Empty<string>();
     }
 
+    public string Name { get; }
     public string Label { get; }
+    public string? Glyph { get; }
+    public string[] Alternates { get; }
+
+    public bool IsActive
+    {
+        get => GetValue(IsActiveProperty);
+        set => SetValue(IsActiveProperty, value);
+    }
+
+    public bool IsVisible
+    {
+        get => GetValue(IsVisibleProperty);
+        set => SetValue(IsVisibleProperty, value);
+    }
+
+    public override string ToString() => $"{GetType().Name} '{Name}'";
 }
