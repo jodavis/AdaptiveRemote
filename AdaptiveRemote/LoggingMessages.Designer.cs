@@ -158,5 +158,14 @@ namespace AdaptiveRemote {
                 return ResourceManager.GetString("SpeechController_Stopping", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recognized an unknown command: {0}.
+        /// </summary>
+        internal static string SpeechController_UnknownCommand {
+            get {
+                return ResourceManager.GetString("SpeechController_UnknownCommand", resourceCulture);
+            }
+        }
     }
 }

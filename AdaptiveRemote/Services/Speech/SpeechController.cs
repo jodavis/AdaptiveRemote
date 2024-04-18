@@ -1,4 +1,5 @@
-﻿using AdaptiveRemote.Models;
+﻿using System.Runtime.CompilerServices;
+using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -37,8 +38,23 @@ internal class SpeechController : ISpeechController, IDisposable
         _viewModel.StatusMessage = Phrases.Speech_WaitingForActivation;
     }
 
-    // TODO: This should not be async void!!!
-    public async void Start()
+    public void Start()
+    {
+        IReadOnlyDictionary<string, Command>? commands = GetCommands();
+
+        if (commands is not null)
+        {
+            _ = ListenWithRetriesAsync(commands, _stop.Token);
+        }
+    }
+
+    public void Dispose()
+    {
+        _logger.LogInformation(LoggingMessages.SpeechController_Stopping);
+        _stop.Cancel();
+    }
+
+    private IReadOnlyDictionary<string, Command>? GetCommands()
     {
         Dictionary<string, Command> commands = new(StringComparer.OrdinalIgnoreCase);
         try
@@ -56,36 +72,27 @@ internal class SpeechController : ISpeechController, IDisposable
         {
             _logger.LogError(ex, LoggingMessages.SpeechController_ErrorDuringStartup, ex);
             _viewModel.StatusMessage = Phrases.Speech_ListeningSystemFailed;
-            return;
+
+            return null;
         }
 
+        return commands;
+    }
+
+    private async Task ListenWithRetriesAsync(IReadOnlyDictionary<string, Command> commands, CancellationToken cancellationToken)
+    {
         int errorCount = 0;
         while (true)
         {
             try
             {
-                _viewModel.StatusMessage = Phrases.Speech_ListeningForAttention;
-                _logger.LogInformation(LoggingMessages.SpeechController_ListenForAttention);
-                await _speechRecognition.ListenForAttention(_stop.Token);
-                _viewModel.IsListening = true;
-                _viewModel.StatusMessage = Phrases.Speech_ImListening;
-                _speechSynthesis.Say(Phrases.Speech_ImListening);
-                _logger.LogInformation(LoggingMessages.SpeechController_ListenForCommands);
-                await foreach (IRecognitionResult result in _speechRecognition.ListenForCommands(CancellationToken.None))
-                {
-                    _logger.LogInformation(LoggingMessages.SpeechController_Recognized, result.Text);
-                    if (commands.TryGetValue(result.Text, out Command? command))
-                    {
-                        _speechSynthesis.Say(Phrases.Speech_Sending(command.Name));
-                        _logger.LogInformation(LoggingMessages.SpeechController_Executing, command.Name);
-                        await _executionService.ExecuteAsync(command);
-                        _logger.LogInformation(LoggingMessages.SpeechController_Executed, command.Name);
-                    }
-                }
-                _speechSynthesis.Say(Phrases.Speech_StoppedListening);
+                await ListenAsync(commands, cancellationToken);
             }
             catch (OperationCanceledException)
             {
+                _viewModel.StatusMessage = string.Empty;
+                _viewModel.IsListening = false;
+
                 _logger.LogInformation(LoggingMessages.SpeechController_Stopped);
                 break;
             }
@@ -105,19 +112,72 @@ internal class SpeechController : ISpeechController, IDisposable
                     _logger.LogInformation(LoggingMessages.SpeechController_Retrying, errorCount);
                 }
             }
-            finally
+        }
+    }
+
+    private async Task ListenAsync(IReadOnlyDictionary<string, Command> commands, CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            await ListenForAttention(cancellationToken);
+
+            await foreach (IRecognitionResult result in ListenForCommandsAsync(cancellationToken))
             {
-                _viewModel.IsListening = false;
+                _logger.LogInformation(LoggingMessages.SpeechController_Recognized, result.Text);
+
+                if (commands.TryGetValue(result.Text, out Command? command))
+                {
+                    await ExecuteCommand(command, cancellationToken);
+                }
+                else
+                {
+                    _logger.LogError(LoggingMessages.SpeechController_UnknownCommand, result.Text);
+                }
             }
         }
     }
 
-    public void Dispose()
+    private async Task ListenForAttention(CancellationToken cancellationToken)
     {
-        _logger.LogInformation(LoggingMessages.SpeechController_Stopping);
-        _stop.Cancel();
-        //_logger.LogInformation("Stopped");
-        //_viewModel.StatusMessage = String.Empty;
-        //_viewModel.IsListening = false;
+        _viewModel.StatusMessage = Phrases.Speech_ListeningForAttention;
+        _logger.LogInformation(LoggingMessages.SpeechController_ListenForAttention);
+
+        await _speechRecognition.ListenForAttention(cancellationToken);
+    }
+
+    private async IAsyncEnumerable<IRecognitionResult> ListenForCommandsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        try
+        {
+            _viewModel.IsListening = true;
+            _viewModel.StatusMessage = Phrases.Speech_ImListening;
+            _speechSynthesis.Say(Phrases.Speech_ImListening);
+            _logger.LogInformation(LoggingMessages.SpeechController_ListenForCommands);
+
+            await foreach (IRecognitionResult result in _speechRecognition.ListenForCommands(cancellationToken))
+            {
+                yield return result;
+
+                _viewModel.IsListening = true;
+                _viewModel.StatusMessage = Phrases.Speech_ImListening;
+            }
+
+            _speechSynthesis.Say(Phrases.Speech_StoppedListening);
+        }
+        finally
+        {
+            _viewModel.IsListening = false;
+        }
+    }
+
+    private async Task ExecuteCommand(Command command, CancellationToken cancellationToken)
+    {
+        _speechSynthesis.Say(Phrases.Speech_Sending(command.Name));
+        _viewModel.StatusMessage = Phrases.Speech_ImSending;
+        _logger.LogInformation(LoggingMessages.SpeechController_Executing, command.Name);
+
+        await _executionService.ExecuteAsync(command, cancellationToken);
+
+        _logger.LogInformation(LoggingMessages.SpeechController_Executed, command.Name);
     }
 }
