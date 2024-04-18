@@ -157,4 +157,8 @@
   <data name="SpeechController_Stopping" xml:space="preserve">
     <value>Stopping</value>
   </data>
+  <data name="SpeechController_UnknownCommand" xml:space="preserve">
+    <value>Recognized an unknown command: {0}</value>
+    <comment>0=Speech that was recognized but did not map to a command</comment>
+  </data>
 </root>

@@ -9,4 +9,5 @@ internal static class Phrases
     public static string Speech_ListeningForAttention => $"Say \"{Speech_Attention}\" to start listening";
     public static string Speech_Attention => "Hey Remote";
     public static string Speech_ListeningSystemFailed => "Listening error, try restarting";
+    public static string Speech_ImSending => "Sending...";
 }
