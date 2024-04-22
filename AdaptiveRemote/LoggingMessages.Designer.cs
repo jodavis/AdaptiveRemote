@@ -167,5 +167,32 @@ namespace AdaptiveRemote {
                 return ResourceManager.GetString("SpeechController_UnknownCommand", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saying &apos;{0}&apos;.
+        /// </summary>
+        internal static string SpeechSynthesis_Saying {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_Saying", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selected voice &apos;{0}&apos;.
+        /// </summary>
+        internal static string SpeechSynthesis_SelectedVoice {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_SelectedVoice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Voice not found: &apos;{0}&apos;.
+        /// </summary>
+        internal static string SpeechSynthesis_VoiceNotFound {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_VoiceNotFound", resourceCulture);
+            }
+        }
     }
 }
