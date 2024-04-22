@@ -1,5 +1,39 @@
-﻿namespace AdaptiveRemote.Services.Speech;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace AdaptiveRemote.Services.Speech;
 internal class SpeechSynthesis : ISpeechSynthesis
 {
-    void ISpeechSynthesis.Say(string phrase) { }
+    private readonly ISpeechSynthesizer _synthesizer;
+    private readonly ILogger<SpeechSynthesis> _logger;
+
+    public SpeechSynthesis(ISpeechSynthesizer synthesizer, IOptionsSnapshot<SpeechSettings> settings, ILogger<SpeechSynthesis> logger)
+    {
+        _synthesizer = synthesizer;
+        _logger = logger;
+
+        SelectVoice(settings.Value.Voice);
+
+        _synthesizer.SetOutputToDefaultAudioDevice();
+    }
+
+    private void SelectVoice(string voiceName)
+    {
+        if (_synthesizer.HasVoice(voiceName))
+        {
+            _synthesizer.SelectVoice(voiceName);
+            _logger.LogInformation(LoggingMessages.SpeechSynthesis_SelectedVoice, voiceName);
+        }
+        else
+        {
+            _logger.LogWarning(LoggingMessages.SpeechSynthesis_VoiceNotFound, voiceName);
+        }
+    }
+
+    void ISpeechSynthesis.Say(string phrase)
+    {
+        _synthesizer.CancelAll();
+        _logger.LogInformation(LoggingMessages.SpeechSynthesis_Saying, phrase);
+        _synthesizer.SpeakAsync(phrase);
+    }
 }

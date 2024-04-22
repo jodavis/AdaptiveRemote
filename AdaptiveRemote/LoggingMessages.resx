@@ -161,4 +161,16 @@
     <value>Recognized an unknown command: {0}</value>
     <comment>0=Speech that was recognized but did not map to a command</comment>
   </data>
+  <data name="SpeechSynthesis_Saying" xml:space="preserve">
+    <value>Saying '{0}'</value>
+    <comment>0=Phrase to be spoken</comment>
+  </data>
+  <data name="SpeechSynthesis_SelectedVoice" xml:space="preserve">
+    <value>Selected voice '{0}'</value>
+    <comment>0=Name of the selected voice</comment>
+  </data>
+  <data name="SpeechSynthesis_VoiceNotFound" xml:space="preserve">
+    <value>Voice not found: '{0}'</value>
+    <comment>0=Name of the missing voice</comment>
+  </data>
 </root>
