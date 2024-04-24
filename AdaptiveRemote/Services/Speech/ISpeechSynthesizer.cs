@@ -1,4 +1,6 @@
-﻿namespace AdaptiveRemote.Services.Speech;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace AdaptiveRemote.Services.Speech;
 
 public interface ISpeechSynthesizer
 {
@@ -8,7 +10,7 @@ public interface ISpeechSynthesizer
 
     void CancelAll();
 
-    bool HasVoice(string name);
+    IEnumerable<string> GetInstalledVoices();
 
-    void SelectVoice(string voice);
+    void SelectVoice(string fullName);
 }

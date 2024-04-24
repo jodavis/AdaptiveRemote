@@ -10,14 +10,19 @@ public class SpeechSynthesisTests
     private readonly Mock<ISpeechSynthesizer> MockSynthesizer = new();
     private readonly SpeechSettings SpeechSettings = new();
 
+    private readonly string[] InstalledVoices = [
+        "Microsoft Zira - English",
+        "Microsoft Quimby - English"
+    ];
+
     public SpeechSynthesisTests()
     {
         MockSynthesizer
             .Setup(x => x.SpeakAsync(It.IsAny<string>()))
             .Verifiable(Times.Never);
         MockSynthesizer
-            .Setup(x => x.HasVoice(It.IsAny<string>()))
-            .Returns(true);
+            .Setup(x => x.GetInstalledVoices())
+            .Returns(InstalledVoices);
         MockSynthesizer
             .Setup(x => x.SetOutputToDefaultAudioDevice())
             .Verifiable(Times.Once);
@@ -46,14 +51,10 @@ public class SpeechSynthesisTests
     public void SpeechSynthesis_Constructor_SelectsVoiceFromSettings()
     {
         // Arrange
-        SpeechSettings.Voice = "Quimby";
+        SpeechSettings.Voice = ["Quimby"];
 
         MockSynthesizer
-            .Setup(x => x.SelectVoice("Quimby"))
-            .Verifiable(Times.Once);
-        MockSynthesizer
-            .Setup(x => x.HasVoice("Quimby"))
-            .Returns(true)
+            .Setup(x => x.SelectVoice(InstalledVoices[1]))
             .Verifiable(Times.Once);
 
         // Act
@@ -61,21 +62,38 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, "Quimby"));
+            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, InstalledVoices[1]));
     }
 
     [TestMethod]
     public void SpeechSynthesis_Constructor_WithInvalidVoiceName_LogsWarning()
     {
         // Arrange
-        SpeechSettings.Voice = "Quimby";
+        SpeechSettings.Voice = ["Missile"];
 
         MockSynthesizer
-            .Setup(x => x.SelectVoice("Quimby"))
+            .Setup(x => x.SelectVoice("Missile"))
+            .Verifiable(Times.Never);
+
+        // Act
+        ISpeechSynthesis sut = CreateSut();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, "Missile"));
+    }
+
+    [TestMethod]
+    public void SpeechSynthesis_Constructor_WithFallbackVoiceName_LogsWarningAndUsesFallback()
+    {
+        // Arrange
+        SpeechSettings.Voice = ["Missile", "Quimby"];
+
+        MockSynthesizer
+            .Setup(x => x.SelectVoice(It.IsAny<string>()))
             .Verifiable(Times.Never);
         MockSynthesizer
-            .Setup(x => x.HasVoice("Quimby"))
-            .Returns(false)
+            .Setup(x => x.SelectVoice(InstalledVoices[1]))
             .Verifiable(Times.Once);
 
         // Act
@@ -83,7 +101,29 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, "Quimby"));
+            string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, "Missile"),
+            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, InstalledVoices[1]));
+    }
+
+    [TestMethod]
+    public void SpeechSynthesis_Constructor_WithFallbackVoiceName_DoesNotTryFallbackIfFirstVoiceIsFound()
+    {
+        // Arrange
+        SpeechSettings.Voice = ["Quimby", "Missile"];
+
+        MockSynthesizer
+            .Setup(x => x.SelectVoice(It.IsAny<string>()))
+            .Verifiable(Times.Never);
+        MockSynthesizer
+            .Setup(x => x.SelectVoice(InstalledVoices[1]))
+            .Verifiable(Times.Once);
+
+        // Act
+        ISpeechSynthesis sut = CreateSut();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, InstalledVoices[1]));
     }
 
     [TestMethod]
@@ -107,7 +147,8 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, SpeechSettings.Voice),
+            string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, SpeechSettings.Voice[0]),
+            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, InstalledVoices[0]),
             string.Format(LoggingMessages.SpeechSynthesis_Saying, input));
     }
 }

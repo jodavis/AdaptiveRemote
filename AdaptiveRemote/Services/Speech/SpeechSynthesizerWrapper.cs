@@ -12,7 +12,6 @@ internal class SpeechSynthesizerWrapper : ISpeechSynthesizer, IDisposable
     public void CancelAll() => _speechSynthesizer.SpeakAsyncCancelAll();
     public void SpeakAsync(string textToSpeak) => _speechSynthesizer.SpeakAsync(textToSpeak);
     public void Dispose() => _speechSynthesizer.Dispose();
-
-    public bool HasVoice(string name) => _speechSynthesizer.GetInstalledVoices().Any(x => x.VoiceInfo.Name == name);
+    public IEnumerable<string> GetInstalledVoices() => _speechSynthesizer.GetInstalledVoices().Select(x => x.VoiceInfo.Name);
     public void SelectVoice(string name) => _speechSynthesizer.SelectVoice(name);
 }
