@@ -15,6 +15,7 @@ internal static class SpeechHostBuilderExtensions
             .AddScoped<ISpeechRecognition, SpeechRecognition>()
             .AddScoped<ISpeechSynthesis, SpeechSynthesis>()
             .AddSingleton<ISpeechSynthesizer, SpeechSynthesizerWrapper>()
+            .AddSingleton<ISpeechRecognitionEngine, SpeechRecognitionEngineWrapper>()
             .AddScoped(GetListeningViewModel);
 
     private static Models.Listening GetListeningViewModel(IServiceProvider provider)

@@ -169,6 +169,136 @@ namespace AdaptiveRemote {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} was cancelled..
+        /// </summary>
+        internal static string SpeechRecognition_CancelledListeningMethod {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_CancelledListeningMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occurred in {0}
+        ///{1}.
+        /// </summary>
+        internal static string SpeechRecognition_ErrorInListeningMethod {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_ErrorInListeningMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occured while stopping the listening engine
+        ///{0}.
+        /// </summary>
+        internal static string SpeechRecognition_ErrorInStopListening {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_ErrorInStopListening", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}.Enabled={1}.
+        /// </summary>
+        internal static string SpeechRecognition_GrammarEnabled {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_GrammarEnabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Listening={0}.
+        /// </summary>
+        internal static string SpeechRecognition_Listening {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_Listening", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AudioSignalProblemOccurred:{0} at {3} ({1}) with AudioLevel:{2}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_AudioSignalProblemOccurred {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_AudioSignalProblemOccurred", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AudioState:{0}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_AudioStateChanged {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_AudioStateChanged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Detected: {0}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_Detected {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_Detected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hypothesized: {0}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_Hypothesized {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_Hypothesized", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loaded Grammar {1}\n   Cancelled:{2}\n   Error: {0}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_LoadGrammarCompleted {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_LoadGrammarCompleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recognition rejected: {0}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_RecognitionRejected {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_RecognitionRejected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recognize completed: InputStreamEnded:{0} Cancelled:{1} BabbleTimeout:{2} InitialSilenceTimeout:{4}
+        ///   Result:{5}
+        ///   Error{3}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_RecognizeCompleted {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_RecognizeCompleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recognized {0}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_Recognized {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_Recognized", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recognizer update reached at {0} ({1}).
+        /// </summary>
+        internal static string SpeechRecognitionEngine_UpdateReached {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_UpdateReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Saying &apos;{0}&apos;.
         /// </summary>
         internal static string SpeechSynthesis_Saying {
