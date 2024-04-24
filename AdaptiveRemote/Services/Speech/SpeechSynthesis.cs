@@ -17,15 +17,19 @@ internal class SpeechSynthesis : ISpeechSynthesis
         _synthesizer.SetOutputToDefaultAudioDevice();
     }
 
-    private void SelectVoice(string voiceName)
+    private void SelectVoice(string[] voiceNames)
     {
-        if (_synthesizer.HasVoice(voiceName))
+        foreach (string voiceName in voiceNames)
         {
-            _synthesizer.SelectVoice(voiceName);
-            _logger.LogInformation(LoggingMessages.SpeechSynthesis_SelectedVoice, voiceName);
-        }
-        else
-        {
+            foreach (string installedVoice in _synthesizer.GetInstalledVoices())
+            {
+                if (installedVoice.Contains(voiceName, StringComparison.OrdinalIgnoreCase))
+                {
+                    _synthesizer.SelectVoice(installedVoice);
+                    _logger.LogInformation(LoggingMessages.SpeechSynthesis_SelectedVoice, installedVoice);
+                    return;
+                }
+            }
             _logger.LogWarning(LoggingMessages.SpeechSynthesis_VoiceNotFound, voiceName);
         }
     }
