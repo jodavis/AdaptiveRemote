@@ -115,7 +115,7 @@ namespace AdaptiveRemote {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Recognized &apos;{0}&apos;.
+        ///   Looks up a localized string similar to Recognized &apos;{0}&apos; as &apos;{1}&apos;.
         /// </summary>
         internal static string SpeechController_Recognized {
             get {

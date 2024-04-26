@@ -1,0 +1,203 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<grammar version="1.0" xml:lang="en-US"
+         xmlns="http://www.w3.org/2001/06/grammar"
+         tag-format="semantics/1.0" root="Attention">
+
+  <rule id="Attention" scope="public">
+    <one-of>
+      <item>Hey Remote</item>
+      <item>Hey TV</item>
+    </one-of>
+    <tag>out="STARTLISTENING"</tag>
+  </rule>
+
+  <rule id="YesNo" scope="public">
+    <one-of>
+      <item>
+        <one-of>
+          <item>Yes</item>
+          <item>Yes, please</item>
+          <item>Yep</item>
+          <item>Yeah</item>
+        </one-of>
+        <tag>out="YES"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>No</item>
+          <item>Nah</item>
+          <item>No, thank you</item>
+        </one-of>
+        <tag>out="NO"</tag>
+      </item>
+    </one-of>
+  </rule>
+
+  <rule id="Commands" scope="public">
+    <one-of>
+      <item>
+        <ruleref uri="#Command"></ruleref>
+      </item>
+      <item>
+        <ruleref uri="#Stop"></ruleref>
+      </item>
+    </one-of>
+  </rule>
+
+  <rule id="Command">
+    <one-of>
+      <item>
+        <one-of>
+          <item>Up</item>
+          <item>Go up</item>
+        </one-of>
+        <tag>out="Command:UP"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Down</item>
+          <item>Go down</item>
+        </one-of>
+        <tag>out="Command:DOWN"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Left</item>
+          <item>Go left</item>
+        </one-of>
+        <tag>out="Command:LEFT"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Right</item>
+          <item>Go right</item>
+        </one-of>
+        <tag>out="Command:RIGHT"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Select</item>
+          <item>OK</item>
+        </one-of>
+        <tag>out="Command:SELECT"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>TiVo</item>
+          <item>Go to TiVo</item>
+        </one-of>
+        <tag>out="Command:TIVO"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Guide</item>
+          <item>Go to Guide</item>
+        </one-of>
+        <tag>out="Command:GUIDE"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Netflix</item>
+          <item>Go to Netflix</item>
+        </one-of>
+        <tag>out="Command:NETFLIX"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Back</item>
+          <item>Go back</item>
+        </one-of>
+        <tag>out="Command:BACK"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Play</item>
+        </one-of>
+        <tag>out="Command:PLAY"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Pause</item>
+        </one-of>
+        <tag>out="Command:PAUSE"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Record</item>
+        </one-of>
+        <tag>out="Command:RECORD"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Replay</item>
+          <item>Skip back</item>
+        </one-of>
+        <tag>out="Command:REPLAY"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Advance</item>
+          <item>Skip forward</item>
+          <item>Skip</item>
+        </one-of>
+        <tag>out="Command:SKIP"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Channel Up</item>
+          <item>Page Up</item>
+        </one-of>
+        <tag>out="Command:CHANNELUP"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Channel Down</item>
+          <item>Page Down</item>
+        </one-of>
+        <tag>out="Command:CHANNELDOWN"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Louder</item>
+          <item>Volume up</item>
+        </one-of>
+        <tag>out="Command:VOLUMEUP"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Quieter</item>
+          <item>Softer</item>
+          <item>Volume Down</item>
+        </one-of>
+        <tag>out="Command:VOLUMEDOWN"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Mute</item>
+        </one-of>
+        <tag>out="Command:MUTE"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Exit</item>
+          <item>Quit</item>
+        </one-of>
+        <tag>out="Command:EXIT"</tag>
+      </item>
+    </one-of>
+  </rule>
+
+  <rule id="Stop">
+    <one-of>
+      <item>Stop Listening</item>
+      <item>Done</item>
+      <item>I'm Done</item>
+      <item>Thank you</item>
+    </one-of>
+    <tag>out="STOPLISTENING"</tag>
+  </rule>
+
+  <rule id="Typing">
+    Type <ruleref uri="grammar:dictation" type="application/srgs+xml" />
+  </rule>
+</grammar>

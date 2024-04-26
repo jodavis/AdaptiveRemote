@@ -9,6 +9,6 @@ internal class TvCommand : Command
         string? cssid = null,
         string? glyph = null,
         string[]? alternates = null)
-        : base(name, placement, label, cssid, glyph, alternates)
+        : base(name, placement, label, cssid, glyph)
     { }
 }

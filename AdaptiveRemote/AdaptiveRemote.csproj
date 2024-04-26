@@ -14,7 +14,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Services\Speech\static_grammar.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <_ContentIncludedByDefault Remove="compilerconfig.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Services\Speech\static_grammar.xml" />
   </ItemGroup>
 
   <ItemGroup>

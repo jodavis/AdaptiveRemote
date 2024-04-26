@@ -35,7 +35,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     public void UnloadAllGrammars() => _engine.UnloadAllGrammars();
     public void LoadGrammar(Grammar grammar) => _engine.LoadGrammar(grammar);
     public void SetInputToDefaultAudioDevice() => _engine.SetInputToDefaultAudioDevice();
-    public void RecognizeAsync() => _engine.RecognizeAsync(RecognizeMode.Single);
+    public void RecognizeAsync() => _engine.RecognizeAsync(RecognizeMode.Multiple);
     public void RecognizeAsyncCancel() => _engine.RecognizeAsyncCancel();
 
     public event EventHandler<RecognitionResultEventArgs> SpeechRecognized
@@ -47,16 +47,16 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     private void OnSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
         => _logger.LogInformation(LoggingMessages.SpeechRecognitionEngine_Recognized, new ResultWrapper(e.Result));
     private void OnSpeechRecognitionRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
-        => _logger.LogWarning(LoggingMessages.SpeechRecognitionEngine_RecognitionRejected, e.Result);
+        => _logger.LogWarning(LoggingMessages.SpeechRecognitionEngine_RecognitionRejected, new ResultWrapper(e.Result));
     private void OnSpeechHypothesized(object? sender, SpeechHypothesizedEventArgs e)
-        => _logger.LogInformation(LoggingMessages.SpeechRecognitionEngine_Hypothesized, e.Result);
+        => _logger.LogInformation(LoggingMessages.SpeechRecognitionEngine_Hypothesized, new ResultWrapper(e.Result));
     private void OnSpeechDetected(object? sender, SpeechDetectedEventArgs e)
         => _logger.LogInformation(LoggingMessages.SpeechRecognitionEngine_Detected, e.AudioPosition);
     private void OnRecognizerUpdateReached(object? sender, RecognizerUpdateReachedEventArgs e)
         => _logger.LogWarning(LoggingMessages.SpeechRecognitionEngine_UpdateReached, e.AudioPosition, e.UserToken);
     private void OnRecognizeCompleted(object? sender, RecognizeCompletedEventArgs e)
         => _logger.LogInformation(LoggingMessages.SpeechRecognitionEngine_RecognizeCompleted,
-            e.InputStreamEnded, e.Cancelled, e.BabbleTimeout, e.Error, e.InitialSilenceTimeout, e.Result);
+            e.InputStreamEnded, e.Cancelled, e.BabbleTimeout, e.Error, e.InitialSilenceTimeout, new ResultWrapper(e.Result));
     private void OnLoadGrammarCompleted(object? sender, LoadGrammarCompletedEventArgs e)
         => _logger.LogInformation(LoggingMessages.SpeechRecognitionEngine_LoadGrammarCompleted, e.Error, e.Grammar.Name, e.Cancelled);
     private void OnAudioStateChanged(object? sender, AudioStateChangedEventArgs e)

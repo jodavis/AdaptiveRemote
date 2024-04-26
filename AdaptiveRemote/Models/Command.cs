@@ -12,20 +12,17 @@ public abstract class Command : RemoteLayoutElement
         string? placement,
         string? label,
         string? cssid,
-        string? glyph,
-        string[]? alternates)
+        string? glyph)
         : base(cssid ?? name.ToUpperInvariant(), placement)
     {
         Name = name;
         Label = label ?? name;
         Glyph = glyph;
-        Alternates = alternates ?? Array.Empty<string>();
     }
 
     public string Name { get; }
     public string Label { get; }
     public string? Glyph { get; }
-    public string[] Alternates { get; }
 
     public bool IsActive
     {
