@@ -62,10 +62,6 @@ internal class SpeechController : ISpeechController, IDisposable
             foreach (Command command in _definitionService.GetCommands())
             {
                 commands[command.Name] = command;
-                foreach (string alternate in command.Alternates)
-                {
-                    commands[alternate] = command;
-                }
             }
         }
         catch (Exception ex)
@@ -117,15 +113,18 @@ internal class SpeechController : ISpeechController, IDisposable
 
     private async Task ListenAsync(IReadOnlyDictionary<string, Command> commands, CancellationToken cancellationToken)
     {
+        const string CommandPrefix = "Command:";
+
         while (true)
         {
             await ListenForAttention(cancellationToken);
 
             await foreach (IRecognitionResult result in ListenForCommandsAsync(cancellationToken))
             {
-                _logger.LogInformation(LoggingMessages.SpeechController_Recognized, result.Text);
+                _logger.LogInformation(LoggingMessages.SpeechController_Recognized, result.Text, result.SemanticMeaning);
 
-                if (commands.TryGetValue(result.Text, out Command? command))
+                if (result.SemanticMeaning.StartsWith(CommandPrefix) &&
+                    commands.TryGetValue(result.SemanticMeaning.Substring(CommandPrefix.Length), out Command? command))
                 {
                     await ExecuteCommand(command, cancellationToken);
                 }

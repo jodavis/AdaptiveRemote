@@ -140,8 +140,8 @@
     <value>Listening for commands</value>
   </data>
   <data name="SpeechController_Recognized" xml:space="preserve">
-    <value>Recognized '{0}'</value>
-    <comment>0=Result text</comment>
+    <value>Recognized '{0}' as '{1}'</value>
+    <comment>0=Result text,1=Semantic meaning</comment>
   </data>
   <data name="SpeechController_Retrying" xml:space="preserve">
     <value>Restarting after {0} error(s)</value>

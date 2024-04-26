@@ -8,9 +8,8 @@ public class TiVoCommand : Command
         string? placement = null,
         string? label = null,
         string? cssid = null,
-        string? glyph = null,
-        string[]? alternates = null)
-        : base(name, placement, label, cssid ?? commandId, glyph, alternates)
+        string? glyph = null)
+        : base(name, placement, label, cssid ?? commandId, glyph)
     {
         CommandId = commandId ?? name.ToUpperInvariant();
     }

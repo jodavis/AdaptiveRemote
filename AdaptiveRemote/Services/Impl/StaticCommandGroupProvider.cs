@@ -31,8 +31,8 @@ internal class StaticCommandGroupProvider : IRemoteDefinitionService
         }, "ROOT"),
         new LayoutGroup("CHANNEL", new List<RemoteLayoutElement>
         {
-            new TiVoCommand("Channel Up", label: "Up", commandId: "CHANNELUP", alternates: new[] { "Page Up" }),
-            new TiVoCommand("Channel Down", label: "Down", commandId: "CHANNELDOWN", alternates: new[] { "Page Down" }),
+            new TiVoCommand("ChannelUp", label: "Up", commandId: "CHANNELUP"),
+            new TiVoCommand("ChannelDown", label: "Down", commandId: "CHANNELDOWN"),
         }, "ROOT"),
         new LayoutGroup("GUTTER", new List<RemoteLayoutElement>
         {

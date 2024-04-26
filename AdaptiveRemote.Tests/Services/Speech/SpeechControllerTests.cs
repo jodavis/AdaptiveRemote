@@ -16,7 +16,7 @@ public class SpeechControllerTests
     private readonly Mock<IOptionsSnapshot<SpeechSettings>> MockOptions = new();
     private readonly SpeechSettings SpeechSettings = new();
 
-    private static readonly Models.TiVoCommand Command1 = new("Hey you!", alternates: new[] { "Howdy!" });
+    private static readonly Models.TiVoCommand Command1 = new("Hey you!");
     private static readonly Models.TiVoCommand Command2 = new("Test Two");
 
     private readonly Models.Listening ViewModel = new("MOCKGROUP");
@@ -181,6 +181,9 @@ public class SpeechControllerTests
         result
             .SetupGet(x => x.Text)
             .Returns(Command1.Name);
+        result
+            .SetupGet(x => x.SemanticMeaning)
+            .Returns("Command:" + Command1.Name);
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -213,7 +216,7 @@ public class SpeechControllerTests
         MockLogger.VerifyMessages(
             LoggingMessages.SpeechController_ListenForAttention,
             LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, Command1.Name),
+            string.Format(LoggingMessages.SpeechController_Recognized, result.Object.Text, result.Object.SemanticMeaning),
             string.Format(LoggingMessages.SpeechController_Executing, Command1.Name));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -230,6 +233,9 @@ public class SpeechControllerTests
         result
             .SetupGet(x => x.Text)
             .Returns("Not a command");
+        result
+            .SetupGet(x => x.SemanticMeaning)
+            .Returns("Command:Not a command");
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -254,7 +260,7 @@ public class SpeechControllerTests
         MockLogger.VerifyMessages(
             LoggingMessages.SpeechController_ListenForAttention,
             LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, "Not a command"),
+            string.Format(LoggingMessages.SpeechController_Recognized, result.Object.Text, result.Object.SemanticMeaning),
             string.Format(LoggingMessages.SpeechController_UnknownCommand, "Not a command"));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -268,6 +274,9 @@ public class SpeechControllerTests
         ISpeechController sut = CreateSut();
 
         Mock<IRecognitionResult> result1 = new();
+        result1
+            .SetupGet(x => x.SemanticMeaning)
+            .Returns("Command:" + Command1.Name);
         result1
             .SetupGet(x => x.Text)
             .Returns(Command1.Name);
@@ -303,64 +312,7 @@ public class SpeechControllerTests
         MockLogger.VerifyMessages(
             LoggingMessages.SpeechController_ListenForAttention,
             LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, Command1.Name),
-            string.Format(LoggingMessages.SpeechController_Executing, Command1.Name),
-            string.Format(LoggingMessages.SpeechController_Executed, Command1.Name));
-
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Speech_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-    }
-
-    [TestMethod]
-    public void SpeechController_UsingAlternatePhrases_ExecutesCommandTwice()
-    {
-        // Arrange
-        ISpeechController sut = CreateSut();
-
-        Mock<IRecognitionResult> result1 = new();
-        result1
-            .SetupGet(x => x.Text)
-            .Returns(Command1.Name);
-        Mock<IRecognitionResult> result2 = new();
-        result2
-            .SetupGet(x => x.Text)
-            .Returns(Command1.Alternates[0]);
-
-        TaskCompletionSource tcs = new();
-        MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
-            .Returns(tcs.Task)
-            .Verifiable(Times.Once);
-        MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
-            .Returns(AsyncEnumerate(false, result1.Object, result2.Object))
-            .Verifiable(Times.Once);
-
-        MockSynthesis
-            .Setup(x => x.Say(Phrases.Speech_ImListening))
-            .Verifiable(Times.Once);
-        MockSynthesis
-            .Setup(x => x.Say(Phrases.Speech_Sending(Command1.Name)))
-            .Verifiable(Times.Exactly(2));
-
-        MockExecution
-            .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask)
-            .Verifiable(Times.Exactly(2));
-
-        sut.Start();
-
-        // Act
-        tcs.SetResult();
-
-        // Assert
-        MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, Command1.Name),
-            string.Format(LoggingMessages.SpeechController_Executing, Command1.Name),
-            string.Format(LoggingMessages.SpeechController_Executed, Command1.Name),
-            string.Format(LoggingMessages.SpeechController_Recognized, Command1.Alternates[0]),
+            string.Format(LoggingMessages.SpeechController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
             string.Format(LoggingMessages.SpeechController_Executing, Command1.Name),
             string.Format(LoggingMessages.SpeechController_Executed, Command1.Name));
 
@@ -688,6 +640,9 @@ public class SpeechControllerTests
         result1
             .SetupGet(x => x.Text)
             .Returns(Command1.Name);
+        result1
+            .SetupGet(x => x.SemanticMeaning)
+            .Returns("Command:" + Command1.Name);
 
         MockRecognition
             .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
@@ -712,7 +667,7 @@ public class SpeechControllerTests
         MockLogger.VerifyMessages(
             LoggingMessages.SpeechController_ListenForAttention,
             LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, Command1.Name),
+            string.Format(LoggingMessages.SpeechController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
             string.Format(LoggingMessages.SpeechController_Executing, Command1.Name),
             LoggingMessages.SpeechController_Stopping);
 
@@ -740,6 +695,9 @@ public class SpeechControllerTests
         result1
             .SetupGet(x => x.Text)
             .Returns(Command1.Name);
+        result1
+            .SetupGet(x => x.SemanticMeaning)
+            .Returns("Command:" + Command1.Name);
 
         MockRecognition
             .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
@@ -765,8 +723,8 @@ public class SpeechControllerTests
         MockLogger.VerifyMessages(
             LoggingMessages.SpeechController_ListenForAttention,
             LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, Command1.Name),
-            string.Format(LoggingMessages.SpeechController_Executing, Command1.Name),
+            string.Format(LoggingMessages.SpeechController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
+            string.Format(LoggingMessages.SpeechController_Executing, Command1.Name, Command1.Name),
             LoggingMessages.SpeechController_Stopping,
             LoggingMessages.SpeechController_Stopped);
 
