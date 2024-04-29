@@ -1,25 +1,25 @@
 using Microsoft.Extensions.Options;
 using Moq;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
 [TestClass]
-public class SpeechControllerTests
+public class ConversationControllerTests
 {
     private static readonly Task IncompleteTask = new TaskCompletionSource().Task;
 
-    private readonly MockLogger<SpeechController> MockLogger = new();
+    private readonly MockLogger<ConversationController> MockLogger = new();
     private readonly Mock<ISpeechRecognition> MockRecognition = new();
     private readonly Mock<ISpeechSynthesis> MockSynthesis = new();
     private readonly Mock<ICommandExecutionService> MockExecution = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinition = new();
-    private readonly Mock<IOptionsSnapshot<SpeechSettings>> MockOptions = new();
-    private readonly SpeechSettings SpeechSettings = new();
+    private readonly Mock<IOptionsSnapshot<ConversationSettings>> MockOptions = new();
+    private readonly ConversationSettings ConversationSettings = new();
 
     private static readonly Models.TiVoCommand Command1 = new("Hey you!");
     private static readonly Models.TiVoCommand Command2 = new("Test Two");
 
-    private readonly Models.Listening ViewModel = new("MOCKGROUP");
+    private readonly Models.Conversation ViewModel = new("MOCKGROUP");
     private readonly Models.RemoteLayoutElement RootLayout =
         new Models.LayoutGroup("COMMANDS", new List<Models.RemoteLayoutElement>
         {
@@ -27,7 +27,7 @@ public class SpeechControllerTests
             Command2
         });
 
-    private SpeechController CreateSut() => new(
+    private ConversationController CreateSut() => new(
         MockOptions.Object,
         MockRecognition.Object,
         MockSynthesis.Object,
@@ -61,7 +61,7 @@ public class SpeechControllerTests
 
         MockOptions
             .SetupGet(x => x.Value)
-            .Returns(SpeechSettings)
+            .Returns(ConversationSettings)
             .Verifiable(Times.Once);
     }
 
@@ -75,7 +75,7 @@ public class SpeechControllerTests
     }
 
     [TestMethod]
-    public void SpeechController_OnConstruction_InitializesViewModel()
+    public void ConversationController_OnConstruction_InitializesViewModel()
     {
         // Arrange
         ViewModel.IsListening = true;
@@ -86,7 +86,7 @@ public class SpeechControllerTests
             .Verifiable(Times.Never);
 
         // Act
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         // Assert
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -94,10 +94,10 @@ public class SpeechControllerTests
     }
 
     [TestMethod]
-    public void SpeechController_OnErrorDuringInitialization_LogsError()
+    public void ConversationController_OnErrorDuringInitialization_LogsError()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         Exception exception = new DataMisalignedException();
         MockDefinition
@@ -105,21 +105,21 @@ public class SpeechControllerTests
             .Throws(exception);
 
         // Act
-        sut.Start();
+        sut.StartListening();
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechController_ErrorDuringStartup, exception));
+            string.Format(LoggingMessages.ConversationController_ErrorDuringStartup, exception));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningSystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_Start_StartsListeningForAttention()
+    public void ConversationController_Start_StartsListeningForAttention()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         MockRecognition
             .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
@@ -127,21 +127,21 @@ public class SpeechControllerTests
             .Verifiable(Times.Once);
 
         // Act
-        sut.Start();
+        sut.StartListening();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention);
+            LoggingMessages.ConversationController_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_OnAttention_StartsListeningForCommands()
+    public void ConversationController_OnAttention_StartsListeningForCommands()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -157,25 +157,25 @@ public class SpeechControllerTests
             .Setup(x => x.Say(Phrases.Speech_ImListening))
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands);
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_OnFirstCommand_AnnouncesAndExecutesCommand()
+    public void ConversationController_OnFirstCommand_AnnouncesAndExecutesCommand()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result = new();
         result
@@ -207,27 +207,27 @@ public class SpeechControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, result.Object.Text, result.Object.SemanticMeaning),
-            string.Format(LoggingMessages.SpeechController_Executing, Command1.Name));
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            string.Format(LoggingMessages.ConversationController_Recognized, result.Object.Text, result.Object.SemanticMeaning),
+            string.Format(LoggingMessages.ConversationController_Executing, Command1.Name));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_OnUnrecognizedCommand_LogsError()
+    public void ConversationController_OnUnrecognizedCommand_LogsError()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result = new();
         result
@@ -251,27 +251,27 @@ public class SpeechControllerTests
             .Setup(x => x.Say(Phrases.Speech_ImListening))
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, result.Object.Text, result.Object.SemanticMeaning),
-            string.Format(LoggingMessages.SpeechController_UnknownCommand, "Not a command"));
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            string.Format(LoggingMessages.ConversationController_Recognized, result.Object.Text, result.Object.SemanticMeaning),
+            string.Format(LoggingMessages.ConversationController_UnknownCommand, "Not a command"));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_OnCompletedFirstCommand_LogsExecutedCommand()
+    public void ConversationController_OnCompletedFirstCommand_LogsExecutedCommand()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result1 = new();
         result1
@@ -303,28 +303,28 @@ public class SpeechControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
-            string.Format(LoggingMessages.SpeechController_Executing, Command1.Name),
-            string.Format(LoggingMessages.SpeechController_Executed, Command1.Name));
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            string.Format(LoggingMessages.ConversationController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
+            string.Format(LoggingMessages.ConversationController_Executing, Command1.Name),
+            string.Format(LoggingMessages.ConversationController_Executed, Command1.Name));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_OnAttentionAndStopListening_StartsListeningForAttentionAgain()
+    public void ConversationController_OnAttentionAndStopListening_StartsListeningForAttentionAgain()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -344,26 +344,26 @@ public class SpeechControllerTests
             .Setup(x => x.Say(Phrases.Speech_StoppedListening))
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            LoggingMessages.SpeechController_ListenForAttention);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            LoggingMessages.ConversationController_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_OnAttentionAndStopListening_StopsAndStartsListeningForCommandsAgain()
+    public void ConversationController_OnAttentionAndStopListening_StopsAndStartsListeningForCommandsAgain()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -383,7 +383,7 @@ public class SpeechControllerTests
             .Setup(x => x.Say(Phrases.Speech_StoppedListening))
             .Verifiable(Times.Exactly(2));
 
-        sut.Start();
+        sut.StartListening();
         tcs.SetResult();
 
         // Act
@@ -391,21 +391,21 @@ public class SpeechControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            LoggingMessages.SpeechController_ListenForAttention);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            LoggingMessages.ConversationController_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_OnError_RestartsListeningForAttention()
+    public void ConversationController_OnError_RestartsListeningForAttention()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
@@ -423,18 +423,18 @@ public class SpeechControllerTests
             .Setup(x => x.Say(Phrases.Speech_ImListening))
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Error, exception),
-            string.Format(LoggingMessages.SpeechController_Retrying, 1),
-            LoggingMessages.SpeechController_ListenForAttention);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            string.Format(LoggingMessages.ConversationController_Error, exception),
+            string.Format(LoggingMessages.ConversationController_Retrying, 1),
+            LoggingMessages.ConversationController_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -442,63 +442,63 @@ public class SpeechControllerTests
 
     [TestMethod]
     [Timeout(1000)]
-    public void SpeechController_OnRepeatedErrors_StopsRestartingAfterErrorLimit()
+    public void ConversationController_OnRepeatedErrors_StopsRestartingAfterErrorLimit()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
         MockRecognition
             .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
             .Throws(exception)
-            .Verifiable(Times.Exactly(SpeechSettings.ErrorRetryLimit));
+            .Verifiable(Times.Exactly(ConversationSettings.ErrorRetryLimit));
 
         // Act
-        sut.Start();
+        sut.StartListening();
 
         // Assert
-        string expectedErrorMessage = string.Format(LoggingMessages.SpeechController_Error, exception);
+        string expectedErrorMessage = string.Format(LoggingMessages.ConversationController_Error, exception);
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 1),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 1),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 2),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 2),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 3),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 3),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 4),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 4),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 5),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 5),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 6),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 6),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 7),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 7),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 8),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 8),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_Retrying, 9),
-            LoggingMessages.SpeechController_ListenForAttention,
+            string.Format(LoggingMessages.ConversationController_Retrying, 9),
+            LoggingMessages.ConversationController_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.SpeechController_RetryLimitReached, 10));
+            string.Format(LoggingMessages.ConversationController_RetryLimitReached, 10));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningSystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_StopWhileWaitingForAttention_CancelsWaitingForAttention()
+    public void ConversationController_StopWhileWaitingForAttention_CancelsWaitingForAttention()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         CancellationToken token = default;
         MockRecognition
@@ -507,15 +507,15 @@ public class SpeechControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         sut.Dispose();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_Stopping);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
@@ -524,10 +524,10 @@ public class SpeechControllerTests
     }
 
     [TestMethod]
-    public void SpeechController_StopCancelsListenForAttention_LogsStopped()
+    public void ConversationController_StopCancelsListenForAttention_LogsStopped()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -536,26 +536,26 @@ public class SpeechControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         sut.Dispose();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_Stopping,
-            LoggingMessages.SpeechController_Stopped);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_Stopping,
+            LoggingMessages.ConversationController_Stopped);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_StopWhileWaitingForCommands_CancelsWaitingForCommands()
+    public void ConversationController_StopWhileWaitingForCommands_CancelsWaitingForCommands()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         CancellationToken token = default;
         MockRecognition
@@ -572,16 +572,16 @@ public class SpeechControllerTests
             .Returns(AsyncEnumerate(complete: false))
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         sut.Dispose();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            LoggingMessages.SpeechController_Stopping);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            LoggingMessages.ConversationController_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
@@ -590,10 +590,10 @@ public class SpeechControllerTests
     }
 
     [TestMethod]
-    public void SpeechController_WaitingForCommandsCanceled_LogsStopped()
+    public void ConversationController_WaitingForCommandsCanceled_LogsStopped()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         MockRecognition
             .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
@@ -609,23 +609,23 @@ public class SpeechControllerTests
             .Verifiable(Times.Once);
 
         // Act
-        sut.Start();
+        sut.StartListening();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            LoggingMessages.SpeechController_Stopped);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            LoggingMessages.ConversationController_Stopped);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
     }
 
     [TestMethod]
-    public void SpeechController_StopWhileExecutingCommand_CancelsExecutingCommand()
+    public void ConversationController_StopWhileExecutingCommand_CancelsExecutingCommand()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         CancellationToken token = default;
         MockRecognition
@@ -658,18 +658,18 @@ public class SpeechControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         sut.Dispose();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
-            string.Format(LoggingMessages.SpeechController_Executing, Command1.Name),
-            LoggingMessages.SpeechController_Stopping);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            string.Format(LoggingMessages.ConversationController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
+            string.Format(LoggingMessages.ConversationController_Executing, Command1.Name),
+            LoggingMessages.ConversationController_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
@@ -678,10 +678,10 @@ public class SpeechControllerTests
     }
 
     [TestMethod]
-    public void SpeechController_ExecutingCommandCanceled_LogsStopped()
+    public void ConversationController_ExecutingCommandCanceled_LogsStopped()
     {
         // Arrange
-        ISpeechController sut = CreateSut();
+        IConversationController sut = CreateSut();
 
         MockRecognition
             .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
@@ -714,19 +714,19 @@ public class SpeechControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.Start();
+        sut.StartListening();
 
         // Act
         sut.Dispose();
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.SpeechController_ListenForAttention,
-            LoggingMessages.SpeechController_ListenForCommands,
-            string.Format(LoggingMessages.SpeechController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
-            string.Format(LoggingMessages.SpeechController_Executing, Command1.Name, Command1.Name),
-            LoggingMessages.SpeechController_Stopping,
-            LoggingMessages.SpeechController_Stopped);
+            LoggingMessages.ConversationController_ListenForAttention,
+            LoggingMessages.ConversationController_ListenForCommands,
+            string.Format(LoggingMessages.ConversationController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
+            string.Format(LoggingMessages.ConversationController_Executing, Command1.Name, Command1.Name),
+            LoggingMessages.ConversationController_Stopping,
+            LoggingMessages.ConversationController_Stopped);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));

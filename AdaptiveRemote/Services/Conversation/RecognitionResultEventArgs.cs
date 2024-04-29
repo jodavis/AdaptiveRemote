@@ -1,4 +1,4 @@
-﻿namespace AdaptiveRemote.Services.Speech;
+﻿namespace AdaptiveRemote.Services.Conversation;
 
 public class RecognitionResultEventArgs : EventArgs
 {

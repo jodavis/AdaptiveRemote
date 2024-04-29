@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Speech.Recognition;
 using Microsoft.Extensions.Logging;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
 [ExcludeFromCodeCoverage(Justification = "Simple wrapper around System.Speech, with event logging")]
 internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDisposable

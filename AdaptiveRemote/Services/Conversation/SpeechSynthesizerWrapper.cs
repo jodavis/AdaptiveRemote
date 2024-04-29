@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Speech.Synthesis;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
 [ExcludeFromCodeCoverage(Justification = "Simple wrapper around System.Speech.SpeechSynthesizer")]
 internal class SpeechSynthesizerWrapper : ISpeechSynthesizer, IDisposable

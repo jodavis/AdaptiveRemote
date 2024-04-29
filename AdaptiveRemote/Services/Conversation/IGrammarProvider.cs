@@ -1,6 +1,6 @@
 ﻿using System.Speech.Recognition;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
 public interface IGrammarProvider
 {
