@@ -1,14 +1,14 @@
 ﻿using Microsoft.Extensions.Options;
 using Moq;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
 [TestClass]
 public class SpeechSynthesisTests
 {
     private readonly MockLogger<SpeechSynthesis> MockLogger = new();
     private readonly Mock<ISpeechSynthesizer> MockSynthesizer = new();
-    private readonly SpeechSettings SpeechSettings = new();
+    private readonly ConversationSettings SpeechSettings = new();
 
     private readonly string[] InstalledVoices = [
         "Microsoft Zira - English",
@@ -36,7 +36,7 @@ public class SpeechSynthesisTests
 
     private ISpeechSynthesis CreateSut()
     {
-        Mock<IOptionsSnapshot<SpeechSettings>> mockOptionsSnapshot = new();
+        Mock<IOptionsSnapshot<ConversationSettings>> mockOptionsSnapshot = new();
         mockOptionsSnapshot
             .SetupGet(x => x.Value)
             .Returns(SpeechSettings);

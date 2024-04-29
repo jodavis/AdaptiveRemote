@@ -2,7 +2,7 @@
 using AdaptiveRemote.TestUtilities;
 using Moq;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
 [TestClass]
 public class SpeechRecognitionTests

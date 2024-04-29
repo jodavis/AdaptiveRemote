@@ -1,10 +1,22 @@
 ﻿@inject Services.ICommandExecutionService CommandExecution;
 
-<button class="btn-primary" id="@Command?.CSSID" @onclick="Invoke">@Command?.Label</button>
+<button class="btn-primary @(IsActive ? "btn-active" : null)" id="@Command?.CSSID" @onclick="Invoke">@Command?.Label</button>
 
 @code {
     [Parameter]
     public Models.Command? Command { get; set; }
+
+    private bool IsActive => Command?.IsActive ?? false;
+
+    protected override void OnInitialized()
+    {
+        if (Command is not null)
+        {
+            Command.PropertyChanged += (sender, args) => StateHasChanged();
+        }
+
+        base.OnInitialized();
+    }
 
     private void Invoke()
     {

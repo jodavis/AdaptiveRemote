@@ -1,6 +1,6 @@
-﻿namespace AdaptiveRemote.Services.Speech;
+﻿namespace AdaptiveRemote.Services.Conversation;
 
-internal class SpeechSettings
+internal class ConversationSettings
 {
     public int ErrorRetryLimit { get; set; } = 10;
     public string[] Voice { get; set; } = ["Jenny", "Zira"];

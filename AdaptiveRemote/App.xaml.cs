@@ -33,7 +33,7 @@ public partial class App : Application
         Host.CreateDefaultBuilder()
             .ConfigureServices(services => services.AddWpfBlazorWebView())
             .AddRemoteServices()
-            .AddSpeechServices()
+            .AddConversationServices()
             .ConfigureServices(services => services.AddSingleton<MainWindow>())
             .Build();
 

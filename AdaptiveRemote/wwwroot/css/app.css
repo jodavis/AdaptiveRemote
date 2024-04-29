@@ -37,6 +37,9 @@ div.listening-on {
 .btn-primary:active {
   background-color: #88bbee;
 }
+.btn-primary.btn-active {
+  background-color: #88bbee;
+}
 .valid.modified:not([type=checkbox]) {
   outline: 1px solid #26b050;
 }

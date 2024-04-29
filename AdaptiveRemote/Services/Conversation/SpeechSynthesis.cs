@@ -1,13 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 internal class SpeechSynthesis : ISpeechSynthesis
 {
     private readonly ISpeechSynthesizer _synthesizer;
     private readonly ILogger<SpeechSynthesis> _logger;
 
-    public SpeechSynthesis(ISpeechSynthesizer synthesizer, IOptionsSnapshot<SpeechSettings> settings, ILogger<SpeechSynthesis> logger)
+    public SpeechSynthesis(ISpeechSynthesizer synthesizer, IOptionsSnapshot<ConversationSettings> settings, ILogger<SpeechSynthesis> logger)
     {
         _synthesizer = synthesizer;
         _logger = logger;

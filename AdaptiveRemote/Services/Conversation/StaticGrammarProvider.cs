@@ -3,7 +3,7 @@ using System.Speech.Recognition;
 using System.Speech.Recognition.SrgsGrammar;
 using System.Xml;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
 internal class StaticGrammarProvider : IGrammarProvider
 {

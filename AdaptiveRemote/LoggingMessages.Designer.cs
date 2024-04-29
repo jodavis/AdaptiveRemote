@@ -63,108 +63,108 @@ namespace AdaptiveRemote {
         /// <summary>
         ///   Looks up a localized string similar to Error in speech recognition loop: {0}.
         /// </summary>
-        internal static string SpeechController_Error {
+        internal static string ConversationController_Error {
             get {
-                return ResourceManager.GetString("SpeechController_Error", resourceCulture);
+                return ResourceManager.GetString("ConversationController_Error", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Error initializing speech recognition: {0}.
         /// </summary>
-        internal static string SpeechController_ErrorDuringStartup {
+        internal static string ConversationController_ErrorDuringStartup {
             get {
-                return ResourceManager.GetString("SpeechController_ErrorDuringStartup", resourceCulture);
+                return ResourceManager.GetString("ConversationController_ErrorDuringStartup", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Executed command &apos;{0}&apos;.
         /// </summary>
-        internal static string SpeechController_Executed {
+        internal static string ConversationController_Executed {
             get {
-                return ResourceManager.GetString("SpeechController_Executed", resourceCulture);
+                return ResourceManager.GetString("ConversationController_Executed", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Executing command &apos;{0}&apos;.
         /// </summary>
-        internal static string SpeechController_Executing {
+        internal static string ConversationController_Executing {
             get {
-                return ResourceManager.GetString("SpeechController_Executing", resourceCulture);
+                return ResourceManager.GetString("ConversationController_Executing", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Waiting for attention.
         /// </summary>
-        internal static string SpeechController_ListenForAttention {
+        internal static string ConversationController_ListenForAttention {
             get {
-                return ResourceManager.GetString("SpeechController_ListenForAttention", resourceCulture);
+                return ResourceManager.GetString("ConversationController_ListenForAttention", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Listening for commands.
         /// </summary>
-        internal static string SpeechController_ListenForCommands {
+        internal static string ConversationController_ListenForCommands {
             get {
-                return ResourceManager.GetString("SpeechController_ListenForCommands", resourceCulture);
+                return ResourceManager.GetString("ConversationController_ListenForCommands", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Recognized &apos;{0}&apos; as &apos;{1}&apos;.
         /// </summary>
-        internal static string SpeechController_Recognized {
+        internal static string ConversationController_Recognized {
             get {
-                return ResourceManager.GetString("SpeechController_Recognized", resourceCulture);
+                return ResourceManager.GetString("ConversationController_Recognized", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Restarting after {0} error(s).
         /// </summary>
-        internal static string SpeechController_Retrying {
+        internal static string ConversationController_Retrying {
             get {
-                return ResourceManager.GetString("SpeechController_Retrying", resourceCulture);
+                return ResourceManager.GetString("ConversationController_Retrying", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Not restarting after {0} error(s).
         /// </summary>
-        internal static string SpeechController_RetryLimitReached {
+        internal static string ConversationController_RetryLimitReached {
             get {
-                return ResourceManager.GetString("SpeechController_RetryLimitReached", resourceCulture);
+                return ResourceManager.GetString("ConversationController_RetryLimitReached", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Stopped.
         /// </summary>
-        internal static string SpeechController_Stopped {
+        internal static string ConversationController_Stopped {
             get {
-                return ResourceManager.GetString("SpeechController_Stopped", resourceCulture);
+                return ResourceManager.GetString("ConversationController_Stopped", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Stopping.
         /// </summary>
-        internal static string SpeechController_Stopping {
+        internal static string ConversationController_Stopping {
             get {
-                return ResourceManager.GetString("SpeechController_Stopping", resourceCulture);
+                return ResourceManager.GetString("ConversationController_Stopping", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Recognized an unknown command: {0}.
         /// </summary>
-        internal static string SpeechController_UnknownCommand {
+        internal static string ConversationController_UnknownCommand {
             get {
-                return ResourceManager.GetString("SpeechController_UnknownCommand", resourceCulture);
+                return ResourceManager.GetString("ConversationController_UnknownCommand", resourceCulture);
             }
         }
         

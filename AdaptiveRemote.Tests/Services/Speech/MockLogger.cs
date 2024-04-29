@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
 internal class MockLogger<LoggerType> : ILogger<LoggerType>
 {

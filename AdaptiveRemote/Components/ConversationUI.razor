@@ -1,0 +1,23 @@
+﻿@inject Services.IConversationController Conversation
+
+<div class="@(IsListening ? "listening-on" : "listening-off")">@StatusMessage</div>
+
+@code {
+    [Parameter]
+    public Models.Conversation? ViewModel { get; set; }
+
+    private bool IsListening => ViewModel?.IsListening ?? false;
+    private string? StatusMessage => ViewModel?.StatusMessage;
+
+    protected override void OnInitialized()
+    {
+        if (ViewModel is not null)
+        {
+            ViewModel.PropertyChanged += (sender, args) => StateHasChanged();
+        }
+
+        base.OnInitialized();
+
+        Conversation.StartListening();
+    }
+}

@@ -117,47 +117,47 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="SpeechController_Error" xml:space="preserve">
+  <data name="ConversationController_Error" xml:space="preserve">
     <value>Error in speech recognition loop: {0}</value>
     <comment>0=Exception message</comment>
   </data>
-  <data name="SpeechController_ErrorDuringStartup" xml:space="preserve">
+  <data name="ConversationController_ErrorDuringStartup" xml:space="preserve">
     <value>Error initializing speech recognition: {0}</value>
     <comment>0=Exception message</comment>
   </data>
-  <data name="SpeechController_Executed" xml:space="preserve">
+  <data name="ConversationController_Executed" xml:space="preserve">
     <value>Executed command '{0}'</value>
     <comment>0=Command name</comment>
   </data>
-  <data name="SpeechController_Executing" xml:space="preserve">
+  <data name="ConversationController_Executing" xml:space="preserve">
     <value>Executing command '{0}'</value>
     <comment>0=Command name</comment>
   </data>
-  <data name="SpeechController_ListenForAttention" xml:space="preserve">
+  <data name="ConversationController_ListenForAttention" xml:space="preserve">
     <value>Waiting for attention</value>
   </data>
-  <data name="SpeechController_ListenForCommands" xml:space="preserve">
+  <data name="ConversationController_ListenForCommands" xml:space="preserve">
     <value>Listening for commands</value>
   </data>
-  <data name="SpeechController_Recognized" xml:space="preserve">
+  <data name="ConversationController_Recognized" xml:space="preserve">
     <value>Recognized '{0}' as '{1}'</value>
     <comment>0=Result text,1=Semantic meaning</comment>
   </data>
-  <data name="SpeechController_Retrying" xml:space="preserve">
+  <data name="ConversationController_Retrying" xml:space="preserve">
     <value>Restarting after {0} error(s)</value>
     <comment>0=the number of errors</comment>
   </data>
-  <data name="SpeechController_RetryLimitReached" xml:space="preserve">
+  <data name="ConversationController_RetryLimitReached" xml:space="preserve">
     <value>Not restarting after {0} error(s)</value>
     <comment>0=the number of errors</comment>
   </data>
-  <data name="SpeechController_Stopped" xml:space="preserve">
+  <data name="ConversationController_Stopped" xml:space="preserve">
     <value>Stopped</value>
   </data>
-  <data name="SpeechController_Stopping" xml:space="preserve">
+  <data name="ConversationController_Stopping" xml:space="preserve">
     <value>Stopping</value>
   </data>
-  <data name="SpeechController_UnknownCommand" xml:space="preserve">
+  <data name="ConversationController_UnknownCommand" xml:space="preserve">
     <value>Recognized an unknown command: {0}</value>
     <comment>0=Speech that was recognized but did not map to a command</comment>
   </data>

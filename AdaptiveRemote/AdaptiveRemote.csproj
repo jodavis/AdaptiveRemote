@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Services\Speech\static_grammar.xml" />
+    <None Remove="Services\Conversation\static_grammar.xml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Services\Speech\static_grammar.xml" />
+    <EmbeddedResource Include="Services\Conversation\static_grammar.xml" />
   </ItemGroup>
 
   <ItemGroup>

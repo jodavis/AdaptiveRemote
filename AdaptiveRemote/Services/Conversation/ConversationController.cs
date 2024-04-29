@@ -3,28 +3,28 @@ using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace AdaptiveRemote.Services.Speech;
+namespace AdaptiveRemote.Services.Conversation;
 
-internal class SpeechController : ISpeechController, IDisposable
+internal class ConversationController : IConversationController, IDisposable
 {
-    private readonly SpeechSettings _speechSettings;
+    private readonly ConversationSettings _speechSettings;
     private readonly ISpeechRecognition _speechRecognition;
     private readonly ISpeechSynthesis _speechSynthesis;
     private readonly ICommandExecutionService _executionService;
     private readonly IRemoteDefinitionService _definitionService;
-    private readonly ILogger<SpeechController> _logger;
-    private readonly Listening _viewModel;
+    private readonly ILogger<ConversationController> _logger;
+    private readonly Models.Conversation _viewModel;
 
     private readonly CancellationTokenSource _stop = new();
 
-    public SpeechController(
-        IOptionsSnapshot<SpeechSettings> options,
+    public ConversationController(
+        IOptionsSnapshot<ConversationSettings> options,
         ISpeechRecognition speechRecognition,
         ISpeechSynthesis speechSynthesis,
         IRemoteDefinitionService definitionService,
         ICommandExecutionService executionService,
-        ILogger<SpeechController> logger,
-        Listening viewModel)
+        ILogger<ConversationController> logger,
+        Models.Conversation viewModel)
     {
         _speechSettings = options.Value;
         _speechRecognition = speechRecognition;
@@ -38,7 +38,7 @@ internal class SpeechController : ISpeechController, IDisposable
         _viewModel.StatusMessage = Phrases.Speech_WaitingForActivation;
     }
 
-    public void Start()
+    public void StartListening()
     {
         IReadOnlyDictionary<string, Command>? commands = GetCommands();
 
@@ -50,7 +50,7 @@ internal class SpeechController : ISpeechController, IDisposable
 
     public void Dispose()
     {
-        _logger.LogInformation(LoggingMessages.SpeechController_Stopping);
+        _logger.LogInformation(LoggingMessages.ConversationController_Stopping);
         _stop.Cancel();
     }
 
@@ -66,7 +66,7 @@ internal class SpeechController : ISpeechController, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, LoggingMessages.SpeechController_ErrorDuringStartup, ex);
+            _logger.LogError(ex, LoggingMessages.ConversationController_ErrorDuringStartup, ex);
             _viewModel.StatusMessage = Phrases.Speech_ListeningSystemFailed;
 
             return null;
@@ -89,23 +89,23 @@ internal class SpeechController : ISpeechController, IDisposable
                 _viewModel.StatusMessage = string.Empty;
                 _viewModel.IsListening = false;
 
-                _logger.LogInformation(LoggingMessages.SpeechController_Stopped);
+                _logger.LogInformation(LoggingMessages.ConversationController_Stopped);
                 break;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, LoggingMessages.SpeechController_Error, ex);
+                _logger.LogError(ex, LoggingMessages.ConversationController_Error, ex);
 
                 errorCount++;
                 if (errorCount >= _speechSettings.ErrorRetryLimit)
                 {
-                    _logger.LogWarning(LoggingMessages.SpeechController_RetryLimitReached, errorCount);
+                    _logger.LogWarning(LoggingMessages.ConversationController_RetryLimitReached, errorCount);
                     _viewModel.StatusMessage = Phrases.Speech_ListeningSystemFailed;
                     break;
                 }
                 else
                 {
-                    _logger.LogInformation(LoggingMessages.SpeechController_Retrying, errorCount);
+                    _logger.LogInformation(LoggingMessages.ConversationController_Retrying, errorCount);
                 }
             }
         }
@@ -121,7 +121,7 @@ internal class SpeechController : ISpeechController, IDisposable
 
             await foreach (IRecognitionResult result in ListenForCommandsAsync(cancellationToken))
             {
-                _logger.LogInformation(LoggingMessages.SpeechController_Recognized, result.Text, result.SemanticMeaning);
+                _logger.LogInformation(LoggingMessages.ConversationController_Recognized, result.Text, result.SemanticMeaning);
 
                 if (result.SemanticMeaning.StartsWith(CommandPrefix) &&
                     commands.TryGetValue(result.SemanticMeaning.Substring(CommandPrefix.Length), out Command? command))
@@ -130,7 +130,7 @@ internal class SpeechController : ISpeechController, IDisposable
                 }
                 else
                 {
-                    _logger.LogError(LoggingMessages.SpeechController_UnknownCommand, result.Text);
+                    _logger.LogError(LoggingMessages.ConversationController_UnknownCommand, result.Text);
                 }
             }
         }
@@ -139,7 +139,7 @@ internal class SpeechController : ISpeechController, IDisposable
     private async Task ListenForAttention(CancellationToken cancellationToken)
     {
         _viewModel.StatusMessage = Phrases.Speech_ListeningForAttention;
-        _logger.LogInformation(LoggingMessages.SpeechController_ListenForAttention);
+        _logger.LogInformation(LoggingMessages.ConversationController_ListenForAttention);
 
         await _speechRecognition.ListenForAttention(cancellationToken);
     }
@@ -151,7 +151,7 @@ internal class SpeechController : ISpeechController, IDisposable
             _viewModel.IsListening = true;
             _viewModel.StatusMessage = Phrases.Speech_ImListening;
             _speechSynthesis.Say(Phrases.Speech_ImListening);
-            _logger.LogInformation(LoggingMessages.SpeechController_ListenForCommands);
+            _logger.LogInformation(LoggingMessages.ConversationController_ListenForCommands);
 
             await foreach (IRecognitionResult result in _speechRecognition.ListenForCommands(cancellationToken))
             {
@@ -173,10 +173,10 @@ internal class SpeechController : ISpeechController, IDisposable
     {
         _speechSynthesis.Say(Phrases.Speech_Sending(command.Name));
         _viewModel.StatusMessage = Phrases.Speech_ImSending;
-        _logger.LogInformation(LoggingMessages.SpeechController_Executing, command.Name);
+        _logger.LogInformation(LoggingMessages.ConversationController_Executing, command.Name);
 
         await _executionService.ExecuteAsync(command, cancellationToken);
 
-        _logger.LogInformation(LoggingMessages.SpeechController_Executed, command.Name);
+        _logger.LogInformation(LoggingMessages.ConversationController_Executed, command.Name);
     }
 }
