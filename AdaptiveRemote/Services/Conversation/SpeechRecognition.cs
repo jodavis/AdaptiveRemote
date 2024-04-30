@@ -41,10 +41,21 @@ internal class SpeechRecognition : ISpeechRecognition
         _engine.LoadGrammar(_yesNoGrammar);
 
         _engine.SpeechRecognized += OnSpeechRecognized;
+        _engine.RecognitionError += OnRecognitionError;
 
         _attentionTcs.SetResult();
         _yesNoTcs.SetResult(false);
         _commandChannel.Writer.Complete();
+    }
+
+    private void OnRecognitionError(object? sender, RecognitionErrorEventArgs e)
+    {
+        RecognitionErrorException exception = new RecognitionErrorException(e.Message);
+        _logger.LogError(LoggingMessages.SpeechRecognition_RecognitionError, e.Message);
+
+        _attentionTcs.TrySetException(exception);
+        _yesNoTcs.TrySetException(exception);
+        _commandChannel.Writer.TryComplete(exception);
     }
 
     private void OnSpeechRecognized(object? sender, RecognitionResultEventArgs e)

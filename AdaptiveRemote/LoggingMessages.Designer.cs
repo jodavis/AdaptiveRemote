@@ -216,6 +216,15 @@ namespace AdaptiveRemote {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Recognition Error: {0}.
+        /// </summary>
+        internal static string SpeechRecognition_RecognitionError {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_RecognitionError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to AudioSignalProblemOccurred:{0} at {3} ({1}) with AudioLevel:{2}.
         /// </summary>
         internal static string SpeechRecognitionEngine_AudioSignalProblemOccurred {

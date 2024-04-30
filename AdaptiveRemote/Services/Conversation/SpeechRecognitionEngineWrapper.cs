@@ -10,6 +10,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 {
     private readonly SpeechRecognitionEngine _engine = new(new CultureInfo("en-US"));
     private readonly ILogger<SpeechRecognitionEngine> _logger;
+
     private event EventHandler<RecognitionResultEventArgs>? _speechRecognized;
 
     public SpeechRecognitionEngineWrapper(ILogger<SpeechRecognitionEngine> logger)
@@ -42,6 +43,12 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     {
         add => _speechRecognized += value;
         remove => _speechRecognized -= value;
+    }
+
+    public event EventHandler<RecognitionErrorEventArgs> RecognitionError
+    {
+        add { }
+        remove { }
     }
 
     private void OnSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
