@@ -221,6 +221,10 @@
     <value>Listening={0}</value>
     <comment>0=True/false</comment>
   </data>
+  <data name="SpeechRecognition_RecognitionError" xml:space="preserve">
+    <value>Recognition Error: {0}</value>
+    <comment>0=Error message</comment>
+  </data>
   <data name="SpeechSynthesis_Saying" xml:space="preserve">
     <value>Saying '{0}'</value>
     <comment>0=Phrase to be spoken</comment>

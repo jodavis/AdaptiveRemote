@@ -109,6 +109,42 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
+    public void SpeechRecognition_ListenForAttention_ReturnsFaultedOnRecognitionError()
+    {
+        // Arrange
+        const string expectedErrorMessage = "What just happened?";
+        RecognitionErrorException expectedException = new RecognitionErrorException(expectedErrorMessage);
+
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+
+        Task resultTask = sut.ListenForAttention(CancellationToken.None);
+
+        // Act
+        MockEngine.Raise(x => x.RecognitionError -= null, new RecognitionErrorEventArgs(expectedErrorMessage));
+
+        // Assert
+        TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, MockAttentionGrammar.Name, true),
+            string.Format(LoggingMessages.SpeechRecognition_Listening, true),
+            string.Format(LoggingMessages.SpeechRecognition_RecognitionError, expectedErrorMessage),
+            string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, "ListenForAttention", expectedException),
+            string.Format(LoggingMessages.SpeechRecognition_Listening, false),
+            string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, MockAttentionGrammar.Name, false));
+    }
+
+    [TestMethod]
     public void SpeechRecognition_ListenForAttention_StopsWaitingWhenCancelled()
     {
         // Arrange
@@ -335,6 +371,42 @@ public class SpeechRecognitionTests
         MockLogger.VerifyMessages(
             string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, MockYesNoGrammar.Name, true),
             string.Format(LoggingMessages.SpeechRecognition_Listening, true));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_ListenForYesNo_ReturnsFaultedOnRecognitionError()
+    {
+        // Arrange
+        const string expectedErrorMessage = "What just happened?";
+        RecognitionErrorException expectedException = new RecognitionErrorException(expectedErrorMessage);
+
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+
+        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+
+        // Act
+        MockEngine.Raise(x => x.RecognitionError -= null, new RecognitionErrorEventArgs(expectedErrorMessage));
+
+        // Assert
+        TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, MockYesNoGrammar.Name, true),
+            string.Format(LoggingMessages.SpeechRecognition_Listening, true),
+            string.Format(LoggingMessages.SpeechRecognition_RecognitionError, expectedErrorMessage),
+            string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, "ListenForYesNo", expectedException),
+            string.Format(LoggingMessages.SpeechRecognition_Listening, false),
+            string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, MockYesNoGrammar.Name, false));
     }
 
     [TestMethod]
@@ -640,6 +712,46 @@ public class SpeechRecognitionTests
         MockLogger.VerifyMessages(
             string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, MockCommandsGrammar.Name, true),
             string.Format(LoggingMessages.SpeechRecognition_Listening, true));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_ListenForCommands_ReturnsFaultedOnRecognitionError()
+    {
+        // Arrange
+        const string expectedErrorMessage = "What just happened?";
+        RecognitionErrorException expectedException = new RecognitionErrorException(expectedErrorMessage);
+
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        Assert.IsNotNull(resultEnum, nameof(resultEnum));
+
+        IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
+
+        ValueTask<bool> resultTask = resultIter.MoveNextAsync();
+
+        // Act
+        MockEngine.Raise(x => x.RecognitionError -= null, new RecognitionErrorEventArgs(expectedErrorMessage));
+
+        // Assert
+        TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, MockCommandsGrammar.Name, true),
+            string.Format(LoggingMessages.SpeechRecognition_Listening, true),
+            string.Format(LoggingMessages.SpeechRecognition_RecognitionError, expectedErrorMessage),
+            string.Format(LoggingMessages.SpeechRecognition_Listening, false),
+            string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, MockCommandsGrammar.Name, false));
     }
 
     [TestMethod]
