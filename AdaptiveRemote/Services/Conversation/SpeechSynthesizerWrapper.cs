@@ -8,7 +8,11 @@ internal class SpeechSynthesizerWrapper : ISpeechSynthesizer, IDisposable
 {
     private readonly SpeechSynthesizer _speechSynthesizer = new();
 
-    public void SetOutputToDefaultAudioDevice() => _speechSynthesizer.SetOutputToDefaultAudioDevice();
+    public SpeechSynthesizerWrapper(IAudioConfigurationService audioConfiguration)
+    {
+        audioConfiguration.Configure(_speechSynthesizer);
+    }
+
     public void CancelAll() => _speechSynthesizer.SpeakAsyncCancelAll();
     public void SpeakAsync(string textToSpeak) => _speechSynthesizer.SpeakAsync(textToSpeak);
     public void Dispose() => _speechSynthesizer.Dispose();

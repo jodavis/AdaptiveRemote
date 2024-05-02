@@ -1,7 +1,4 @@
-﻿
-using System.Speech.Recognition;
-
-namespace AdaptiveRemote.Services.Conversation;
+﻿namespace AdaptiveRemote.Services.Conversation;
 
 internal interface ISpeechRecognition
 {

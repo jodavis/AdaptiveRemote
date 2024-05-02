@@ -4,8 +4,6 @@ namespace AdaptiveRemote.Services.Conversation;
 
 public interface ISpeechSynthesizer
 {
-    void SetOutputToDefaultAudioDevice();
-
     void SpeakAsync(string phrase);
 
     void CancelAll();

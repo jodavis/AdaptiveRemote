@@ -31,8 +31,6 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         _logger = logger;
         _settings = settings.Value;
 
-        _engine.SetInputToDefaultAudioDevice();
-
         _attentionGrammar = LoadGrammar(grammarProvider.LoadAttentionGrammar);
         _commandsGrammar = LoadGrammar(grammarProvider.LoadCommandsGrammar);
         _yesNoGrammar = LoadGrammar(grammarProvider.LoadYesNoGrammar);

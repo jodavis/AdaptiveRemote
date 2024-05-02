@@ -28,10 +28,6 @@ public class SpeechRecognitionTests
     [TestInitialize]
     public void SetupMocks()
     {
-        MockEngine
-            .Setup(x => x.SetInputToDefaultAudioDevice())
-            .Verifiable(Times.Once);
-
         MockAttentionGrammar.Enabled = true;
         MockGrammarProvider
             .Setup(x => x.LoadAttentionGrammar())

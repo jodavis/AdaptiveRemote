@@ -17,6 +17,7 @@ internal static class ConversationHostBuilderExtensions
             .AddScoped<IGrammarProvider, StaticGrammarProvider>()
             .AddSingleton<ISpeechSynthesizer, SpeechSynthesizerWrapper>()
             .AddSingleton<ISpeechRecognitionEngine, SpeechRecognitionEngineWrapper>()
+            .AddSingleton<IAudioConfigurationService, DefaultDeviceAudioConfiguration>()
             .AddScoped(GetConversationViewModel);
 
     private static Models.ConversationView GetConversationViewModel(IServiceProvider provider)
