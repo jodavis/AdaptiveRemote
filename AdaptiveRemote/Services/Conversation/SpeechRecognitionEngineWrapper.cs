@@ -14,7 +14,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 
     private event EventHandler<RecognitionResultEventArgs>? _speechRecognized;
 
-    public SpeechRecognitionEngineWrapper(ILogger<SpeechRecognitionEngine> logger)
+    public SpeechRecognitionEngineWrapper(ILogger<SpeechRecognitionEngine> logger, IAudioConfigurationService audioConfiguration)
     {
         _logger = logger;
 
@@ -29,6 +29,8 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
         _engine.SpeechRecognized += OnSpeechRecognized;
 
         _engine.SpeechRecognized += BroadcastSpeechRecognized;
+
+        audioConfiguration.Configure(_engine);
     }
 
     private void BroadcastSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)

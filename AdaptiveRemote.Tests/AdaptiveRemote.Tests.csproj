@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -9,6 +9,11 @@
     <IsTestProject>true</IsTestProject>
     <RootNamespace>AdaptiveRemote</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Services\Conversation\SpeechSamples\*.wav" />
+    <EmbeddedResource Include="Services\Conversation\SpeechSamples\*.wav" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />

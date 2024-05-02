@@ -144,15 +144,15 @@
       </item>
       <item>
         <one-of>
-          <item>Channel Up</item>
-          <item>Page Up</item>
+          <item>Channel up</item>
+          <item>Page up</item>
         </one-of>
         <tag>out="Command:ChannelUp"</tag>
       </item>
       <item>
         <one-of>
-          <item>Channel Down</item>
-          <item>Page Down</item>
+          <item>Channel down</item>
+          <item>Page down</item>
         </one-of>
         <tag>out="Command:ChannelDown"</tag>
       </item>
@@ -167,7 +167,7 @@
         <one-of>
           <item>Quieter</item>
           <item>Softer</item>
-          <item>Volume Down</item>
+          <item>Volume down</item>
         </one-of>
         <tag>out="Command:VolumeDown"</tag>
       </item>

@@ -1,0 +1,38 @@
+Advance
+Back
+Channel down
+Channel up
+Down
+Exit
+Go back
+Go down
+Go left
+Go right
+Go to Guide
+Go to Netflix
+Go to TiVo
+Go up
+Guide
+Left
+Louder
+Netflix
+OK
+Page down
+Page up
+Pause
+Play
+Quieter
+Quit
+Record
+Replay
+Right
+Select
+Skip
+Skip back
+Skip forward
+Softer
+TiVo
+Up
+Volume down
+Volume up
+Stop listening
