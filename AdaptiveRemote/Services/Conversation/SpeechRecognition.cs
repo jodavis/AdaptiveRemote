@@ -55,26 +55,28 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
 
     private void OnSpeechRecognized(object? sender, RecognitionResultEventArgs e)
     {
-        switch (e.Result.SemanticMeaning)
+        if (e.Result.TryGetSemanticValue("system", out string? systemCommand))
         {
-            case "YES":
-                _yesNoTcs.TrySetResult(true);
-                break;
-            case "NO":
-                _yesNoTcs.TrySetResult(false);
-                break;
-            case "STARTLISTENING":
-                _attentionTcs.TrySetResult();
-                break;
-            case "STOPLISTENING":
-                _commandChannel.Writer.TryComplete();
-                break;
-            default:
-                if (e.Result.SemanticMeaning.StartsWith("Command:") == true)
-                {
-                    _commandChannel.Writer.TryWrite(e.Result);
-                }
-                break;
+            switch (systemCommand)
+            {
+                case "YES":
+                    _yesNoTcs.TrySetResult(true);
+                    break;
+                case "NO":
+                    _yesNoTcs.TrySetResult(false);
+                    break;
+                case "STARTLISTENING":
+                    _attentionTcs.TrySetResult();
+                    break;
+                case "STOPLISTENING":
+                    _commandChannel.Writer.TryComplete();
+                    break;
+            }
+        }
+
+        if (e.Result.ContainsSemanticValue("command"))
+        {
+            _commandChannel.Writer.TryWrite(e.Result);
         }
     }
 

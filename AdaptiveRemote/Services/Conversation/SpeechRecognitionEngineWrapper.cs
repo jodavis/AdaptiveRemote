@@ -93,6 +93,22 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
         string IRecognitionResult.Text => _result.Text;
 
         string IRecognitionResult.SemanticMeaning => _result.Semantics.Value?.ToString() ?? _result.Text;
+        bool IRecognitionResult.ContainsSemanticValue(string key) => _result.Semantics.ContainsKey(key);
+
+        bool IRecognitionResult.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
+        {
+            if (_result.Semantics.ContainsKey(key) &&
+                _result.Semantics[key]?.Value is string v)
+            {
+                value = v;
+                return true;
+            }
+            else
+            {
+                value = null;
+                return false;
+            }
+        }
 
         public override string ToString()
             => string.Format(
