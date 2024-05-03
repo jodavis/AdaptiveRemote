@@ -114,24 +114,24 @@ internal class ConversationController : IConversationController, IDisposable
 
     private async Task ListenAsync(IReadOnlyDictionary<string, Command> commands, CancellationToken cancellationToken)
     {
-        const string CommandPrefix = "Command:";
-
         while (true)
         {
             await ListenForAttentionAsync(cancellationToken);
 
             await foreach (IRecognitionResult result in ListenForCommandsAsync(cancellationToken))
             {
-                _logger.LogInformation(Message.ConversationController_Recognized, result.Text, result.SemanticMeaning);
+                if (result.TryGetSemanticValue("command", out string? commandName))
+                {
+                    _logger.LogInformation(Message.ConversationController_Recognized, result.Text, commandName);
 
-                if (result.SemanticMeaning.StartsWith(CommandPrefix) &&
-                    commands.TryGetValue(result.SemanticMeaning.Substring(CommandPrefix.Length), out Command? command))
-                {
-                    await ExecuteCommandAsync(command, cancellationToken);
-                }
-                else
-                {
-                    _logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
+                    if (commands.TryGetValue(commandName, out Command? command))
+                    {
+                        await ExecuteCommandAsync(command, cancellationToken);
+                    }
+                    else
+                    {
+                        _logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
+                    }
                 }
             }
         }
