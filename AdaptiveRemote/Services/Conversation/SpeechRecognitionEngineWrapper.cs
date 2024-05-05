@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
 using System.Speech.Recognition;
 using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
@@ -94,6 +95,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 
         string IRecognitionResult.SemanticMeaning => _result.Semantics.Value?.ToString() ?? _result.Text;
         bool IRecognitionResult.ContainsSemanticValue(string key) => _result.Semantics.ContainsKey(key);
+        void IRecognitionResult.WriteToWaveStream(Stream waveStream) => _result.Audio.WriteToWaveStream(waveStream);
 
         bool IRecognitionResult.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
         {

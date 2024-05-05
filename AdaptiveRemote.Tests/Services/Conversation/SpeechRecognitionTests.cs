@@ -14,8 +14,7 @@ public class SpeechRecognitionTests
     private readonly MockLogger<SpeechRecognition> MockLogger = new();
     private readonly Mock<ISpeechRecognitionEngine> MockEngine = new();
     private readonly Mock<IGrammarProvider> MockGrammarProvider = new();
-    private readonly Mock<IOptionsSnapshot<ConversationSettings>> MockSettings = new();
-    private readonly ConversationSettings Settings = new();
+    private readonly MockOptions<ConversationSettings> MockOptions = new();
 
     private readonly Grammar MockAttentionGrammar = new(new GrammarBuilder("Attention")) { Name = nameof(MockAttentionGrammar) };
     private readonly Grammar MockCommandsGrammar = new(new GrammarBuilder("Commands")) { Name = nameof(MockCommandsGrammar) };
@@ -23,7 +22,7 @@ public class SpeechRecognitionTests
 
     public TestContext? TestContext { get; set; }
 
-    private ISpeechRecognition CreateSut() => new SpeechRecognition(MockSettings.Object, MockEngine.Object, MockGrammarProvider.Object, MockLogger);
+    private ISpeechRecognition CreateSut() => new SpeechRecognition(MockOptions, MockEngine.Object, MockGrammarProvider.Object, MockLogger);
 
     private static IRecognitionResult CreateMockResult(params string[] semanticValues)
     {
@@ -93,11 +92,6 @@ public class SpeechRecognitionTests
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Never);
-
-        MockSettings
-            .SetupGet(x => x.Value)
-            .Returns(Settings)
-            .Verifiable(Times.Once);
 
         MockLogger.OutputWriter = TestContext;
     }
@@ -1120,7 +1114,7 @@ public class SpeechRecognitionTests
 
         const int extraCommandsCount = 3;
 
-        for (int i = 0; i < Settings.CommandBufferSize + extraCommandsCount; i++)
+        for (int i = 0; i < MockOptions.Value.CommandBufferSize + extraCommandsCount; i++)
         {
             IRecognitionResult result = CreateMockResult($"command=Up{i}");
             EventArgs eventArgs = new RecognitionResultEventArgs(result);
@@ -1145,7 +1139,7 @@ public class SpeechRecognitionTests
         }
 
         // Assert
-        Assert.AreEqual(Settings.CommandBufferSize, resultCount);
+        Assert.AreEqual(MockOptions.Value.CommandBufferSize, resultCount);
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
@@ -1159,7 +1153,7 @@ public class SpeechRecognitionTests
     public async Task SpeechRecognition_ListenForCommandsAsync_BuffersConfiguredNumberOfCommands()
     {
         // Arrange
-        Settings.CommandBufferSize = 10;
+        MockOptions.Value.CommandBufferSize = 10;
 
         ISpeechRecognition sut = CreateSut();
 
@@ -1175,7 +1169,7 @@ public class SpeechRecognitionTests
 
         const int extraCommandsCount = 3;
 
-        for (int i = 0; i < Settings.CommandBufferSize + extraCommandsCount; i++)
+        for (int i = 0; i < MockOptions.Value.CommandBufferSize + extraCommandsCount; i++)
         {
             IRecognitionResult result = CreateMockResult($"command=Up{i}");
             EventArgs eventArgs = new RecognitionResultEventArgs(result);
@@ -1200,7 +1194,7 @@ public class SpeechRecognitionTests
         }
 
         // Assert
-        Assert.AreEqual(Settings.CommandBufferSize, resultCount);
+        Assert.AreEqual(MockOptions.Value.CommandBufferSize, resultCount);
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),

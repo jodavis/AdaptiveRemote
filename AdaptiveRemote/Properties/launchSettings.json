@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "RecordSamples": {
+      "commandName": "Project",
+      "commandLineArgs": "--Conversation:RecordSamples=true --Conversation:RecordingUserName=User1 --Conversation:RecordingOutputPath=../AdaptiveRemote.Tests/Services/Conversation/SpeechSamples",
+      "workingDirectory": "."
+    },
+    "NormalRun": {
+      "commandName": "Project"
+    }
+  }
+}
