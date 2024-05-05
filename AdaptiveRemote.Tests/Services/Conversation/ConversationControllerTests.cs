@@ -364,6 +364,57 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
+    public void ConversationController_OnCommandWithRepeate_LogsExecutedCommandMultipleTimes()
+    {
+        // Arrange
+        IConversationController sut = CreateSut();
+
+        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name, "repeat=3");
+
+        TaskCompletionSource tcs = new();
+        MockRecognition
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
+            .Returns(tcs.Task)
+            .Verifiable(Times.Once);
+        MockRecognition
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
+            .Returns(AsyncEnumerate(false, result1.Object))
+            .Verifiable(Times.Once);
+
+        MockSynthesis
+            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Verifiable(Times.Once);
+        MockSynthesis
+            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name, 3)))
+            .Verifiable(Times.Once);
+
+        MockExecution
+            .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Exactly(3));
+
+        sut.StartListening();
+
+        // Act
+        tcs.SetResult();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result1.Object.Text, Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name));
+
+        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+    }
+
+    [TestMethod]
     public void ConversationController_OnAttentionAndStopListening_StartsListeningForAttentionAgain()
     {
         // Arrange

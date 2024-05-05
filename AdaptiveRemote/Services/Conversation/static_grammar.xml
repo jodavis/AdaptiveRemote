@@ -39,12 +39,79 @@
         <ruleref uri="#Command"></ruleref>
       </item>
       <item>
+        <ruleref uri="#RepeatableCommand"></ruleref>
+      </item>
+      <item>
         <ruleref uri="#Stop"></ruleref>
       </item>
     </one-of>
   </rule>
 
   <rule id="Command">
+    <one-of>
+      <item>
+        <one-of>
+          <item>Select</item>
+          <item>OK</item>
+        </one-of>
+        <tag>out.command="Select"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>TiVo</item>
+          <item>Go to TiVo</item>
+        </one-of>
+        <tag>out.command="TiVo"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Guide</item>
+          <item>Go to Guide</item>
+        </one-of>
+        <tag>out.command="Guide"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Netflix</item>
+          <item>Go to Netflix</item>
+        </one-of>
+        <tag>out.command="Netflix"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Play</item>
+        </one-of>
+        <tag>out.command="Play"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Pause</item>
+        </one-of>
+        <tag>out.command="Pause"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Record</item>
+        </one-of>
+        <tag>out.command="Record"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Mute</item>
+        </one-of>
+        <tag>out.command="Mute"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Exit</item>
+          <item>Quit</item>
+        </one-of>
+        <tag>out.command="Exit"</tag>
+      </item>
+    </one-of>
+  </rule>
+
+  <rule id="RepeatableCommand">
     <one-of>
       <item>
         <one-of>
@@ -76,56 +143,10 @@
       </item>
       <item>
         <one-of>
-          <item>Select</item>
-          <item>OK</item>
-        </one-of>
-        <tag>out.command="Select"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>TiVo</item>
-          <item>Go to TiVo</item>
-        </one-of>
-        <tag>out.command="TiVo"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Guide</item>
-          <item>Go to Guide</item>
-        </one-of>
-        <tag>out.command="Guide"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Netflix</item>
-          <item>Go to Netflix</item>
-        </one-of>
-        <tag>out.command="Netflix"</tag>
-      </item>
-      <item>
-        <one-of>
           <item>Back</item>
           <item>Go back</item>
         </one-of>
         <tag>out.command="Back"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Play</item>
-        </one-of>
-        <tag>out.command="Play"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Pause</item>
-        </one-of>
-        <tag>out.command="Pause"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Record</item>
-        </one-of>
-        <tag>out.command="Record"</tag>
       </item>
       <item>
         <one-of>
@@ -171,20 +192,10 @@
         </one-of>
         <tag>out.command="VolumeDown"</tag>
       </item>
-      <item>
-        <one-of>
-          <item>Mute</item>
-        </one-of>
-        <tag>out.command="Mute"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Exit</item>
-          <item>Quit</item>
-        </one-of>
-        <tag>out.command="Exit"</tag>
-      </item>
     </one-of>
+
+    <ruleref uri="#RepeatCount" />
+    <tag>out.repeat=rules.latest()</tag>
   </rule>
 
   <rule id="Stop">
@@ -199,5 +210,76 @@
 
   <rule id="Typing">
     Type <ruleref uri="grammar:dictation" type="application/srgs+xml" />
+  </rule>
+
+  <rule id="RepeatCount">
+    <one-of>
+      <item>
+        <one-of>
+          <item></item>
+          <item>once</item>
+          <item>one</item>
+          <item>one time</item>
+        </one-of>
+        <tag>out=1</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>twice</item>
+          <item>two</item>
+          <item>two times</item>
+        </one-of>
+        <tag>out=2</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>three</item>
+          <item>three times</item>
+        </one-of>
+        <tag>out=3</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>four</item>
+          <item>four times</item>
+        </one-of>
+        <tag>out=4</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>five</item>
+          <item>five times</item>
+        </one-of>
+        <tag>out=5</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>six</item>
+          <item>six times</item>
+        </one-of>
+        <tag>out=6</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>seven</item>
+          <item>seven times</item>
+        </one-of>
+        <tag>out=7</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>eight</item>
+          <item>eight times</item>
+        </one-of>
+        <tag>out=8</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>nine</item>
+          <item>nine times</item>
+        </one-of>
+        <tag>out=9</tag>
+      </item>
+    </one-of>
   </rule>
 </grammar>

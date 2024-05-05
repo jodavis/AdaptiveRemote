@@ -36,3 +36,23 @@ Up
 Volume down
 Volume up
 Stop listening
+
+Go up once
+Go down one
+Go left one time
+Go right twice
+Volume down two
+Channel up two times
+Channel down three
+Replay three times
+Skip back four
+Skip four times
+Skip forward five
+Page up six
+Page down six times
+Volume up seven
+Up seven times
+Down eight
+Left eight times
+Right nine times
+Go back nine

@@ -126,7 +126,9 @@ internal class ConversationController : IConversationController, IDisposable
 
                     if (commands.TryGetValue(commandName, out Command? command))
                     {
-                        await ExecuteCommandAsync(command, cancellationToken);
+                        int repeat = ParseRepeat(result);
+
+                        await ExecuteCommandAsync(command, repeat, cancellationToken);
                     }
                     else
                     {
@@ -134,6 +136,17 @@ internal class ConversationController : IConversationController, IDisposable
                     }
                 }
             }
+        }
+
+        static int ParseRepeat(IRecognitionResult result)
+        {
+            if (result.TryGetSemanticValue("repeat", out string? repeatString) &&
+                int.TryParse(repeatString, out int repeat))
+            {
+                return repeat;
+            }
+
+            return 1;
         }
     }
 
@@ -170,14 +183,18 @@ internal class ConversationController : IConversationController, IDisposable
         }
     }
 
-    private async Task ExecuteCommandAsync(Command command, CancellationToken cancellationToken)
+    private async Task ExecuteCommandAsync(Command command, int repeat, CancellationToken cancellationToken)
     {
-        _speechSynthesis.Say(Phrases.Conversation_Sent(command.Name));
+        _speechSynthesis.Say(Phrases.Conversation_Sent(command.Name, repeat));
         _viewModel.StatusMessage = Phrases.Conversation_ImSending;
-        _logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
-        await _executionService.ExecuteAsync(command, cancellationToken);
+        for (int i = 0; i < repeat; i++)
+        {
+            _logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
-        _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+            await _executionService.ExecuteAsync(command, cancellationToken);
+
+            _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+        }
     }
 }
