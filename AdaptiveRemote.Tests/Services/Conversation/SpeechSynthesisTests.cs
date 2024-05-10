@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using AdaptiveRemote.TestUtilities;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace AdaptiveRemote.Services.Conversation;
@@ -34,6 +35,13 @@ public class SpeechSynthesisTests
         MockSynthesizer.Verify();
     }
 
+    private static string Expected_SelectedVoice(string voiceName)
+        => string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, voiceName);
+    private static string Expected_VoiceNotFound(string voiceName)
+        => string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, voiceName);
+    private static string Expected_Saying(string phrase)
+        => string.Format(LoggingMessages.SpeechSynthesis_Saying, phrase);
+
     private ISpeechSynthesis CreateSut()
     {
         Mock<IOptionsSnapshot<ConversationSettings>> mockOptionsSnapshot = new();
@@ -62,7 +70,7 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, InstalledVoices[1]));
+            Expected_SelectedVoice(InstalledVoices[1]));
     }
 
     [TestMethod]
@@ -80,7 +88,7 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, "Missile"));
+            Expected_VoiceNotFound("Missile"));
     }
 
     [TestMethod]
@@ -101,8 +109,8 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, "Missile"),
-            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, InstalledVoices[1]));
+            Expected_VoiceNotFound("Missile"),
+            Expected_SelectedVoice(InstalledVoices[1]));
     }
 
     [TestMethod]
@@ -123,7 +131,7 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, InstalledVoices[1]));
+            Expected_SelectedVoice(InstalledVoices[1]));
     }
 
     [TestMethod]
@@ -147,8 +155,8 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, SpeechSettings.Voice[0]),
-            string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, InstalledVoices[0]),
-            string.Format(LoggingMessages.SpeechSynthesis_Saying, input));
+            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
+            Expected_SelectedVoice(InstalledVoices[0]),
+            Expected_Saying(input));
     }
 }

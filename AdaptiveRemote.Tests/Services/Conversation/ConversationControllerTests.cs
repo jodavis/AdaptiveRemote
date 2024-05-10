@@ -1,3 +1,4 @@
+using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -26,6 +27,31 @@ public class ConversationControllerTests
             Command1,
             Command2
         });
+
+    private static string Expected_ListenForAttention
+        => LoggingMessages.ConversationController_ListenForAttention;
+    private static string Expected_ListenForCommands
+        => LoggingMessages.ConversationController_ListenForCommands;
+    private static string Expected_Recognized(string text, string semantics)
+        => string.Format(LoggingMessages.ConversationController_Recognized, text, semantics);
+    private static string Expected_Executing(string command)
+        => string.Format(LoggingMessages.ConversationController_Executing, command);
+    private static string Expected_Executed(string command)
+        => string.Format(LoggingMessages.ConversationController_Executed, command);
+    private static string Expected_UnknownCommand(string command)
+        => string.Format(LoggingMessages.ConversationController_UnknownCommand, command);
+    private static string Expected_ErrorDuringStartup(Exception error)
+        => string.Format(LoggingMessages.ConversationController_ErrorDuringStartup, error);
+    private static string Expected_Error(Exception error)
+        => string.Format(LoggingMessages.ConversationController_Error, error);
+    private static string Expected_Retrying(int times)
+        => string.Format(LoggingMessages.ConversationController_Retrying, times);
+    private static string Expected_RetryLimitReached(int times)
+        => string.Format(LoggingMessages.ConversationController_RetryLimitReached, times);
+    private static string Expected_Stopping
+        => LoggingMessages.ConversationController_Stopping;
+    private static string Expected_Stopped
+        => LoggingMessages.ConversationController_Stopped;
 
     private ConversationController CreateSut() => new(
         MockOptions.Object,
@@ -109,7 +135,7 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            string.Format(LoggingMessages.ConversationController_ErrorDuringStartup, exception));
+            Expected_ErrorDuringStartup(exception));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningSystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -131,7 +157,7 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention);
+            Expected_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -164,8 +190,8 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands);
+            Expected_ListenForAttention,
+            Expected_ListenForCommands);
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -214,10 +240,10 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            string.Format(LoggingMessages.ConversationController_Recognized, result.Object.Text, result.Object.SemanticMeaning),
-            string.Format(LoggingMessages.ConversationController_Executing, Command1.Name));
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result.Object.Text, result.Object.SemanticMeaning),
+            Expected_Executing(Command1.Name));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -258,10 +284,10 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            string.Format(LoggingMessages.ConversationController_Recognized, result.Object.Text, result.Object.SemanticMeaning),
-            string.Format(LoggingMessages.ConversationController_UnknownCommand, "Not a command"));
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result.Object.Text, result.Object.SemanticMeaning),
+            Expected_UnknownCommand("Not a command"));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -310,11 +336,11 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            string.Format(LoggingMessages.ConversationController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
-            string.Format(LoggingMessages.ConversationController_Executing, Command1.Name),
-            string.Format(LoggingMessages.ConversationController_Executed, Command1.Name));
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result1.Object.Text, result1.Object.SemanticMeaning),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -351,9 +377,9 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            LoggingMessages.ConversationController_ListenForAttention);
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -391,11 +417,11 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            LoggingMessages.ConversationController_ListenForAttention);
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -430,11 +456,11 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            string.Format(LoggingMessages.ConversationController_Error, exception),
-            string.Format(LoggingMessages.ConversationController_Retrying, 1),
-            LoggingMessages.ConversationController_ListenForAttention);
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Error(exception),
+            Expected_Retrying(1),
+            Expected_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -457,38 +483,38 @@ public class ConversationControllerTests
         sut.StartListening();
 
         // Assert
-        string expectedErrorMessage = string.Format(LoggingMessages.ConversationController_Error, exception);
+        string expectedErrorMessage = Expected_Error(exception);
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 1),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(1),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 2),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(2),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 3),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(3),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 4),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(4),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 5),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(5),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 6),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(6),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 7),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(7),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 8),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(8),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_Retrying, 9),
-            LoggingMessages.ConversationController_ListenForAttention,
+            Expected_Retrying(9),
+            Expected_ListenForAttention,
             expectedErrorMessage,
-            string.Format(LoggingMessages.ConversationController_RetryLimitReached, 10));
+            Expected_RetryLimitReached(10));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Speech_ListeningSystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -514,8 +540,8 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_Stopping);
+            Expected_ListenForAttention,
+            Expected_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
@@ -543,9 +569,9 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_Stopping,
-            LoggingMessages.ConversationController_Stopped);
+            Expected_ListenForAttention,
+            Expected_Stopping,
+            Expected_Stopped);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -579,9 +605,9 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            LoggingMessages.ConversationController_Stopping);
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
@@ -613,9 +639,9 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            LoggingMessages.ConversationController_Stopped);
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Stopped);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -665,11 +691,11 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            string.Format(LoggingMessages.ConversationController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
-            string.Format(LoggingMessages.ConversationController_Executing, Command1.Name),
-            LoggingMessages.ConversationController_Stopping);
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result1.Object.Text, result1.Object.SemanticMeaning),
+            Expected_Executing(Command1.Name),
+            Expected_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
@@ -721,12 +747,12 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            LoggingMessages.ConversationController_ListenForAttention,
-            LoggingMessages.ConversationController_ListenForCommands,
-            string.Format(LoggingMessages.ConversationController_Recognized, result1.Object.Text, result1.Object.SemanticMeaning),
-            string.Format(LoggingMessages.ConversationController_Executing, Command1.Name, Command1.Name),
-            LoggingMessages.ConversationController_Stopping,
-            LoggingMessages.ConversationController_Stopped);
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result1.Object.Text, result1.Object.SemanticMeaning),
+            Expected_Executing(Command1.Name),
+            Expected_Stopping,
+            Expected_Stopped);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
