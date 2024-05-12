@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace AdaptiveRemote {
+namespace AdaptiveRemote.Logging {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace AdaptiveRemote {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("AdaptiveRemote.LoggingMessages", typeof(LoggingMessages).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("AdaptiveRemote.Logging.LoggingMessages", typeof(LoggingMessages).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -212,6 +212,15 @@ namespace AdaptiveRemote {
         internal static string SpeechRecognition_Listening {
             get {
                 return ResourceManager.GetString("SpeechRecognition_Listening", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} is already in progress.
+        /// </summary>
+        internal static string SpeechRecognition_ListeningMethodAlreadyInProgress {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_ListeningMethodAlreadyInProgress", resourceCulture);
             }
         }
         

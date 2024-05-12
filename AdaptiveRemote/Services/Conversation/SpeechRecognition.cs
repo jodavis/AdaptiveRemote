@@ -1,5 +1,6 @@
 ﻿using System.Speech.Recognition;
 using System.Threading.Channels;
+using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.Conversation;
@@ -51,7 +52,7 @@ internal class SpeechRecognition : ISpeechRecognition
     private void OnRecognitionError(object? sender, RecognitionErrorEventArgs e)
     {
         RecognitionErrorException exception = new RecognitionErrorException(e.Message);
-        _logger.LogError(LoggingMessages.SpeechRecognition_RecognitionError, e.Message);
+        _logger.LogError(Message.SpeechRecognition_RecognitionError, e.Message);
 
         _attentionTcs.TrySetException(exception);
         _yesNoTcs.TrySetException(exception);
@@ -108,13 +109,13 @@ internal class SpeechRecognition : ISpeechRecognition
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation(LoggingMessages.SpeechRecognition_CancelledListeningMethod,
+            _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod,
                 nameof(ISpeechRecognition.ListenForAttention));
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, LoggingMessages.SpeechRecognition_ErrorInListeningMethod,
+            _logger.LogError(Message.SpeechRecognition_ErrorInListeningMethod,
                 nameof(ISpeechRecognition.ListenForAttention), ex);
             throw;
         }
@@ -150,13 +151,13 @@ internal class SpeechRecognition : ISpeechRecognition
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation(LoggingMessages.SpeechRecognition_CancelledListeningMethod,
+            _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod,
                 nameof(ISpeechRecognition.ListenForYesNo));
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, LoggingMessages.SpeechRecognition_ErrorInListeningMethod,
+            _logger.LogError(Message.SpeechRecognition_ErrorInListeningMethod,
                 nameof(ISpeechRecognition.ListenForYesNo), ex);
             throw;
         }
@@ -207,7 +208,7 @@ internal class SpeechRecognition : ISpeechRecognition
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    _logger.LogInformation(LoggingMessages.SpeechRecognition_CancelledListeningMethod,
+                    _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod,
                         nameof(ISpeechRecognition.ListenForCommands));
                 }
 
@@ -221,9 +222,7 @@ internal class SpeechRecognition : ISpeechRecognition
     {
         if (!task.IsCompleted)
         {
-            Exception error = new InvalidOperationException(methodName + " is already in progress");
-            _logger.LogError(error, error.Message);
-            throw error;
+            _logger.LogAndThrowError(Message.SpeechRecognition_ListeningMethodAlreadyInProgress, methodName);
         }
     }
 
@@ -235,7 +234,7 @@ internal class SpeechRecognition : ISpeechRecognition
         }
         finally
         {
-            _logger.LogInformation(LoggingMessages.SpeechRecognition_GrammarEnabled, grammar.Name, grammar.Enabled);
+            _logger.LogInformation(Message.SpeechRecognition_GrammarEnabled, grammar.Name, grammar.Enabled);
         }
     }
 
@@ -244,7 +243,7 @@ internal class SpeechRecognition : ISpeechRecognition
         if (_listeningCount++ == 0)
         {
             _engine.RecognizeAsync();
-            _logger.LogInformation(LoggingMessages.SpeechRecognition_Listening, true);
+            _logger.LogInformation(Message.SpeechRecognition_Listening, true);
         }
     }
 
@@ -255,11 +254,11 @@ internal class SpeechRecognition : ISpeechRecognition
             try
             {
                 _engine.RecognizeAsyncCancel();
-                _logger.LogInformation(LoggingMessages.SpeechRecognition_Listening, false);
+                _logger.LogInformation(Message.SpeechRecognition_Listening, false);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, LoggingMessages.SpeechRecognition_ErrorInStopListening, ex);
+                _logger.LogError(Message.SpeechRecognition_ErrorInStopListening, ex);
             }
         }
     }

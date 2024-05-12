@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="LoggingMessages.Designer.cs">
+    <Compile Update="Logging\LoggingMessages.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>LoggingMessages.resx</DependentUpon>
@@ -48,7 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="LoggingMessages.resx">
+    <EmbeddedResource Update="Logging\LoggingMessages.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>LoggingMessages.Designer.cs</LastGenOutput>
     </EmbeddedResource>

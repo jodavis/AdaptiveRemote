@@ -221,6 +221,10 @@
     <value>Listening={0}</value>
     <comment>0=True/false</comment>
   </data>
+  <data name="SpeechRecognition_ListeningMethodAlreadyInProgress" xml:space="preserve">
+    <value>{0} is already in progress</value>
+    <comment>0=Name of the method that was called twice</comment>
+  </data>
   <data name="SpeechRecognition_RecognitionError" xml:space="preserve">
     <value>Recognition Error: {0}</value>
     <comment>0=Error message</comment>
