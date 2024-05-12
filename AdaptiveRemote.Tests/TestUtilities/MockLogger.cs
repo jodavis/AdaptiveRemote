@@ -21,7 +21,7 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
             return;
         }
 
-        _messages.Add(formatter(state, exception));
+        _messages.Add($"{logLevel}[{eventId.Id}]: {formatter(state, exception)}");
     }
 
     public void VerifyMessages(params string[] expected)

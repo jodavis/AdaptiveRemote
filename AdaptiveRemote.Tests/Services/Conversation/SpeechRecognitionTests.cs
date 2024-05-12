@@ -1,4 +1,5 @@
 ﻿using System.Speech.Recognition;
+using AdaptiveRemote.Logging;
 using AdaptiveRemote.TestUtilities;
 using Moq;
 
@@ -73,25 +74,31 @@ public class SpeechRecognitionTests
     }
 
     private static string Expected_GrammarEnabled(string grammarName)
-        => string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammarName, true);
+        => $"Information[305]: {string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammarName, true)}";
     private static string Expected_GrammarDisabled(string grammarName)
-        => string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammarName, false);
+        => $"Information[305]: {string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammarName, false)}";
     private static string Expected_Listening(bool listening)
-        => string.Format(LoggingMessages.SpeechRecognition_Listening, listening);
+        => $"Information[306]: {string.Format(LoggingMessages.SpeechRecognition_Listening, listening)}";
     private static string Expected_RecognitionError(string error)
-        => string.Format(LoggingMessages.SpeechRecognition_RecognitionError, error);
+        => $"Error[302]: {string.Format(LoggingMessages.SpeechRecognition_RecognitionError, error)}";
     private static string Expected_ErrorInListenForAttention(Exception error)
-        => string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForAttention), error);
+        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForAttention), error)}";
     private static string Expected_ErrorInListenForCommands(Exception error)
-        => string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForCommands), error);
+        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForCommands), error)}";
     private static string Expected_ErrorInListenForYesNo(Exception error)
-        => string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForYesNo), error);
+        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForYesNo), error)}";
     private static string Expected_CancelledListenForAttention
-        => string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForAttention));
+        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForAttention))}";
     private static string Expected_CancelledListenForCommands
-        => string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForCommands));
+        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForCommands))}";
     private static string Expected_CancelledListenForYesNo
-        => string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForYesNo));
+        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForYesNo))}";
+    private static string Expected_ListenForAttentionAlreadyInProgress
+        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForAttention))}";
+    private static string Expected_ListenForCommandsAlreadyInProgress
+        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForCommands))}";
+    private static string Expected_ListenForYesNoAlreadyInProgress
+        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForYesNo))}";
 
     [TestMethod]
     public void SpeechRecognition_Constructor_LoadsAndDisablesGrammars()
@@ -222,7 +229,7 @@ public class SpeechRecognitionTests
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar.Name),
             Expected_Listening(true),
-            "ListenForAttention is already in progress");
+            Expected_ListenForAttentionAlreadyInProgress);
     }
 
     [TestMethod]
@@ -487,7 +494,7 @@ public class SpeechRecognitionTests
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar.Name),
             Expected_Listening(true),
-            "ListenForYesNo is already in progress");
+            Expected_ListenForYesNoAlreadyInProgress);
     }
 
     [TestMethod]
@@ -841,7 +848,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            "ListenForCommands is already in progress");
+            Expected_ListenForCommandsAlreadyInProgress);
     }
 
     [TestMethod]

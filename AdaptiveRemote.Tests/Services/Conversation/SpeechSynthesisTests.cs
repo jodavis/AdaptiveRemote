@@ -1,4 +1,5 @@
-﻿using AdaptiveRemote.TestUtilities;
+﻿using AdaptiveRemote.Logging;
+using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -36,11 +37,11 @@ public class SpeechSynthesisTests
     }
 
     private static string Expected_SelectedVoice(string voiceName)
-        => string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, voiceName);
+        => $"Information[401]: {string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, voiceName)}";
     private static string Expected_VoiceNotFound(string voiceName)
-        => string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, voiceName);
+        => $"Warning[402]: {string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, voiceName)}";
     private static string Expected_Saying(string phrase)
-        => string.Format(LoggingMessages.SpeechSynthesis_Saying, phrase);
+        => $"Information[403]: {string.Format(LoggingMessages.SpeechSynthesis_Saying, phrase)}";
 
     private ISpeechSynthesis CreateSut()
     {

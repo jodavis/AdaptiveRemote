@@ -1,3 +1,4 @@
+using AdaptiveRemote.Logging;
 using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -29,29 +30,29 @@ public class ConversationControllerTests
         });
 
     private static string Expected_ListenForAttention
-        => LoggingMessages.ConversationController_ListenForAttention;
+        => $"Information[209]: {LoggingMessages.ConversationController_ListenForAttention}";
     private static string Expected_ListenForCommands
-        => LoggingMessages.ConversationController_ListenForCommands;
+        => $"Information[212]: {LoggingMessages.ConversationController_ListenForCommands}";
     private static string Expected_Recognized(string text, string semantics)
-        => string.Format(LoggingMessages.ConversationController_Recognized, text, semantics);
+        => $"Information[207]: {string.Format(LoggingMessages.ConversationController_Recognized, text, semantics)}";
     private static string Expected_Executing(string command)
-        => string.Format(LoggingMessages.ConversationController_Executing, command);
+        => $"Information[210]: {string.Format(LoggingMessages.ConversationController_Executing, command)}";
     private static string Expected_Executed(string command)
-        => string.Format(LoggingMessages.ConversationController_Executed, command);
+        => $"Information[211]: {string.Format(LoggingMessages.ConversationController_Executed, command)}";
     private static string Expected_UnknownCommand(string command)
-        => string.Format(LoggingMessages.ConversationController_UnknownCommand, command);
+        => $"Error[208]: {string.Format(LoggingMessages.ConversationController_UnknownCommand, command)}";
     private static string Expected_ErrorDuringStartup(Exception error)
-        => string.Format(LoggingMessages.ConversationController_ErrorDuringStartup, error);
+        => $"Error[201]: {string.Format(LoggingMessages.ConversationController_ErrorDuringStartup, error)}";
     private static string Expected_Error(Exception error)
-        => string.Format(LoggingMessages.ConversationController_Error, error);
+        => $"Error[204]: {string.Format(LoggingMessages.ConversationController_Error, error)}";
     private static string Expected_Retrying(int times)
-        => string.Format(LoggingMessages.ConversationController_Retrying, times);
+        => $"Warning[206]: {string.Format(LoggingMessages.ConversationController_Retrying, times)}";
     private static string Expected_RetryLimitReached(int times)
-        => string.Format(LoggingMessages.ConversationController_RetryLimitReached, times);
+        => $"Warning[205]: {string.Format(LoggingMessages.ConversationController_RetryLimitReached, times)}";
     private static string Expected_Stopping
-        => LoggingMessages.ConversationController_Stopping;
+        => $"Information[202]: {LoggingMessages.ConversationController_Stopping}";
     private static string Expected_Stopped
-        => LoggingMessages.ConversationController_Stopped;
+        => $"Information[203]: {LoggingMessages.ConversationController_Stopped}";
 
     private ConversationController CreateSut() => new(
         MockOptions.Object,

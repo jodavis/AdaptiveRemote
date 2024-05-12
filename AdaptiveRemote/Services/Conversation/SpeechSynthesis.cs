@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AdaptiveRemote.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
@@ -26,18 +27,18 @@ internal class SpeechSynthesis : ISpeechSynthesis
                 if (installedVoice.Contains(voiceName, StringComparison.OrdinalIgnoreCase))
                 {
                     _synthesizer.SelectVoice(installedVoice);
-                    _logger.LogInformation(LoggingMessages.SpeechSynthesis_SelectedVoice, installedVoice);
+                    _logger.LogInformation(Message.SpeechSynthesis_SelectedVoice, installedVoice);
                     return;
                 }
             }
-            _logger.LogWarning(LoggingMessages.SpeechSynthesis_VoiceNotFound, voiceName);
+            _logger.LogWarning(Message.SpeechSynthesis_VoiceNotFound, voiceName);
         }
     }
 
     void ISpeechSynthesis.Say(string phrase)
     {
         _synthesizer.CancelAll();
-        _logger.LogInformation(LoggingMessages.SpeechSynthesis_Saying, phrase);
+        _logger.LogInformation(Message.SpeechSynthesis_Saying, phrase);
         _synthesizer.SpeakAsync(phrase);
     }
 }
