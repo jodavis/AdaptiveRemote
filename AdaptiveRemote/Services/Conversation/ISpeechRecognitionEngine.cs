@@ -8,8 +8,8 @@ internal interface ISpeechRecognitionEngine
     event EventHandler<RecognitionErrorEventArgs> RecognitionError;
 
     void LoadGrammar(Grammar grammar);
+    void UnloadGrammar(Grammar grammar);
     void RecognizeAsync();
     void RecognizeAsyncCancel();
     void SetInputToDefaultAudioDevice();
-    void UnloadAllGrammars();
 }

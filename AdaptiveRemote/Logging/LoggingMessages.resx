@@ -217,6 +217,16 @@
     <value>{0}.Enabled={1}</value>
     <comment>0=Grammar name;1=True/False</comment>
   </data>
+  <data name="SpeechRecognition_GrammarFailedToLoad" xml:space="preserve">
+    <value>Failed to load '{0}'
+{1}</value>
+    <comment>0=Name of grammar that failed to load,1=Exception</comment>
+  </data>
+  <data name="SpeechRecognition_GrammarFailedToUnload" xml:space="preserve">
+    <value>Failed to unload '{0}'
+{1}</value>
+    <comment>0=Name of grammar that failed to unload,1=Exception</comment>
+  </data>
   <data name="SpeechRecognition_Listening" xml:space="preserve">
     <value>Listening={0}</value>
     <comment>0=True/false</comment>

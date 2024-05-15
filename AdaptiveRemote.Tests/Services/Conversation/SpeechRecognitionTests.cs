@@ -8,6 +8,8 @@ namespace AdaptiveRemote.Services.Conversation;
 [TestClass]
 public class SpeechRecognitionTests
 {
+    private static readonly TimeSpan ResultTimeout = TimeSpan.FromMilliseconds(100);
+
     private readonly MockLogger<SpeechRecognition> MockLogger = new();
     private readonly Mock<ISpeechRecognitionEngine> MockEngine = new();
     private readonly Mock<IGrammarProvider> MockGrammarProvider = new();
@@ -18,12 +20,11 @@ public class SpeechRecognitionTests
 
     private ISpeechRecognition CreateSut() => new SpeechRecognition(MockEngine.Object, MockGrammarProvider.Object, MockLogger);
 
-    public SpeechRecognitionTests()
+    public TestContext? TestContext { get; set; }
+
+    [TestInitialize]
+    public void SetupMocks()
     {
-        MockEngine
-            .Setup(x => x.UnloadAllGrammars())
-            .Callback(() => MockEngine.Verify(x => x.LoadGrammar(It.IsAny<Grammar>()), Times.Never))
-            .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.SetInputToDefaultAudioDevice())
             .Verifiable(Times.Once);
@@ -64,6 +65,8 @@ public class SpeechRecognitionTests
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Never);
+
+        MockLogger.OutputWriter = TestContext;
     }
 
     [TestCleanup]
@@ -77,6 +80,10 @@ public class SpeechRecognitionTests
         => $"Information[305]: {string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammarName, true)}";
     private static string Expected_GrammarDisabled(string grammarName)
         => $"Information[305]: {string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammarName, false)}";
+    private static string Expected_FailedToLoad(Grammar grammar, Exception error)
+        => $"Warning[309]: {string.Format(LoggingMessages.SpeechRecognition_GrammarFailedToLoad, grammar.Name, $"{error.GetType().FullName}: {error.Message}")}";
+    private static string Expected_FailedToUnload(Grammar grammar, Exception error)
+        => $"Warning[310]: {string.Format(LoggingMessages.SpeechRecognition_GrammarFailedToUnload, grammar.Name, $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_Listening(bool listening)
         => $"Information[306]: {string.Format(LoggingMessages.SpeechRecognition_Listening, listening)}";
     private static string Expected_RecognitionError(string error)
@@ -732,7 +739,7 @@ public class SpeechRecognitionTests
         ValueTask<bool> resultTask = resultIter.MoveNextAsync();
 
         // Assert
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        TaskAssert.IsNotComplete(resultTask, ResultTimeout, nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -769,7 +776,7 @@ public class SpeechRecognitionTests
         MockEngine.Raise(x => x.RecognitionError -= null, new RecognitionErrorEventArgs(expectedErrorMessage));
 
         // Assert
-        TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
+        TaskAssert.IsFaulted(resultTask, expectedException, ResultTimeout, nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -809,7 +816,7 @@ public class SpeechRecognitionTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsCanceled(resultTask, 1000, nameof(resultTask));
+        TaskAssert.IsCanceled(resultTask, ResultTimeout, nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -886,7 +893,7 @@ public class SpeechRecognitionTests
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
 
         // Assert
-        TaskAssert.ResultEquals(resultTask, true, nameof(resultTask));
+        TaskAssert.ResultEquals(resultTask, true, ResultTimeout, nameof(resultTask));
         Assert.AreSame(mockResult.Object, resultIter.Current, nameof(resultIter) + ".Current");
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
@@ -925,7 +932,7 @@ public class SpeechRecognitionTests
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
 
         // Assert
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        TaskAssert.IsNotComplete(resultTask, ResultTimeout, nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -966,7 +973,7 @@ public class SpeechRecognitionTests
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
 
         // Assert
-        TaskAssert.ResultEquals(resultTask, false, nameof(resultTask));
+        TaskAssert.ResultEquals(resultTask, false, ResultTimeout, nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1005,13 +1012,13 @@ public class SpeechRecognitionTests
 
         RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
-        TaskAssert.ResultEquals(firstTask, false, nameof(firstTask));
+        TaskAssert.ResultEquals(firstTask, false, ResultTimeout, nameof(firstTask));
 
         // Act
         ValueTask<bool> resultTask = sut.ListenForCommands(CancellationToken.None).GetAsyncEnumerator().MoveNextAsync();
 
         // Assert
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        TaskAssert.IsNotComplete(resultTask, ResultTimeout, nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1049,7 +1056,7 @@ public class SpeechRecognitionTests
 
         RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
-        TaskAssert.ResultEquals(firstTask, true, nameof(firstTask));
+        TaskAssert.ResultEquals(firstTask, true, ResultTimeout, nameof(firstTask));
 
         ValueTask<bool> resultTask = resultIter.MoveNextAsync();
 
@@ -1057,7 +1064,7 @@ public class SpeechRecognitionTests
         MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        TaskAssert.IsComplete(resultTask, ResultTimeout, nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1091,7 +1098,7 @@ public class SpeechRecognitionTests
         ValueTask<bool> resultTask = resultIter.MoveNextAsync();
 
         // Assert
-        TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
+        TaskAssert.IsFaulted(resultTask, expectedException, ResultTimeout, nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1123,7 +1130,7 @@ public class SpeechRecognitionTests
         // Assert
         TaskAssert.IsNotComplete(attentionTask, nameof(attentionTask));
         TaskAssert.IsNotComplete(yesNoTask, nameof(yesNoTask));
-        TaskAssert.IsNotComplete(commandTask, nameof(commandTask));
+        TaskAssert.IsNotComplete(commandTask, ResultTimeout, nameof(commandTask));
         Assert.IsTrue(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1163,7 +1170,7 @@ public class SpeechRecognitionTests
         // Assert
         TaskAssert.IsComplete(attentionTask, nameof(attentionTask));
         TaskAssert.IsNotComplete(yesNoTask, nameof(yesNoTask));
-        TaskAssert.IsNotComplete(commandTask, nameof(commandTask));
+        TaskAssert.IsNotComplete(commandTask, ResultTimeout, nameof(commandTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1204,7 +1211,7 @@ public class SpeechRecognitionTests
         // Assert
         TaskAssert.IsNotComplete(attentionTask, nameof(attentionTask));
         TaskAssert.ResultEquals(yesNoTask, true, nameof(yesNoTask));
-        TaskAssert.IsNotComplete(commandTask, nameof(commandTask));
+        TaskAssert.IsNotComplete(commandTask, ResultTimeout, nameof(commandTask));
         Assert.IsTrue(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1245,7 +1252,7 @@ public class SpeechRecognitionTests
         // Assert
         TaskAssert.IsNotComplete(attentionTask, nameof(attentionTask));
         TaskAssert.IsNotComplete(yesNoTask, nameof(yesNoTask));
-        TaskAssert.ResultEquals(commandTask, true, nameof(commandTask));
+        TaskAssert.ResultEquals(commandTask, true, ResultTimeout, nameof(commandTask));
         Assert.IsTrue(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1285,7 +1292,7 @@ public class SpeechRecognitionTests
         // Assert
         TaskAssert.IsNotComplete(attentionTask, nameof(attentionTask));
         TaskAssert.IsNotComplete(yesNoTask, nameof(yesNoTask));
-        TaskAssert.ResultEquals(commandTask, false, nameof(commandTask));
+        TaskAssert.ResultEquals(commandTask, false, ResultTimeout, nameof(commandTask));
         Assert.IsTrue(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1343,7 +1350,7 @@ public class SpeechRecognitionTests
         // Assert
         TaskAssert.IsComplete(attentionTask, nameof(attentionTask));
         TaskAssert.ResultEquals(yesNoTask, false, nameof(yesNoTask));
-        TaskAssert.ResultEquals(commandTask, false, nameof(commandTask));
+        TaskAssert.ResultEquals(commandTask, false, ResultTimeout, nameof(commandTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -1357,5 +1364,385 @@ public class SpeechRecognitionTests
             Expected_GrammarDisabled(MockAttentionGrammar.Name),
             Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar.Name));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_Dispose_CancelsListenForAttentionAndUnloadsGrammars()
+    {
+        // Arramge
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockYesNoGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
+            .Verifiable(Times.Once);
+
+        Task attentionResult = sut.ListenForAttention(default);
+
+        // Act
+        ((IDisposable)sut).Dispose();
+
+        // Assert
+        TaskAssert.IsCanceled(attentionResult, nameof(attentionResult));
+
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_Listening(true),
+            Expected_CancelledListenForAttention,
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockAttentionGrammar.Name));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_Dispose_UnloadsAllGrammarsIfUnloadAttentionGrammarFails()
+    {
+        // Arramge
+        ISpeechRecognition sut = CreateSut();
+
+        Exception expectedException = new InvalidOperationException("Whoops no unload");
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockYesNoGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
+            .Verifiable(Times.Once);
+
+        Task attentionResult = sut.ListenForAttention(default);
+
+        // Act
+        ((IDisposable)sut).Dispose();
+
+        // Assert
+        TaskAssert.IsCanceled(attentionResult, nameof(attentionResult));
+
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_Listening(true),
+            Expected_CancelledListenForAttention,
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockAttentionGrammar.Name),
+            Expected_FailedToUnload(MockAttentionGrammar, expectedException));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_Dispose_CancelsListenForYesNoAndUnloadsGrammars()
+    {
+        // Arramge
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockYesNoGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
+            .Verifiable(Times.Once);
+
+        Task yesNoResult = sut.ListenForYesNo(default);
+
+        // Act
+        ((IDisposable)sut).Dispose();
+
+        // Assert
+        TaskAssert.IsCanceled(yesNoResult, nameof(yesNoResult));
+
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_Listening(true),
+            Expected_CancelledListenForYesNo,
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_Dispose_UnloadsAllGrammarsIfUnloadYesNoGrammarFails()
+    {
+        // Arramge
+        ISpeechRecognition sut = CreateSut();
+
+        Exception expectedException = new InvalidOperationException("Whoops no unload");
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockYesNoGrammar))
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
+            .Verifiable(Times.Once);
+
+        Task yesNoResult = sut.ListenForYesNo(default);
+
+        // Act
+        ((IDisposable)sut).Dispose();
+
+        // Assert
+        TaskAssert.IsCanceled(yesNoResult, ResultTimeout, nameof(yesNoResult));
+
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_Listening(true),
+            Expected_CancelledListenForYesNo,
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockYesNoGrammar.Name),
+            Expected_FailedToUnload(MockYesNoGrammar, expectedException));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_Dispose_CancelsListenForCommandsAndUnloadsGrammars()
+    {
+        // Arramge
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockYesNoGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
+            .Verifiable(Times.Once);
+
+        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommands(default);
+        ValueTask<bool> commandsResult = commandsEnum.GetAsyncEnumerator().MoveNextAsync();
+
+        // Act
+        ((IDisposable)sut).Dispose();
+
+        // Assert
+        TaskAssert.IsCanceled(commandsResult, ResultTimeout, nameof(commandsResult));
+
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_Listening(true),
+            Expected_CancelledListenForCommands,
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_Dispose_UnloadsAllGrammarsIfUnloadCommandsGrammarFails()
+    {
+        // Arramge
+        ISpeechRecognition sut = CreateSut();
+
+        Exception expectedException = new InvalidOperationException("Whoops no unload");
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockYesNoGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+
+        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommands(default);
+        ValueTask<bool> commandsResult = commandsEnum.GetAsyncEnumerator().MoveNextAsync();
+
+        // Act
+        ((IDisposable)sut).Dispose();
+
+        // Assert
+        TaskAssert.IsCanceled(commandsResult, ResultTimeout, nameof(commandsResult));
+
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_Listening(true),
+            Expected_CancelledListenForCommands,
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockCommandsGrammar.Name),
+            Expected_FailedToUnload(MockCommandsGrammar, expectedException));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_Dispose_CancelsAllListenMethodsAndUnloadsGrammars()
+    {
+        // Arramge
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockYesNoGrammar))
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
+            .Verifiable(Times.Once);
+
+        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommands(default);
+        ValueTask<bool> commandsResult = commandsEnum.GetAsyncEnumerator().MoveNextAsync();
+        Task attentionResult = sut.ListenForAttention(default);
+        Task yesNoResult = sut.ListenForYesNo(default);
+
+        // Act
+        ((IDisposable)sut).Dispose();
+
+        // Assert
+        TaskAssert.IsCanceled(commandsResult, ResultTimeout, nameof(commandsResult));
+        TaskAssert.IsCanceled(attentionResult, nameof(commandsResult));
+        TaskAssert.IsCanceled(yesNoResult, nameof(commandsResult));
+
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_Listening(true),
+            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_CancelledListenForYesNo,
+            Expected_GrammarDisabled(MockYesNoGrammar.Name),
+            Expected_CancelledListenForAttention,
+            Expected_GrammarDisabled(MockAttentionGrammar.Name),
+            Expected_CancelledListenForCommands,
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+    }
+
+    [TestMethod]
+    public void SpeechRecognition_Dispose_UnloadsAllGrammarsIfAllUnloadGrammarCallsFail()
+    {
+        // Arramge
+        ISpeechRecognition sut = CreateSut();
+
+        Exception expectedException = new InvalidOperationException("Whoops no unload");
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockYesNoGrammar))
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+
+        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommands(default);
+        ValueTask<bool> commandsResult = commandsEnum.GetAsyncEnumerator().MoveNextAsync();
+        Task attentionResult = sut.ListenForAttention(default);
+        Task yesNoResult = sut.ListenForYesNo(default);
+
+        // Act
+        ((IDisposable)sut).Dispose();
+
+        // Assert
+        TaskAssert.IsCanceled(commandsResult, ResultTimeout, nameof(commandsResult));
+        TaskAssert.IsCanceled(attentionResult, nameof(commandsResult));
+        TaskAssert.IsCanceled(yesNoResult, nameof(commandsResult));
+
+        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
+        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
+        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_Listening(true),
+            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_CancelledListenForYesNo,
+            Expected_GrammarDisabled(MockYesNoGrammar.Name),
+            Expected_CancelledListenForAttention,
+            Expected_GrammarDisabled(MockAttentionGrammar.Name),
+            Expected_CancelledListenForCommands,
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockCommandsGrammar.Name),
+            Expected_FailedToUnload(MockAttentionGrammar, expectedException),
+            Expected_FailedToUnload(MockYesNoGrammar, expectedException),
+            Expected_FailedToUnload(MockCommandsGrammar, expectedException));
     }
 }
