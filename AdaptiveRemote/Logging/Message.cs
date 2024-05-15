@@ -30,6 +30,8 @@ internal enum Message
     SpeechRecognition_Listening = 306,
     SpeechRecognition_ErrorInStopListening = 307,
     SpeechRecognition_ListeningMethodAlreadyInProgress = 308,
+    SpeechRecognition_GrammarFailedToLoad = 309,
+    SpeechRecognition_GrammarFailedToUnload = 310,
     SpeechSynthesis_SelectedVoice = 401,
     SpeechSynthesis_VoiceNotFound = 402,
     SpeechSynthesis_Saying = 403,

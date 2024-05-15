@@ -34,8 +34,8 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     private void BroadcastSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
         => _speechRecognized?.Invoke(this, new RecognitionResultEventArgs(WrapRequired(e.Result)));
 
-    public void UnloadAllGrammars() => _engine.UnloadAllGrammars();
     public void LoadGrammar(Grammar grammar) => _engine.LoadGrammar(grammar);
+    public void UnloadGrammar(Grammar grammar) => _engine.UnloadGrammar(grammar);
     public void SetInputToDefaultAudioDevice() => _engine.SetInputToDefaultAudioDevice();
     public void RecognizeAsync() => _engine.RecognizeAsync(RecognizeMode.Multiple);
     public void RecognizeAsyncCancel() => _engine.RecognizeAsyncCancel();

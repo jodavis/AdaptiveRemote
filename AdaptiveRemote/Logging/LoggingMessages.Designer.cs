@@ -207,6 +207,26 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to load &apos;{0}&apos;
+        ///{1}.
+        /// </summary>
+        internal static string SpeechRecognition_GrammarFailedToLoad {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_GrammarFailedToLoad", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to unload &apos;{0}&apos;
+        ///{1}.
+        /// </summary>
+        internal static string SpeechRecognition_GrammarFailedToUnload {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_GrammarFailedToUnload", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Listening={0}.
         /// </summary>
         internal static string SpeechRecognition_Listening {

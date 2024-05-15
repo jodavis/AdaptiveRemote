@@ -8,6 +8,7 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
     private Exception? _assertException = null;
 
     public IEnumerable<string> Messages => _messages;
+    public TestContext? OutputWriter { get; set; }
 
     IDisposable? ILogger.BeginScope<TState>(TState state) => throw new NotImplementedException();
     bool ILogger.IsEnabled(LogLevel logLevel) => throw new NotImplementedException();
@@ -21,7 +22,9 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
             return;
         }
 
-        _messages.Add($"{logLevel}[{eventId.Id}]: {formatter(state, exception)}");
+        string message = $"{logLevel}[{eventId.Id}]: {formatter(state, exception)}";
+        _messages.Add(message);
+        OutputWriter?.WriteLine(message);
     }
 
     public void VerifyMessages(params string[] expected)
@@ -59,7 +62,7 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
 
             if (!actualIter.Current.StartsWith(expectedIter.Current))
             {
-                Assert.AreEqual($"\n{actualIter.Current}", $"\n{expectedIter.Current}", "MockLogger.Messages[{0}]", count);
+                Assert.AreEqual($"\n{expectedIter.Current}", $"\n{actualIter.Current}", "MockLogger.Messages[{0}]", count);
             }
 
             count++;

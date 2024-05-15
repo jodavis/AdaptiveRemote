@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-internal class SpeechRecognition : ISpeechRecognition
+internal class SpeechRecognition : ISpeechRecognition, IDisposable
 {
     private readonly ISpeechRecognitionEngine _engine;
     private readonly ILogger _logger;
@@ -19,6 +19,7 @@ internal class SpeechRecognition : ISpeechRecognition
     private TaskCompletionSource<bool> _yesNoTcs = new();
     private Channel<IRecognitionResult> _commandChannel = Channel.CreateUnbounded<IRecognitionResult>();
 
+    private readonly CancellationTokenSource _stopCts = new();
     private readonly object _lockObject = new();
     private int _listeningCount = 0;
 
@@ -28,19 +29,10 @@ internal class SpeechRecognition : ISpeechRecognition
         _logger = logger;
 
         _engine.SetInputToDefaultAudioDevice();
-        _engine.UnloadAllGrammars();
 
-        _attentionGrammar = grammarProvider.LoadAttentionGrammar();
-        _attentionGrammar.Enabled = false;
-        _engine.LoadGrammar(_attentionGrammar);
-
-        _commandsGrammar = grammarProvider.LoadCommandsGrammar();
-        _commandsGrammar.Enabled = false;
-        _engine.LoadGrammar(_commandsGrammar);
-
-        _yesNoGrammar = grammarProvider.LoadYesNoGrammar();
-        _yesNoGrammar.Enabled = false;
-        _engine.LoadGrammar(_yesNoGrammar);
+        _attentionGrammar = LoadGrammar(grammarProvider.LoadAttentionGrammar);
+        _commandsGrammar = LoadGrammar(grammarProvider.LoadCommandsGrammar);
+        _yesNoGrammar = LoadGrammar(grammarProvider.LoadYesNoGrammar);
 
         _engine.SpeechRecognized += OnSpeechRecognized;
         _engine.RecognitionError += OnRecognitionError;
@@ -99,6 +91,8 @@ internal class SpeechRecognition : ISpeechRecognition
 
     async Task ISpeechRecognition.ListenForAttention(CancellationToken cancellationToken)
     {
+        cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
+
         Task attentionTask = ResetAttentionTask(cancellationToken);
 
         await StartAndStopListening(_attentionGrammar, attentionTask);
@@ -118,6 +112,8 @@ internal class SpeechRecognition : ISpeechRecognition
 
     async Task<bool> ISpeechRecognition.ListenForYesNo(CancellationToken cancellationToken)
     {
+        cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
+
         Task<bool> yesNoTask = ResetYesNoTask(cancellationToken);
 
         await StartAndStopListening(_yesNoGrammar, yesNoTask);
@@ -145,6 +141,8 @@ internal class SpeechRecognition : ISpeechRecognition
 
     IAsyncEnumerable<IRecognitionResult> ISpeechRecognition.ListenForCommands(CancellationToken cancellationToken)
     {
+        cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
+
         Channel<IRecognitionResult> resultChannel = ResetCommandChannel(cancellationToken);
 
         _ = StartAndStopListeningToChannel(resultChannel);
@@ -198,6 +196,37 @@ internal class SpeechRecognition : ISpeechRecognition
         }
     }
 
+    private Grammar LoadGrammar(Func<Grammar> loader)
+    {
+        string grammarName = "Name not loaded";
+        try
+        {
+            Grammar grammar = loader();
+            grammarName = grammar.Name;
+            grammar.Enabled = false;
+            _engine.LoadGrammar(grammar);
+            return grammar;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(Message.SpeechRecognition_GrammarFailedToLoad, grammarName, ex);
+            throw;
+        }
+    }
+
+    private void UnloadGrammar(Grammar grammar)
+    {
+        try
+        {
+            grammar.Enabled = false;
+            _engine.UnloadGrammar(grammar);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(Message.SpeechRecognition_GrammarFailedToUnload, grammar.Name, ex);
+        }
+    }
+
     private void EnableGrammar(Grammar grammar, bool enable)
     {
         try
@@ -233,5 +262,14 @@ internal class SpeechRecognition : ISpeechRecognition
                 _logger.LogError(Message.SpeechRecognition_ErrorInStopListening, ex);
             }
         }
+    }
+
+    public void Dispose()
+    {
+        _stopCts.Cancel();
+
+        UnloadGrammar(_attentionGrammar);
+        UnloadGrammar(_yesNoGrammar);
+        UnloadGrammar(_commandsGrammar);
     }
 }
