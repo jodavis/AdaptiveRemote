@@ -168,9 +168,8 @@ internal class SpeechRecognition : ISpeechRecognition
         }
     }
 
-    private ChannelReader<IRecognitionResult> ResetCommandChannel(CancellationToken cancellationToken)
+    private Channel<IRecognitionResult> ResetCommandChannel(CancellationToken cancellationToken)
     {
-        ChannelReader<IRecognitionResult> resultReader;
         lock (_lockObject)
         {
             EnsureCanReset(_commandChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommands));
@@ -182,36 +181,42 @@ internal class SpeechRecognition : ISpeechRecognition
                 AllowSynchronousContinuations = true,
             });
             cancellationToken.Register(() => _commandChannel.Writer.TryComplete(new TaskCanceledException()));
-            resultReader = _commandChannel.Reader;
         }
 
-        return resultReader;
+        return _commandChannel;
     }
 
     IAsyncEnumerable<IRecognitionResult> ISpeechRecognition.ListenForCommands(CancellationToken cancellationToken)
     {
-        return Enumerate(ResetCommandChannel(cancellationToken));
+        Channel<IRecognitionResult> resultChannel = ResetCommandChannel(cancellationToken);
 
-        async IAsyncEnumerable<IRecognitionResult> Enumerate(ChannelReader<IRecognitionResult> resultReader)
+        _ = StartAndStopListening(resultChannel);
+
+        return resultChannel.Reader.ReadAllAsync(cancellationToken);
+
+        async Task StartAndStopListening(Channel<IRecognitionResult> resultChannel)
         {
             try
             {
                 EnableGrammar(_commandsGrammar, true);
                 StartListening();
 
-                await foreach (IRecognitionResult result in resultReader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    yield return result;
-                }
+                await resultChannel.Reader.Completion;
+            }
+            catch (OperationCanceledException ex)
+            {
+                _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod,
+                    nameof(ISpeechRecognition.ListenForCommands));
+                resultChannel.Writer.TryComplete(ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(Message.SpeechRecognition_ErrorInListeningMethod,
+                    nameof(ISpeechRecognition.ListenForCommands), ex);
+                resultChannel.Writer.TryComplete(ex);
             }
             finally
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod,
-                        nameof(ISpeechRecognition.ListenForCommands));
-                }
-
                 StopListening();
                 EnableGrammar(_commandsGrammar, false);
             }

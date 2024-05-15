@@ -57,7 +57,10 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
                     string.Join("\n", missingMessages));
             }
 
-            StringAssert.StartsWith($"\n{actualIter.Current}", $"\n{expectedIter.Current}", "MockLogger.Messages[{0}]", count);
+            if (!actualIter.Current.StartsWith(expectedIter.Current))
+            {
+                Assert.AreEqual($"\n{actualIter.Current}", $"\n{expectedIter.Current}", "MockLogger.Messages[{0}]", count);
+            }
 
             count++;
         }
