@@ -1,4 +1,5 @@
-﻿using System.Speech.Recognition;
+﻿using System.Runtime.CompilerServices;
+using System.Speech.Recognition;
 using System.Threading.Channels;
 using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
@@ -100,30 +101,7 @@ internal class SpeechRecognition : ISpeechRecognition
     {
         Task attentionTask = ResetAttentionTask(cancellationToken);
 
-        try
-        {
-            EnableGrammar(_attentionGrammar, true);
-            StartListening();
-
-            await attentionTask;
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod,
-                nameof(ISpeechRecognition.ListenForAttention));
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(Message.SpeechRecognition_ErrorInListeningMethod,
-                nameof(ISpeechRecognition.ListenForAttention), ex);
-            throw;
-        }
-        finally
-        {
-            StopListening();
-            EnableGrammar(_attentionGrammar, false);
-        }
+        await StartAndStopListening(_attentionGrammar, attentionTask);
     }
 
     private Task<bool> ResetYesNoTask(CancellationToken cancellationToken)
@@ -142,30 +120,9 @@ internal class SpeechRecognition : ISpeechRecognition
     {
         Task<bool> yesNoTask = ResetYesNoTask(cancellationToken);
 
-        try
-        {
-            EnableGrammar(_yesNoGrammar, true);
-            StartListening();
+        await StartAndStopListening(_yesNoGrammar, yesNoTask);
 
-            return await yesNoTask;
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod,
-                nameof(ISpeechRecognition.ListenForYesNo));
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(Message.SpeechRecognition_ErrorInListeningMethod,
-                nameof(ISpeechRecognition.ListenForYesNo), ex);
-            throw;
-        }
-        finally
-        {
-            StopListening();
-            EnableGrammar(_yesNoGrammar, false);
-        }
+        return yesNoTask.Result;
     }
 
     private Channel<IRecognitionResult> ResetCommandChannel(CancellationToken cancellationToken)
@@ -190,36 +147,46 @@ internal class SpeechRecognition : ISpeechRecognition
     {
         Channel<IRecognitionResult> resultChannel = ResetCommandChannel(cancellationToken);
 
-        _ = StartAndStopListening(resultChannel);
+        _ = StartAndStopListeningToChannel(resultChannel);
 
         return resultChannel.Reader.ReadAllAsync(cancellationToken);
 
-        async Task StartAndStopListening(Channel<IRecognitionResult> resultChannel)
+        async Task StartAndStopListeningToChannel(Channel<IRecognitionResult> resultChannel)
         {
             try
             {
-                EnableGrammar(_commandsGrammar, true);
-                StartListening();
-
-                await resultChannel.Reader.Completion;
-            }
-            catch (OperationCanceledException ex)
-            {
-                _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod,
-                    nameof(ISpeechRecognition.ListenForCommands));
-                resultChannel.Writer.TryComplete(ex);
+                await StartAndStopListening(_commandsGrammar, resultChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommands));
             }
             catch (Exception ex)
             {
-                _logger.LogError(Message.SpeechRecognition_ErrorInListeningMethod,
-                    nameof(ISpeechRecognition.ListenForCommands), ex);
                 resultChannel.Writer.TryComplete(ex);
             }
-            finally
-            {
-                StopListening();
-                EnableGrammar(_commandsGrammar, false);
-            }
+        }
+    }
+
+    private async Task StartAndStopListening(Grammar grammar, Task listenTask, [CallerMemberName] string methodName = "Undefined")
+    {
+        try
+        {
+            EnableGrammar(grammar, true);
+            StartListening();
+
+            await listenTask;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod, methodName);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(Message.SpeechRecognition_ErrorInListeningMethod, methodName, ex);
+            throw;
+        }
+        finally
+        {
+            StopListening();
+            EnableGrammar(grammar, false);
         }
     }
 
