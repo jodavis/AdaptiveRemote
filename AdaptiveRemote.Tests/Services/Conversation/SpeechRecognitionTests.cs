@@ -1,6 +1,7 @@
 ﻿using System.Speech.Recognition;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.TestUtilities;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace AdaptiveRemote.Services.Conversation;
@@ -13,12 +14,14 @@ public class SpeechRecognitionTests
     private readonly MockLogger<SpeechRecognition> MockLogger = new();
     private readonly Mock<ISpeechRecognitionEngine> MockEngine = new();
     private readonly Mock<IGrammarProvider> MockGrammarProvider = new();
+    private readonly Mock<IOptionsSnapshot<ConversationSettings>> MockSettings = new();
+    private readonly ConversationSettings Settings = new();
 
     private readonly Grammar MockAttentionGrammar = new(new GrammarBuilder("Attention")) { Name = nameof(MockAttentionGrammar) };
     private readonly Grammar MockCommandsGrammar = new(new GrammarBuilder("Commands")) { Name = nameof(MockCommandsGrammar) };
     private readonly Grammar MockYesNoGrammar = new(new GrammarBuilder("YesNo")) { Name = nameof(MockYesNoGrammar) };
 
-    private ISpeechRecognition CreateSut() => new SpeechRecognition(MockEngine.Object, MockGrammarProvider.Object, MockLogger);
+    private ISpeechRecognition CreateSut() => new SpeechRecognition(MockSettings.Object, MockEngine.Object, MockGrammarProvider.Object, MockLogger);
 
     public TestContext? TestContext { get; set; }
 
@@ -65,6 +68,11 @@ public class SpeechRecognitionTests
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Never);
+
+        MockSettings
+            .SetupGet(x => x.Value)
+            .Returns(Settings)
+            .Verifiable(Times.Once);
 
         MockLogger.OutputWriter = TestContext;
     }
@@ -1106,6 +1114,128 @@ public class SpeechRecognitionTests
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar.Name),
             Expected_ErrorInListenForCommands(expectedException),
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+    }
+
+    [TestMethod]
+    public async Task SpeechRecognition_ListenForCommandsAsync_BuffersDefaultNumberOfCommands()
+    {
+        // Arrange
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
+        Assert.IsNotNull(resultEnum, nameof(resultEnum));
+
+        const int extraCommandsCount = 3;
+
+        for (int i = 0; i < Settings.CommandBufferSize + extraCommandsCount; i++)
+        {
+            Mock<IRecognitionResult> mockResult = new();
+            mockResult
+                .SetupGet(x => x.SemanticMeaning)
+                .Returns($"Command:ChannelUp{i}");
+
+            EventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+            MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
+        }
+
+        Mock<IRecognitionResult> mockStopListeningResult = new();
+        mockStopListeningResult
+            .SetupGet(x => x.SemanticMeaning)
+            .Returns("STOPLISTENING");
+
+        EventArgs stopListeningEventArgs = new RecognitionResultEventArgs(mockStopListeningResult.Object);
+        MockEngine.Raise(x => x.SpeechRecognized -= null, stopListeningEventArgs);
+
+        int resultCount = 0;
+
+        // Act
+        await foreach (IRecognitionResult result in resultEnum)
+        {
+            for (int i = 0; i < extraCommandsCount; i++)
+            {
+                Assert.AreNotEqual($"Command:ChannelUp{i}", result.SemanticMeaning, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
+            }
+
+            resultCount++;
+        }
+
+        // Assert
+        Assert.AreEqual(Settings.CommandBufferSize, resultCount);
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_Listening(true),
+            Expected_Listening(false),
+            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+    }
+
+    [TestMethod]
+    public async Task SpeechRecognition_ListenForCommandsAsync_BuffersConfiguredNumberOfCommands()
+    {
+        // Arrange
+        Settings.CommandBufferSize = 10;
+
+        ISpeechRecognition sut = CreateSut();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
+        Assert.IsNotNull(resultEnum, nameof(resultEnum));
+
+        const int extraCommandsCount = 3;
+
+        for (int i = 0; i < Settings.CommandBufferSize + extraCommandsCount; i++)
+        {
+            Mock<IRecognitionResult> mockResult = new();
+            mockResult
+                .SetupGet(x => x.SemanticMeaning)
+                .Returns($"Command:ChannelUp{i}");
+
+            EventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+            MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
+        }
+
+        Mock<IRecognitionResult> mockStopListeningResult = new();
+        mockStopListeningResult
+            .SetupGet(x => x.SemanticMeaning)
+            .Returns("STOPLISTENING");
+
+        EventArgs stopListeningEventArgs = new RecognitionResultEventArgs(mockStopListeningResult.Object);
+        MockEngine.Raise(x => x.SpeechRecognized -= null, stopListeningEventArgs);
+
+        int resultCount = 0;
+
+        // Act
+        await foreach (IRecognitionResult result in resultEnum)
+        {
+            for (int i = 0; i < extraCommandsCount; i++)
+            {
+                Assert.AreNotEqual($"Command:ChannelUp{i}", result.SemanticMeaning, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
+            }
+
+            resultCount++;
+        }
+
+        // Assert
+        Assert.AreEqual(Settings.CommandBufferSize, resultCount);
+
+        MockLogger.VerifyMessages(
+            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_Listening(true),
             Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar.Name));
     }

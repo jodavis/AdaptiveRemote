@@ -3,6 +3,7 @@ using System.Speech.Recognition;
 using System.Threading.Channels;
 using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
 
@@ -10,6 +11,7 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
 {
     private readonly ISpeechRecognitionEngine _engine;
     private readonly ILogger _logger;
+    private readonly ConversationSettings _settings;
 
     private readonly Grammar _attentionGrammar;
     private readonly Grammar _yesNoGrammar;
@@ -23,10 +25,11 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
     private readonly object _lockObject = new();
     private int _listeningCount = 0;
 
-    public SpeechRecognition(ISpeechRecognitionEngine engine, IGrammarProvider grammarProvider, ILogger<SpeechRecognition> logger)
+    public SpeechRecognition(IOptionsSnapshot<ConversationSettings> settings, ISpeechRecognitionEngine engine, IGrammarProvider grammarProvider, ILogger<SpeechRecognition> logger)
     {
         _engine = engine;
         _logger = logger;
+        _settings = settings.Value;
 
         _engine.SetInputToDefaultAudioDevice();
 
@@ -126,8 +129,7 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         lock (_lockObject)
         {
             EnsureCanReset(_commandChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommandsAsync));
-            // TODO: Make channel bounds configurable
-            _commandChannel = Channel.CreateBounded<IRecognitionResult>(new BoundedChannelOptions(2)
+            _commandChannel = Channel.CreateBounded<IRecognitionResult>(new BoundedChannelOptions(_settings.CommandBufferSize)
             {
                 SingleReader = true,
                 FullMode = BoundedChannelFullMode.DropOldest,
