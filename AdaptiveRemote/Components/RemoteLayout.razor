@@ -4,15 +4,15 @@
         <CommandButton Command="@command" />
         break;
     case Models.LayoutGroup nestedGroup:
-        <div id="@nestedGroup.ID">
+        <div id="@nestedGroup.CSSID">
             @foreach (Models.RemoteLayoutElement element in nestedGroup.Elements)
             {
                 <RemoteLayout LayoutElement="@element" />
             }
         </div>
         break;
-    case Models.Listening listening:
-        <ListeningUI ViewModel="@listening" />
+    case Models.ConversationView conversation:
+        <ConversationUI ViewModel="@conversation" />
         break;
 }
 

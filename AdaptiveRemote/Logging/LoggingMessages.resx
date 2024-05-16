@@ -1,0 +1,254 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ConversationController_Error" xml:space="preserve">
+    <value>Error in speech recognition loop: {0}</value>
+    <comment>0=Exception message</comment>
+  </data>
+  <data name="ConversationController_ErrorDuringStartup" xml:space="preserve">
+    <value>Error initializing speech recognition: {0}</value>
+    <comment>0=Exception message</comment>
+  </data>
+  <data name="ConversationController_Executed" xml:space="preserve">
+    <value>Executed command '{0}'</value>
+    <comment>0=Command name</comment>
+  </data>
+  <data name="ConversationController_Executing" xml:space="preserve">
+    <value>Executing command '{0}'</value>
+    <comment>0=Command name</comment>
+  </data>
+  <data name="ConversationController_ListenForAttention" xml:space="preserve">
+    <value>Waiting for attention</value>
+  </data>
+  <data name="ConversationController_ListenForCommands" xml:space="preserve">
+    <value>Listening for commands</value>
+  </data>
+  <data name="ConversationController_Recognized" xml:space="preserve">
+    <value>Recognized '{0}' as '{1}'</value>
+    <comment>0=Result text,1=Semantic meaning</comment>
+  </data>
+  <data name="ConversationController_Retrying" xml:space="preserve">
+    <value>Restarting after {0} error(s)</value>
+    <comment>0=the number of errors</comment>
+  </data>
+  <data name="ConversationController_RetryLimitReached" xml:space="preserve">
+    <value>Not restarting after {0} error(s)</value>
+    <comment>0=the number of errors</comment>
+  </data>
+  <data name="ConversationController_Stopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="ConversationController_Stopping" xml:space="preserve">
+    <value>Stopping</value>
+  </data>
+  <data name="ConversationController_UnknownCommand" xml:space="preserve">
+    <value>Recognized an unknown command: {0}</value>
+    <comment>0=Speech that was recognized but did not map to a command</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_AudioSignalProblemOccurred" xml:space="preserve">
+    <value>AudioSignalProblemOccurred:{0} at {3} ({1}) with AudioLevel:{2}</value>
+    <comment>0=Code for the audio problem that occurred;1=Recognizer position in the audio stream;2=Audio level at time of error;3=Position in the audio stream</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_AudioStateChanged" xml:space="preserve">
+    <value>AudioState:{0}</value>
+    <comment>0=New value fromt he AudioState enum</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_Detected" xml:space="preserve">
+    <value>Detected: {0}</value>
+    <comment>0=Recognition result</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_Hypothesized" xml:space="preserve">
+    <value>Hypothesized: {0}</value>
+    <comment>0=Recognition result</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_LoadGrammarCompleted" xml:space="preserve">
+    <value>Loaded Grammar {1}\n   Cancelled:{2}\n   Error: {0}</value>
+    <comment>0=Error that occurred, if any;1=Grammar name;2=True if load was cancelled</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_RecognitionRejected" xml:space="preserve">
+    <value>Recognition rejected: {0}</value>
+    <comment>0=Recognition result</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_RecognizeCompleted" xml:space="preserve">
+    <value>Recognize completed: InputStreamEnded:{0} Cancelled:{1} BabbleTimeout:{2} InitialSilenceTimeout:{4}
+   Result:{5}
+   Error{3}</value>
+    <comment>0-5=Data values from the event args</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_Recognized" xml:space="preserve">
+    <value>Recognized {0}</value>
+    <comment>0=Recognition result</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_UpdateReached" xml:space="preserve">
+    <value>Recognizer update reached at {0} ({1})</value>
+    <comment>0=Position in the audio stream,1=UserToken</comment>
+  </data>
+  <data name="SpeechRecognition_CancelledListeningMethod" xml:space="preserve">
+    <value>{0} was cancelled.</value>
+    <comment>0=Cancelled method</comment>
+  </data>
+  <data name="SpeechRecognition_ErrorInListeningMethod" xml:space="preserve">
+    <value>An error occurred in {0}
+{1}</value>
+    <comment>0=Failed method;1=Exception</comment>
+  </data>
+  <data name="SpeechRecognition_ErrorInStopListening" xml:space="preserve">
+    <value>An error occured while stopping the listening engine
+{0}</value>
+    <comment>0=Exception</comment>
+  </data>
+  <data name="SpeechRecognition_GrammarEnabled" xml:space="preserve">
+    <value>{0}.Enabled={1}</value>
+    <comment>0=Grammar name;1=True/False</comment>
+  </data>
+  <data name="SpeechRecognition_GrammarFailedToLoad" xml:space="preserve">
+    <value>Failed to load '{0}'
+{1}</value>
+    <comment>0=Name of grammar that failed to load,1=Exception</comment>
+  </data>
+  <data name="SpeechRecognition_GrammarFailedToUnload" xml:space="preserve">
+    <value>Failed to unload '{0}'
+{1}</value>
+    <comment>0=Name of grammar that failed to unload,1=Exception</comment>
+  </data>
+  <data name="SpeechRecognition_Listening" xml:space="preserve">
+    <value>Listening={0}</value>
+    <comment>0=True/false</comment>
+  </data>
+  <data name="SpeechRecognition_ListeningMethodAlreadyInProgress" xml:space="preserve">
+    <value>{0} is already in progress</value>
+    <comment>0=Name of the method that was called twice</comment>
+  </data>
+  <data name="SpeechRecognition_RecognitionError" xml:space="preserve">
+    <value>Recognition Error: {0}</value>
+    <comment>0=Error message</comment>
+  </data>
+  <data name="SpeechSynthesis_Saying" xml:space="preserve">
+    <value>Saying '{0}'</value>
+    <comment>0=Phrase to be spoken</comment>
+  </data>
+  <data name="SpeechSynthesis_SelectedVoice" xml:space="preserve">
+    <value>Selected voice '{0}'</value>
+    <comment>0=Name of the selected voice</comment>
+  </data>
+  <data name="SpeechSynthesis_VoiceNotFound" xml:space="preserve">
+    <value>Voice not found: '{0}'</value>
+    <comment>0=Name of the missing voice</comment>
+  </data>
+</root>

@@ -12,15 +12,17 @@ internal class CommandExecutionService : ICommandExecutionService
         _logger = logger;
     }
 
-    Task ICommandExecutionService.ExecuteAsync(Command command, CancellationToken cancellationToken)
+    async Task ICommandExecutionService.ExecuteAsync(Command command, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Executing {Name} {ID}", command.GetType().Name, command.ID);
+        _logger.LogInformation("Executing {Name} {ID}", command.GetType().Name, command.CSSID);
 
-        if (command is ExitCommand)
+        if (command is ApplicationCommand)
         {
             System.Windows.Application.Current.Shutdown();
         }
 
-        return Task.CompletedTask;
+        command.IsActive = true;
+        await Task.Delay(600, cancellationToken);
+        command.IsActive = false;
     }
 }
