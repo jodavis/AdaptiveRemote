@@ -14,7 +14,7 @@ public class MvvmObject : INotifyPropertyChanging, INotifyPropertyChanged
 
     public PropertyType GetValue<PropertyType>(MvvmProperty<PropertyType> property)
     {
-        if (!_values.TryGetValue(property, out object? value))
+        if (!_values.TryGetValue(property, out object? value) || value is null)
         {
             return property.DefaultValue;
         }
