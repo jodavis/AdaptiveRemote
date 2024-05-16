@@ -118,7 +118,7 @@ internal class ConversationController : IConversationController, IDisposable
 
         while (true)
         {
-            await ListenForAttention(cancellationToken);
+            await ListenForAttentionAsync(cancellationToken);
 
             await foreach (IRecognitionResult result in ListenForCommandsAsync(cancellationToken))
             {
@@ -127,7 +127,7 @@ internal class ConversationController : IConversationController, IDisposable
                 if (result.SemanticMeaning.StartsWith(CommandPrefix) &&
                     commands.TryGetValue(result.SemanticMeaning.Substring(CommandPrefix.Length), out Command? command))
                 {
-                    await ExecuteCommand(command, cancellationToken);
+                    await ExecuteCommandAsync(command, cancellationToken);
                 }
                 else
                 {
@@ -137,12 +137,12 @@ internal class ConversationController : IConversationController, IDisposable
         }
     }
 
-    private async Task ListenForAttention(CancellationToken cancellationToken)
+    private async Task ListenForAttentionAsync(CancellationToken cancellationToken)
     {
         _viewModel.StatusMessage = Phrases.Speech_ListeningForAttention;
         _logger.LogInformation(Message.ConversationController_ListenForAttention);
 
-        await _speechRecognition.ListenForAttention(cancellationToken);
+        await _speechRecognition.ListenForAttentionAsync(cancellationToken);
     }
 
     private async IAsyncEnumerable<IRecognitionResult> ListenForCommandsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -154,7 +154,7 @@ internal class ConversationController : IConversationController, IDisposable
             _speechSynthesis.Say(Phrases.Speech_ImListening);
             _logger.LogInformation(Message.ConversationController_ListenForCommands);
 
-            await foreach (IRecognitionResult result in _speechRecognition.ListenForCommands(cancellationToken))
+            await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
             {
                 yield return result;
 
@@ -170,7 +170,7 @@ internal class ConversationController : IConversationController, IDisposable
         }
     }
 
-    private async Task ExecuteCommand(Command command, CancellationToken cancellationToken)
+    private async Task ExecuteCommandAsync(Command command, CancellationToken cancellationToken)
     {
         _speechSynthesis.Say(Phrases.Speech_Sending(command.Name));
         _viewModel.StatusMessage = Phrases.Speech_ImSending;

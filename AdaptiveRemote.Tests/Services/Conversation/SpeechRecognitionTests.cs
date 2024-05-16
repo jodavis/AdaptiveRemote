@@ -89,23 +89,23 @@ public class SpeechRecognitionTests
     private static string Expected_RecognitionError(string error)
         => $"Error[302]: {string.Format(LoggingMessages.SpeechRecognition_RecognitionError, error)}";
     private static string Expected_ErrorInListenForAttention(Exception error)
-        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForAttention), $"{error.GetType().FullName}: {error.Message}")}";
+        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForAttentionAsync), $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_ErrorInListenForCommands(Exception error)
-        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForCommands), $"{error.GetType().FullName}: {error.Message}")}";
+        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForCommandsAsync), $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_ErrorInListenForYesNo(Exception error)
-        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForYesNo), $"{error.GetType().FullName}: {error.Message}")}";
+        => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForYesNoAsync), $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_CancelledListenForAttention
-        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForAttention))}";
+        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForAttentionAsync))}";
     private static string Expected_CancelledListenForCommands
-        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForCommands))}";
+        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForCommandsAsync))}";
     private static string Expected_CancelledListenForYesNo
-        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForYesNo))}";
+        => $"Information[303]: {string.Format(LoggingMessages.SpeechRecognition_CancelledListeningMethod, nameof(ISpeechRecognition.ListenForYesNoAsync))}";
     private static string Expected_ListenForAttentionAlreadyInProgress
-        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForAttention))}";
+        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForAttentionAsync))}";
     private static string Expected_ListenForCommandsAlreadyInProgress
-        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForCommands))}";
+        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForCommandsAsync))}";
     private static string Expected_ListenForYesNoAlreadyInProgress
-        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForYesNo))}";
+        => $"Error[308]: {string.Format(LoggingMessages.SpeechRecognition_ListeningMethodAlreadyInProgress, nameof(ISpeechRecognition.ListenForYesNoAsync))}";
 
     [TestMethod]
     public void SpeechRecognition_Constructor_LoadsAndDisablesGrammars()
@@ -120,7 +120,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForAttention_WaitsForAttentionPhrase()
+    public void SpeechRecognition_ListenForAttentionAsync_WaitsForAttentionPhrase()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -130,7 +130,7 @@ public class SpeechRecognitionTests
             .Verifiable(Times.Once);
 
         // Act
-        Task resultTask = sut.ListenForAttention(CancellationToken.None);
+        Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
         // Assert
         TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
@@ -144,7 +144,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForAttention_ReturnsFaultedOnRecognitionError()
+    public void SpeechRecognition_ListenForAttentionAsync_ReturnsFaultedOnRecognitionError()
     {
         // Arrange
         const string expectedErrorMessage = "What just happened?";
@@ -159,7 +159,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        Task resultTask = sut.ListenForAttention(CancellationToken.None);
+        Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
         // Act
         MockEngine.Raise(x => x.RecognitionError -= null, new RecognitionErrorEventArgs(expectedErrorMessage));
@@ -180,7 +180,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForAttention_StopsWaitingWhenCancelled()
+    public void SpeechRecognition_ListenForAttentionAsync_StopsWaitingWhenCancelled()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -193,7 +193,7 @@ public class SpeechRecognitionTests
             .Verifiable(Times.Once);
 
         CancellationTokenSource cts = new();
-        Task resultTask = sut.ListenForAttention(cts.Token);
+        Task resultTask = sut.ListenForAttentionAsync(cts.Token);
 
         // Act
         cts.Cancel();
@@ -213,7 +213,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForAttention_ThrowsIfAlreadyWaitingForAttention()
+    public void SpeechRecognition_ListenForAttentionAsync_ThrowsIfAlreadyWaitingForAttention()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -222,13 +222,13 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        _ = sut.ListenForAttention(CancellationToken.None);
+        _ = sut.ListenForAttentionAsync(CancellationToken.None);
 
         // Act
-        Task resultTask = sut.ListenForAttention(CancellationToken.None);
+        Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
         // Assert
-        TaskAssert.IsFaulted(resultTask, new InvalidOperationException("ListenForAttention is already in progress"), nameof(resultTask));
+        TaskAssert.IsFaulted(resultTask, new InvalidOperationException("ListenForAttentionAsync is already in progress"), nameof(resultTask));
         Assert.IsTrue(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -240,7 +240,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForAttention_CompletesAndStopsListeningWhenAttentionPhraseDetected()
+    public void SpeechRecognition_ListenForAttentionAsync_CompletesAndStopsListeningWhenAttentionPhraseDetected()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -252,7 +252,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        Task resultTask = sut.ListenForAttention(CancellationToken.None);
+        Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
         Mock<IRecognitionResult> mockResult = new();
         mockResult
@@ -276,7 +276,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForAttention_CanCallAgainAfterComplete()
+    public void SpeechRecognition_ListenForAttentionAsync_CanCallAgainAfterComplete()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -288,7 +288,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        _ = sut.ListenForAttention(CancellationToken.None);
+        _ = sut.ListenForAttentionAsync(CancellationToken.None);
 
         Mock<IRecognitionResult> mockResult = new();
         mockResult
@@ -298,7 +298,7 @@ public class SpeechRecognitionTests
         MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
 
         // Act
-        Task resultTask = sut.ListenForAttention(CancellationToken.None);
+        Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
         // Assert
         TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
@@ -316,7 +316,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForAttention_SecondEventDoesNothing()
+    public void SpeechRecognition_ListenForAttentionAsync_SecondEventDoesNothing()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -328,7 +328,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        Task resultTask = sut.ListenForAttention(CancellationToken.None);
+        Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
         Mock<IRecognitionResult> mockResult = new();
         mockResult
@@ -354,7 +354,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForAttention_StopsListeningOnError()
+    public void SpeechRecognition_ListenForAttentionAsync_StopsListeningOnError()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -369,7 +369,7 @@ public class SpeechRecognitionTests
             .Verifiable(Times.Once);
 
         // Act
-        Task resultTask = sut.ListenForAttention(CancellationToken.None);
+        Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
         // Assert
         TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
@@ -385,7 +385,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_WaitsForYesOrNo()
+    public void SpeechRecognition_ListenForYesNoAsync_WaitsForYesOrNo()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -395,7 +395,7 @@ public class SpeechRecognitionTests
             .Verifiable(Times.Once);
 
         // Act
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
         // Assert
         TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
@@ -409,7 +409,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_ReturnsFaultedOnRecognitionError()
+    public void SpeechRecognition_ListenForYesNoAsync_ReturnsFaultedOnRecognitionError()
     {
         // Arrange
         const string expectedErrorMessage = "What just happened?";
@@ -424,7 +424,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
         // Act
         MockEngine.Raise(x => x.RecognitionError -= null, new RecognitionErrorEventArgs(expectedErrorMessage));
@@ -445,7 +445,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_StopsWaitingWhenCancelled()
+    public void SpeechRecognition_ListenForYesNoAsync_StopsWaitingWhenCancelled()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -458,7 +458,7 @@ public class SpeechRecognitionTests
             .Verifiable(Times.Once);
 
         CancellationTokenSource cts = new();
-        Task<bool> resultTask = sut.ListenForYesNo(cts.Token);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(cts.Token);
 
         // Act
         cts.Cancel();
@@ -478,7 +478,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_ThrowsIfAlreadyWaitingForYesNo()
+    public void SpeechRecognition_ListenForYesNoAsync_ThrowsIfAlreadyWaitingForYesNo()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -487,13 +487,13 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        _ = sut.ListenForYesNo(CancellationToken.None);
+        _ = sut.ListenForYesNoAsync(CancellationToken.None);
 
         // Act
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
         // Assert
-        TaskAssert.IsFaulted(resultTask, new InvalidOperationException("ListenForYesNo is already in progress"), nameof(resultTask));
+        TaskAssert.IsFaulted(resultTask, new InvalidOperationException("ListenForYesNoAsync is already in progress"), nameof(resultTask));
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -505,7 +505,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_CompletesAndStopsListeningWhenYesDetected()
+    public void SpeechRecognition_ListenForYesNoAsync_CompletesAndStopsListeningWhenYesDetected()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -517,7 +517,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
         Mock<IRecognitionResult> mockResult = new();
         mockResult
@@ -543,7 +543,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_CompletesAndStopsListeningWhenNoDetected()
+    public void SpeechRecognition_ListenForYesNoAsync_CompletesAndStopsListeningWhenNoDetected()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -555,7 +555,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
         Mock<IRecognitionResult> mockResult = new();
         mockResult
@@ -581,7 +581,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_DoesNotCompleteWhenYesOrNoNotDetected()
+    public void SpeechRecognition_ListenForYesNoAsync_DoesNotCompleteWhenYesOrNoNotDetected()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -590,7 +590,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
         Mock<IRecognitionResult> mockResult = new();
         mockResult
@@ -614,7 +614,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_CanCallAgainAfterComplete()
+    public void SpeechRecognition_ListenForYesNoAsync_CanCallAgainAfterComplete()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -626,7 +626,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        _ = sut.ListenForYesNo(CancellationToken.None);
+        _ = sut.ListenForYesNoAsync(CancellationToken.None);
 
         Mock<IRecognitionResult> mockResult = new();
         mockResult
@@ -635,7 +635,7 @@ public class SpeechRecognitionTests
         MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
 
         // Act
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
         // Assert
         TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
@@ -653,7 +653,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_SecondAttemptDoesNothing()
+    public void SpeechRecognition_ListenForYesNoAsync_SecondAttemptDoesNothing()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -670,7 +670,7 @@ public class SpeechRecognitionTests
             .SetupGet(x => x.SemanticMeaning)
             .Returns("NO");
 
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
         MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
 
         // Act
@@ -690,7 +690,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForYesNo_StopsListeningOnError()
+    public void SpeechRecognition_ListenForYesNoAsync_StopsListeningOnError()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -705,7 +705,7 @@ public class SpeechRecognitionTests
             .Verifiable(Times.Once);
 
         // Act
-        Task<bool> resultTask = sut.ListenForYesNo(CancellationToken.None);
+        Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
         // Assert
         TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
@@ -721,7 +721,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_MoveNextAsync_WaitsForCommand()
+    public void SpeechRecognition_ListenForCommandsAsync_MoveNextAsync_WaitsForCommand()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -730,7 +730,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -750,7 +750,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_ReturnsFaultedOnRecognitionError()
+    public void SpeechRecognition_ListenForCommandsAsync_ReturnsFaultedOnRecognitionError()
     {
         // Arrange
         const string expectedErrorMessage = "What just happened?";
@@ -765,7 +765,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -791,7 +791,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_StopsWaitingWhenCancelled()
+    public void SpeechRecognition_ListenForCommandsAsync_StopsWaitingWhenCancelled()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -805,7 +805,7 @@ public class SpeechRecognitionTests
 
         CancellationTokenSource cts = new();
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(cts.Token);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(cts.Token);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -830,7 +830,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_ThrowsIfAlreadyWaitingForCommands()
+    public void SpeechRecognition_ListenForCommandsAsync_ThrowsIfAlreadyWaitingForCommands()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -839,19 +839,19 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        _ = sut.ListenForCommands(CancellationToken.None);
+        _ = sut.ListenForCommandsAsync(CancellationToken.None);
 
         try
         {
             // Act
-            _ = sut.ListenForCommands(CancellationToken.None);
+            _ = sut.ListenForCommandsAsync(CancellationToken.None);
 
             // Assert
             Assert.Fail("Expected exception was not thrown");
         }
         catch (InvalidOperationException result)
         {
-            Assert.AreEqual("ListenForCommands is already in progress", result.Message, nameof(result) + ".Message");
+            Assert.AreEqual("ListenForCommandsAsync is already in progress", result.Message, nameof(result) + ".Message");
         }
 
         // Assert
@@ -866,7 +866,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_MoveNextAsync_CompletesWhenCommandDetected()
+    public void SpeechRecognition_ListenForCommandsAsync_MoveNextAsync_CompletesWhenCommandDetected()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -875,7 +875,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -905,7 +905,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_DoesNotCompleteWhenNonCommandDetected()
+    public void SpeechRecognition_ListenForCommandsAsync_DoesNotCompleteWhenNonCommandDetected()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -914,7 +914,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -943,7 +943,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_MoveNextAsync_CompletesWhenStopListeningDetected()
+    public void SpeechRecognition_ListenForCommandsAsync_MoveNextAsync_CompletesWhenStopListeningDetected()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -955,7 +955,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -986,7 +986,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_CanCallAgainAfterComplete()
+    public void SpeechRecognition_ListenForCommandsAsync_CanCallAgainAfterComplete()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -998,7 +998,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -1015,7 +1015,7 @@ public class SpeechRecognitionTests
         TaskAssert.ResultEquals(firstTask, false, ResultTimeout, nameof(firstTask));
 
         // Act
-        ValueTask<bool> resultTask = sut.ListenForCommands(CancellationToken.None).GetAsyncEnumerator().MoveNextAsync();
+        ValueTask<bool> resultTask = sut.ListenForCommandsAsync(CancellationToken.None).GetAsyncEnumerator().MoveNextAsync();
 
         // Assert
         TaskAssert.IsNotComplete(resultTask, ResultTimeout, nameof(resultTask));
@@ -1033,7 +1033,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_SecondEventIsAlsoReturned()
+    public void SpeechRecognition_ListenForCommandsAsync_SecondEventIsAlsoReturned()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -1047,7 +1047,7 @@ public class SpeechRecognitionTests
             .SetupGet(x => x.SemanticMeaning)
             .Returns("Command:UP");
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -1075,7 +1075,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
-    public void SpeechRecognition_ListenForCommands_StopsListeningOnError()
+    public void SpeechRecognition_ListenForCommandsAsync_StopsListeningOnError()
     {
         // Arrange
         ISpeechRecognition sut = CreateSut();
@@ -1089,7 +1089,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
@@ -1120,11 +1120,11 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
         // Act
-        Task attentionTask = sut.ListenForAttention(CancellationToken.None);
-        Task<bool> yesNoTask = sut.ListenForYesNo(CancellationToken.None);
+        Task attentionTask = sut.ListenForAttentionAsync(CancellationToken.None);
+        Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
         // Assert
@@ -1152,10 +1152,10 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
-        Task attentionTask = sut.ListenForAttention(CancellationToken.None);
-        Task<bool> yesNoTask = sut.ListenForYesNo(CancellationToken.None);
+        Task attentionTask = sut.ListenForAttentionAsync(CancellationToken.None);
+        Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
         Mock<IRecognitionResult> mockResult = new();
@@ -1193,10 +1193,10 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
-        Task attentionTask = sut.ListenForAttention(CancellationToken.None);
-        Task<bool> yesNoTask = sut.ListenForYesNo(CancellationToken.None);
+        Task attentionTask = sut.ListenForAttentionAsync(CancellationToken.None);
+        Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
         Mock<IRecognitionResult> mockResult = new();
@@ -1234,10 +1234,10 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
-        Task attentionTask = sut.ListenForAttention(CancellationToken.None);
-        Task<bool> yesNoTask = sut.ListenForYesNo(CancellationToken.None);
+        Task attentionTask = sut.ListenForAttentionAsync(CancellationToken.None);
+        Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
         Mock<IRecognitionResult> mockResult = new();
@@ -1274,10 +1274,10 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
-        Task attentionTask = sut.ListenForAttention(CancellationToken.None);
-        Task<bool> yesNoTask = sut.ListenForYesNo(CancellationToken.None);
+        Task attentionTask = sut.ListenForAttentionAsync(CancellationToken.None);
+        Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
         Mock<IRecognitionResult> mockResult = new();
@@ -1318,10 +1318,10 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommands(CancellationToken.None);
+        IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
-        Task attentionTask = sut.ListenForAttention(CancellationToken.None);
-        Task<bool> yesNoTask = sut.ListenForYesNo(CancellationToken.None);
+        Task attentionTask = sut.ListenForAttentionAsync(CancellationToken.None);
+        Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
         Mock<IRecognitionResult> mockCommandsResult = new();
@@ -1388,7 +1388,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
             .Verifiable(Times.Once);
 
-        Task attentionResult = sut.ListenForAttention(default);
+        Task attentionResult = sut.ListenForAttentionAsync(default);
 
         // Act
         ((IDisposable)sut).Dispose();
@@ -1433,7 +1433,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
             .Verifiable(Times.Once);
 
-        Task attentionResult = sut.ListenForAttention(default);
+        Task attentionResult = sut.ListenForAttentionAsync(default);
 
         // Act
         ((IDisposable)sut).Dispose();
@@ -1476,7 +1476,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
             .Verifiable(Times.Once);
 
-        Task yesNoResult = sut.ListenForYesNo(default);
+        Task yesNoResult = sut.ListenForYesNoAsync(default);
 
         // Act
         ((IDisposable)sut).Dispose();
@@ -1521,7 +1521,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
             .Verifiable(Times.Once);
 
-        Task yesNoResult = sut.ListenForYesNo(default);
+        Task yesNoResult = sut.ListenForYesNoAsync(default);
 
         // Act
         ((IDisposable)sut).Dispose();
@@ -1564,7 +1564,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommands(default);
+        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommandsAsync(default);
         ValueTask<bool> commandsResult = commandsEnum.GetAsyncEnumerator().MoveNextAsync();
 
         // Act
@@ -1610,7 +1610,7 @@ public class SpeechRecognitionTests
             .Throws(expectedException)
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommands(default);
+        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommandsAsync(default);
         ValueTask<bool> commandsResult = commandsEnum.GetAsyncEnumerator().MoveNextAsync();
 
         // Act
@@ -1654,10 +1654,10 @@ public class SpeechRecognitionTests
             .Setup(x => x.UnloadGrammar(MockCommandsGrammar))
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommands(default);
+        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommandsAsync(default);
         ValueTask<bool> commandsResult = commandsEnum.GetAsyncEnumerator().MoveNextAsync();
-        Task attentionResult = sut.ListenForAttention(default);
-        Task yesNoResult = sut.ListenForYesNo(default);
+        Task attentionResult = sut.ListenForAttentionAsync(default);
+        Task yesNoResult = sut.ListenForYesNoAsync(default);
 
         // Act
         ((IDisposable)sut).Dispose();
@@ -1712,10 +1712,10 @@ public class SpeechRecognitionTests
             .Throws(expectedException)
             .Verifiable(Times.Once);
 
-        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommands(default);
+        IAsyncEnumerable<IRecognitionResult> commandsEnum = sut.ListenForCommandsAsync(default);
         ValueTask<bool> commandsResult = commandsEnum.GetAsyncEnumerator().MoveNextAsync();
-        Task attentionResult = sut.ListenForAttention(default);
-        Task yesNoResult = sut.ListenForYesNo(default);
+        Task attentionResult = sut.ListenForAttentionAsync(default);
+        Task yesNoResult = sut.ListenForYesNoAsync(default);
 
         // Act
         ((IDisposable)sut).Dispose();

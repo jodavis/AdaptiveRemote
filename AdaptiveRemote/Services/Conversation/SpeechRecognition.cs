@@ -81,7 +81,7 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
     {
         lock (_lockObject)
         {
-            EnsureCanReset(_attentionTcs.Task, nameof(ISpeechRecognition.ListenForAttention));
+            EnsureCanReset(_attentionTcs.Task, nameof(ISpeechRecognition.ListenForAttentionAsync));
 
             _attentionTcs = new();
             cancellationToken.Register(() => _attentionTcs.TrySetCanceled());
@@ -89,20 +89,20 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         }
     }
 
-    async Task ISpeechRecognition.ListenForAttention(CancellationToken cancellationToken)
+    async Task ISpeechRecognition.ListenForAttentionAsync(CancellationToken cancellationToken)
     {
         cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
 
         Task attentionTask = ResetAttentionTask(cancellationToken);
 
-        await StartAndStopListening(_attentionGrammar, attentionTask);
+        await StartAndStopListeningAsync(_attentionGrammar, attentionTask);
     }
 
     private Task<bool> ResetYesNoTask(CancellationToken cancellationToken)
     {
         lock (_lockObject)
         {
-            EnsureCanReset(_yesNoTcs.Task, nameof(ISpeechRecognition.ListenForYesNo));
+            EnsureCanReset(_yesNoTcs.Task, nameof(ISpeechRecognition.ListenForYesNoAsync));
 
             _yesNoTcs = new();
             cancellationToken.Register(() => _yesNoTcs.TrySetCanceled());
@@ -110,13 +110,13 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         }
     }
 
-    async Task<bool> ISpeechRecognition.ListenForYesNo(CancellationToken cancellationToken)
+    async Task<bool> ISpeechRecognition.ListenForYesNoAsync(CancellationToken cancellationToken)
     {
         cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
 
         Task<bool> yesNoTask = ResetYesNoTask(cancellationToken);
 
-        await StartAndStopListening(_yesNoGrammar, yesNoTask);
+        await StartAndStopListeningAsync(_yesNoGrammar, yesNoTask);
 
         return yesNoTask.Result;
     }
@@ -125,7 +125,7 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
     {
         lock (_lockObject)
         {
-            EnsureCanReset(_commandChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommands));
+            EnsureCanReset(_commandChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommandsAsync));
             // TODO: Make channel bounds configurable
             _commandChannel = Channel.CreateBounded<IRecognitionResult>(new BoundedChannelOptions(2)
             {
@@ -139,21 +139,21 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         return _commandChannel;
     }
 
-    IAsyncEnumerable<IRecognitionResult> ISpeechRecognition.ListenForCommands(CancellationToken cancellationToken)
+    IAsyncEnumerable<IRecognitionResult> ISpeechRecognition.ListenForCommandsAsync(CancellationToken cancellationToken)
     {
         cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
 
         Channel<IRecognitionResult> resultChannel = ResetCommandChannel(cancellationToken);
 
-        _ = StartAndStopListeningToChannel(resultChannel);
+        _ = StartAndStopListeningToChannelAsync(resultChannel);
 
         return resultChannel.Reader.ReadAllAsync(cancellationToken);
 
-        async Task StartAndStopListeningToChannel(Channel<IRecognitionResult> resultChannel)
+        async Task StartAndStopListeningToChannelAsync(Channel<IRecognitionResult> resultChannel)
         {
             try
             {
-                await StartAndStopListening(_commandsGrammar, resultChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommands));
+                await StartAndStopListeningAsync(_commandsGrammar, resultChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommandsAsync));
             }
             catch (Exception ex)
             {
@@ -162,7 +162,7 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         }
     }
 
-    private async Task StartAndStopListening(Grammar grammar, Task listenTask, [CallerMemberName] string methodName = "Undefined")
+    private async Task StartAndStopListeningAsync(Grammar grammar, Task listenTask, [CallerMemberName] string methodName = "Undefined")
     {
         try
         {

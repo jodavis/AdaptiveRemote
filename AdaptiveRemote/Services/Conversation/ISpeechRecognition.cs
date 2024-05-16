@@ -5,9 +5,9 @@ namespace AdaptiveRemote.Services.Conversation;
 
 internal interface ISpeechRecognition
 {
-    Task ListenForAttention(CancellationToken cancellationToken);
+    Task ListenForAttentionAsync(CancellationToken cancellationToken);
 
-    Task<bool> ListenForYesNo(CancellationToken cancellationToken);
+    Task<bool> ListenForYesNoAsync(CancellationToken cancellationToken);
 
-    IAsyncEnumerable<IRecognitionResult> ListenForCommands(CancellationToken cancellationToken);
+    IAsyncEnumerable<IRecognitionResult> ListenForCommandsAsync(CancellationToken cancellationToken);
 }

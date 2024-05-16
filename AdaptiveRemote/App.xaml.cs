@@ -22,12 +22,12 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
-        _ = StartApplicationLoop();
+        _ = StartApplicationLoopAsync();
 
         base.OnStartup(e);
     }
 
-    private async Task StartApplicationLoop()
+    private async Task StartApplicationLoopAsync()
     {
         IHost host =
         Host.CreateDefaultBuilder()
