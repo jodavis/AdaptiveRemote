@@ -51,88 +51,88 @@
           <item>Up</item>
           <item>Go up</item>
         </one-of>
-        <tag>out="Command:UP"</tag>
+        <tag>out="Command:Up"</tag>
       </item>
       <item>
         <one-of>
           <item>Down</item>
           <item>Go down</item>
         </one-of>
-        <tag>out="Command:DOWN"</tag>
+        <tag>out="Command:Down"</tag>
       </item>
       <item>
         <one-of>
           <item>Left</item>
           <item>Go left</item>
         </one-of>
-        <tag>out="Command:LEFT"</tag>
+        <tag>out="Command:Left"</tag>
       </item>
       <item>
         <one-of>
           <item>Right</item>
           <item>Go right</item>
         </one-of>
-        <tag>out="Command:RIGHT"</tag>
+        <tag>out="Command:Right"</tag>
       </item>
       <item>
         <one-of>
           <item>Select</item>
           <item>OK</item>
         </one-of>
-        <tag>out="Command:SELECT"</tag>
+        <tag>out="Command:Select"</tag>
       </item>
       <item>
         <one-of>
           <item>TiVo</item>
           <item>Go to TiVo</item>
         </one-of>
-        <tag>out="Command:TIVO"</tag>
+        <tag>out="Command:TiVo"</tag>
       </item>
       <item>
         <one-of>
           <item>Guide</item>
           <item>Go to Guide</item>
         </one-of>
-        <tag>out="Command:GUIDE"</tag>
+        <tag>out="Command:Guide"</tag>
       </item>
       <item>
         <one-of>
           <item>Netflix</item>
           <item>Go to Netflix</item>
         </one-of>
-        <tag>out="Command:NETFLIX"</tag>
+        <tag>out="Command:Netflix"</tag>
       </item>
       <item>
         <one-of>
           <item>Back</item>
           <item>Go back</item>
         </one-of>
-        <tag>out="Command:BACK"</tag>
+        <tag>out="Command:Back"</tag>
       </item>
       <item>
         <one-of>
           <item>Play</item>
         </one-of>
-        <tag>out="Command:PLAY"</tag>
+        <tag>out="Command:Play"</tag>
       </item>
       <item>
         <one-of>
           <item>Pause</item>
         </one-of>
-        <tag>out="Command:PAUSE"</tag>
+        <tag>out="Command:Pause"</tag>
       </item>
       <item>
         <one-of>
           <item>Record</item>
         </one-of>
-        <tag>out="Command:RECORD"</tag>
+        <tag>out="Command:Record"</tag>
       </item>
       <item>
         <one-of>
           <item>Replay</item>
           <item>Skip back</item>
         </one-of>
-        <tag>out="Command:REPLAY"</tag>
+        <tag>out="Command:Replay"</tag>
       </item>
       <item>
         <one-of>
@@ -140,28 +140,28 @@
           <item>Skip forward</item>
           <item>Skip</item>
         </one-of>
-        <tag>out="Command:SKIP"</tag>
+        <tag>out="Command:Skip"</tag>
       </item>
       <item>
         <one-of>
           <item>Channel Up</item>
           <item>Page Up</item>
         </one-of>
-        <tag>out="Command:CHANNELUP"</tag>
+        <tag>out="Command:ChannelUp"</tag>
       </item>
       <item>
         <one-of>
           <item>Channel Down</item>
           <item>Page Down</item>
         </one-of>
-        <tag>out="Command:CHANNELDOWN"</tag>
+        <tag>out="Command:ChannelDown"</tag>
       </item>
       <item>
         <one-of>
           <item>Louder</item>
           <item>Volume up</item>
         </one-of>
-        <tag>out="Command:VOLUMEUP"</tag>
+        <tag>out="Command:VolumeUp"</tag>
       </item>
       <item>
         <one-of>
@@ -169,20 +169,20 @@
           <item>Softer</item>
           <item>Volume Down</item>
         </one-of>
-        <tag>out="Command:VOLUMEDOWN"</tag>
+        <tag>out="Command:VolumeDown"</tag>
       </item>
       <item>
         <one-of>
           <item>Mute</item>
         </one-of>
-        <tag>out="Command:MUTE"</tag>
+        <tag>out="Command:Mute"</tag>
       </item>
       <item>
         <one-of>
           <item>Exit</item>
           <item>Quit</item>
         </one-of>
-        <tag>out="Command:EXIT"</tag>
+        <tag>out="Command:Exit"</tag>
       </item>
     </one-of>
   </rule>

@@ -57,7 +57,7 @@ internal class ConversationController : IConversationController, IDisposable
 
     private IReadOnlyDictionary<string, Command>? GetCommands()
     {
-        Dictionary<string, Command> commands = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, Command> commands = new(StringComparer.Ordinal);
         try
         {
             foreach (Command command in _definitionService.GetCommands())
