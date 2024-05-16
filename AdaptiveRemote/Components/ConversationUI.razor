@@ -4,7 +4,7 @@
 
 @code {
     [Parameter]
-    public Models.Conversation? ViewModel { get; set; }
+    public Models.ConversationView? ViewModel { get; set; }
 
     private bool IsListening => ViewModel?.IsListening ?? false;
     private string? StatusMessage => ViewModel?.StatusMessage;

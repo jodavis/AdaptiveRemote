@@ -31,12 +31,12 @@ internal class StaticCommandGroupProvider : IRemoteDefinitionService
         }, "ROOT"),
         new LayoutGroup("CHANNEL", new List<RemoteLayoutElement>
         {
-            new TiVoCommand("ChannelUp", label: "Up", commandId: "CHANNELUP"),
-            new TiVoCommand("ChannelDown", label: "Down", commandId: "CHANNELDOWN"),
+            new TiVoCommand("ChannelUp", label: "Up"),
+            new TiVoCommand("ChannelDown", label: "Down"),
         }, "ROOT"),
         new LayoutGroup("GUTTER", new List<RemoteLayoutElement>
         {
-            new Models.Conversation(),
+            new Models.ConversationView(),
             new ApplicationCommand("Exit")
         }, "ROOT")
     }, string.Empty);

@@ -2,13 +2,13 @@
 
 namespace AdaptiveRemote.Models;
 
-public class Conversation : RemoteLayoutElement
+public class ConversationView : RemoteLayoutElement
 {
     internal static readonly MvvmProperty<bool> IsListeningProperty = new(nameof(IsListening));
     internal static readonly MvvmProperty<string> StatusMessageProperty = new(nameof(StatusMessage));
 
-    public Conversation(string? placement = null)
-        : base(nameof(Conversation).ToUpperInvariant(), placement)
+    public ConversationView(string? placement = null)
+        : base(nameof(ConversationView).ToUpperInvariant(), placement)
     {
     }
 

@@ -19,9 +19,9 @@ internal static class ConversationHostBuilderExtensions
             .AddSingleton<ISpeechRecognitionEngine, SpeechRecognitionEngineWrapper>()
             .AddScoped(GetConversationViewModel);
 
-    private static Models.Conversation GetConversationViewModel(IServiceProvider provider)
+    private static Models.ConversationView GetConversationViewModel(IServiceProvider provider)
     {
         IRemoteDefinitionService definition = provider.GetRequiredService<IRemoteDefinitionService>();
-        return definition.GetElement<Models.Conversation>();
+        return definition.GetElement<Models.ConversationView>();
     }
 }
