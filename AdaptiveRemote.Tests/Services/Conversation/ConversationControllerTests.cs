@@ -76,10 +76,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Never);
 
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
 
         MockSynthesis
@@ -149,7 +149,7 @@ public class ConversationControllerTests
         IConversationController sut = CreateSut();
 
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
@@ -172,11 +172,11 @@ public class ConversationControllerTests
 
         TaskCompletionSource tcs = new();
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerate(false))
             .Verifiable(Times.Once);
 
@@ -214,11 +214,11 @@ public class ConversationControllerTests
 
         TaskCompletionSource tcs = new();
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerate(false, result.Object))
             .Verifiable(Times.Once);
 
@@ -266,11 +266,11 @@ public class ConversationControllerTests
 
         TaskCompletionSource tcs = new();
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerate(false, result.Object))
             .Verifiable(Times.Once);
 
@@ -310,11 +310,11 @@ public class ConversationControllerTests
 
         TaskCompletionSource tcs = new();
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerate(false, result1.Object))
             .Verifiable(Times.Once);
 
@@ -355,12 +355,12 @@ public class ConversationControllerTests
 
         TaskCompletionSource tcs = new();
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Callback(() => tcs = new())
             .Returns(() => tcs.Task)
             .Verifiable(Times.Exactly(2));
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerate(true))
             .Verifiable(Times.Once);
 
@@ -394,12 +394,12 @@ public class ConversationControllerTests
 
         TaskCompletionSource tcs = new();
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Callback(() => tcs = new())
             .Returns(() => tcs.Task)
             .Verifiable(Times.Exactly(3));
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerate(true))
             .Verifiable(Times.Exactly(2));
 
@@ -437,12 +437,12 @@ public class ConversationControllerTests
         TaskCompletionSource tcs = new();
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Callback(() => tcs = new())
             .Returns(() => tcs.Task)
             .Verifiable(Times.Exactly(2));
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Throws(exception)
             .Verifiable(Times.Once);
 
@@ -476,7 +476,7 @@ public class ConversationControllerTests
 
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Throws(exception)
             .Verifiable(Times.Exactly(ConversationSettings.ErrorRetryLimit));
 
@@ -529,7 +529,7 @@ public class ConversationControllerTests
 
         CancellationToken token = default;
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Callback(delegate (CancellationToken cancel) { token = cancel; })
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
@@ -558,7 +558,7 @@ public class ConversationControllerTests
 
         TaskCompletionSource tcs = new();
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Callback(delegate (CancellationToken cancel) { cancel.Register(tcs.SetCanceled); })
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
@@ -586,7 +586,7 @@ public class ConversationControllerTests
 
         CancellationToken token = default;
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
@@ -594,7 +594,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Callback(delegate (CancellationToken cancel) { token = cancel; })
             .Returns(AsyncEnumerate(complete: false))
             .Verifiable(Times.Once);
@@ -623,7 +623,7 @@ public class ConversationControllerTests
         IConversationController sut = CreateSut();
 
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
@@ -631,7 +631,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(CancelAsyncEnumerate())
             .Verifiable(Times.Once);
 
@@ -656,7 +656,7 @@ public class ConversationControllerTests
 
         CancellationToken token = default;
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
@@ -672,7 +672,7 @@ public class ConversationControllerTests
             .Returns("Command:" + Command1.Name);
 
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerate(complete: false, result1.Object))
             .Verifiable(Times.Once);
         MockSynthesis
@@ -711,7 +711,7 @@ public class ConversationControllerTests
         IConversationController sut = CreateSut();
 
         MockRecognition
-            .Setup(x => x.ListenForAttention(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
@@ -727,7 +727,7 @@ public class ConversationControllerTests
             .Returns("Command:" + Command1.Name);
 
         MockRecognition
-            .Setup(x => x.ListenForCommands(It.IsAny<CancellationToken>()))
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
             .Returns(AsyncEnumerate(complete: false, result1.Object))
             .Verifiable(Times.Once);
         MockSynthesis
