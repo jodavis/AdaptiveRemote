@@ -84,18 +84,18 @@ public class SpeechRecognitionTests
         MockGrammarProvider.Verify();
     }
 
-    private static string Expected_GrammarEnabled(string grammarName)
-        => $"Information[305]: {string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammarName, true)}";
-    private static string Expected_GrammarDisabled(string grammarName)
-        => $"Information[305]: {string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammarName, false)}";
+    private static string Expected_GrammarEnabled(Grammar grammar)
+        => $"Information[305]: {string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammar.Name, true)}";
+    private static string Expected_GrammarDisabled(Grammar grammar)
+        => $"Information[305]: {string.Format(LoggingMessages.SpeechRecognition_GrammarEnabled, grammar.Name, false)}";
     private static string Expected_FailedToLoad(Grammar grammar, Exception error)
         => $"Warning[309]: {string.Format(LoggingMessages.SpeechRecognition_GrammarFailedToLoad, grammar.Name, $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_FailedToUnload(Grammar grammar, Exception error)
         => $"Warning[310]: {string.Format(LoggingMessages.SpeechRecognition_GrammarFailedToUnload, grammar.Name, $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_Listening(bool listening)
         => $"Information[306]: {string.Format(LoggingMessages.SpeechRecognition_Listening, listening)}";
-    private static string Expected_RecognitionError(string error)
-        => $"Error[302]: {string.Format(LoggingMessages.SpeechRecognition_RecognitionError, error)}";
+    private static string Expected_RecognitionError(string errorMessage)
+        => $"Error[302]: {string.Format(LoggingMessages.SpeechRecognition_RecognitionError, errorMessage)}";
     private static string Expected_ErrorInListenForAttention(Exception error)
         => $"Error[304]: {string.Format(LoggingMessages.SpeechRecognition_ErrorInListeningMethod, nameof(ISpeechRecognition.ListenForAttentionAsync), $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_ErrorInListenForCommands(Exception error)
@@ -147,7 +147,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true));
     }
 
@@ -179,12 +179,12 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true),
             Expected_RecognitionError(expectedErrorMessage),
             Expected_ErrorInListenForAttention(expectedException),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name));
+            Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -213,11 +213,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForAttention,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name));
+            Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -242,7 +242,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true),
             Expected_ListenForAttentionAlreadyInProgress);
     }
@@ -277,10 +277,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name));
+            Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -315,11 +315,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarDisabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true));
     }
 
@@ -355,10 +355,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name));
+            Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -386,10 +386,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_ErrorInListenForAttention(expectedException),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name));
+            Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -412,7 +412,7 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true));
     }
 
@@ -444,12 +444,12 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_RecognitionError(expectedErrorMessage),
             Expected_ErrorInListenForYesNo(expectedException),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -478,11 +478,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForYesNo,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -507,7 +507,7 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_ListenForYesNoAlreadyInProgress);
     }
@@ -544,10 +544,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -582,10 +582,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -617,7 +617,7 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true));
     }
 
@@ -652,11 +652,11 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarDisabled(MockYesNoGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true));
     }
 
@@ -691,10 +691,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -722,10 +722,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_ErrorInListenForYesNo(expectedException),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -753,7 +753,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true));
     }
 
@@ -790,12 +790,12 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_RecognitionError(expectedErrorMessage),
             Expected_ErrorInListenForCommands(expectedException),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -830,11 +830,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForCommands,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -868,7 +868,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_ListenForCommandsAlreadyInProgress);
     }
@@ -908,7 +908,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true));
     }
 
@@ -946,7 +946,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true));
     }
 
@@ -987,10 +987,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1032,11 +1032,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name),
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarDisabled(MockCommandsGrammar),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true));
     }
 
@@ -1078,7 +1078,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true));
     }
 
@@ -1112,10 +1112,10 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_ErrorInListenForCommands(expectedException),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1172,10 +1172,10 @@ public class SpeechRecognitionTests
         Assert.AreEqual(Settings.CommandBufferSize, resultCount);
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1234,10 +1234,10 @@ public class SpeechRecognitionTests
         Assert.AreEqual(Settings.CommandBufferSize, resultCount);
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1266,10 +1266,10 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name));
+            Expected_GrammarEnabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -1306,11 +1306,11 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name));
+            Expected_GrammarEnabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar),
+            Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -1347,11 +1347,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarEnabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar),
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -1388,10 +1388,10 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name));
+            Expected_GrammarEnabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -1428,11 +1428,11 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarEnabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar),
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1486,14 +1486,14 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar),
+            Expected_GrammarDisabled(MockCommandsGrammar),
+            Expected_GrammarDisabled(MockAttentionGrammar),
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -1531,11 +1531,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForAttention,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name));
+            Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -1576,11 +1576,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForAttention,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockAttentionGrammar.Name),
+            Expected_GrammarDisabled(MockAttentionGrammar),
             Expected_FailedToUnload(MockAttentionGrammar, expectedException));
     }
 
@@ -1619,11 +1619,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForYesNo,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name));
+            Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -1664,11 +1664,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForYesNo,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockYesNoGrammar.Name),
+            Expected_GrammarDisabled(MockYesNoGrammar),
             Expected_FailedToUnload(MockYesNoGrammar, expectedException));
     }
 
@@ -1708,11 +1708,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForCommands,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1754,11 +1754,11 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
             Expected_CancelledListenForCommands,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name),
+            Expected_GrammarDisabled(MockCommandsGrammar),
             Expected_FailedToUnload(MockCommandsGrammar, expectedException));
     }
 
@@ -1802,17 +1802,17 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_CancelledListenForYesNo,
-            Expected_GrammarDisabled(MockYesNoGrammar.Name),
+            Expected_GrammarDisabled(MockYesNoGrammar),
             Expected_CancelledListenForAttention,
-            Expected_GrammarDisabled(MockAttentionGrammar.Name),
+            Expected_GrammarDisabled(MockAttentionGrammar),
             Expected_CancelledListenForCommands,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name));
+            Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1860,17 +1860,17 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar.Name),
+            Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_Listening(true),
-            Expected_GrammarEnabled(MockAttentionGrammar.Name),
-            Expected_GrammarEnabled(MockYesNoGrammar.Name),
+            Expected_GrammarEnabled(MockAttentionGrammar),
+            Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_CancelledListenForYesNo,
-            Expected_GrammarDisabled(MockYesNoGrammar.Name),
+            Expected_GrammarDisabled(MockYesNoGrammar),
             Expected_CancelledListenForAttention,
-            Expected_GrammarDisabled(MockAttentionGrammar.Name),
+            Expected_GrammarDisabled(MockAttentionGrammar),
             Expected_CancelledListenForCommands,
             Expected_Listening(false),
-            Expected_GrammarDisabled(MockCommandsGrammar.Name),
+            Expected_GrammarDisabled(MockCommandsGrammar),
             Expected_FailedToUnload(MockAttentionGrammar, expectedException),
             Expected_FailedToUnload(MockYesNoGrammar, expectedException),
             Expected_FailedToUnload(MockCommandsGrammar, expectedException));
