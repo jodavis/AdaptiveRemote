@@ -35,4 +35,5 @@ internal enum Message
     SpeechSynthesis_SelectedVoice = 401,
     SpeechSynthesis_VoiceNotFound = 402,
     SpeechSynthesis_Saying = 403,
+    ListeningController_State = 501,
 }

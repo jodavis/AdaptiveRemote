@@ -169,6 +169,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Listening={0} ({1} listen, {2} pause).
+        /// </summary>
+        internal static string ListeningController_State {
+            get {
+                return ResourceManager.GetString("ListeningController_State", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} was cancelled..
         /// </summary>
         internal static string SpeechRecognition_CancelledListeningMethod {
