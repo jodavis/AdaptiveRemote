@@ -14,6 +14,10 @@ public class ListeningControllerTests
 
     private static string Expect_State(bool listening, int listenCount, int pauseCount = 0)
         => $"Information[501]: {string.Format(LoggingMessages.ListeningController_State, listening, listenCount, pauseCount)}";
+    private static string Expect_RecognizeAsyncError(Exception expectedException)
+        => $"Error[502]: {string.Format(LoggingMessages.ListeningController_RecognizeAsyncError, $"{expectedException.GetType().FullName}: {expectedException.Message}")}";
+    private static string Expect_RecognizeAsyncCancelError(Exception expectedException)
+        => $"Error[503]: {string.Format(LoggingMessages.ListeningController_RecognizeAsyncCancelError, $"{expectedException.GetType().FullName}: {expectedException.Message}")}";
 
     [TestInitialize]
     public void SetupMocks()
@@ -514,5 +518,138 @@ public class ListeningControllerTests
             Expect_State(false, 0, 1),
             Expect_State(false, 1, 1),
             Expect_State(true, 1, 0));
+    }
+
+    [TestMethod]
+    public void ListeningController_Listen_WithError_ThrowsAndDecreasesListenCount()
+    {
+        // Arrange
+        IListeningController sut = CreateSut();
+
+        Exception expectedException = new InvalidOperationException("Some thing didn't work");
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+
+        try
+        {
+            // Act
+            sut.Listen();
+
+            // Assert
+            Assert.Fail("Expected exception was not thrown");
+        }
+        catch (InvalidOperationException result)
+        {
+            Assert.AreEqual(expectedException.Message, result.Message, nameof(result) + ".Message");
+        }
+
+        MockLogger
+            .VerifyMessages(
+                Expect_RecognizeAsyncError(expectedException),
+                Expect_State(false, 0));
+    }
+
+    [TestMethod]
+    public void ListeningController_Listen_Dispose_WithError_LogsErrorButDoesNotThrow()
+    {
+        // Arrange
+        IListeningController sut = CreateSut();
+
+        Exception expectedException = new InvalidOperationException("Some thing didn't work");
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+
+        IDisposable listen = sut.Listen();
+
+        // Act
+        listen.Dispose();
+
+        MockLogger
+            .VerifyMessages(
+                Expect_State(true, 1),
+                Expect_RecognizeAsyncCancelError(expectedException),
+                Expect_State(true, 0));
+    }
+
+    [TestMethod]
+    public void ListeningController_Pause_WithError_ThrowsAndDecreasesPauseCount()
+    {
+        // Arrange
+        IListeningController sut = CreateSut();
+
+        Exception expectedException = new InvalidOperationException("Some thing didn't work");
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+
+        sut.Listen();
+
+        try
+        {
+            // Act
+            sut.Pause();
+
+            // Assert
+            Assert.Fail("Expected exception was not thrown");
+        }
+        catch (InvalidOperationException result)
+        {
+            Assert.AreEqual(expectedException.Message, result.Message, nameof(result) + ".Message");
+        }
+
+        MockLogger
+            .VerifyMessages(
+                Expect_State(true, 1),
+                Expect_RecognizeAsyncCancelError(expectedException),
+                Expect_State(true, 1));
+    }
+
+    [TestMethod]
+    public void ListeningController_Pause_Dispose_WithError_ThrowsAndDecreasesPauseCount()
+    {
+        // Arrange
+        IListeningController sut = CreateSut();
+
+        Exception expectedException = new InvalidOperationException("Some thing didn't work");
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Verifiable(Times.Once);
+        MockEngine
+            .Setup(x => x.RecognizeAsyncCancel())
+            .Verifiable(Times.Once);
+
+        sut.Listen();
+        IDisposable pause = sut.Pause();
+
+        MockEngine
+            .Setup(x => x.RecognizeAsync())
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+
+        // Act
+        pause.Dispose();
+
+        // Assert
+        MockLogger
+            .VerifyMessages(
+                Expect_State(true, 1, 0),
+                Expect_State(false, 1, 1),
+                Expect_RecognizeAsyncError(expectedException),
+                Expect_State(false, 1, 0));
     }
 }

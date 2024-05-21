@@ -169,11 +169,41 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error calling RecognuzeAsyncCancel
+        ///{0}.
+        /// </summary>
+        internal static string ListeningController_RecognizeAsyncCancelError {
+            get {
+                return ResourceManager.GetString("ListeningController_RecognizeAsyncCancelError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error calling RecognuzeAsync
+        ///{0}.
+        /// </summary>
+        internal static string ListeningController_RecognizeAsyncError {
+            get {
+                return ResourceManager.GetString("ListeningController_RecognizeAsyncError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Listening={0} ({1} listen, {2} pause).
         /// </summary>
         internal static string ListeningController_State {
             get {
                 return ResourceManager.GetString("ListeningController_State", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error while updating listen state
+        ///{0}.
+        /// </summary>
+        internal static string ListeningController_UpdateListenStateError {
+            get {
+                return ResourceManager.GetString("ListeningController_UpdateListenStateError", resourceCulture);
             }
         }
         

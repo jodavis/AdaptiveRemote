@@ -1,6 +1,4 @@
-﻿using System.Windows.Media.Animation;
-using System.Xml;
-using AdaptiveRemote.Logging;
+﻿using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.Conversation;
@@ -25,62 +23,55 @@ internal class ListeningController : IListeningController
 
     IDisposable IListeningController.Pause() => new Pauser(this);
 
-    private void IncrementListening()
+    private void UpdateListenState(int listenDelta = 0, int pauseDelta = 0, bool undoOnError = true)
     {
         lock (_lockObject)
         {
-            _listenCount++;
-            UpdateListenState();
-        }
-    }
+            Message errorMessage = Message.ListeningController_RecognizeAsyncError;
 
-    private void DecrementListening()
-    {
-        lock (_lockObject)
-        {
-            _listenCount--;
-            UpdateListenState();
-        }
-    }
+            _listenCount += listenDelta;
+            _pauseCount += pauseDelta;
 
-    private void IncrementPausing()
-    {
-        lock (_lockObject)
-        {
-            _pauseCount++;
-            UpdateListenState();
-        }
-    }
-
-    private void DecrementPausing()
-    {
-        lock (_lockObject)
-        {
-            _pauseCount--;
-            UpdateListenState();
-        }
-    }
-
-    private void UpdateListenState()
-    {
-        if (_isListening)
-        {
-            if (_listenCount == 0 || _pauseCount > 0)
+            try
             {
-                _isListening = false;
-                _engine.RecognizeAsyncCancel();
+                if (_isListening)
+                {
+                    if (_listenCount == 0 || _pauseCount > 0)
+                    {
+                        errorMessage = Message.ListeningController_RecognizeAsyncCancelError;
+
+                        _engine.RecognizeAsyncCancel();
+                        _isListening = false;
+                    }
+                }
+                else
+                {
+                    if (_listenCount > 0 && _pauseCount == 0)
+                    {
+                        errorMessage = Message.ListeningController_RecognizeAsyncError;
+
+                        _engine.RecognizeAsync();
+                        _isListening = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(errorMessage, ex);
+
+                if (undoOnError)
+                {
+                    _listenCount -= listenDelta;
+                    _pauseCount -= pauseDelta;
+
+                    throw;
+                }
+            }
+            finally
+            {
+                _logger.LogInformation(Message.ListeningController_State, _isListening, _listenCount, _pauseCount);
             }
         }
-        else
-        {
-            if (_listenCount > 0 && _pauseCount == 0)
-            {
-                _isListening = true;
-                _engine.RecognizeAsync();
-            }
-        }
-
-        _logger.LogInformation(Message.ListeningController_State, _isListening, _listenCount, _pauseCount);
     }
 
     private class Listener : IDisposable
@@ -90,12 +81,12 @@ internal class ListeningController : IListeningController
         public Listener(ListeningController owner)
         {
             _owner = owner;
-            _owner.IncrementListening();
+            _owner.UpdateListenState(listenDelta: 1);
         }
 
         public void Dispose()
         {
-            Interlocked.Exchange(ref _owner, null)?.DecrementListening();
+            Interlocked.Exchange(ref _owner, null)?.UpdateListenState(listenDelta: -1, undoOnError: false);
         }
     }
 
@@ -106,12 +97,12 @@ internal class ListeningController : IListeningController
         public Pauser(ListeningController owner)
         {
             _owner = owner;
-            _owner.IncrementPausing();
+            _owner.UpdateListenState(pauseDelta: 1);
         }
 
         public void Dispose()
         {
-            Interlocked.Exchange(ref _owner, null)?.DecrementPausing();
+            Interlocked.Exchange(ref _owner, null)?.UpdateListenState(pauseDelta: -1, undoOnError: false);
         }
     }
 }
