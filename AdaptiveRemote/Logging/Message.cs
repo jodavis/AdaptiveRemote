@@ -36,4 +36,7 @@ internal enum Message
     SpeechSynthesis_VoiceNotFound = 402,
     SpeechSynthesis_Saying = 403,
     ListeningController_State = 501,
+    ListeningController_RecognizeAsyncError = 502,
+    ListeningController_RecognizeAsyncCancelError = 503,
+    ListeningController_UpdateListenStateError = 504,
 }

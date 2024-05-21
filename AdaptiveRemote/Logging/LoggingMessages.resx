@@ -161,9 +161,24 @@
     <value>Recognized an unknown command: {0}</value>
     <comment>0=Speech that was recognized but did not map to a command</comment>
   </data>
+  <data name="ListeningController_RecognizeAsyncCancelError" xml:space="preserve">
+    <value>Error calling RecognuzeAsyncCancel
+{0}</value>
+    <comment>0=Exception</comment>
+  </data>
+  <data name="ListeningController_RecognizeAsyncError" xml:space="preserve">
+    <value>Error calling RecognuzeAsync
+{0}</value>
+    <comment>0=Exception</comment>
+  </data>
   <data name="ListeningController_State" xml:space="preserve">
     <value>Listening={0} ({1} listen, {2} pause)</value>
     <comment>0=True/False,1=listen count, 2=pause count</comment>
+  </data>
+  <data name="ListeningController_UpdateListenStateError" xml:space="preserve">
+    <value>Error while updating listen state
+{0}</value>
+    <comment>0=Exception</comment>
   </data>
   <data name="SpeechRecognitionEngine_AudioSignalProblemOccurred" xml:space="preserve">
     <value>AudioSignalProblemOccurred:{0} at {3} ({1}) with AudioLevel:{2}</value>
