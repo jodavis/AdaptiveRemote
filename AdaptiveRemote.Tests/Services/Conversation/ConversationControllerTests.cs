@@ -364,7 +364,7 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_OnCommandWithRepeate_LogsExecutedCommandMultipleTimes()
+    public void ConversationController_OnCommandWithRepeat_LogsExecutedCommandMultipleTimes()
     {
         // Arrange
         IConversationController sut = CreateSut();

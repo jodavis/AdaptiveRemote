@@ -8,7 +8,7 @@ namespace AdaptiveRemote.Services.Configuration;
 internal static class ConversationHostBuilderExtensions
 {
     internal static IHostBuilder AddConversationSystem(this IHostBuilder hostBuilder)
-        => hostBuilder.ConfigureServices((context, services) => AddConversationServices(context.Configuration.GetSection("Conversation"), services));
+        => hostBuilder.ConfigureServices((context, services) => services.AddConversationServices(context.Configuration.GetSection("Conversation")));
 
     internal static IServiceCollection AddConversationServices(IServiceCollection services)
         => services
@@ -21,7 +21,7 @@ internal static class ConversationHostBuilderExtensions
             .AddSingleton<IAudioConfigurationService, DefaultDeviceAudioConfiguration>()
             .AddScoped(GetConversationViewModel);
 
-    internal static IServiceCollection AddConversationServices(IConfiguration config, IServiceCollection services)
+    internal static IServiceCollection AddConversationServices(this IServiceCollection services, IConfiguration config)
         => AddConversationServices(services).Configure<ConversationSettings>(config);
 
     private static Models.ConversationView GetConversationViewModel(IServiceProvider provider)

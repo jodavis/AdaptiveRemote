@@ -1130,9 +1130,10 @@ public class SpeechRecognitionTests
         // Act
         await foreach (IRecognitionResult result in resultEnum)
         {
+            Assert.IsTrue(result.TryGetSemanticValue("command", out string? actualValue), "Did not find expected semantic value for 'command'");
             for (int i = 0; i < extraCommandsCount; i++)
             {
-                Assert.AreNotEqual($"Command:ChannelUp{i}", result.SemanticMeaning, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
+                Assert.AreNotEqual($"Up{i}", actualValue, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
             }
 
             resultCount++;
@@ -1185,9 +1186,10 @@ public class SpeechRecognitionTests
         // Act
         await foreach (IRecognitionResult result in resultEnum)
         {
+            Assert.IsTrue(result.TryGetSemanticValue("command", out string? actualValue), "Did not find expected semantic value for 'command'");
             for (int i = 0; i < extraCommandsCount; i++)
             {
-                Assert.AreNotEqual($"Command:ChannelUp{i}", result.SemanticMeaning, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
+                Assert.AreNotEqual($"Up{i}", actualValue, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
             }
 
             resultCount++;
