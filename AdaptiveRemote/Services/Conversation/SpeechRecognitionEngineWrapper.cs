@@ -93,7 +93,6 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 
         string IRecognitionResult.Text => _result.Text;
 
-        string IRecognitionResult.SemanticMeaning => _result.Semantics.Value?.ToString() ?? _result.Text;
         bool IRecognitionResult.ContainsSemanticValue(string key) => _result.Semantics.ContainsKey(key);
         void IRecognitionResult.WriteToWaveStream(Stream waveStream) => _result.Audio.WriteToWaveStream(waveStream);
 
@@ -120,7 +119,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
                     "Confidence: {4}",
                     "Alternates: '{1}'",
                     "Homophones: '{7}'",
-                    "Semantics: {3} / {2}",
+                    "Semantics: {2}",
                     "Grammar: {5}"),
                 _result.Text,
                 string.Join("', '", _result.Alternates.Select(x => $"{x.Text}:{x.Confidence}")),

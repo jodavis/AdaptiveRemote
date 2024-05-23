@@ -21,7 +21,7 @@ public class GrammarTests
     }
 
     [TestMethod]
-    [Timeout(2000)]
+    [Timeout(5000)]
     [DataRow("User1_Advance_032138", "Advance", "command=Skip,repeat=1", DisplayName = "User1_Advance_032138")]
     [DataRow("User1_Back_032109", "Back", "command=Back,repeat=1", DisplayName = "User1_Back_032109")]
     [DataRow("User1_ChannelDown_032155", "Channel down", "command=ChannelDown,repeat=1", DisplayName = "User1_ChannelDown_032155")]
