@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Speech.Recognition;
 using System.Speech.Synthesis;
 using AdaptiveRemote.Services.Configuration;
@@ -85,6 +86,13 @@ public class GrammarTests
         _cts.Dispose();
     }
 
+    public Stopwatch Stopwatch { get; } = new();
+    public TestContext? TestContext { get; set; }
+    private void Log(string message)
+    {
+        TestContext?.WriteLine($"{Stopwatch.ElapsedMilliseconds}: {message}");
+    }
+
     [TestMethod]
     [Timeout(5000)]
     [DynamicData(nameof(GetTestSamples), DynamicDataSourceType.Method,
@@ -95,15 +103,20 @@ public class GrammarTests
         string expectedSemantics)
     {
         // Arrange
+        Stopwatch.Start();
+
         ISpeechRecognition speechRecognition = CreateSut();
 
         audioConfiguration.SetAudioInputToWaveStream(waveFileName);
 
-        Task timeoutTask = Task.Delay(2000, _cts.Token);
+        Task timeoutTask = Task.Delay(2000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
+            TaskContinuationOptions.ExecuteSynchronously);
 
         // Act
         Task<IRecognitionResult> resultTask = GetFirstResult(speechRecognition, _cts.Token);
+        Log("Waiting for a command");
         await Task.WhenAny(resultTask, timeoutTask);
+        Log("Done waiting");
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask) + " timed out");
@@ -124,10 +137,12 @@ public class GrammarTests
         }
     }
 
-    private static async Task<IRecognitionResult> GetFirstResult(ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
+    private async Task<IRecognitionResult> GetFirstResult(ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
     {
+        Log("ListenForCommandsAsync");
         await foreach (IRecognitionResult result in speechRecognition.ListenForCommandsAsync(cancellationToken))
         {
+            Log("Received a command");
             return result;
         }
 
