@@ -117,7 +117,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Never);
 
         MockSynthesis
-            .Setup(x => x.Say(It.IsAny<string>()))
+            .Setup(x => x.SayAsync(It.IsAny<string>(), default))
             .Verifiable(Times.Never);
 
         MockOptions
@@ -215,7 +215,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
 
         sut.StartListening();
@@ -251,10 +251,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), default))
             .Verifiable(Times.Once);
 
         MockExecution
@@ -297,7 +297,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
 
         sut.StartListening();
@@ -335,10 +335,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), default))
             .Verifiable(Times.Once);
 
         MockExecution
@@ -382,10 +382,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name, 3)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name, 3), default))
             .Verifiable(Times.Once);
 
         MockExecution
@@ -432,10 +432,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_StoppedListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, default))
             .Verifiable(Times.Once);
 
         sut.StartListening();
@@ -471,10 +471,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Exactly(2));
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Exactly(2));
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_StoppedListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, default))
             .Verifiable(Times.Exactly(2));
 
         sut.StartListening();
@@ -514,7 +514,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
 
         sut.StartListening();
@@ -657,7 +657,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
 
         MockRecognition
@@ -694,7 +694,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
 
         MockRecognition
@@ -727,7 +727,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
 
         Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
@@ -737,7 +737,7 @@ public class ConversationControllerTests
             .Returns(AsyncEnumerate(complete: false, result1.Object))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), default))
             .Verifiable(Times.Once);
 
         MockExecution
@@ -776,7 +776,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, default))
             .Verifiable(Times.Once);
 
         Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
@@ -786,7 +786,7 @@ public class ConversationControllerTests
             .Returns(AsyncEnumerate(complete: false, result1.Object))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), default))
             .Verifiable(Times.Once);
 
         TaskCompletionSource tcs = new();

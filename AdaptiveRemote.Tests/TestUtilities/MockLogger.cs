@@ -72,7 +72,7 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         {
             List<string> unexpectedMessages = GetRemaining(actualIter, ref count);
             Assert.AreEqual(expected.Length, count,
-                "Wront number of messages. Did not expect to find:\n{0}",
+                "Wrong number of messages. Did not expect to find:\n{0}",
                 string.Join("\n", unexpectedMessages));
         }
     }
