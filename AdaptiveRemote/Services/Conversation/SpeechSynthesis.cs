@@ -6,15 +6,23 @@ namespace AdaptiveRemote.Services.Conversation;
 internal class SpeechSynthesis : ISpeechSynthesis
 {
     private readonly ISpeechSynthesizer _synthesizer;
+    private readonly IListeningController _listeningController;
     private readonly ILogger<SpeechSynthesis> _logger;
 
-    public SpeechSynthesis(ISpeechSynthesizer synthesizer, IOptionsSnapshot<ConversationSettings> settings, ILogger<SpeechSynthesis> logger)
+    private TaskCompletionSource _tcs = new();
+
+    public SpeechSynthesis(ISpeechSynthesizer synthesizer, IListeningController listeningController, IOptionsSnapshot<ConversationSettings> settings, ILogger<SpeechSynthesis> logger)
     {
         _synthesizer = synthesizer;
+        _listeningController = listeningController;
         _logger = logger;
 
         SelectVoice(settings.Value.Voice);
+
+        _synthesizer.SpeakCompleted += OnSpeakCompleted;
     }
+
+    private void OnSpeakCompleted(object? sender, EventArgs e) => _tcs.TrySetResult();
 
     private void SelectVoice(string[] voiceNames)
     {
@@ -33,10 +41,23 @@ internal class SpeechSynthesis : ISpeechSynthesis
         }
     }
 
-    void ISpeechSynthesis.Say(string phrase)
+    async Task ISpeechSynthesis.SayAsync(string phrase, CancellationToken cancellationToken)
     {
+        _tcs = new();
+
+        using (cancellationToken.Register(() => CancelSpeaking(_tcs, phrase)))
+        using (_listeningController.Pause())
+        {
+            _logger.LogInformation(Message.SpeechSynthesis_Saying, phrase);
+            _synthesizer.SpeakAsync(phrase);
+            await _tcs.Task;
+        }
+    }
+
+    private void CancelSpeaking(TaskCompletionSource tcs, string phrase)
+    {
+        _logger.LogInformation(Message.SpeechSynthesis_CancelledSaying, phrase);
+        tcs.TrySetCanceled();
         _synthesizer.CancelAll();
-        _logger.LogInformation(Message.SpeechSynthesis_Saying, phrase);
-        _synthesizer.SpeakAsync(phrase);
     }
 }

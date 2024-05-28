@@ -376,6 +376,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cancelled saying &apos;{0}&apos;.
+        /// </summary>
+        internal static string SpeechSynthesis_CancelledSaying {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_CancelledSaying", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Saying &apos;{0}&apos;.
         /// </summary>
         internal static string SpeechSynthesis_Saying {

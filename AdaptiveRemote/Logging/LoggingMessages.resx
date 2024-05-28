@@ -258,6 +258,10 @@
     <value>Recognition Error: {0}</value>
     <comment>0=Error message</comment>
   </data>
+  <data name="SpeechSynthesis_CancelledSaying" xml:space="preserve">
+    <value>Cancelled saying '{0}'</value>
+    <comment>0=Phrase that is cancelled</comment>
+  </data>
   <data name="SpeechSynthesis_Saying" xml:space="preserve">
     <value>Saying '{0}'</value>
     <comment>0=Phrase to be spoken</comment>

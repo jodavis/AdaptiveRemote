@@ -164,7 +164,7 @@ internal class ConversationController : IConversationController, IDisposable
         {
             _viewModel.IsListening = true;
             _viewModel.StatusMessage = Phrases.Conversation_ImListening;
-            _speechSynthesis.Say(Phrases.Conversation_ImListening);
+            _ = _speechSynthesis.SayAsync(Phrases.Conversation_ImListening, default);
             _logger.LogInformation(Message.ConversationController_ListenForCommands);
 
             await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
@@ -175,7 +175,7 @@ internal class ConversationController : IConversationController, IDisposable
                 _viewModel.StatusMessage = Phrases.Conversation_ImListening;
             }
 
-            _speechSynthesis.Say(Phrases.Conversation_StoppedListening);
+            _ = _speechSynthesis.SayAsync(Phrases.Conversation_StoppedListening, default);
         }
         finally
         {
@@ -185,7 +185,7 @@ internal class ConversationController : IConversationController, IDisposable
 
     private async Task ExecuteCommandAsync(Command command, int repeat, CancellationToken cancellationToken)
     {
-        _speechSynthesis.Say(Phrases.Conversation_Sent(command.Name, repeat));
+        _ = _speechSynthesis.SayAsync(Phrases.Conversation_Sent(command.Name, repeat), default);
         _viewModel.StatusMessage = Phrases.Conversation_ImSending;
 
         for (int i = 0; i < repeat; i++)
