@@ -8,8 +8,8 @@ using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Input;
 using System.Windows.Shell;
-using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Windows.Themes;
@@ -22,18 +22,22 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
-        _ = StartApplicationLoopAsync();
+        _ = StartApplicationLoopAsync(e.Args);
 
         base.OnStartup(e);
     }
 
-    private async Task StartApplicationLoopAsync()
+    private async Task StartApplicationLoopAsync(string[] args)
     {
         IHost host =
         Host.CreateDefaultBuilder()
+            .ConfigureAppConfiguration(config =>
+            {
+                config.AddCommandLine(args);
+            })
             .ConfigureServices(services => services.AddWpfBlazorWebView())
             .AddRemoteServices()
-            .AddConversationServices()
+            .AddConversationSystem()
             .ConfigureServices(services => services.AddSingleton<MainWindow>())
             .Build();
 

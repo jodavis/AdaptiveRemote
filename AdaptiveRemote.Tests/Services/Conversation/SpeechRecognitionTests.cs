@@ -14,24 +14,48 @@ public class SpeechRecognitionTests
     private readonly MockLogger<SpeechRecognition> MockLogger = new();
     private readonly Mock<ISpeechRecognitionEngine> MockEngine = new();
     private readonly Mock<IGrammarProvider> MockGrammarProvider = new();
-    private readonly Mock<IOptionsSnapshot<ConversationSettings>> MockSettings = new();
-    private readonly ConversationSettings Settings = new();
+    private readonly MockOptions<ConversationSettings> MockOptions = new();
 
     private readonly Grammar MockAttentionGrammar = new(new GrammarBuilder("Attention")) { Name = nameof(MockAttentionGrammar) };
     private readonly Grammar MockCommandsGrammar = new(new GrammarBuilder("Commands")) { Name = nameof(MockCommandsGrammar) };
     private readonly Grammar MockYesNoGrammar = new(new GrammarBuilder("YesNo")) { Name = nameof(MockYesNoGrammar) };
 
-    private ISpeechRecognition CreateSut() => new SpeechRecognition(MockSettings.Object, MockEngine.Object, MockGrammarProvider.Object, MockLogger);
-
     public TestContext? TestContext { get; set; }
+
+    private ISpeechRecognition CreateSut() => new SpeechRecognition(MockOptions, MockEngine.Object, MockGrammarProvider.Object, MockLogger);
+
+    private static IRecognitionResult CreateMockResult(params string[] semanticValues)
+    {
+        string? nullValue;
+
+        Mock<IRecognitionResult> mockResult = new();
+        mockResult
+            .Setup(x => x.ContainsSemanticValue(It.IsAny<string>()))
+            .Returns(false);
+        mockResult
+            .Setup(x => x.TryGetSemanticValue(It.IsAny<string>(), out nullValue))
+            .Returns(false);
+
+        foreach (string semanticValue in semanticValues)
+        {
+            string[] parts = semanticValue.Split('=');
+            string key = parts[0];
+            string? value = parts[1];
+
+            mockResult
+                .Setup(x => x.ContainsSemanticValue(key))
+                .Returns(true);
+            mockResult
+                .Setup(x => x.TryGetSemanticValue(key, out value))
+                .Returns(true);
+        }
+
+        return mockResult.Object;
+    }
 
     [TestInitialize]
     public void SetupMocks()
     {
-        MockEngine
-            .Setup(x => x.SetInputToDefaultAudioDevice())
-            .Verifiable(Times.Once);
-
         MockAttentionGrammar.Enabled = true;
         MockGrammarProvider
             .Setup(x => x.LoadAttentionGrammar())
@@ -68,11 +92,6 @@ public class SpeechRecognitionTests
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Never);
-
-        MockSettings
-            .SetupGet(x => x.Value)
-            .Returns(Settings)
-            .Verifiable(Times.Once);
 
         MockLogger.OutputWriter = TestContext;
     }
@@ -262,13 +281,10 @@ public class SpeechRecognitionTests
 
         Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STARTLISTENING");
+        IRecognitionResult result = CreateMockResult("system=STARTLISTENING");
 
         // Act
-        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
+        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(result));
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask));
@@ -298,12 +314,9 @@ public class SpeechRecognitionTests
 
         _ = sut.ListenForAttentionAsync(CancellationToken.None);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STARTLISTENING");
+        IRecognitionResult result = CreateMockResult("system=STARTLISTENING");
 
-        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
+        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(result));
 
         // Act
         Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
@@ -338,15 +351,12 @@ public class SpeechRecognitionTests
 
         Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STARTLISTENING");
+        IRecognitionResult result = CreateMockResult("system=STARTLISTENING");
 
-        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
+        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(result));
 
         // Act
-        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
+        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(result));
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask));
@@ -527,12 +537,9 @@ public class SpeechRecognitionTests
 
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("YES");
+        IRecognitionResult result = CreateMockResult("system=YES");
 
-        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -565,12 +572,9 @@ public class SpeechRecognitionTests
 
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("NO");
+        IRecognitionResult result = CreateMockResult("system=NO");
 
-        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -600,12 +604,9 @@ public class SpeechRecognitionTests
 
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("OTHER");
+        IRecognitionResult result = CreateMockResult("system=OTHER");
 
-        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -636,11 +637,8 @@ public class SpeechRecognitionTests
 
         _ = sut.ListenForYesNoAsync(CancellationToken.None);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("YES");
-        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
+        IRecognitionResult result = CreateMockResult("system=YES");
+        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(result));
 
         // Act
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
@@ -673,16 +671,13 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("NO");
+        IRecognitionResult result = CreateMockResult("system=NO");
 
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
-        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
+        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(result));
 
         // Act
-        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
+        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(result));
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask));
@@ -887,22 +882,17 @@ public class SpeechRecognitionTests
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
-
         ValueTask<bool> resultTask = resultIter.MoveNextAsync();
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("Command:UP x3");
-
-        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+        IRecognitionResult result = CreateMockResult("command=UP");
+        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
 
         // Assert
         TaskAssert.ResultEquals(resultTask, true, ResultTimeout, nameof(resultTask));
-        Assert.AreSame(mockResult.Object, resultIter.Current, nameof(resultIter) + ".Current");
+        Assert.AreSame(result, resultIter.Current, nameof(resultIter) + ".Current");
         Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled");
         Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled");
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
@@ -929,12 +919,9 @@ public class SpeechRecognitionTests
 
         ValueTask<bool> resultTask = resultIter.MoveNextAsync();
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("OTHER");
+        IRecognitionResult result = CreateMockResult("system=OTHER");
 
-        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -970,12 +957,9 @@ public class SpeechRecognitionTests
 
         ValueTask<bool> resultTask = resultIter.MoveNextAsync();
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STOPLISTENING");
+        IRecognitionResult result = CreateMockResult("system=STOPLISTENING");
 
-        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -1013,12 +997,9 @@ public class SpeechRecognitionTests
 
         ValueTask<bool> firstTask = resultIter.MoveNextAsync();
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STOPLISTENING");
+        IRecognitionResult result = CreateMockResult("system=STOPLISTENING");
 
-        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(result);
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
         TaskAssert.ResultEquals(firstTask, false, ResultTimeout, nameof(firstTask));
 
@@ -1050,26 +1031,22 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsync())
             .Verifiable(Times.Once);
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("Command:UP");
-
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
         Assert.IsNotNull(resultEnum, nameof(resultEnum));
 
         IAsyncEnumerator<IRecognitionResult> resultIter = resultEnum.GetAsyncEnumerator();
-
         ValueTask<bool> firstTask = resultIter.MoveNextAsync();
 
-        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+        IRecognitionResult result = CreateMockResult("command=UP");
+        RecognitionResultEventArgs eventArgs = new RecognitionResultEventArgs(result);
+
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
         TaskAssert.ResultEquals(firstTask, true, ResultTimeout, nameof(firstTask));
 
         ValueTask<bool> resultTask = resultIter.MoveNextAsync();
 
         // Act
-        MockEngine.Raise(x => x.SpeechRecognized -= null, new RecognitionResultEventArgs(mockResult.Object));
+        MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
 
         // Assert
         TaskAssert.IsComplete(resultTask, ResultTimeout, nameof(resultTask));
@@ -1119,6 +1096,7 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
+    [Timeout(1000)]
     public async Task SpeechRecognition_ListenForCommandsAsync_BuffersDefaultNumberOfCommands()
     {
         // Arrange
@@ -1136,23 +1114,15 @@ public class SpeechRecognitionTests
 
         const int extraCommandsCount = 3;
 
-        for (int i = 0; i < Settings.CommandBufferSize + extraCommandsCount; i++)
+        for (int i = 0; i < MockOptions.Value.CommandBufferSize + extraCommandsCount; i++)
         {
-            Mock<IRecognitionResult> mockResult = new();
-            mockResult
-                .SetupGet(x => x.SemanticMeaning)
-                .Returns($"Command:ChannelUp{i}");
-
-            EventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+            IRecognitionResult result = CreateMockResult($"command=Up{i}");
+            EventArgs eventArgs = new RecognitionResultEventArgs(result);
             MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
         }
 
-        Mock<IRecognitionResult> mockStopListeningResult = new();
-        mockStopListeningResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STOPLISTENING");
-
-        EventArgs stopListeningEventArgs = new RecognitionResultEventArgs(mockStopListeningResult.Object);
+        IRecognitionResult stopListingResult = CreateMockResult("system=STOPLISTENING");
+        EventArgs stopListeningEventArgs = new RecognitionResultEventArgs(stopListingResult);
         MockEngine.Raise(x => x.SpeechRecognized -= null, stopListeningEventArgs);
 
         int resultCount = 0;
@@ -1160,16 +1130,17 @@ public class SpeechRecognitionTests
         // Act
         await foreach (IRecognitionResult result in resultEnum)
         {
+            Assert.IsTrue(result.TryGetSemanticValue("command", out string? actualValue), "Did not find expected semantic value for 'command'");
             for (int i = 0; i < extraCommandsCount; i++)
             {
-                Assert.AreNotEqual($"Command:ChannelUp{i}", result.SemanticMeaning, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
+                Assert.AreNotEqual($"Up{i}", actualValue, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
             }
 
             resultCount++;
         }
 
         // Assert
-        Assert.AreEqual(Settings.CommandBufferSize, resultCount);
+        Assert.AreEqual(MockOptions.Value.CommandBufferSize, resultCount);
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
@@ -1179,10 +1150,11 @@ public class SpeechRecognitionTests
     }
 
     [TestMethod]
+    [Timeout(1000)]
     public async Task SpeechRecognition_ListenForCommandsAsync_BuffersConfiguredNumberOfCommands()
     {
         // Arrange
-        Settings.CommandBufferSize = 10;
+        MockOptions.Value.CommandBufferSize = 10;
 
         ISpeechRecognition sut = CreateSut();
 
@@ -1198,23 +1170,15 @@ public class SpeechRecognitionTests
 
         const int extraCommandsCount = 3;
 
-        for (int i = 0; i < Settings.CommandBufferSize + extraCommandsCount; i++)
+        for (int i = 0; i < MockOptions.Value.CommandBufferSize + extraCommandsCount; i++)
         {
-            Mock<IRecognitionResult> mockResult = new();
-            mockResult
-                .SetupGet(x => x.SemanticMeaning)
-                .Returns($"Command:ChannelUp{i}");
-
-            EventArgs eventArgs = new RecognitionResultEventArgs(mockResult.Object);
+            IRecognitionResult result = CreateMockResult($"command=Up{i}");
+            EventArgs eventArgs = new RecognitionResultEventArgs(result);
             MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
         }
 
-        Mock<IRecognitionResult> mockStopListeningResult = new();
-        mockStopListeningResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STOPLISTENING");
-
-        EventArgs stopListeningEventArgs = new RecognitionResultEventArgs(mockStopListeningResult.Object);
+        IRecognitionResult stopListingResult = CreateMockResult("system=STOPLISTENING");
+        EventArgs stopListeningEventArgs = new RecognitionResultEventArgs(stopListingResult);
         MockEngine.Raise(x => x.SpeechRecognized -= null, stopListeningEventArgs);
 
         int resultCount = 0;
@@ -1222,16 +1186,17 @@ public class SpeechRecognitionTests
         // Act
         await foreach (IRecognitionResult result in resultEnum)
         {
+            Assert.IsTrue(result.TryGetSemanticValue("command", out string? actualValue), "Did not find expected semantic value for 'command'");
             for (int i = 0; i < extraCommandsCount; i++)
             {
-                Assert.AreNotEqual($"Command:ChannelUp{i}", result.SemanticMeaning, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
+                Assert.AreNotEqual($"Up{i}", actualValue, "Did not expect to see one of the first {0} commands, since the buffer should discard oldest", extraCommandsCount);
             }
 
             resultCount++;
         }
 
         // Assert
-        Assert.AreEqual(Settings.CommandBufferSize, resultCount);
+        Assert.AreEqual(MockOptions.Value.CommandBufferSize, resultCount);
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
@@ -1288,11 +1253,8 @@ public class SpeechRecognitionTests
         Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STARTLISTENING");
-        RecognitionResultEventArgs eventArgs = new(mockResult.Object);
+        IRecognitionResult result = CreateMockResult("system=STARTLISTENING");
+        RecognitionResultEventArgs eventArgs = new(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -1329,11 +1291,8 @@ public class SpeechRecognitionTests
         Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("YES");
-        RecognitionResultEventArgs eventArgs = new(mockResult.Object);
+        IRecognitionResult result = CreateMockResult("system=YES");
+        RecognitionResultEventArgs eventArgs = new(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -1370,11 +1329,8 @@ public class SpeechRecognitionTests
         Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("Command:DOWN");
-        RecognitionResultEventArgs eventArgs = new(mockResult.Object);
+        IRecognitionResult result = CreateMockResult("command=DOWN");
+        RecognitionResultEventArgs eventArgs = new(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -1410,11 +1366,8 @@ public class SpeechRecognitionTests
         Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
-        Mock<IRecognitionResult> mockResult = new();
-        mockResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STOPLISTENING");
-        RecognitionResultEventArgs eventArgs = new(mockResult.Object);
+        IRecognitionResult result = CreateMockResult("system=STOPLISTENING");
+        RecognitionResultEventArgs eventArgs = new(result);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, eventArgs);
@@ -1454,23 +1407,14 @@ public class SpeechRecognitionTests
         Task<bool> yesNoTask = sut.ListenForYesNoAsync(CancellationToken.None);
         ValueTask<bool> commandTask = commandEnum.GetAsyncEnumerator().MoveNextAsync();
 
-        Mock<IRecognitionResult> mockCommandsResult = new();
-        mockCommandsResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STOPLISTENING");
-        RecognitionResultEventArgs commandsEventArgs = new(mockCommandsResult.Object);
+        IRecognitionResult commandsResult = CreateMockResult("system=STOPLISTENING");
+        RecognitionResultEventArgs commandsEventArgs = new(commandsResult);
 
-        Mock<IRecognitionResult> mockAttentionResult = new();
-        mockAttentionResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("STARTLISTENING");
-        RecognitionResultEventArgs attentionEventArgs = new(mockAttentionResult.Object);
+        IRecognitionResult attentionResult = CreateMockResult("system=STARTLISTENING");
+        RecognitionResultEventArgs attentionEventArgs = new(attentionResult);
 
-        Mock<IRecognitionResult> mockYesNoResult = new();
-        mockYesNoResult
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("NO");
-        RecognitionResultEventArgs yesNoEventArgs = new(mockYesNoResult.Object);
+        IRecognitionResult yesNoResult = CreateMockResult("system=NO");
+        RecognitionResultEventArgs yesNoEventArgs = new(yesNoResult);
 
         // Act
         MockEngine.Raise(x => x.SpeechRecognized -= null, commandsEventArgs);

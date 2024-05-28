@@ -64,6 +64,39 @@ public class ConversationControllerTests
         MockLogger,
         ViewModel);
 
+    private static Mock<IRecognitionResult> CreateMockResult(string text, params string[] semanticValues)
+    {
+        string? nullValue;
+
+        Mock<IRecognitionResult> mockResult = new();
+        mockResult
+            .Setup(x => x.ContainsSemanticValue(It.IsAny<string>()))
+            .Returns(false);
+        mockResult
+            .Setup(x => x.TryGetSemanticValue(It.IsAny<string>(), out nullValue))
+            .Returns(false);
+
+        mockResult
+            .SetupGet(x => x.Text)
+            .Returns(text);
+
+        foreach (string semanticValue in semanticValues)
+        {
+            string[] parts = semanticValue.Split('=');
+            string key = parts[0];
+            string? value = parts[1];
+
+            mockResult
+                .Setup(x => x.ContainsSemanticValue(key))
+                .Returns(true);
+            mockResult
+                .Setup(x => x.TryGetSemanticValue(key, out value))
+                .Returns(true);
+        }
+
+        return mockResult;
+    }
+
     [TestInitialize]
     public void InitializeMocks()
     {
@@ -205,13 +238,7 @@ public class ConversationControllerTests
         // Arrange
         IConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result = new();
-        result
-            .SetupGet(x => x.Text)
-            .Returns(Command1.Name);
-        result
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("Command:" + Command1.Name);
+        Mock<IRecognitionResult> result = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -244,7 +271,7 @@ public class ConversationControllerTests
         MockLogger.VerifyMessages(
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result.Object.Text, result.Object.SemanticMeaning),
+            Expected_Recognized(result.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -257,13 +284,7 @@ public class ConversationControllerTests
         // Arrange
         IConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result = new();
-        result
-            .SetupGet(x => x.Text)
-            .Returns("Not a command");
-        result
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("Command:Not a command");
+        Mock<IRecognitionResult> result = CreateMockResult("Not a command", "command=Not a command");
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -288,7 +309,7 @@ public class ConversationControllerTests
         MockLogger.VerifyMessages(
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result.Object.Text, result.Object.SemanticMeaning),
+            Expected_Recognized(result.Object.Text, result.Object.Text),
             Expected_UnknownCommand("Not a command"));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -301,13 +322,7 @@ public class ConversationControllerTests
         // Arrange
         IConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result1 = new();
-        result1
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("Command:" + Command1.Name);
-        result1
-            .SetupGet(x => x.Text)
-            .Returns(Command1.Name);
+        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -340,7 +355,58 @@ public class ConversationControllerTests
         MockLogger.VerifyMessages(
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, result1.Object.SemanticMeaning),
+            Expected_Recognized(result1.Object.Text, Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name));
+
+        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+    }
+
+    [TestMethod]
+    public void ConversationController_OnCommandWithRepeat_LogsExecutedCommandMultipleTimes()
+    {
+        // Arrange
+        IConversationController sut = CreateSut();
+
+        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name, "repeat=3");
+
+        TaskCompletionSource tcs = new();
+        MockRecognition
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
+            .Returns(tcs.Task)
+            .Verifiable(Times.Once);
+        MockRecognition
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
+            .Returns(AsyncEnumerate(false, result1.Object))
+            .Verifiable(Times.Once);
+
+        MockSynthesis
+            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Verifiable(Times.Once);
+        MockSynthesis
+            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name, 3)))
+            .Verifiable(Times.Once);
+
+        MockExecution
+            .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Exactly(3));
+
+        sut.StartListening();
+
+        // Act
+        tcs.SetResult();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result1.Object.Text, Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name));
 
@@ -664,13 +730,7 @@ public class ConversationControllerTests
             .Setup(x => x.Say(Phrases.Conversation_ImListening))
             .Verifiable(Times.Once);
 
-        Mock<IRecognitionResult> result1 = new();
-        result1
-            .SetupGet(x => x.Text)
-            .Returns(Command1.Name);
-        result1
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("Command:" + Command1.Name);
+        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         MockRecognition
             .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
@@ -695,7 +755,7 @@ public class ConversationControllerTests
         MockLogger.VerifyMessages(
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, result1.Object.SemanticMeaning),
+            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Stopping);
 
@@ -719,13 +779,7 @@ public class ConversationControllerTests
             .Setup(x => x.Say(Phrases.Conversation_ImListening))
             .Verifiable(Times.Once);
 
-        Mock<IRecognitionResult> result1 = new();
-        result1
-            .SetupGet(x => x.Text)
-            .Returns(Command1.Name);
-        result1
-            .SetupGet(x => x.SemanticMeaning)
-            .Returns("Command:" + Command1.Name);
+        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         MockRecognition
             .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
@@ -751,7 +805,7 @@ public class ConversationControllerTests
         MockLogger.VerifyMessages(
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, result1.Object.SemanticMeaning),
+            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Stopping,
             Expected_Stopped);

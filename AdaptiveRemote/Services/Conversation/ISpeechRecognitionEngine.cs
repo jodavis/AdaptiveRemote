@@ -11,5 +11,4 @@ internal interface ISpeechRecognitionEngine
     void UnloadGrammar(Grammar grammar);
     void RecognizeAsync();
     void RecognizeAsyncCancel();
-    void SetInputToDefaultAudioDevice();
 }

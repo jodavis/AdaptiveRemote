@@ -14,8 +14,6 @@ internal class SpeechSynthesis : ISpeechSynthesis
         _logger = logger;
 
         SelectVoice(settings.Value.Voice);
-
-        _synthesizer.SetOutputToDefaultAudioDevice();
     }
 
     private void SelectVoice(string[] voiceNames)

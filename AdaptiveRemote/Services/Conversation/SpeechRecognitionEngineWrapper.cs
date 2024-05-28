@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
 using System.Speech.Recognition;
 using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 
     private event EventHandler<RecognitionResultEventArgs>? _speechRecognized;
 
-    public SpeechRecognitionEngineWrapper(ILogger<SpeechRecognitionEngine> logger)
+    public SpeechRecognitionEngineWrapper(ILogger<SpeechRecognitionEngine> logger, IAudioConfigurationService audioConfiguration)
     {
         _logger = logger;
 
@@ -29,6 +30,8 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
         _engine.SpeechRecognized += OnSpeechRecognized;
 
         _engine.SpeechRecognized += BroadcastSpeechRecognized;
+
+        audioConfiguration.Configure(_engine);
     }
 
     private void BroadcastSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
@@ -90,7 +93,23 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 
         string IRecognitionResult.Text => _result.Text;
 
-        string IRecognitionResult.SemanticMeaning => _result.Semantics.Value?.ToString() ?? _result.Text;
+        bool IRecognitionResult.ContainsSemanticValue(string key) => _result.Semantics.ContainsKey(key);
+        void IRecognitionResult.WriteToWaveStream(Stream waveStream) => _result.Audio.WriteToWaveStream(waveStream);
+
+        bool IRecognitionResult.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
+        {
+            if (_result.Semantics.ContainsKey(key) &&
+                _result.Semantics[key]?.Value is string v)
+            {
+                value = v;
+                return true;
+            }
+            else
+            {
+                value = null;
+                return false;
+            }
+        }
 
         public override string ToString()
             => string.Format(
@@ -100,7 +119,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
                     "Confidence: {4}",
                     "Alternates: '{1}'",
                     "Homophones: '{7}'",
-                    "Semantics: {3} / {2}",
+                    "Semantics: {2}",
                     "Grammar: {5}"),
                 _result.Text,
                 string.Join("', '", _result.Alternates.Select(x => $"{x.Text}:{x.Confidence}")),

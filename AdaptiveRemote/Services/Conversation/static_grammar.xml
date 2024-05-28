@@ -8,7 +8,7 @@
       <item>Hey Remote</item>
       <item>Hey TV</item>
     </one-of>
-    <tag>out="STARTLISTENING"</tag>
+    <tag>out.system="STARTLISTENING"</tag>
   </rule>
 
   <rule id="YesNo" scope="public">
@@ -20,7 +20,7 @@
           <item>Yep</item>
           <item>Yeah</item>
         </one-of>
-        <tag>out="YES"</tag>
+        <tag>out.system="YES"</tag>
       </item>
       <item>
         <one-of>
@@ -28,7 +28,7 @@
           <item>Nah</item>
           <item>No, thank you</item>
         </one-of>
-        <tag>out="NO"</tag>
+        <tag>out.system="NO"</tag>
       </item>
     </one-of>
   </rule>
@@ -37,6 +37,9 @@
     <one-of>
       <item>
         <ruleref uri="#Command"></ruleref>
+      </item>
+      <item>
+        <ruleref uri="#RepeatableCommand"></ruleref>
       </item>
       <item>
         <ruleref uri="#Stop"></ruleref>
@@ -48,91 +51,109 @@
     <one-of>
       <item>
         <one-of>
-          <item>Up</item>
-          <item>Go up</item>
-        </one-of>
-        <tag>out="Command:Up"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Down</item>
-          <item>Go down</item>
-        </one-of>
-        <tag>out="Command:Down"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Left</item>
-          <item>Go left</item>
-        </one-of>
-        <tag>out="Command:Left"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Right</item>
-          <item>Go right</item>
-        </one-of>
-        <tag>out="Command:Right"</tag>
-      </item>
-      <item>
-        <one-of>
           <item>Select</item>
           <item>OK</item>
         </one-of>
-        <tag>out="Command:Select"</tag>
+        <tag>out.command="Select"</tag>
       </item>
       <item>
         <one-of>
           <item>TiVo</item>
           <item>Go to TiVo</item>
         </one-of>
-        <tag>out="Command:TiVo"</tag>
+        <tag>out.command="TiVo"</tag>
       </item>
       <item>
         <one-of>
           <item>Guide</item>
           <item>Go to Guide</item>
         </one-of>
-        <tag>out="Command:Guide"</tag>
+        <tag>out.command="Guide"</tag>
       </item>
       <item>
         <one-of>
           <item>Netflix</item>
           <item>Go to Netflix</item>
         </one-of>
-        <tag>out="Command:Netflix"</tag>
+        <tag>out.command="Netflix"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Play</item>
+        </one-of>
+        <tag>out.command="Play"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Pause</item>
+        </one-of>
+        <tag>out.command="Pause"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Record</item>
+        </one-of>
+        <tag>out.command="Record"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Mute</item>
+        </one-of>
+        <tag>out.command="Mute"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Exit</item>
+          <item>Quit</item>
+        </one-of>
+        <tag>out.command="Exit"</tag>
+      </item>
+    </one-of>
+  </rule>
+
+  <rule id="RepeatableCommand">
+    <one-of>
+      <item>
+        <one-of>
+          <item>Up</item>
+          <item>Go up</item>
+        </one-of>
+        <tag>out.command="Up"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Down</item>
+          <item>Go down</item>
+        </one-of>
+        <tag>out.command="Down"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Left</item>
+          <item>Go left</item>
+        </one-of>
+        <tag>out.command="Left"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Right</item>
+          <item>Go right</item>
+        </one-of>
+        <tag>out.command="Right"</tag>
       </item>
       <item>
         <one-of>
           <item>Back</item>
           <item>Go back</item>
         </one-of>
-        <tag>out="Command:Back"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Play</item>
-        </one-of>
-        <tag>out="Command:Play"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Pause</item>
-        </one-of>
-        <tag>out="Command:Pause"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Record</item>
-        </one-of>
-        <tag>out="Command:Record"</tag>
+        <tag>out.command="Back"</tag>
       </item>
       <item>
         <one-of>
           <item>Replay</item>
           <item>Skip back</item>
         </one-of>
-        <tag>out="Command:Replay"</tag>
+        <tag>out.command="Replay"</tag>
       </item>
       <item>
         <one-of>
@@ -140,51 +161,41 @@
           <item>Skip forward</item>
           <item>Skip</item>
         </one-of>
-        <tag>out="Command:Skip"</tag>
+        <tag>out.command="Skip"</tag>
       </item>
       <item>
         <one-of>
-          <item>Channel Up</item>
-          <item>Page Up</item>
+          <item>Channel up</item>
+          <item>Page up</item>
         </one-of>
-        <tag>out="Command:ChannelUp"</tag>
+        <tag>out.command="ChannelUp"</tag>
       </item>
       <item>
         <one-of>
-          <item>Channel Down</item>
-          <item>Page Down</item>
+          <item>Channel down</item>
+          <item>Page down</item>
         </one-of>
-        <tag>out="Command:ChannelDown"</tag>
+        <tag>out.command="ChannelDown"</tag>
       </item>
       <item>
         <one-of>
           <item>Louder</item>
           <item>Volume up</item>
         </one-of>
-        <tag>out="Command:VolumeUp"</tag>
+        <tag>out.command="VolumeUp"</tag>
       </item>
       <item>
         <one-of>
           <item>Quieter</item>
           <item>Softer</item>
-          <item>Volume Down</item>
+          <item>Volume down</item>
         </one-of>
-        <tag>out="Command:VolumeDown"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Mute</item>
-        </one-of>
-        <tag>out="Command:Mute"</tag>
-      </item>
-      <item>
-        <one-of>
-          <item>Exit</item>
-          <item>Quit</item>
-        </one-of>
-        <tag>out="Command:Exit"</tag>
+        <tag>out.command="VolumeDown"</tag>
       </item>
     </one-of>
+
+    <ruleref uri="#RepeatCount" />
+    <tag>out.repeat=rules.latest()</tag>
   </rule>
 
   <rule id="Stop">
@@ -194,10 +205,81 @@
       <item>I'm Done</item>
       <item>Thank you</item>
     </one-of>
-    <tag>out="STOPLISTENING"</tag>
+    <tag>out.system="STOPLISTENING"</tag>
   </rule>
 
   <rule id="Typing">
     Type <ruleref uri="grammar:dictation" type="application/srgs+xml" />
+  </rule>
+
+  <rule id="RepeatCount">
+    <one-of>
+      <item>
+        <one-of>
+          <item></item>
+          <item>once</item>
+          <item>one</item>
+          <item>one time</item>
+        </one-of>
+        <tag>out=1</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>twice</item>
+          <item>two</item>
+          <item>two times</item>
+        </one-of>
+        <tag>out=2</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>three</item>
+          <item>three times</item>
+        </one-of>
+        <tag>out=3</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>four</item>
+          <item>four times</item>
+        </one-of>
+        <tag>out=4</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>five</item>
+          <item>five times</item>
+        </one-of>
+        <tag>out=5</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>six</item>
+          <item>six times</item>
+        </one-of>
+        <tag>out=6</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>seven</item>
+          <item>seven times</item>
+        </one-of>
+        <tag>out=7</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>eight</item>
+          <item>eight times</item>
+        </one-of>
+        <tag>out=8</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>nine</item>
+          <item>nine times</item>
+        </one-of>
+        <tag>out=9</tag>
+      </item>
+    </one-of>
   </rule>
 </grammar>
