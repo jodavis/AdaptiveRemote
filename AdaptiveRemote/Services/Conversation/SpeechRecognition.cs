@@ -1,7 +1,9 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.IO;
+using System.Runtime.CompilerServices;
 using System.Speech.Recognition;
 using System.Threading.Channels;
 using AdaptiveRemote.Logging;
+using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -9,6 +11,8 @@ namespace AdaptiveRemote.Services.Conversation;
 
 internal class SpeechRecognition : ISpeechRecognition, IDisposable
 {
+    private static readonly string[] SemanticKeyList = ["command", "repeat", "system"];
+
     private readonly ISpeechRecognitionEngine _engine;
     private readonly ILogger _logger;
     private readonly ConversationSettings _settings;
@@ -31,8 +35,6 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         _logger = logger;
         _settings = settings.Value;
 
-        _engine.SetInputToDefaultAudioDevice();
-
         _attentionGrammar = LoadGrammar(grammarProvider.LoadAttentionGrammar);
         _commandsGrammar = LoadGrammar(grammarProvider.LoadCommandsGrammar);
         _yesNoGrammar = LoadGrammar(grammarProvider.LoadYesNoGrammar);
@@ -43,6 +45,8 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         _attentionTcs.SetResult();
         _yesNoTcs.SetResult(false);
         _commandChannel.Writer.Complete();
+
+        _settings = settings.Value;
     }
 
     private void OnRecognitionError(object? sender, RecognitionErrorEventArgs e)
@@ -57,26 +61,33 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
 
     private void OnSpeechRecognized(object? sender, RecognitionResultEventArgs e)
     {
-        switch (e.Result.SemanticMeaning)
+        if (e.Result.TryGetSemanticValue("system", out string? systemCommand))
         {
-            case "YES":
-                _yesNoTcs.TrySetResult(true);
-                break;
-            case "NO":
-                _yesNoTcs.TrySetResult(false);
-                break;
-            case "STARTLISTENING":
-                _attentionTcs.TrySetResult();
-                break;
-            case "STOPLISTENING":
-                _commandChannel.Writer.TryComplete();
-                break;
-            default:
-                if (e.Result.SemanticMeaning.StartsWith("Command:") == true)
-                {
-                    _commandChannel.Writer.TryWrite(e.Result);
-                }
-                break;
+            switch (systemCommand)
+            {
+                case "YES":
+                    _yesNoTcs.TrySetResult(true);
+                    break;
+                case "NO":
+                    _yesNoTcs.TrySetResult(false);
+                    break;
+                case "STARTLISTENING":
+                    _attentionTcs.TrySetResult();
+                    break;
+                case "STOPLISTENING":
+                    _commandChannel.Writer.TryComplete();
+                    break;
+            }
+        }
+
+        if (e.Result.ContainsSemanticValue("command"))
+        {
+            _commandChannel.Writer.TryWrite(e.Result);
+        }
+
+        if (_settings.RecordSamples)
+        {
+            RecordSpeechSample(e.Result);
         }
     }
 
@@ -273,5 +284,32 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         UnloadGrammar(_attentionGrammar);
         UnloadGrammar(_yesNoGrammar);
         UnloadGrammar(_commandsGrammar);
+    }
+
+    private void RecordSpeechSample(IRecognitionResult result)
+    {
+        string outputPath = _settings.RecordingOutputPath ?? ".";
+        string userName = _settings.RecordingUserName ?? "User";
+
+        string text = result.Text.ToPascalCase();
+        string fileName = $"{userName}_{text}_{DateTime.Now:hhmmss}";
+        string path = $"{outputPath}\\{fileName}.wav";
+        using (Stream waveStream = File.OpenWrite(path))
+        {
+            result.WriteToWaveStream(waveStream);
+            waveStream.Flush();
+        }
+
+        string dataRowsPath = $"{outputPath}\\Datarows.txt";
+        string semantics = string.Join(",", SemanticKeyList
+            .Select(key => result.TryGetSemanticValue(key, out string? value) ? $"{key}={value}" : null)
+            .OfType<string>());
+
+        using (Stream dataRowsStream = File.Open(dataRowsPath, FileMode.Append))
+        {
+            StreamWriter writer = new(dataRowsStream);
+            writer.WriteLine($"    [DataRow(\"{fileName}\", \"{result.Text}\", \"{semantics}\", DisplayName = \"{fileName}\")]");
+            writer.Flush();
+        }
     }
 }

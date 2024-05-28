@@ -25,9 +25,6 @@ public class SpeechSynthesisTests
         MockSynthesizer
             .Setup(x => x.GetInstalledVoices())
             .Returns(InstalledVoices);
-        MockSynthesizer
-            .Setup(x => x.SetOutputToDefaultAudioDevice())
-            .Verifiable(Times.Once);
     }
 
     [TestCleanup]

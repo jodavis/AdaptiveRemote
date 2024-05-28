@@ -114,26 +114,39 @@ internal class ConversationController : IConversationController, IDisposable
 
     private async Task ListenAsync(IReadOnlyDictionary<string, Command> commands, CancellationToken cancellationToken)
     {
-        const string CommandPrefix = "Command:";
-
         while (true)
         {
             await ListenForAttentionAsync(cancellationToken);
 
             await foreach (IRecognitionResult result in ListenForCommandsAsync(cancellationToken))
             {
-                _logger.LogInformation(Message.ConversationController_Recognized, result.Text, result.SemanticMeaning);
+                if (result.TryGetSemanticValue("command", out string? commandName))
+                {
+                    _logger.LogInformation(Message.ConversationController_Recognized, result.Text, commandName);
 
-                if (result.SemanticMeaning.StartsWith(CommandPrefix) &&
-                    commands.TryGetValue(result.SemanticMeaning.Substring(CommandPrefix.Length), out Command? command))
-                {
-                    await ExecuteCommandAsync(command, cancellationToken);
-                }
-                else
-                {
-                    _logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
+                    if (commands.TryGetValue(commandName, out Command? command))
+                    {
+                        int repeat = ParseRepeat(result);
+
+                        await ExecuteCommandAsync(command, repeat, cancellationToken);
+                    }
+                    else
+                    {
+                        _logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
+                    }
                 }
             }
+        }
+
+        static int ParseRepeat(IRecognitionResult result)
+        {
+            if (result.TryGetSemanticValue("repeat", out string? repeatString) &&
+                int.TryParse(repeatString, out int repeat))
+            {
+                return repeat;
+            }
+
+            return 1;
         }
     }
 
@@ -170,14 +183,18 @@ internal class ConversationController : IConversationController, IDisposable
         }
     }
 
-    private async Task ExecuteCommandAsync(Command command, CancellationToken cancellationToken)
+    private async Task ExecuteCommandAsync(Command command, int repeat, CancellationToken cancellationToken)
     {
-        _speechSynthesis.Say(Phrases.Conversation_Sent(command.Name));
+        _speechSynthesis.Say(Phrases.Conversation_Sent(command.Name, repeat));
         _viewModel.StatusMessage = Phrases.Conversation_ImSending;
-        _logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
-        await _executionService.ExecuteAsync(command, cancellationToken);
+        for (int i = 0; i < repeat; i++)
+        {
+            _logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
-        _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+            await _executionService.ExecuteAsync(command, cancellationToken);
+
+            _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+        }
     }
 }
