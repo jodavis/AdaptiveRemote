@@ -25,7 +25,7 @@ internal class ConversationController : IConversationController, IDisposable
         IRemoteDefinitionService definitionService,
         ICommandExecutionService executionService,
         ILogger<ConversationController> logger,
-        Models.ConversationView viewModel)
+        ConversationView viewModel)
     {
         _speechSettings = options.Value;
         _speechRecognition = speechRecognition;
@@ -87,9 +87,6 @@ internal class ConversationController : IConversationController, IDisposable
             }
             catch (OperationCanceledException)
             {
-                _viewModel.StatusMessage = string.Empty;
-                _viewModel.IsListening = false;
-
                 _logger.LogInformation(Message.ConversationController_Stopped);
                 break;
             }
@@ -152,49 +149,81 @@ internal class ConversationController : IConversationController, IDisposable
 
     private async Task ListenForAttentionAsync(CancellationToken cancellationToken)
     {
-        _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
-        _logger.LogInformation(Message.ConversationController_ListenForAttention);
+        try
+        {
+            _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
+            _logger.LogInformation(Message.ConversationController_ListenForAttention);
 
-        await _speechRecognition.ListenForAttentionAsync(cancellationToken);
+            await _speechRecognition.ListenForAttentionAsync(cancellationToken);
+        }
+        finally
+        {
+            _viewModel.StatusMessage = string.Empty;
+        }
     }
 
     private async IAsyncEnumerable<IRecognitionResult> ListenForCommandsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         try
         {
-            _viewModel.IsListening = true;
             _viewModel.StatusMessage = Phrases.Conversation_ImListening;
-            _ = _speechSynthesis.SayAsync(Phrases.Conversation_ImListening, default);
+            await SayAsync(Phrases.Conversation_ImListening, cancellationToken);
+
+            _viewModel.IsListening = true;
             _logger.LogInformation(Message.ConversationController_ListenForCommands);
 
             await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
             {
                 yield return result;
-
-                _viewModel.IsListening = true;
-                _viewModel.StatusMessage = Phrases.Conversation_ImListening;
             }
 
-            _ = _speechSynthesis.SayAsync(Phrases.Conversation_StoppedListening, default);
+            _viewModel.IsListening = false;
+            _viewModel.StatusMessage = string.Empty;
+            await SayAsync(Phrases.Conversation_StoppedListening, cancellationToken);
         }
         finally
         {
             _viewModel.IsListening = false;
+            _viewModel.StatusMessage = string.Empty;
         }
     }
 
     private async Task ExecuteCommandAsync(Command command, int repeat, CancellationToken cancellationToken)
     {
-        _ = _speechSynthesis.SayAsync(Phrases.Conversation_Sent(command.Name, repeat), default);
+        Task sayTask = SayAsync(Phrases.Conversation_Sent(command.Name, repeat), cancellationToken);
+
+        string previousMessage = _viewModel.StatusMessage;
         _viewModel.StatusMessage = Phrases.Conversation_ImSending;
 
-        for (int i = 0; i < repeat; i++)
+        try
         {
-            _logger.LogInformation(Message.ConversationController_Executing, command.Name);
+            for (int i = 0; i < repeat; i++)
+            {
+                _logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
-            await _executionService.ExecuteAsync(command, cancellationToken);
+                await _executionService.ExecuteAsync(command, cancellationToken);
 
-            _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+                _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+            }
+
+            await sayTask;
+        }
+        finally
+        {
+            _viewModel.StatusMessage = previousMessage;
+        }
+    }
+
+    private async Task SayAsync(string phrase, CancellationToken cancellationToken)
+    {
+        try
+        {
+            _viewModel.SpeakingMessage = phrase;
+            await _speechSynthesis.SayAsync(phrase, cancellationToken);
+        }
+        finally
+        {
+            _viewModel.SpeakingMessage = null;
         }
     }
 }
