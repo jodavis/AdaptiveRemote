@@ -27,8 +27,6 @@ internal enum Message
     SpeechRecognition_CancelledListeningMethod = 303,
     SpeechRecognition_ErrorInListeningMethod = 304,
     SpeechRecognition_GrammarEnabled = 305,
-    SpeechRecognition_Listening = 306,
-    SpeechRecognition_ErrorInStopListening = 307,
     SpeechRecognition_ListeningMethodAlreadyInProgress = 308,
     SpeechRecognition_GrammarFailedToLoad = 309,
     SpeechRecognition_GrammarFailedToUnload = 310,
