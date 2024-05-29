@@ -227,16 +227,6 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to An error occured while stopping the listening engine
-        ///{0}.
-        /// </summary>
-        internal static string SpeechRecognition_ErrorInStopListening {
-            get {
-                return ResourceManager.GetString("SpeechRecognition_ErrorInStopListening", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to {0}.Enabled={1}.
         /// </summary>
         internal static string SpeechRecognition_GrammarEnabled {
@@ -262,15 +252,6 @@ namespace AdaptiveRemote.Logging {
         internal static string SpeechRecognition_GrammarFailedToUnload {
             get {
                 return ResourceManager.GetString("SpeechRecognition_GrammarFailedToUnload", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Listening={0}.
-        /// </summary>
-        internal static string SpeechRecognition_Listening {
-            get {
-                return ResourceManager.GetString("SpeechRecognition_Listening", resourceCulture);
             }
         }
         

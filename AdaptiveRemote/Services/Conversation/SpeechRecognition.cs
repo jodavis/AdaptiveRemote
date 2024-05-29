@@ -14,6 +14,7 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
     private static readonly string[] SemanticKeyList = ["command", "repeat", "system"];
 
     private readonly ISpeechRecognitionEngine _engine;
+    private readonly IListeningController _listeningController;
     private readonly ILogger _logger;
     private readonly ConversationSettings _settings;
 
@@ -27,11 +28,11 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
 
     private readonly CancellationTokenSource _stopCts = new();
     private readonly object _lockObject = new();
-    private int _listeningCount = 0;
 
-    public SpeechRecognition(IOptionsSnapshot<ConversationSettings> settings, ISpeechRecognitionEngine engine, IGrammarProvider grammarProvider, ILogger<SpeechRecognition> logger)
+    public SpeechRecognition(IOptionsSnapshot<ConversationSettings> settings, ISpeechRecognitionEngine engine, IListeningController listeningController, IGrammarProvider grammarProvider, ILogger<SpeechRecognition> logger)
     {
         _engine = engine;
+        _listeningController = listeningController;
         _logger = logger;
         _settings = settings.Value;
 
@@ -180,9 +181,10 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         try
         {
             EnableGrammar(grammar, true);
-            StartListening();
-
-            await listenTask;
+            using (_listeningController.Listen())
+            {
+                await listenTask;
+            }
         }
         catch (OperationCanceledException)
         {
@@ -196,7 +198,6 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         }
         finally
         {
-            StopListening();
             EnableGrammar(grammar, false);
         }
     }
@@ -249,31 +250,6 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         finally
         {
             _logger.LogInformation(Message.SpeechRecognition_GrammarEnabled, grammar.Name, grammar.Enabled);
-        }
-    }
-
-    private void StartListening()
-    {
-        if (_listeningCount++ == 0)
-        {
-            _engine.RecognizeAsync();
-            _logger.LogInformation(Message.SpeechRecognition_Listening, true);
-        }
-    }
-
-    private void StopListening()
-    {
-        if (--_listeningCount == 0)
-        {
-            try
-            {
-                _engine.RecognizeAsyncCancel();
-                _logger.LogInformation(Message.SpeechRecognition_Listening, false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(Message.SpeechRecognition_ErrorInStopListening, ex);
-            }
         }
     }
 

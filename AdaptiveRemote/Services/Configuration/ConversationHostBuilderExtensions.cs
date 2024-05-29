@@ -19,6 +19,7 @@ internal static class ConversationHostBuilderExtensions
             .AddSingleton<ISpeechSynthesizer, SpeechSynthesizerWrapper>()
             .AddSingleton<ISpeechRecognitionEngine, SpeechRecognitionEngineWrapper>()
             .AddSingleton<IAudioConfigurationService, DefaultDeviceAudioConfiguration>()
+            .AddSingleton<IListeningController, ListeningController>()
             .AddScoped(GetConversationViewModel);
 
     internal static IServiceCollection AddConversationServices(this IServiceCollection services, IConfiguration config)
