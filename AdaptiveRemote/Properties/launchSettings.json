@@ -5,6 +5,11 @@
       "commandLineArgs": "--Conversation:RecordSamples=true --Conversation:RecordingUserName=User1 --Conversation:RecordingOutputPath=../AdaptiveRemote.Tests/Services/Conversation/SpeechSamples",
       "workingDirectory": "."
     },
+    "FakeConversation": {
+      "commandName": "Project",
+      "commandLineArgs": "--Conversation:UseFakes=true",
+      "workingDirectory": "."
+    },
     "NormalRun": {
       "commandName": "Project"
     }
