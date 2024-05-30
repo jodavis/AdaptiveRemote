@@ -1,6 +1,18 @@
 ﻿@inject Services.IConversationController Conversation
 
-<div class="@(IsListening ? "listening-on" : "listening-off")">@StatusMessage</div>
+@if (IsListening)
+{
+    <div class="conversation-border"><div>Listening...</div></div>
+}
+
+@if (SpeakingMessage is not null)
+{
+    <div class="conversation-speaking-message">@SpeakingMessage</div>
+}
+else
+{
+    <div class="conversation-status-message">@StatusMessage</div>
+}
 
 @code {
     [Parameter]
@@ -8,6 +20,7 @@
 
     private bool IsListening => ViewModel?.IsListening ?? false;
     private string? StatusMessage => ViewModel?.StatusMessage;
+    private string? SpeakingMessage => ViewModel?.SpeakingMessage;
 
     protected override void OnInitialized()
     {
