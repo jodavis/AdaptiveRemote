@@ -344,7 +344,7 @@ public class ConversationControllerTests
             Expected_Recognized(result.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name));
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.AreEqual(Phrases.Conversation_Sent(Command1.Name), ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
@@ -481,7 +481,7 @@ public class ConversationControllerTests
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name));
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.AreEqual(Phrases.Conversation_Sent(Command1.Name), ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }

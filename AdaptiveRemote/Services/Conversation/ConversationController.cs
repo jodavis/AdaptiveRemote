@@ -216,13 +216,16 @@ internal class ConversationController : IConversationController, IDisposable
 
     private async Task SayAsync(string phrase, CancellationToken cancellationToken)
     {
+        bool wasListening = _viewModel.IsListening;
         try
         {
+            _viewModel.IsListening = false;
             _viewModel.SpeakingMessage = phrase;
             await _speechSynthesis.SayAsync(phrase, cancellationToken);
         }
         finally
         {
+            _viewModel.IsListening = wasListening;
             _viewModel.SpeakingMessage = null;
         }
     }
