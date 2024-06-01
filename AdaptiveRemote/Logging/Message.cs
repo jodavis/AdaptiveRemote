@@ -40,4 +40,8 @@ internal enum Message
     ListeningController_RecognizeAsyncError = 502,
     ListeningController_RecognizeAsyncCancelError = 503,
     ListeningController_UpdateListenStateError = 504,
+    CommandService_Executing = 601,
+    CommandService_Executed = 602,
+    CommandService_Error = 603,
+    CommandService_Cancelled = 604,
 }

@@ -117,6 +117,23 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CommandService_Cancelled" xml:space="preserve">
+    <value>Cancelled executing {0}</value>
+    <comment>0=Description of the command</comment>
+  </data>
+  <data name="CommandService_Error" xml:space="preserve">
+    <value>Error executing {0}
+{1}</value>
+    <comment>0=Description of the command,1=Exception message</comment>
+  </data>
+  <data name="CommandService_Executed" xml:space="preserve">
+    <value>Executed {0}</value>
+    <comment>0=Description of the command</comment>
+  </data>
+  <data name="CommandService_Executing" xml:space="preserve">
+    <value>Executing {0}</value>
+    <comment>0=Description of the command</comment>
+  </data>
   <data name="ConversationController_Error" xml:space="preserve">
     <value>Error in speech recognition loop: {0}</value>
     <comment>0=Exception message</comment>
