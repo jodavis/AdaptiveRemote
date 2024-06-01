@@ -61,6 +61,43 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cancelled executing {0}.
+        /// </summary>
+        internal static string CommandService_Cancelled {
+            get {
+                return ResourceManager.GetString("CommandService_Cancelled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error executing {0}
+        ///{1}.
+        /// </summary>
+        internal static string CommandService_Error {
+            get {
+                return ResourceManager.GetString("CommandService_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Executed {0}.
+        /// </summary>
+        internal static string CommandService_Executed {
+            get {
+                return ResourceManager.GetString("CommandService_Executed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Executing {0}.
+        /// </summary>
+        internal static string CommandService_Executing {
+            get {
+                return ResourceManager.GetString("CommandService_Executing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error in speech recognition loop: {0}.
         /// </summary>
         internal static string ConversationController_Error {
