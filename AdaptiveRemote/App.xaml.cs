@@ -36,20 +36,14 @@ public partial class App : Application
                 config.AddCommandLine(args);
             })
             .ConfigureServices(services => services.AddWpfBlazorWebView())
+            .ConfigureServices(services => services.AddSingleton<MainWindow>())
             .AddRemoteServices()
             .AddConversationSystem()
-            .ConfigureServices(services => services.AddSingleton<MainWindow>())
             .Build();
 
-        // TODO: What does the restart cycle look like?
-        MainWindow window = host.Services.GetRequiredService<MainWindow>();
-
-        IServiceScope scope = host.Services.CreateScope();
-        MainWindow.Resources["services"] = scope.ServiceProvider;
-
-        window.Show();
         await host.RunAsync();
-        window.Hide();
+
+        Shutdown();
     }
 
     protected override void OnExit(ExitEventArgs e)

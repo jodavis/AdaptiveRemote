@@ -147,7 +147,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Never);
 
         // Act
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         // Assert
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -159,7 +159,7 @@ public class ConversationControllerTests
     public void ConversationController_OnErrorDuringInitialization_LogsError()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         Exception exception = new DataMisalignedException();
         MockDefinition
@@ -167,7 +167,7 @@ public class ConversationControllerTests
             .Throws(exception);
 
         // Act
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -182,7 +182,7 @@ public class ConversationControllerTests
     public void ConversationController_Start_StartsListeningForAttention()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         MockRecognition
             .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
@@ -190,7 +190,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         // Act
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -205,7 +205,7 @@ public class ConversationControllerTests
     public void ConversationController_OnAttention_WaitsToSayImListeningingBeforeListeningForCommands()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -218,7 +218,7 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -236,7 +236,7 @@ public class ConversationControllerTests
     public void ConversationController_OnAttention_CancelsSayingImListeningIfStopped()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -250,7 +250,7 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         sut.Dispose();
@@ -270,7 +270,7 @@ public class ConversationControllerTests
     public void ConversationController_OnAttention_StartsListeningForCommands()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -286,7 +286,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -305,7 +305,7 @@ public class ConversationControllerTests
     public void ConversationController_OnFirstCommand_AnnouncesAndExecutesCommand()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
@@ -332,7 +332,7 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -353,7 +353,7 @@ public class ConversationControllerTests
     public void ConversationController_OnUnrecognizedCommand_LogsError()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result = CreateMockResult("Not a command", "command=Not a command");
 
@@ -371,7 +371,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -392,7 +392,7 @@ public class ConversationControllerTests
     public void ConversationController_OnCompletedFirstCommand_LogsExecutedCommand()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
@@ -418,7 +418,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -440,7 +440,7 @@ public class ConversationControllerTests
     public void ConversationController_OnCompletedFirstCommand_DoesNotExecuteNextCommandUntilSayAsyncCompletes()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
         Mock<IRecognitionResult> result2 = CreateMockResult(Command2.Name, "command=" + Command2.Name);
@@ -468,7 +468,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -490,7 +490,7 @@ public class ConversationControllerTests
     public void ConversationController_OnCompletedFirstCommand_CancelsWhileAnnouncingSent()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
@@ -518,7 +518,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         sut.Dispose();
@@ -542,7 +542,7 @@ public class ConversationControllerTests
     public void ConversationController_OnCommandWithRepeat_LogsExecutedCommandMultipleTimes()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name, "repeat=3");
 
@@ -568,7 +568,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Exactly(3));
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -594,7 +594,7 @@ public class ConversationControllerTests
     public void ConversationController_OnAttentionAndStopListening_WaitsToSayStoppedListeningBeforeListeningForAttention()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -615,7 +615,7 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -634,7 +634,7 @@ public class ConversationControllerTests
     public void ConversationController_OnAttentionAndStopListening_CancelsSayAsyncWhenStopped()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -655,7 +655,7 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         sut.Dispose();
@@ -676,7 +676,7 @@ public class ConversationControllerTests
     public void ConversationController_OnAttentionAndStopListening_StartsListeningForAttentionAgain()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -696,7 +696,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -716,7 +716,7 @@ public class ConversationControllerTests
     public void ConversationController_OnAttentionAndStopListening_StopsAndStartsListeningForCommandsAgain()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -736,7 +736,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Exactly(2));
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
         tcs.SetResult();
 
         // Act
@@ -759,7 +759,7 @@ public class ConversationControllerTests
     public void ConversationController_OnError_RestartsListeningForAttention()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
@@ -777,7 +777,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         tcs.SetResult();
@@ -800,7 +800,7 @@ public class ConversationControllerTests
     public void ConversationController_OnRepeatedErrors_StopsRestartingAfterErrorLimit()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
         MockRecognition
@@ -809,7 +809,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Exactly(ConversationSettings.ErrorRetryLimit));
 
         // Act
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Assert
         string expectedErrorMessage = Expected_Error(exception);
@@ -854,7 +854,7 @@ public class ConversationControllerTests
     public void ConversationController_StopWhileWaitingForAttention_CancelsWaitingForAttention()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         CancellationToken token = default;
         MockRecognition
@@ -863,7 +863,7 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         sut.Dispose();
@@ -884,7 +884,7 @@ public class ConversationControllerTests
     public void ConversationController_StopCancelsListenForAttention_LogsStopped()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -893,7 +893,7 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         sut.Dispose();
@@ -913,7 +913,7 @@ public class ConversationControllerTests
     public void ConversationController_StopWhileWaitingForCommands_CancelsWaitingForCommands()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         CancellationToken token = default;
         MockRecognition
@@ -930,7 +930,7 @@ public class ConversationControllerTests
             .Returns(AsyncEnumerate(complete: false))
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         sut.Dispose();
@@ -952,7 +952,7 @@ public class ConversationControllerTests
     public void ConversationController_WaitingForCommandsCanceled_LogsStopped()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         MockRecognition
             .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
@@ -968,7 +968,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         // Act
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -985,7 +985,7 @@ public class ConversationControllerTests
     public void ConversationController_StopWhileExecutingCommand_CancelsExecutingCommand()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         CancellationToken token = default;
         MockRecognition
@@ -1012,7 +1012,7 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         sut.Dispose();
@@ -1036,7 +1036,7 @@ public class ConversationControllerTests
     public void ConversationController_ExecutingCommandCanceled_LogsStopped()
     {
         // Arrange
-        IConversationController sut = CreateSut();
+        ConversationController sut = CreateSut();
 
         MockRecognition
             .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
@@ -1063,7 +1063,7 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.StartListening();
+        sut.InitializeAsync(default);
 
         // Act
         sut.Dispose();
