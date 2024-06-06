@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-internal class ConversationController : IConversationController, IDisposable
+internal class ConversationController : IScopedLifecycle, IDisposable
 {
     private readonly ConversationSettings _speechSettings;
     private readonly ISpeechRecognition _speechRecognition;
@@ -39,7 +39,9 @@ internal class ConversationController : IConversationController, IDisposable
         _viewModel.StatusMessage = Phrases.Conversation_WaitingForActivation;
     }
 
-    public void StartListening()
+    string IScopedLifecycle.Name => "Conversation system";
+
+    public Task InitializeAsync(CancellationToken cancellationToken)
     {
         IReadOnlyDictionary<string, Command>? commands = GetCommands();
 
@@ -47,6 +49,8 @@ internal class ConversationController : IConversationController, IDisposable
         {
             _ = ListenWithRetriesAsync(commands, _stop.Token);
         }
+
+        return Task.CompletedTask;
     }
 
     public void Dispose()
