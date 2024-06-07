@@ -176,16 +176,14 @@ internal class ConversationController : IConversationController, IDisposable
             {
                 yield return result;
             }
-
-            _viewModel.IsListening = false;
-            _viewModel.StatusMessage = string.Empty;
-            await SayAsync(Phrases.Conversation_StoppedListening, cancellationToken);
         }
         finally
         {
             _viewModel.IsListening = false;
             _viewModel.StatusMessage = string.Empty;
         }
+
+        await SayAsync(Phrases.Conversation_StoppedListening, cancellationToken);
     }
 
     private async Task ExecuteCommandAsync(Command command, int repeat, CancellationToken cancellationToken)

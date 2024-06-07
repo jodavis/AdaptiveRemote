@@ -22,10 +22,6 @@ public class SpeechRecognitionTests
     private readonly Grammar MockCommandsGrammar = new(new GrammarBuilder("Commands")) { Name = nameof(MockCommandsGrammar) };
     private readonly Grammar MockYesNoGrammar = new(new GrammarBuilder("YesNo")) { Name = nameof(MockYesNoGrammar) };
 
-    // TODO
-    // Use ListeningController
-    // Remove reference counting and error handling
-
     public TestContext? TestContext { get; set; }
 
     private ISpeechRecognition CreateSut() => new SpeechRecognition(MockOptions, MockEngine.Object, MockListening.Object, MockGrammarProvider.Object, MockLogger);

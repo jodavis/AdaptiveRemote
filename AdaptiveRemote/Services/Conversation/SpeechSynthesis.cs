@@ -20,6 +20,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
         SelectVoice(settings.Value.Voice);
 
         _synthesizer.SpeakCompleted += OnSpeakCompleted;
+        _tcs.SetResult();
     }
 
     private void OnSpeakCompleted(object? sender, EventArgs e) => _tcs.TrySetResult();
@@ -43,6 +44,11 @@ internal class SpeechSynthesis : ISpeechSynthesis
 
     async Task ISpeechSynthesis.SayAsync(string phrase, CancellationToken cancellationToken)
     {
+        if (!_tcs.Task.IsCompleted)
+        {
+            _logger.LogAndThrowError(Message.SpeechSynthesis_AlreadySpeaking, phrase);
+        }
+
         _tcs = new();
 
         using (cancellationToken.Register(() => CancelSpeaking(_tcs, phrase)))

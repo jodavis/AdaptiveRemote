@@ -169,7 +169,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error calling RecognuzeAsyncCancel
+        ///   Looks up a localized string similar to Error calling RecognizeAsyncCancel
         ///{0}.
         /// </summary>
         internal static string ListeningController_RecognizeAsyncCancelError {
@@ -179,7 +179,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error calling RecognuzeAsync
+        ///   Looks up a localized string similar to Error calling RecognizeAsync
         ///{0}.
         /// </summary>
         internal static string ListeningController_RecognizeAsyncError {
@@ -353,6 +353,15 @@ namespace AdaptiveRemote.Logging {
         internal static string SpeechRecognitionEngine_UpdateReached {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_UpdateReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot say &apos;{0}&apos;; another phrase is already in progress..
+        /// </summary>
+        internal static string SpeechSynthesis_AlreadySpeaking {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_AlreadySpeaking", resourceCulture);
             }
         }
         
