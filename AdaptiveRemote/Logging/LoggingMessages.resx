@@ -162,12 +162,12 @@
     <comment>0=Speech that was recognized but did not map to a command</comment>
   </data>
   <data name="ListeningController_RecognizeAsyncCancelError" xml:space="preserve">
-    <value>Error calling RecognuzeAsyncCancel
+    <value>Error calling RecognizeAsyncCancel
 {0}</value>
     <comment>0=Exception</comment>
   </data>
   <data name="ListeningController_RecognizeAsyncError" xml:space="preserve">
-    <value>Error calling RecognuzeAsync
+    <value>Error calling RecognizeAsync
 {0}</value>
     <comment>0=Exception</comment>
   </data>
@@ -248,6 +248,10 @@
   <data name="SpeechRecognition_RecognitionError" xml:space="preserve">
     <value>Recognition Error: {0}</value>
     <comment>0=Error message</comment>
+  </data>
+  <data name="SpeechSynthesis_AlreadySpeaking" xml:space="preserve">
+    <value>Cannot say '{0}'; another phrase is already in progress.</value>
+    <comment>0=Next phrase that was attempted</comment>
   </data>
   <data name="SpeechSynthesis_CancelledSaying" xml:space="preserve">
     <value>Cancelled saying '{0}'</value>

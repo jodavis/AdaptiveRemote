@@ -59,6 +59,8 @@ public class SpeechSynthesisTests
         => $"Information[403]: {string.Format(LoggingMessages.SpeechSynthesis_Saying, phrase)}";
     private static string Expected_CancelledSaying(string phrase)
         => $"Information[404]: {string.Format(LoggingMessages.SpeechSynthesis_CancelledSaying, phrase)}";
+    private static string Expected_AlreadySpeaking(string phrase)
+        => $"Error[405]: {string.Format(LoggingMessages.SpeechSynthesis_AlreadySpeaking, phrase)}";
 
     private ISpeechSynthesis CreateSut()
     {
@@ -364,5 +366,44 @@ public class SpeechSynthesisTests
             Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]),
             Expected_Saying(input));
+    }
+
+    [TestMethod]
+    public void SpeechSynthesis_SayAsync_ThrowsIfSpeakingIsInProgress()
+    {
+        // Arrange
+        const string input1 = "Hello World!";
+        const string input2 = "Hi Planet?!";
+
+        MockSynthesizer
+            .Setup(x => x.SpeakAsync(input1))
+            .Verifiable(Times.Once);
+        MockSynthesizer
+            .Setup(x => x.SpeakAsync(input2))
+            .Verifiable(Times.Never);
+
+        MockController
+            .Setup(x => x.Pause())
+            .Returns(MockPauseDisposable.Object)
+            .Verifiable(Times.Once);
+
+        ISpeechSynthesis sut = CreateSut();
+
+        sut.SayAsync(input1, default);
+
+        Exception expectedError = new InvalidOperationException(
+            string.Format(LoggingMessages.SpeechSynthesis_AlreadySpeaking, input2));
+
+        // Act
+        Task resultTask = sut.SayAsync(input2, default);
+
+        // Assert
+        TaskAssert.IsFaulted(resultTask, expectedError, nameof(resultTask));
+
+        MockLogger.VerifyMessages(
+            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
+            Expected_SelectedVoice(InstalledVoices[0]),
+            Expected_Saying(input1),
+            Expected_AlreadySpeaking(input2));
     }
 }
