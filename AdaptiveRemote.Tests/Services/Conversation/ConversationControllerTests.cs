@@ -19,16 +19,16 @@ public class ConversationControllerTests
     private readonly Mock<IOptionsSnapshot<ConversationSettings>> MockOptions = new();
     private readonly ConversationSettings ConversationSettings = new();
 
-    private static readonly Models.TiVoCommand Command1 = new("Hey you!");
-    private static readonly Models.TiVoCommand Command2 = new("Test Two");
+    private static readonly TiVoCommand Command1 = new("Hey you!");
+    private static readonly TiVoCommand Command2 = new("Test Two");
 
-    private readonly Models.ConversationView ViewModel = new("MOCKGROUP");
-    private readonly Models.RemoteLayoutElement RootLayout =
-        new Models.LayoutGroup("COMMANDS", new List<Models.RemoteLayoutElement>
-        {
+    private readonly ConversationView ViewModel = new("MOCKGROUP");
+    private readonly RemoteLayoutElement RootLayout =
+        new LayoutGroup("COMMANDS",
+        [
             Command1,
             Command2
-        });
+        ]);
 
     private static string Expected_ListenForAttention
         => $"Information[209]: {LoggingMessages.ConversationController_ListenForAttention}";
@@ -106,7 +106,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockExecution
-            .Setup(x => x.ExecuteAsync(It.IsAny<Models.Command>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ExecuteAsync(It.IsAny<Command>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
 
         MockRecognition
@@ -117,7 +117,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Never);
 
         MockSynthesis
-            .Setup(x => x.Say(It.IsAny<string>()))
+            .Setup(x => x.SayAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
 
         MockOptions
@@ -152,6 +152,7 @@ public class ConversationControllerTests
         // Assert
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_WaitingForActivation, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -174,6 +175,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -196,6 +198,72 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+    }
+
+    [TestMethod]
+    public void ConversationController_OnAttention_WaitsToSayImListeningingBeforeListeningForCommands()
+    {
+        // Arrange
+        IConversationController sut = CreateSut();
+
+        TaskCompletionSource tcs = new();
+        MockRecognition
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
+            .Returns(tcs.Task)
+            .Verifiable(Times.Once);
+
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
+            .Returns(IncompleteTask)
+            .Verifiable(Times.Once);
+
+        sut.StartListening();
+
+        // Act
+        tcs.SetResult();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_ListenForAttention);
+
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+    }
+
+    [TestMethod]
+    public void ConversationController_OnAttention_CancelsSayingImListeningIfStopped()
+    {
+        // Arrange
+        IConversationController sut = CreateSut();
+
+        TaskCompletionSource tcs = new();
+        MockRecognition
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
+            .Callback(delegate (string phrase, CancellationToken cancellation) { cancellation.Register(tcs.SetCanceled); })
+            .Returns(tcs.Task)
+            .Verifiable(Times.Once);
+
+        sut.StartListening();
+
+        // Act
+        sut.Dispose();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_ListenForAttention,
+            Expected_Stopping,
+            Expected_Stopped);
+
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -215,7 +283,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         sut.StartListening();
@@ -230,6 +298,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -251,10 +320,11 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
+            .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
         MockExecution
@@ -274,8 +344,9 @@ public class ConversationControllerTests
             Expected_Recognized(result.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name));
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_Sent(Command1.Name), ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -297,7 +368,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         sut.StartListening();
@@ -314,6 +385,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -335,10 +407,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         MockExecution
@@ -361,6 +433,109 @@ public class ConversationControllerTests
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+    }
+
+    [TestMethod]
+    public void ConversationController_OnCompletedFirstCommand_DoesNotExecuteNextCommandUntilSayAsyncCompletes()
+    {
+        // Arrange
+        IConversationController sut = CreateSut();
+
+        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+        Mock<IRecognitionResult> result2 = CreateMockResult(Command2.Name, "command=" + Command2.Name);
+
+        TaskCompletionSource tcs = new();
+        MockRecognition
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
+            .Returns(tcs.Task)
+            .Verifiable(Times.Once);
+        MockRecognition
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
+            .Returns(AsyncEnumerate(false, result1.Object, result2.Object))
+            .Verifiable(Times.Once);
+
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
+            .Verifiable(Times.Once);
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
+            .Returns(IncompleteTask)
+            .Verifiable(Times.Once);
+
+        MockExecution
+            .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        sut.StartListening();
+
+        // Act
+        tcs.SetResult();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result1.Object.Text, Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name));
+
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_Sent(Command1.Name), ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+    }
+
+    [TestMethod]
+    public void ConversationController_OnCompletedFirstCommand_CancelsWhileAnnouncingSent()
+    {
+        // Arrange
+        IConversationController sut = CreateSut();
+
+        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+
+        TaskCompletionSource tcs = new();
+        MockRecognition
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+        MockRecognition
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
+            .Returns(AsyncEnumerate(false, result1.Object))
+            .Verifiable(Times.Once);
+
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
+            .Verifiable(Times.Once);
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
+            .Callback(delegate (string phrase, CancellationToken cancellation) { cancellation.Register(tcs.SetCanceled); })
+            .Returns(tcs.Task)
+            .Verifiable(Times.Once);
+
+        MockExecution
+            .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        sut.StartListening();
+
+        // Act
+        sut.Dispose();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result1.Object.Text, Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name),
+            Expected_Stopping,
+            Expected_Stopped);
+
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -382,10 +557,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name, 3)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name, 3), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         MockExecution
@@ -412,6 +587,89 @@ public class ConversationControllerTests
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+    }
+
+    [TestMethod]
+    public void ConversationController_OnAttentionAndStopListening_WaitsToSayStoppedListeningBeforeListeningForAttention()
+    {
+        // Arrange
+        IConversationController sut = CreateSut();
+
+        TaskCompletionSource tcs = new();
+        MockRecognition
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => tcs = new())
+            .Returns(() => tcs.Task)
+            .Verifiable(Times.Once);
+        MockRecognition
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
+            .Returns(AsyncEnumerate(true))
+            .Verifiable(Times.Once);
+
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
+            .Verifiable(Times.Once);
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
+            .Returns(IncompleteTask)
+            .Verifiable(Times.Once);
+
+        sut.StartListening();
+
+        // Act
+        tcs.SetResult();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_ListenForAttention,
+            Expected_ListenForCommands);
+
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_StoppedListening, ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+    }
+
+    [TestMethod]
+    public void ConversationController_OnAttentionAndStopListening_CancelsSayAsyncWhenStopped()
+    {
+        // Arrange
+        IConversationController sut = CreateSut();
+
+        TaskCompletionSource tcs = new();
+        MockRecognition
+            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+        MockRecognition
+            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
+            .Returns(AsyncEnumerate(true))
+            .Verifiable(Times.Once);
+
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
+            .Verifiable(Times.Once);
+        MockSynthesis
+            .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
+            .Callback(delegate (string phrase, CancellationToken cancellation) { cancellation.Register(tcs.SetCanceled); })
+            .Returns(tcs.Task)
+            .Verifiable(Times.Once);
+
+        sut.StartListening();
+
+        // Act
+        sut.Dispose();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Stopping,
+            Expected_Stopped);
+
+        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
+        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -432,10 +690,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_StoppedListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         sut.StartListening();
@@ -451,6 +709,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -471,10 +730,10 @@ public class ConversationControllerTests
             .Verifiable(Times.Exactly(2));
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Exactly(2));
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_StoppedListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Exactly(2));
 
         sut.StartListening();
@@ -493,6 +752,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -514,7 +774,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         sut.StartListening();
@@ -532,6 +792,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -586,6 +847,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -615,6 +877,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -643,6 +906,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -657,7 +921,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         MockRecognition
@@ -681,6 +945,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -694,7 +959,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         MockRecognition
@@ -713,6 +978,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -727,7 +993,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
@@ -737,12 +1003,12 @@ public class ConversationControllerTests
             .Returns(AsyncEnumerate(complete: false, result1.Object))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         MockExecution
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
-            .Callback(delegate (Models.Command command, CancellationToken cancel) { token = cancel; })
+            .Callback(delegate (Command command, CancellationToken cancel) { token = cancel; })
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
@@ -763,6 +1029,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -776,7 +1043,7 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_ImListening))
+            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
@@ -786,13 +1053,13 @@ public class ConversationControllerTests
             .Returns(AsyncEnumerate(complete: false, result1.Object))
             .Verifiable(Times.Once);
         MockSynthesis
-            .Setup(x => x.Say(Phrases.Conversation_Sent(Command1.Name)))
+            .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
         TaskCompletionSource tcs = new();
         MockExecution
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
-            .Callback(delegate (Models.Command command, CancellationToken cancel) { cancel.Register(tcs.SetCanceled); })
+            .Callback(delegate (Command command, CancellationToken cancel) { cancel.Register(tcs.SetCanceled); })
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
@@ -812,6 +1079,7 @@ public class ConversationControllerTests
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     private static async IAsyncEnumerable<IRecognitionResult> AsyncEnumerate(bool complete, params IRecognitionResult[] commands)

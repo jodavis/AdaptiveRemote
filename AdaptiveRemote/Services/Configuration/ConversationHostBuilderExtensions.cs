@@ -10,7 +10,7 @@ internal static class ConversationHostBuilderExtensions
     internal static IHostBuilder AddConversationSystem(this IHostBuilder hostBuilder)
         => hostBuilder.ConfigureServices((context, services) => services.AddConversationServices(context.Configuration.GetSection("Conversation")));
 
-    internal static IServiceCollection AddConversationServices(IServiceCollection services)
+    internal static IServiceCollection AddConversationServices(this IServiceCollection services)
         => services
             .AddScoped<IConversationController, ConversationController>()
             .AddScoped<ISpeechRecognition, SpeechRecognition>()
@@ -19,14 +19,23 @@ internal static class ConversationHostBuilderExtensions
             .AddSingleton<ISpeechSynthesizer, SpeechSynthesizerWrapper>()
             .AddSingleton<ISpeechRecognitionEngine, SpeechRecognitionEngineWrapper>()
             .AddSingleton<IAudioConfigurationService, DefaultDeviceAudioConfiguration>()
+            .AddSingleton<IListeningController, ListeningController>()
             .AddScoped(GetConversationViewModel);
 
     internal static IServiceCollection AddConversationServices(this IServiceCollection services, IConfiguration config)
-        => AddConversationServices(services).Configure<ConversationSettings>(config);
+        => services
+            .AddConversationServices()
+            .OptionallyAddFakeSpeechRecognition(config)
+            .Configure<ConversationSettings>(config);
 
     private static Models.ConversationView GetConversationViewModel(IServiceProvider provider)
     {
         IRemoteDefinitionService definition = provider.GetRequiredService<IRemoteDefinitionService>();
         return definition.GetElement<Models.ConversationView>();
     }
+
+    private static IServiceCollection OptionallyAddFakeSpeechRecognition(this IServiceCollection services, IConfiguration config)
+        => config.GetValue<bool>("UseFakes") == true
+            ? services.AddSingleton<ISpeechRecognitionEngine, FakeSpeechRecognitionEngine>()
+            : services;
 }

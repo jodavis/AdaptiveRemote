@@ -169,6 +169,45 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error calling RecognizeAsyncCancel
+        ///{0}.
+        /// </summary>
+        internal static string ListeningController_RecognizeAsyncCancelError {
+            get {
+                return ResourceManager.GetString("ListeningController_RecognizeAsyncCancelError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error calling RecognizeAsync
+        ///{0}.
+        /// </summary>
+        internal static string ListeningController_RecognizeAsyncError {
+            get {
+                return ResourceManager.GetString("ListeningController_RecognizeAsyncError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Listening={0} ({1} listen, {2} pause).
+        /// </summary>
+        internal static string ListeningController_State {
+            get {
+                return ResourceManager.GetString("ListeningController_State", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error while updating listen state
+        ///{0}.
+        /// </summary>
+        internal static string ListeningController_UpdateListenStateError {
+            get {
+                return ResourceManager.GetString("ListeningController_UpdateListenStateError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} was cancelled..
         /// </summary>
         internal static string SpeechRecognition_CancelledListeningMethod {
@@ -184,16 +223,6 @@ namespace AdaptiveRemote.Logging {
         internal static string SpeechRecognition_ErrorInListeningMethod {
             get {
                 return ResourceManager.GetString("SpeechRecognition_ErrorInListeningMethod", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to An error occured while stopping the listening engine
-        ///{0}.
-        /// </summary>
-        internal static string SpeechRecognition_ErrorInStopListening {
-            get {
-                return ResourceManager.GetString("SpeechRecognition_ErrorInStopListening", resourceCulture);
             }
         }
         
@@ -223,15 +252,6 @@ namespace AdaptiveRemote.Logging {
         internal static string SpeechRecognition_GrammarFailedToUnload {
             get {
                 return ResourceManager.GetString("SpeechRecognition_GrammarFailedToUnload", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Listening={0}.
-        /// </summary>
-        internal static string SpeechRecognition_Listening {
-            get {
-                return ResourceManager.GetString("SpeechRecognition_Listening", resourceCulture);
             }
         }
         
@@ -337,6 +357,24 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cannot say &apos;{0}&apos;; another phrase is already in progress..
+        /// </summary>
+        internal static string SpeechSynthesis_AlreadySpeaking {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_AlreadySpeaking", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancelled saying &apos;{0}&apos;.
+        /// </summary>
+        internal static string SpeechSynthesis_CancelledSaying {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_CancelledSaying", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Saying &apos;{0}&apos;.
         /// </summary>
         internal static string SpeechSynthesis_Saying {
@@ -351,6 +389,15 @@ namespace AdaptiveRemote.Logging {
         internal static string SpeechSynthesis_SelectedVoice {
             get {
                 return ResourceManager.GetString("SpeechSynthesis_SelectedVoice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Set speaking rate to {0}.
+        /// </summary>
+        internal static string SpeechSynthesis_SetSpeakingRate {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_SetSpeakingRate", resourceCulture);
             }
         }
         

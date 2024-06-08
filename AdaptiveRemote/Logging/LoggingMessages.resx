@@ -161,6 +161,25 @@
     <value>Recognized an unknown command: {0}</value>
     <comment>0=Speech that was recognized but did not map to a command</comment>
   </data>
+  <data name="ListeningController_RecognizeAsyncCancelError" xml:space="preserve">
+    <value>Error calling RecognizeAsyncCancel
+{0}</value>
+    <comment>0=Exception</comment>
+  </data>
+  <data name="ListeningController_RecognizeAsyncError" xml:space="preserve">
+    <value>Error calling RecognizeAsync
+{0}</value>
+    <comment>0=Exception</comment>
+  </data>
+  <data name="ListeningController_State" xml:space="preserve">
+    <value>Listening={0} ({1} listen, {2} pause)</value>
+    <comment>0=True/False,1=listen count, 2=pause count</comment>
+  </data>
+  <data name="ListeningController_UpdateListenStateError" xml:space="preserve">
+    <value>Error while updating listen state
+{0}</value>
+    <comment>0=Exception</comment>
+  </data>
   <data name="SpeechRecognitionEngine_AudioSignalProblemOccurred" xml:space="preserve">
     <value>AudioSignalProblemOccurred:{0} at {3} ({1}) with AudioLevel:{2}</value>
     <comment>0=Code for the audio problem that occurred;1=Recognizer position in the audio stream;2=Audio level at time of error;3=Position in the audio stream</comment>
@@ -208,11 +227,6 @@
 {1}</value>
     <comment>0=Failed method;1=Exception</comment>
   </data>
-  <data name="SpeechRecognition_ErrorInStopListening" xml:space="preserve">
-    <value>An error occured while stopping the listening engine
-{0}</value>
-    <comment>0=Exception</comment>
-  </data>
   <data name="SpeechRecognition_GrammarEnabled" xml:space="preserve">
     <value>{0}.Enabled={1}</value>
     <comment>0=Grammar name;1=True/False</comment>
@@ -227,10 +241,6 @@
 {1}</value>
     <comment>0=Name of grammar that failed to unload,1=Exception</comment>
   </data>
-  <data name="SpeechRecognition_Listening" xml:space="preserve">
-    <value>Listening={0}</value>
-    <comment>0=True/false</comment>
-  </data>
   <data name="SpeechRecognition_ListeningMethodAlreadyInProgress" xml:space="preserve">
     <value>{0} is already in progress</value>
     <comment>0=Name of the method that was called twice</comment>
@@ -239,6 +249,14 @@
     <value>Recognition Error: {0}</value>
     <comment>0=Error message</comment>
   </data>
+  <data name="SpeechSynthesis_AlreadySpeaking" xml:space="preserve">
+    <value>Cannot say '{0}'; another phrase is already in progress.</value>
+    <comment>0=Next phrase that was attempted</comment>
+  </data>
+  <data name="SpeechSynthesis_CancelledSaying" xml:space="preserve">
+    <value>Cancelled saying '{0}'</value>
+    <comment>0=Phrase that is cancelled</comment>
+  </data>
   <data name="SpeechSynthesis_Saying" xml:space="preserve">
     <value>Saying '{0}'</value>
     <comment>0=Phrase to be spoken</comment>
@@ -246,6 +264,10 @@
   <data name="SpeechSynthesis_SelectedVoice" xml:space="preserve">
     <value>Selected voice '{0}'</value>
     <comment>0=Name of the selected voice</comment>
+  </data>
+  <data name="SpeechSynthesis_SetSpeakingRate" xml:space="preserve">
+    <value>Set speaking rate to {0}</value>
+    <comment>0=Speaking rate</comment>
   </data>
   <data name="SpeechSynthesis_VoiceNotFound" xml:space="preserve">
     <value>Voice not found: '{0}'</value>

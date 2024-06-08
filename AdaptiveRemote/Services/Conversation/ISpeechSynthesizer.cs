@@ -11,4 +11,8 @@ public interface ISpeechSynthesizer
     IEnumerable<string> GetInstalledVoices();
 
     void SelectVoice(string fullName);
+
+    void SetSpeakingRate(int rate);
+
+    event EventHandler SpeakCompleted;
 }
