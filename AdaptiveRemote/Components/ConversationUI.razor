@@ -2,12 +2,12 @@
 
 @if (IsListening)
 {
-    <div class="conversation-border"><div>Listening...</div></div>
+    <div class="conversation-border"><div></div></div>
 }
 
 @if (SpeakingMessage is not null)
 {
-    <div class="conversation-speaking-message">@SpeakingMessage</div>
+    <div class="conversation-speaking-message">"@SpeakingMessage"</div>
 }
 else
 {
