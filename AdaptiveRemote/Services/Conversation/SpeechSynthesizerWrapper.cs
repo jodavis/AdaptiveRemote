@@ -34,6 +34,7 @@ internal class SpeechSynthesizerWrapper : ISpeechSynthesizer, IDisposable
     public void SpeakAsync(string textToSpeak) => _speechSynthesizer.SpeakAsync(textToSpeak);
     public void Dispose() => _speechSynthesizer.Dispose();
     public IEnumerable<string> GetInstalledVoices() => _speechSynthesizer.GetInstalledVoices().Select(x => x.VoiceInfo.Name);
+    public void SetSpeakingRate(int rate) => _speechSynthesizer.Rate = rate;
     public void SelectVoice(string name) => _speechSynthesizer.SelectVoice(name);
 
     public event EventHandler SpeakCompleted

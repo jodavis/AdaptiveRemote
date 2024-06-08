@@ -18,6 +18,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
         _logger = logger;
 
         SelectVoice(settings.Value.Voice);
+        SetSpeakingRate(settings.Value.SpeakingRate);
 
         _synthesizer.SpeakCompleted += OnSpeakCompleted;
         _tcs.SetResult();
@@ -40,6 +41,12 @@ internal class SpeechSynthesis : ISpeechSynthesis
             }
             _logger.LogWarning(Message.SpeechSynthesis_VoiceNotFound, voiceName);
         }
+    }
+
+    private void SetSpeakingRate(int speakingRate)
+    {
+        _synthesizer.SetSpeakingRate(speakingRate);
+
     }
 
     async Task ISpeechSynthesis.SayAsync(string phrase, CancellationToken cancellationToken)

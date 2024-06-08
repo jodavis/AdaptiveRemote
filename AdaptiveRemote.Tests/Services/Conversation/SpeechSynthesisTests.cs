@@ -30,6 +30,9 @@ public class SpeechSynthesisTests
         MockSynthesizer
             .Setup(x => x.CancelAll())
             .Verifiable(Times.Never);
+        MockSynthesizer
+            .Setup(x => x.SetSpeakingRate(It.IsAny<int>()))
+            .Verifiable(Times.Once);
 
         MockController
             .Setup(x => x.Listen())
@@ -61,6 +64,8 @@ public class SpeechSynthesisTests
         => $"Information[404]: {string.Format(LoggingMessages.SpeechSynthesis_CancelledSaying, phrase)}";
     private static string Expected_AlreadySpeaking(string phrase)
         => $"Error[405]: {string.Format(LoggingMessages.SpeechSynthesis_AlreadySpeaking, phrase)}";
+    private static string Expected_SetSpeakingRate(int speakintRate)
+        => $"Information[406]: {string.Format(LoggingMessages.SpeechSynthesis_SetSpeakingRate, speakintRate)}";
 
     private ISpeechSynthesis CreateSut()
     {
@@ -153,6 +158,28 @@ public class SpeechSynthesisTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_SelectedVoice(InstalledVoices[1]));
+    }
+
+    [TestMethod]
+    public void SpeechSynthesis_Constructor_WithCustomizedSpeakingRate_CallsSetSpeakingRate()
+    {
+        // Arrange
+        SpeechSettings.SpeakingRate = 75;
+
+        MockSynthesizer
+            .Setup(x => x.SetSpeakingRate(It.IsAny<int>()))
+            .Callback(delegate (int speakingRate) { throw new AssertFailedException($"Wrong speaking rate: {speakingRate}"); });
+        MockSynthesizer
+            .Setup(x => x.SetSpeakingRate(75))
+            .Verifiable(Times.Once);
+
+        // Act
+        ISpeechSynthesis sut = CreateSut();
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
+            Expected_SelectedVoice(InstalledVoices[0]));
     }
 
     [TestMethod]
