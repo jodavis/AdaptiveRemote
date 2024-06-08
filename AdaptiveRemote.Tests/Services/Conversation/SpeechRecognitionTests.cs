@@ -14,6 +14,8 @@ public class SpeechRecognitionTests
     private readonly MockLogger<SpeechRecognition> MockLogger = new();
     private readonly Mock<ISpeechRecognitionEngine> MockEngine = new();
     private readonly Mock<IGrammarProvider> MockGrammarProvider = new();
+    private readonly Mock<IListeningController> MockListening = new();
+    private readonly Mock<IDisposable> MockListenDisposable = new();
     private readonly MockOptions<ConversationSettings> MockOptions = new();
 
     private readonly Grammar MockAttentionGrammar = new(new GrammarBuilder("Attention")) { Name = nameof(MockAttentionGrammar) };
@@ -22,7 +24,7 @@ public class SpeechRecognitionTests
 
     public TestContext? TestContext { get; set; }
 
-    private ISpeechRecognition CreateSut() => new SpeechRecognition(MockOptions, MockEngine.Object, MockGrammarProvider.Object, MockLogger);
+    private ISpeechRecognition CreateSut() => new SpeechRecognition(MockOptions, MockEngine.Object, MockListening.Object, MockGrammarProvider.Object, MockLogger);
 
     private static IRecognitionResult CreateMockResult(params string[] semanticValues)
     {
@@ -93,6 +95,13 @@ public class SpeechRecognitionTests
             .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Never);
 
+        MockListening
+            .Setup(x => x.Listen())
+            .Verifiable(Times.Never);
+        MockListenDisposable
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Never);
+
         MockLogger.OutputWriter = TestContext;
     }
 
@@ -101,6 +110,8 @@ public class SpeechRecognitionTests
     {
         MockEngine.Verify();
         MockGrammarProvider.Verify();
+        MockListening.Verify();
+        MockListenDisposable.Verify();
     }
 
     private static string Expected_GrammarEnabled(Grammar grammar)
@@ -111,8 +122,6 @@ public class SpeechRecognitionTests
         => $"Warning[309]: {string.Format(LoggingMessages.SpeechRecognition_GrammarFailedToLoad, grammar.Name, $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_FailedToUnload(Grammar grammar, Exception error)
         => $"Warning[310]: {string.Format(LoggingMessages.SpeechRecognition_GrammarFailedToUnload, grammar.Name, $"{error.GetType().FullName}: {error.Message}")}";
-    private static string Expected_Listening(bool listening)
-        => $"Information[306]: {string.Format(LoggingMessages.SpeechRecognition_Listening, listening)}";
     private static string Expected_RecognitionError(string errorMessage)
         => $"Error[302]: {string.Format(LoggingMessages.SpeechRecognition_RecognitionError, errorMessage)}";
     private static string Expected_ErrorInListenForAttention(Exception error)
@@ -152,8 +161,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         // Act
@@ -166,8 +176,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -179,11 +188,12 @@ public class SpeechRecognitionTests
 
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
@@ -199,10 +209,8 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true),
             Expected_RecognitionError(expectedErrorMessage),
             Expected_ErrorInListenForAttention(expectedException),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
@@ -212,11 +220,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         CancellationTokenSource cts = new();
@@ -233,9 +242,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForAttention,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
@@ -245,8 +252,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         _ = sut.ListenForAttentionAsync(CancellationToken.None);
@@ -262,7 +270,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true),
             Expected_ListenForAttentionAlreadyInProgress);
     }
 
@@ -272,11 +279,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
@@ -294,8 +302,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
@@ -305,11 +311,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Exactly(2));
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         _ = sut.ListenForAttentionAsync(CancellationToken.None);
@@ -329,11 +336,8 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockAttentionGrammar),
-            Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockAttentionGrammar));
     }
 
     [TestMethod]
@@ -342,11 +346,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         Task resultTask = sut.ListenForAttentionAsync(CancellationToken.None);
@@ -366,8 +371,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
@@ -378,12 +381,9 @@ public class SpeechRecognitionTests
         ISpeechRecognition sut = CreateSut();
 
         InvalidOperationException expectedException = new InvalidOperationException();
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
             .Throws(expectedException)
-            .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
         // Act
@@ -398,7 +398,6 @@ public class SpeechRecognitionTests
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_ErrorInListenForAttention(expectedException),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
@@ -408,8 +407,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         // Act
@@ -422,8 +422,7 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -435,11 +434,12 @@ public class SpeechRecognitionTests
 
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
@@ -455,10 +455,8 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
             Expected_RecognitionError(expectedErrorMessage),
             Expected_ErrorInListenForYesNo(expectedException),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
@@ -468,11 +466,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         CancellationTokenSource cts = new();
@@ -489,9 +488,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForYesNo,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
@@ -501,8 +498,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         _ = sut.ListenForYesNoAsync(CancellationToken.None);
@@ -518,7 +516,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
             Expected_ListenForYesNoAlreadyInProgress);
     }
 
@@ -528,11 +525,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
@@ -552,8 +550,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
@@ -563,11 +559,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
@@ -587,8 +584,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
@@ -598,8 +593,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         Task<bool> resultTask = sut.ListenForYesNoAsync(CancellationToken.None);
@@ -618,8 +614,7 @@ public class SpeechRecognitionTests
         Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -628,11 +623,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Exactly(2));
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         _ = sut.ListenForYesNoAsync(CancellationToken.None);
@@ -651,11 +647,8 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar),
-            Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockYesNoGrammar));
     }
 
     [TestMethod]
@@ -664,11 +657,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IRecognitionResult result = CreateMockResult("system=NO");
@@ -687,8 +681,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
@@ -699,12 +691,9 @@ public class SpeechRecognitionTests
         ISpeechRecognition sut = CreateSut();
 
         InvalidOperationException expectedException = new InvalidOperationException();
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
             .Throws(expectedException)
-            .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
         // Act
@@ -719,7 +708,6 @@ public class SpeechRecognitionTests
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_ErrorInListenForYesNo(expectedException),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
@@ -729,8 +717,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -748,8 +737,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -761,11 +749,12 @@ public class SpeechRecognitionTests
 
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -786,10 +775,8 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_RecognitionError(expectedErrorMessage),
             Expected_ErrorInListenForCommands(expectedException),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
@@ -799,11 +786,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         CancellationTokenSource cts = new();
@@ -826,9 +814,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForCommands,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
@@ -838,8 +824,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         _ = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -864,7 +851,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_ListenForCommandsAlreadyInProgress);
     }
 
@@ -874,8 +860,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -898,8 +885,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -908,8 +894,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -933,8 +920,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -943,11 +929,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -972,8 +959,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
@@ -983,11 +968,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Exactly(2));
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -1014,11 +1000,8 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar),
-            Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1027,8 +1010,9 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -1055,8 +1039,7 @@ public class SpeechRecognitionTests
         Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled");
 
         MockLogger.VerifyMessages(
-            Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true));
+            Expected_GrammarEnabled(MockCommandsGrammar));
     }
 
     [TestMethod]
@@ -1066,12 +1049,9 @@ public class SpeechRecognitionTests
         ISpeechRecognition sut = CreateSut();
 
         InvalidOperationException expectedException = new InvalidOperationException();
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
             .Throws(expectedException)
-            .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -1091,7 +1071,6 @@ public class SpeechRecognitionTests
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
             Expected_ErrorInListenForCommands(expectedException),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
@@ -1102,11 +1081,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -1144,8 +1124,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
@@ -1158,11 +1136,12 @@ public class SpeechRecognitionTests
 
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> resultEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -1200,8 +1179,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
@@ -1211,9 +1188,10 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
-            .Verifiable(Times.Once);
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Exactly(3));
 
         IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
@@ -1232,7 +1210,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_GrammarEnabled(MockYesNoGrammar));
     }
@@ -1243,8 +1220,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Exactly(3));
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -1269,7 +1250,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_GrammarDisabled(MockAttentionGrammar));
@@ -1281,8 +1261,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Exactly(3));
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -1307,7 +1291,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_GrammarDisabled(MockYesNoGrammar));
@@ -1319,9 +1302,10 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
-            .Verifiable(Times.Once);
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Exactly(3));
 
         IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
@@ -1345,7 +1329,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_GrammarEnabled(MockYesNoGrammar));
     }
@@ -1356,8 +1339,12 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Exactly(3));
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
 
         IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
@@ -1382,7 +1369,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_GrammarDisabled(MockCommandsGrammar));
@@ -1394,12 +1380,13 @@ public class SpeechRecognitionTests
         // Arrange
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
-            .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
-            .Verifiable(Times.Once);
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Exactly(3));
+        MockListenDisposable
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Exactly(3));
 
         IAsyncEnumerable<IRecognitionResult> commandEnum = sut.ListenForCommandsAsync(CancellationToken.None);
 
@@ -1431,12 +1418,10 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_GrammarDisabled(MockCommandsGrammar),
             Expected_GrammarDisabled(MockAttentionGrammar),
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
@@ -1446,11 +1431,12 @@ public class SpeechRecognitionTests
         // Arramge
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
@@ -1476,9 +1462,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForAttention,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockAttentionGrammar));
     }
 
@@ -1490,11 +1474,12 @@ public class SpeechRecognitionTests
 
         Exception expectedException = new InvalidOperationException("Whoops no unload");
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
@@ -1521,9 +1506,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockAttentionGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForAttention,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockAttentionGrammar),
             Expected_FailedToUnload(MockAttentionGrammar, expectedException));
     }
@@ -1534,11 +1517,12 @@ public class SpeechRecognitionTests
         // Arramge
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
@@ -1564,9 +1548,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForYesNo,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar));
     }
 
@@ -1578,11 +1560,12 @@ public class SpeechRecognitionTests
 
         Exception expectedException = new InvalidOperationException("Whoops no unload");
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
@@ -1609,9 +1592,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockYesNoGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForYesNo,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockYesNoGrammar),
             Expected_FailedToUnload(MockYesNoGrammar, expectedException));
     }
@@ -1622,11 +1603,12 @@ public class SpeechRecognitionTests
         // Arramge
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
@@ -1653,9 +1635,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForCommands,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
@@ -1667,11 +1647,12 @@ public class SpeechRecognitionTests
 
         Exception expectedException = new InvalidOperationException("Whoops no unload");
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
             .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
+        MockListenDisposable
+            .Setup(x => x.Dispose())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
@@ -1699,9 +1680,7 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_CancelledListenForCommands,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar),
             Expected_FailedToUnload(MockCommandsGrammar, expectedException));
     }
@@ -1712,12 +1691,13 @@ public class SpeechRecognitionTests
         // Arramge
         ISpeechRecognition sut = CreateSut();
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
-            .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
-            .Verifiable(Times.Once);
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Exactly(3));
+        MockListenDisposable
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Exactly(3));
         MockEngine
             .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
             .Verifiable(Times.Once);
@@ -1747,7 +1727,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_CancelledListenForYesNo,
@@ -1755,7 +1734,6 @@ public class SpeechRecognitionTests
             Expected_CancelledListenForAttention,
             Expected_GrammarDisabled(MockAttentionGrammar),
             Expected_CancelledListenForCommands,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar));
     }
 
@@ -1767,12 +1745,13 @@ public class SpeechRecognitionTests
 
         Exception expectedException = new InvalidOperationException("Whoops no unload");
 
-        MockEngine
-            .Setup(x => x.RecognizeAsync())
-            .Verifiable(Times.Once);
-        MockEngine
-            .Setup(x => x.RecognizeAsyncCancel())
-            .Verifiable(Times.Once);
+        MockListening
+            .Setup(x => x.Listen())
+            .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Exactly(3));
+        MockListenDisposable
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Exactly(3));
         MockEngine
             .Setup(x => x.UnloadGrammar(MockAttentionGrammar))
             .Throws(expectedException)
@@ -1805,7 +1784,6 @@ public class SpeechRecognitionTests
 
         MockLogger.VerifyMessages(
             Expected_GrammarEnabled(MockCommandsGrammar),
-            Expected_Listening(true),
             Expected_GrammarEnabled(MockAttentionGrammar),
             Expected_GrammarEnabled(MockYesNoGrammar),
             Expected_CancelledListenForYesNo,
@@ -1813,7 +1791,6 @@ public class SpeechRecognitionTests
             Expected_CancelledListenForAttention,
             Expected_GrammarDisabled(MockAttentionGrammar),
             Expected_CancelledListenForCommands,
-            Expected_Listening(false),
             Expected_GrammarDisabled(MockCommandsGrammar),
             Expected_FailedToUnload(MockAttentionGrammar, expectedException),
             Expected_FailedToUnload(MockYesNoGrammar, expectedException),

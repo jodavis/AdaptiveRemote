@@ -2,5 +2,5 @@
 
 internal interface ISpeechSynthesis
 {
-    void Say(string phrase);
+    Task SayAsync(string phrase, CancellationToken cancellationToken);
 }
