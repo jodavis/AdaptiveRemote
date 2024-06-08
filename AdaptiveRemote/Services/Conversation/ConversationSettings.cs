@@ -5,6 +5,7 @@ internal class ConversationSettings
     public int ErrorRetryLimit { get; set; } = 10;
     public string[] Voice { get; set; } = ["Jenny", "Zira"];
     public int CommandBufferSize { get; set; } = 2;
+    public int SpeakingRate { get; set; } = 3;
 
     public bool RecordSamples { get; set; } = false;
     public string? RecordingOutputPath { get; set; } = default;

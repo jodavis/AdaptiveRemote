@@ -12,5 +12,7 @@ public interface ISpeechSynthesizer
 
     void SelectVoice(string fullName);
 
+    void SetSpeakingRate(int rate);
+
     event EventHandler SpeakCompleted;
 }

@@ -393,6 +393,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Set speaking rate to {0}.
+        /// </summary>
+        internal static string SpeechSynthesis_SetSpeakingRate {
+            get {
+                return ResourceManager.GetString("SpeechSynthesis_SetSpeakingRate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Voice not found: &apos;{0}&apos;.
         /// </summary>
         internal static string SpeechSynthesis_VoiceNotFound {

@@ -265,6 +265,10 @@
     <value>Selected voice '{0}'</value>
     <comment>0=Name of the selected voice</comment>
   </data>
+  <data name="SpeechSynthesis_SetSpeakingRate" xml:space="preserve">
+    <value>Set speaking rate to {0}</value>
+    <comment>0=Speaking rate</comment>
+  </data>
   <data name="SpeechSynthesis_VoiceNotFound" xml:space="preserve">
     <value>Voice not found: '{0}'</value>
     <comment>0=Name of the missing voice</comment>
