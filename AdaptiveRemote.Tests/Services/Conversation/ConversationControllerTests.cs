@@ -14,7 +14,7 @@ public class ConversationControllerTests
     private readonly MockLogger<ConversationController> MockLogger = new();
     private readonly Mock<ISpeechRecognition> MockRecognition = new();
     private readonly Mock<ISpeechSynthesis> MockSynthesis = new();
-    private readonly Mock<ICommandExecutionService> MockExecution = new();
+    private readonly Mock<ICommandService> MockCommands = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinition = new();
     private readonly Mock<IOptionsSnapshot<ConversationSettings>> MockOptions = new();
     private readonly ConversationSettings ConversationSettings = new();
@@ -60,7 +60,7 @@ public class ConversationControllerTests
         MockRecognition.Object,
         MockSynthesis.Object,
         MockDefinition.Object,
-        MockExecution.Object,
+        MockCommands.Object,
         MockLogger,
         ViewModel);
 
@@ -105,7 +105,7 @@ public class ConversationControllerTests
             .Returns(RootLayout)
             .Verifiable(Times.Once);
 
-        MockExecution
+        MockCommands
             .Setup(x => x.ExecuteAsync(It.IsAny<Command>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
 
@@ -131,7 +131,7 @@ public class ConversationControllerTests
     {
         MockRecognition.Verify();
         MockSynthesis.Verify();
-        MockExecution.Verify();
+        MockCommands.Verify();
         MockDefinition.Verify();
     }
 
@@ -327,7 +327,7 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        MockExecution
+        MockCommands
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
@@ -413,7 +413,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        MockExecution
+        MockCommands
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
@@ -463,7 +463,7 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        MockExecution
+        MockCommands
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
@@ -513,7 +513,7 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        MockExecution
+        MockCommands
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
@@ -563,7 +563,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name, 3), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        MockExecution
+        MockCommands
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Exactly(3));
@@ -1006,7 +1006,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        MockExecution
+        MockCommands
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
             .Callback(delegate (Command command, CancellationToken cancel) { token = cancel; })
             .Returns(IncompleteTask)
@@ -1057,7 +1057,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         TaskCompletionSource tcs = new();
-        MockExecution
+        MockCommands
             .Setup(x => x.ExecuteAsync(Command1, It.IsAny<CancellationToken>()))
             .Callback(delegate (Command command, CancellationToken cancel) { cancel.Register(tcs.SetCanceled); })
             .Returns(tcs.Task)
