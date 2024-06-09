@@ -24,7 +24,7 @@ public class CommandServiceTests
     public void SetupMocks()
     {
         MockApplicationService
-            .Setup(x => x.ExecuteCommandAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.Exit())
             .Verifiable(Times.Never);
         MockTiVoService
             .Setup(x => x.SendAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -43,12 +43,13 @@ public class CommandServiceTests
     }
 
     [TestMethod]
-    public void CommandService_Application_ExecuteAsync_ExecutesCommand()
+    [DataRow("Exit")]
+    public void CommandService_Application_ExecuteAsync_ExecutesCommand(string command)
     {
         // Arrange
-        ApplicationCommand input = new("Exit");
+        ApplicationCommand input = new(command);
 
-        Expect_ApplicationCommand("Exit");
+        Expect_ApplicationCommand(command);
 
         ICommandService sut = CreateSut();
 
@@ -61,72 +62,6 @@ public class CommandServiceTests
         MockLogger.VerifyMessages(
             Expect_ExecutingMessage(input),
             Expect_ExecutedMessage(input));
-    }
-
-    [TestMethod]
-    public void CommandService_Application_ExecuteAsync_WaitsForCommandToComplete()
-    {
-        // Arrange
-        ApplicationCommand input = new("Exit");
-
-        Expect_ApplicationCommand("Exit", result: IncompleteTask);
-
-        ICommandService sut = CreateSut();
-
-        // Act
-        Task resultTask = sut.ExecuteAsync(input);
-
-        // Assert
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
-
-        MockLogger.VerifyMessages(
-            Expect_ExecutingMessage(input));
-    }
-
-    [TestMethod]
-    public void CommandService_Application_ExecuteAsync_CancelsCommand()
-    {
-        // Arrange
-        ApplicationCommand input = new("Exit");
-        CancellationTokenSource cts = new();
-
-        Expect_ApplicationCommand("Exit", IncompleteTask);
-
-        ICommandService sut = CreateSut();
-
-        Task resultTask = sut.ExecuteAsync(input, cts.Token);
-
-        // Act
-        cts.Cancel();
-
-        // Assert
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
-
-        MockLogger.VerifyMessages(
-            Expect_ExecutingMessage(input),
-            Expect_CancelledMessage(input));
-    }
-
-    [TestMethod]
-    public void CommandService_Application_ExecuteAsync_LogsError()
-    {
-        // Arrange
-        ApplicationCommand input = new("Exit");
-
-        Exception error = new InvalidOperationException("What the?!?");
-        Expect_ApplicationCommand("Exit", Task.FromException(error));
-
-        ICommandService sut = CreateSut();
-
-        // Act
-        Task resultTask = sut.ExecuteAsync(input);
-
-        // Assert
-        TaskAssert.IsFaulted(resultTask, error, nameof(resultTask));
-
-        MockLogger.VerifyMessages(
-            Expect_ExecutingMessage(input),
-            Expect_ErrorMessage(input, error));
     }
 
     [TestMethod]
@@ -335,15 +270,19 @@ public class CommandServiceTests
     private static string Expect_CancelledMessage(Command command)
         => $"Warning[604]: {string.Format(Logging.LoggingMessages.CommandService_Cancelled, command)}";
 
-    private void Expect_ApplicationCommand(string name, Task? result = default, Times? times = default)
+    private void Expect_ApplicationCommand(string name, Times? times = default)
     {
-        TaskCompletionSource tcs = WrapResult(result);
-
-        MockApplicationService
-            .Setup(x => x.ExecuteCommandAsync(name, It.IsAny<CancellationToken>()))
-            .Callback(delegate (string _, CancellationToken cancel) { cancel.Register(() => tcs.TrySetCanceled()); })
-            .Returns(tcs.Task)
-            .Verifiable(times ?? Times.Once());
+        switch (name)
+        {
+            case nameof(IApplicationService.Exit):
+                MockApplicationService
+                    .Setup(x => x.Exit())
+                    .Verifiable(times ?? Times.Once());
+                break;
+            default:
+                Assert.Fail("Unknoan IApplicationService command '{0}'", name);
+                break;
+        }
     }
 
     private void Expect_TiVoCommand(string comandCode, Task? result = default, Times? times = default)

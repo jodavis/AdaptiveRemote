@@ -54,9 +54,4 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Services\Broadlink\" />
-    <Folder Include="Services\TiVo\" />
-  </ItemGroup>
-
 </Project>

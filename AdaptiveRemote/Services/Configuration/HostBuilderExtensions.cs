@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AdaptiveRemote.Services.Commands;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote.Services.Configuration;
@@ -13,7 +14,10 @@ internal static class HostBuilderExtensions
             .AddHostedService<Lifecycle.ApplicationLifecycle>()
             .AddSingleton<Lifecycle.IApplicationScopeFactory, Lifecycle.BlazorWindowScopeFactory>()
             .AddScoped<IRemoteDefinitionService, Impl.StaticCommandGroupProvider>()
-            .AddSingleton<ICommandExecutionService, Impl.CommandExecutionService>();
+            .AddSingleton<IApplicationService, Commands.ApplicationService>()
+            .AddSingleton<ITiVoService, TiVo.PlaceholderTiVoService>()
+            .AddSingleton<IBroadlinkService, Broadlink.PlaceholderBroadlinkService>()
+            .AddSingleton<ICommandService, Commands.CommandService>();
 
     internal static IServiceCollection AddScopedLifecycle<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle

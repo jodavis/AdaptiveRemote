@@ -11,6 +11,11 @@ internal class CommandService : ICommandService
     private readonly IBroadlinkService _broadlink;
     private readonly ILogger<CommandService> _logger;
 
+    private readonly IReadOnlyDictionary<string, Action<IApplicationService>> _applicationStuff = new Dictionary<string, Action<IApplicationService>>()
+    {
+        [nameof(IApplicationService.Exit)] = app => app.Exit()
+    };
+
     public CommandService(IApplicationService application, ITiVoService tivo, IBroadlinkService broadlink, ILogger<CommandService> logger)
     {
         _application = application;
@@ -27,7 +32,7 @@ internal class CommandService : ICommandService
             switch (command)
             {
                 case ApplicationCommand applicationCommand:
-                    await _application.ExecuteCommandAsync(applicationCommand.Name, cancellationToken);
+                    _applicationStuff[applicationCommand.Name].Invoke(_application);
                     break;
                 case TiVoCommand tivoCommand:
                     await _tivo.SendAsync(tivoCommand.CommandId, cancellationToken);

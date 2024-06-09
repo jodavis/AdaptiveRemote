@@ -11,7 +11,7 @@ internal class ConversationController : IScopedLifecycle, IDisposable
     private readonly ConversationSettings _speechSettings;
     private readonly ISpeechRecognition _speechRecognition;
     private readonly ISpeechSynthesis _speechSynthesis;
-    private readonly ICommandExecutionService _executionService;
+    private readonly ICommandService _commandService;
     private readonly IRemoteDefinitionService _definitionService;
     private readonly ILogger<ConversationController> _logger;
     private readonly ConversationView _viewModel;
@@ -23,14 +23,14 @@ internal class ConversationController : IScopedLifecycle, IDisposable
         ISpeechRecognition speechRecognition,
         ISpeechSynthesis speechSynthesis,
         IRemoteDefinitionService definitionService,
-        ICommandExecutionService executionService,
+        ICommandService commandService,
         ILogger<ConversationController> logger,
         ConversationView viewModel)
     {
         _speechSettings = options.Value;
         _speechRecognition = speechRecognition;
         _speechSynthesis = speechSynthesis;
-        _executionService = executionService;
+        _commandService = commandService;
         _definitionService = definitionService;
         _logger = logger;
         _viewModel = viewModel;
@@ -203,7 +203,7 @@ internal class ConversationController : IScopedLifecycle, IDisposable
             {
                 _logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
-                await _executionService.ExecuteAsync(command, cancellationToken);
+                await _commandService.ExecuteAsync(command, cancellationToken);
 
                 _logger.LogInformation(Message.ConversationController_Executed, command.Name);
             }
