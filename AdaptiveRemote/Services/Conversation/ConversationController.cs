@@ -53,6 +53,8 @@ internal class ConversationController : IScopedLifecycle, IDisposable
         return Task.CompletedTask;
     }
 
+    public Task CleanUpAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
     public void Dispose()
     {
         _logger.LogInformation(Message.ConversationController_Stopping);

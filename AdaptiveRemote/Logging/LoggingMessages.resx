@@ -117,6 +117,35 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ApplicationLifecycle_CleanedUp" xml:space="preserve">
+    <value>Cleaned up {0}</value>
+    <comment>0=Name of the service</comment>
+  </data>
+  <data name="ApplicationLifecycle_CleaningUp" xml:space="preserve">
+    <value>Cleaning up {0}</value>
+    <comment>0=Name of the service</comment>
+  </data>
+  <data name="ApplicationLifecycle_CleaningUpFailed" xml:space="preserve">
+    <value>Error while cleaning up {0}
+{1}</value>
+    <comment>0=Name of the service,1=Exception</comment>
+  </data>
+  <data name="ApplicationLifecycle_Initialized" xml:space="preserve">
+    <value>Inititalized {0}</value>
+    <comment>0=Name of the service</comment>
+  </data>
+  <data name="ApplicationLifecycle_Initializing" xml:space="preserve">
+    <value>Initializing {0}</value>
+    <comment>0=Name of the service</comment>
+  </data>
+  <data name="ApplicationLifecycle_InitializingFailed" xml:space="preserve">
+    <value>Error while initializing {0}
+{1}</value>
+    <comment>0=Name of the service,1=Exception</comment>
+  </data>
+  <data name="ApplicationLifecycle_ShuttingDown" xml:space="preserve">
+    <value>Shutting down</value>
+  </data>
   <data name="CommandService_Cancelled" xml:space="preserve">
     <value>Cancelled executing {0}</value>
     <comment>0=Description of the command</comment>

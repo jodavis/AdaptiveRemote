@@ -61,6 +61,71 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cleaned up {0}.
+        /// </summary>
+        internal static string ApplicationLifecycle_CleanedUp {
+            get {
+                return ResourceManager.GetString("ApplicationLifecycle_CleanedUp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cleaning up {0}.
+        /// </summary>
+        internal static string ApplicationLifecycle_CleaningUp {
+            get {
+                return ResourceManager.GetString("ApplicationLifecycle_CleaningUp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error while cleaning up {0}
+        ///{1}.
+        /// </summary>
+        internal static string ApplicationLifecycle_CleaningUpFailed {
+            get {
+                return ResourceManager.GetString("ApplicationLifecycle_CleaningUpFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Inititalized {0}.
+        /// </summary>
+        internal static string ApplicationLifecycle_Initialized {
+            get {
+                return ResourceManager.GetString("ApplicationLifecycle_Initialized", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initializing {0}.
+        /// </summary>
+        internal static string ApplicationLifecycle_Initializing {
+            get {
+                return ResourceManager.GetString("ApplicationLifecycle_Initializing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error while initializing {0}
+        ///{1}.
+        /// </summary>
+        internal static string ApplicationLifecycle_InitializingFailed {
+            get {
+                return ResourceManager.GetString("ApplicationLifecycle_InitializingFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Shutting down.
+        /// </summary>
+        internal static string ApplicationLifecycle_ShuttingDown {
+            get {
+                return ResourceManager.GetString("ApplicationLifecycle_ShuttingDown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancelled executing {0}.
         /// </summary>
         internal static string CommandService_Cancelled {
