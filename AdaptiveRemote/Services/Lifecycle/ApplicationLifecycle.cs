@@ -1,34 +1,84 @@
-﻿using AdaptiveRemote.Utilities;
+﻿using AdaptiveRemote.Logging;
+using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
 internal class ApplicationLifecycle : BackgroundService
 {
     private readonly IApplicationScopeFactory _scopeFactory;
+    private readonly ILogger<ApplicationLifecycle> _logger;
 
-    public ApplicationLifecycle(IApplicationScopeFactory scopeFactory)
+    public ApplicationLifecycle(IApplicationScopeFactory scopeFactory, ILogger<ApplicationLifecycle> logger)
     {
         _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using IApplicationScope scope = await _scopeFactory.CreateNewScopeAsync(default);
 
-        _ = scope.TryInvokeAsync(InitializeLifecycle, default);
+        _ = scope.TryInvokeAsync(InitializeLifecycle, stoppingToken);
 
         await stoppingToken.WaitForCancelled();
+
+        _logger.LogInformation(Message.ApplicationLifecycle_ShuttingDown);
+
+        await scope.TryInvokeAsync(CleanUpLifecycle, default);
     }
 
-    private Task InitializeLifecycle(IServiceProvider provider, CancellationToken token)
+    private Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
     {
         foreach (IScopedLifecycle scopedService in provider.GetServices<IScopedLifecycle>())
         {
-            _ = scopedService.InitializeAsync(default);
+            _ = InitializeServiceAsync(scopedService, cancellationToken);
         }
 
         return Task.CompletedTask;
+    }
+
+    private async Task InitializeServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(Message.ApplicationLifecycle_Initializing, scopedService.Name);
+        try
+        {
+            await scopedService.InitializeAsync(cancellationToken);
+            _logger.LogInformation(Message.ApplicationLifecycle_Initialized, scopedService.Name);
+        }
+        catch (OperationCanceledException)
+        { }
+        catch (Exception error)
+        {
+            _logger.LogError(Message.ApplicationLifecycle_InitializingFailed, scopedService.Name, error.InnerException);
+        }
+    }
+
+    private async Task CleanUpLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
+    {
+        List<Task> cleanUpTasks = new();
+
+        foreach (IScopedLifecycle scopedService in provider.GetServices<IScopedLifecycle>())
+        {
+            cleanUpTasks.Add(CleanUpServiceAsync(scopedService, cancellationToken));
+        }
+
+        await Task.WhenAll(cleanUpTasks);
+    }
+
+    private async Task CleanUpServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation(Message.ApplicationLifecycle_CleaningUp, scopedService.Name);
+        try
+        {
+            await scopedService.CleanUpAsync(cancellationToken);
+            _logger.LogInformation(Message.ApplicationLifecycle_CleanedUp, scopedService.Name);
+        }
+        catch (Exception error)
+        {
+            _logger.LogError(Message.ApplicationLifecycle_CleaningUpFailed, scopedService.Name, error.InnerException);
+        }
     }
 }
