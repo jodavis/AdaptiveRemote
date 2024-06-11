@@ -52,7 +52,7 @@ internal class ApplicationLifecycle : BackgroundService
         { }
         catch (Exception error)
         {
-            _logger.LogError(Message.ApplicationLifecycle_InitializingFailed, scopedService.Name, error.InnerException);
+            _logger.LogError(Message.ApplicationLifecycle_InitializingFailed, scopedService.Name, error);
         }
     }
 
@@ -78,7 +78,7 @@ internal class ApplicationLifecycle : BackgroundService
         }
         catch (Exception error)
         {
-            _logger.LogError(Message.ApplicationLifecycle_CleaningUpFailed, scopedService.Name, error.InnerException);
+            _logger.LogError(Message.ApplicationLifecycle_CleaningUpFailed, scopedService.Name, error);
         }
     }
 }

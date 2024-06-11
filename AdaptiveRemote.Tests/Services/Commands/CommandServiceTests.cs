@@ -286,41 +286,16 @@ public class CommandServiceTests
     }
 
     private void Expect_TiVoCommand(string comandCode, Task? result = default, Times? times = default)
-    {
-        TaskCompletionSource tcs = WrapResult(result);
-
-        MockTiVoService
+        => MockTiVoService
             .Setup(x => x.SendAsync(comandCode, It.IsAny<CancellationToken>()))
-            .Callback(delegate (string _, CancellationToken cancel) { cancel.Register(() => tcs.TrySetCanceled()); })
-            .Returns(tcs.Task)
+            .WithStandardTaskBehavior(result)
             .Verifiable(times ?? Times.Once());
-    }
 
     private void Expect_BroadlinkCommand(Task? result = default, Times? times = default)
-    {
-        TaskCompletionSource tcs = WrapResult(result);
-
-        MockBroadlinkService
+        => MockBroadlinkService
             .Setup(x => x.SendAsync(It.IsAny<CancellationToken>()))
-            .Callback(delegate (CancellationToken cancel) { cancel.Register(() => tcs.TrySetCanceled()); })
-            .Returns(tcs.Task)
+            .WithStandardTaskBehavior(result)
             .Verifiable(times ?? Times.Once());
-    }
-
-    private static TaskCompletionSource WrapResult(Task? result)
-    {
-        TaskCompletionSource tcs = new();
-        if (result is not null)
-        {
-            result.ContinueWith(_ => result.IsFaulted ? tcs.TrySetException(result.Exception.InnerException!) : tcs.TrySetResult(), TaskContinuationOptions.ExecuteSynchronously);
-        }
-        else
-        {
-            tcs.SetResult();
-        }
-
-        return tcs;
-    }
 
     private class UnsupportedCommand : Command
     {
