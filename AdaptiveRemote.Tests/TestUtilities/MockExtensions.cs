@@ -1,4 +1,5 @@
-﻿using Moq.Language.Flow;
+﻿using Moq;
+using Moq.Language.Flow;
 
 namespace AdaptiveRemote.TestUtilities;
 
@@ -9,12 +10,12 @@ internal static class MockExtensions
         Task? returnTask = default)
         where ContractType : class
     {
-        return setup.Returns(delegate (CancellationToken cancel)
+        return setup.Returns(delegate (IInvocation invocation)
         {
             TaskCompletionSource tcs = new();
             if (returnTask is not null)
             {
-                returnTask.ContinueWith(t => t.IsFaulted ? tcs.TrySetException(t.Exception) : tcs.TrySetResult(), TaskContinuationOptions.ExecuteSynchronously);
+                returnTask.ContinueWith(t => t.IsFaulted ? tcs.TrySetException(t.Exception.InnerException ?? t.Exception) : tcs.TrySetResult(), TaskContinuationOptions.ExecuteSynchronously);
             }
             else
             {
@@ -22,7 +23,14 @@ internal static class MockExtensions
                 tcs.SetResult();
             }
 
-            cancel.Register(() => tcs.TrySetCanceled());
+            foreach (object argument in invocation.Arguments)
+            {
+                if (argument is CancellationToken cancel)
+                {
+                    cancel.Register(() => tcs.TrySetCanceled());
+                    break;
+                }
+            }
 
             return tcs.Task;
         });

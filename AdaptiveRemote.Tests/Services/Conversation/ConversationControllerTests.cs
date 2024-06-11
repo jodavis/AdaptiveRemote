@@ -253,7 +253,7 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Act
-        sut.Dispose();
+        sut.CleanUpAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -521,7 +521,7 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Act
-        sut.Dispose();
+        sut.CleanUpAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -658,7 +658,7 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Act
-        sut.Dispose();
+        sut.CleanUpAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -866,7 +866,7 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Act
-        sut.Dispose();
+        sut.CleanUpAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -896,7 +896,7 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Act
-        sut.Dispose();
+        sut.CleanUpAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -933,7 +933,7 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Act
-        sut.Dispose();
+        sut.CleanUpAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -1015,7 +1015,7 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Act
-        sut.Dispose();
+        sut.CleanUpAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -1066,7 +1066,7 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Act
-        sut.Dispose();
+        sut.CleanUpAsync(default);
 
         // Assert
         MockLogger.VerifyMessages(
