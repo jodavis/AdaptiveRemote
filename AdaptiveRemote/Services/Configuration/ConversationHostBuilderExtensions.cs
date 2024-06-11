@@ -12,7 +12,7 @@ internal static class ConversationHostBuilderExtensions
 
     internal static IServiceCollection AddConversationServices(this IServiceCollection services)
         => services
-            .AddScoped<IConversationController, ConversationController>()
+            .AddScopedLifecycleService<ConversationController>()
             .AddScoped<ISpeechRecognition, SpeechRecognition>()
             .AddScoped<ISpeechSynthesis, SpeechSynthesis>()
             .AddScoped<IGrammarProvider, StaticGrammarProvider>()

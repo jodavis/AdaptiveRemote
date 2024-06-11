@@ -1,6 +1,4 @@
-﻿@inject Services.IConversationController Conversation
-
-@if (IsListening)
+﻿@if (IsListening)
 {
     <div class="conversation-border"><div></div></div>
 }
@@ -30,7 +28,5 @@ else
         }
 
         base.OnInitialized();
-
-        Conversation.StartListening();
     }
 }

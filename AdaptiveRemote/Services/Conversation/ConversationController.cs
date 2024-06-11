@@ -6,12 +6,12 @@ using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-internal class ConversationController : IConversationController, IDisposable
+internal class ConversationController : IScopedLifecycle
 {
     private readonly ConversationSettings _speechSettings;
     private readonly ISpeechRecognition _speechRecognition;
     private readonly ISpeechSynthesis _speechSynthesis;
-    private readonly ICommandExecutionService _executionService;
+    private readonly ICommandService _commandService;
     private readonly IRemoteDefinitionService _definitionService;
     private readonly ILogger<ConversationController> _logger;
     private readonly ConversationView _viewModel;
@@ -23,14 +23,14 @@ internal class ConversationController : IConversationController, IDisposable
         ISpeechRecognition speechRecognition,
         ISpeechSynthesis speechSynthesis,
         IRemoteDefinitionService definitionService,
-        ICommandExecutionService executionService,
+        ICommandService commandService,
         ILogger<ConversationController> logger,
         ConversationView viewModel)
     {
         _speechSettings = options.Value;
         _speechRecognition = speechRecognition;
         _speechSynthesis = speechSynthesis;
-        _executionService = executionService;
+        _commandService = commandService;
         _definitionService = definitionService;
         _logger = logger;
         _viewModel = viewModel;
@@ -39,7 +39,9 @@ internal class ConversationController : IConversationController, IDisposable
         _viewModel.StatusMessage = Phrases.Conversation_WaitingForActivation;
     }
 
-    public void StartListening()
+    string IScopedLifecycle.Name => "Conversation system";
+
+    public Task InitializeAsync(CancellationToken cancellationToken)
     {
         IReadOnlyDictionary<string, Command>? commands = GetCommands();
 
@@ -47,12 +49,16 @@ internal class ConversationController : IConversationController, IDisposable
         {
             _ = ListenWithRetriesAsync(commands, _stop.Token);
         }
+
+        return Task.CompletedTask;
     }
 
-    public void Dispose()
+    public Task CleanUpAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation(Message.ConversationController_Stopping);
         _stop.Cancel();
+
+        return Task.CompletedTask;
     }
 
     private IReadOnlyDictionary<string, Command>? GetCommands()
@@ -199,7 +205,7 @@ internal class ConversationController : IConversationController, IDisposable
             {
                 _logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
-                await _executionService.ExecuteAsync(command, cancellationToken);
+                await _commandService.ExecuteAsync(command, cancellationToken);
 
                 _logger.LogInformation(Message.ConversationController_Executed, command.Name);
             }

@@ -1,4 +1,4 @@
-﻿@inject Services.ICommandExecutionService CommandExecution;
+﻿@inject Services.ICommandService CommandService;
 
 <button class="btn-primary @(IsActive ? "btn-active" : null)" id="@Command?.CSSID" @onclick="Invoke">@Command?.Label</button>
 
@@ -22,7 +22,7 @@
     {
         if (Command is not null)
         {
-            _ = CommandExecution.ExecuteAsync(Command);
+            _ = CommandService.ExecuteAsync(Command);
         }
     }
 }
