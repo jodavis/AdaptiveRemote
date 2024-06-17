@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Reflection.Metadata.Ecma335;
 using I8Beef.TiVo;
 using I8Beef.TiVo.Commands;
 using I8Beef.TiVo.Events;
@@ -17,7 +18,34 @@ internal class LibraryTiVoConnectionFactory : ITiVoConnectionFactory
 
     Task<ITiVoConnection> ITiVoConnectionFactory.ConnectAsync(EndPoint endpoint, CancellationToken cancellationToken)
     {
-        return Task.FromResult<ITiVoConnection>(new Connection(new(endpoint.ToString()), _logger));
+        if (GetHostAndPortFromEndpoint(endpoint, out string host, out int? port))
+        {
+            return Task.FromResult<ITiVoConnection>(new Connection(new(host, port ?? 31339), _logger));
+        }
+        else
+        {
+            return Task.FromException<ITiVoConnection>(new ArgumentException($"EndPoint of type {endpoint.GetType().Name} is not supported", nameof(endpoint)));
+        }
+    }
+
+    private static bool GetHostAndPortFromEndpoint(EndPoint endpoint, out string host, out int? port)
+    {
+        switch (endpoint)
+        {
+            case IPEndPoint ipEndPoint:
+                host = ipEndPoint.Address.ToString();
+                port = ipEndPoint.Port;
+                if (port == 0)
+                {
+                    port = null;
+                }
+                return true;
+
+            default:
+                host = string.Empty;
+                port = null;
+                return false;
+        }
     }
 
     private class Connection : ITiVoConnection
@@ -36,6 +64,7 @@ internal class LibraryTiVoConnectionFactory : ITiVoConnectionFactory
             _client.MessageSent += OnMessageSent;
 
             _client.Connect();
+            _logger.LogInformation($"Connected to TiVo {_client}");
         }
 
         Task ITiVoConnection.DisposeAsync(CancellationToken cancellationToken)
@@ -44,6 +73,8 @@ internal class LibraryTiVoConnectionFactory : ITiVoConnectionFactory
 
             if (client is not null)
             {
+                _logger.LogInformation($"Disconecting from TiVo {client}");
+
                 client.Close();
                 client.Dispose();
 
@@ -61,7 +92,7 @@ internal class LibraryTiVoConnectionFactory : ITiVoConnectionFactory
             Client client = _client
                 ?? throw new ObjectDisposedException(nameof(LibraryTiVoConnectionFactory));
 
-            Command command = CommandFactory.GetCommand(commandId) ?? throw new ArgumentException($"Unable to interpret '{commandId}' as a TiVo command", nameof(commandId));
+            Command command = CommandFactory.GetCommand("IRCODE " + commandId) ?? throw new ArgumentException($"Unable to interpret '{commandId}' as a TiVo command", nameof(commandId));
             await client.SendCommandAsync(command);
         }
 
