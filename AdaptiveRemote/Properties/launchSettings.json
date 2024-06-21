@@ -7,7 +7,7 @@
     },
     "FakeConversation": {
       "commandName": "Project",
-      "commandLineArgs": "--Conversation:UseFakes=true",
+      "commandLineArgs": "--Conversation:UseFakes=true --telemetry:Publish=false",
       "workingDirectory": "."
     },
     "NormalRun": {
