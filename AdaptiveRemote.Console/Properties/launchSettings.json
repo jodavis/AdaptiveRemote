@@ -10,6 +10,11 @@
       "commandLineArgs": "--Conversation:UseFakes=true --telemetry:Publish=false",
       "workingDirectory": "."
     },
+    "FakeConversation with TelemtryLogging": {
+      "commandName": "Project",
+      "commandLineArgs": "--Conversation:UseFakes=true --telemetry:Publish=false --telemetry:LogToConsole=true",
+      "workingDirectory": "."
+    },
     "NormalRun": {
       "commandName": "Project"
     }
