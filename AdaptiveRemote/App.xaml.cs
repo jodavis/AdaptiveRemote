@@ -33,16 +33,8 @@ public partial class App : Application
         {
             IHost host =
             Host.CreateDefaultBuilder()
-                .ConfigureAppConfiguration(config =>
-                {
-                    config.AddUserSecrets<App>();
-                    config.AddCommandLine(args);
-                })
-                .ConfigureServices(services => services.AddWpfBlazorWebView())
-                .ConfigureServices(services => services.AddSingleton<MainWindow>())
-                .ConfigureTelemetry()
-                .AddRemoteServices()
-                .AddConversationSystem()
+                .ConfigureAppSettings(args)
+                .ConfigureApp()
                 .Build();
 
             await host.RunAsync();

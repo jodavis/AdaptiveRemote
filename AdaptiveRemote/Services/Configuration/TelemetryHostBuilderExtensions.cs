@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Models;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.Extensions.Configuration;
@@ -50,7 +49,7 @@ internal static class TelemetryHostBuilderExtensions
     {
         public bool LogToConsole { get; set; } = true;
 
-        public bool Publish { get; set; } = true;
+        public bool Publish { get; set; } = false;
 
         public string? ConnectionString { get; set; } = default;
     }
