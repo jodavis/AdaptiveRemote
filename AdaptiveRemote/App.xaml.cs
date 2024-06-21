@@ -29,21 +29,24 @@ public partial class App : Application
 
     private async Task StartApplicationLoopAsync(string[] args)
     {
-        IHost host =
-        Host.CreateDefaultBuilder()
-            .ConfigureAppConfiguration(config =>
-            {
-                config.AddCommandLine(args);
-            })
-            .ConfigureServices(services => services.AddWpfBlazorWebView())
-            .ConfigureServices(services => services.AddSingleton<MainWindow>())
-            .AddRemoteServices()
-            .AddConversationSystem()
-            .Build();
+        try
+        {
+            IHost host =
+            Host.CreateDefaultBuilder()
+                .ConfigureAppSettings(args)
+                .ConfigureApp()
+                .Build();
 
-        await host.RunAsync();
-
-        Shutdown();
+            await host.RunAsync();
+        }
+        catch (ConfigurationErrorsException configErrors)
+        {
+            MessageBox.Show(configErrors.Message, "Configuration errors", MessageBoxButton.OK, MessageBoxImage.Stop);
+        }
+        finally
+        {
+            Shutdown();
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
