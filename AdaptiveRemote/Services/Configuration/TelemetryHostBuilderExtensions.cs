@@ -1,4 +1,5 @@
 ﻿using System.Configuration;
+using AdaptiveRemote.Models;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.Extensions.Configuration;
@@ -36,7 +37,7 @@ internal static class TelemetryHostBuilderExtensions
                 tracing.AddAzureMonitorLogExporter(configure =>
                 {
                     configure.ConnectionString = settings.ConnectionString
-                        ?? throw new ConfigurationErrorsException($"The '{SettingsKey}:{nameof(TelemetrySettings.ConnectionString)}' setting is required to publish telemetry");
+                        ?? throw Errors.Telemetry_ConnectionStringRequired(SettingsKey, nameof(TelemetrySettings.ConnectionString));
                     configure.Credential = new VisualStudioCredential();
                 });
             }
