@@ -46,12 +46,13 @@ public partial class App : Application
                 .Build();
 
             await host.RunAsync();
-
-            Shutdown();
         }
         catch (ConfigurationErrorsException configErrors)
         {
             MessageBox.Show(configErrors.Message, "Configuration errors", MessageBoxButton.OK, MessageBoxImage.Stop);
+        }
+        finally
+        {
             Shutdown();
         }
     }
