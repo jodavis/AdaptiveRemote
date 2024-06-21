@@ -47,7 +47,7 @@ internal static class TelemetryHostBuilderExtensions
 
     private class TelemetrySettings
     {
-        public bool LogToConsole { get; set; } = true;
+        public bool LogToConsole { get; set; } = false;
 
         public bool Publish { get; set; } = false;
 

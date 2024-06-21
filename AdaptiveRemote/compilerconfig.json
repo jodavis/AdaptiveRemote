@@ -2,9 +2,5 @@
   {
     "outputFile": "wwwroot/css/app.css",
     "inputFile": "wwwroot/css/app.less"
-  },
-  {
-    "outputFile": "wwwroot/css/layout.css",
-    "inputFile": "wwwroot/css/layout.scss"
   }
 ]

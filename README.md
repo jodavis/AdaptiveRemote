@@ -17,9 +17,13 @@ Getting Started
 ---------------
 The project requires Windows OS and [.NET8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
 
-To build and run the application, clone the repository and `dotnet run` from the
-`AdaptiveRemote` project directory. You can also open the solution in Visual Studio 
-2022 or later and run the project.
+The application can be run from two projects. `AdaptiveRemote` is the main GUI application.
+`AdaptiveRemote.Console` is the same GUI application, but launched as a console app that 
+logs output to the terminal.
+
+To build and run the application, clone the repository and `dotnet run` from either the
+`AdaptiveRemote` or `AdaptiveRemote.Console` project directories. You can also open the
+solution in Visual Studio 2022 or later and run either project.
 
 Unit tests are in the `AdaptiveRemote.Tests` project. You can run them using `dotnet test` 
 from that directory or through Visual Studio's Test Explorer.

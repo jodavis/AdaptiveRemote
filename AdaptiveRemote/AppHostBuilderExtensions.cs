@@ -5,16 +5,16 @@ using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote;
 
-internal static class AppHostBuilderExtensions
+public static class AppHostBuilderExtensions
 {
-    internal static IHostBuilder ConfigureApp(this IHostBuilder hostBuilder)
+    public static IHostBuilder ConfigureApp(this IHostBuilder hostBuilder)
         => hostBuilder
             .AddBlazorUI()
             .ConfigureTelemetry()
             .AddRemoteServices()
             .AddConversationSystem();
 
-    internal static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)
+    public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)
         => hostBuilder
             .ConfigureAppConfiguration(config =>
             {
