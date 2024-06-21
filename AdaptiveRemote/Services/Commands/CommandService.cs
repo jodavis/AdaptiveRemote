@@ -41,7 +41,7 @@ internal class CommandService : ICommandService
                     await _broadlink.SendAsync(cancellationToken);
                     break;
                 default:
-                    throw new ArgumentException(Phrases.Commands_UnsupportedCommandType(command), nameof(command));
+                    throw Errors.Commands_UnsupportedCommandType(command, nameof(command));
             }
             _logger.LogInformation(Message.CommandService_Executed, command);
         }

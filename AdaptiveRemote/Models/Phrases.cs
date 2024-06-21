@@ -1,6 +1,4 @@
-﻿using System.Runtime.Serialization;
-
-namespace AdaptiveRemote.Models;
+﻿namespace AdaptiveRemote.Models;
 
 internal static class Phrases
 {
@@ -13,7 +11,6 @@ internal static class Phrases
     public static string Conversation_ListeningForAttention => $"Say \"{Conversation_AttentionPhrase}\" to get my attention";
     public static string Conversation_AttentionPhrase => "Hey Remote";
     public static string Conversation_SystemFailed => "Conversation system error, try restarting";
-    public static string Commands_UnsupportedCommandType(Command command) => $"Cannot execute {command}";
 
     private static string NumberOfTimes(int repeat)
         => repeat switch

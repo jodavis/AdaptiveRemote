@@ -246,7 +246,7 @@ public class CommandServiceTests
 
         ICommandService sut = CreateSut();
 
-        Exception expectedError = new ArgumentException(Phrases.Commands_UnsupportedCommandType(input), "command");
+        Exception expectedError = Errors.Commands_UnsupportedCommandType(input, "command");
 
         // Act
         Task resultTask = sut.ExecuteAsync(input);
