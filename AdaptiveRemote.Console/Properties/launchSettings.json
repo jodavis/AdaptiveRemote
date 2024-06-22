@@ -2,17 +2,17 @@
   "profiles": {
     "RecordSamples": {
       "commandName": "Project",
-      "commandLineArgs": "--Conversation:RecordSamples=true --Conversation:RecordingUserName=User1 --Conversation:RecordingOutputPath=../AdaptiveRemote.Tests/Services/Conversation/SpeechSamples",
+      "commandLineArgs": "--conversation:RecordSamples=true --conversation:RecordingUserName=User1 --conversation:RecordingOutputPath=../AdaptiveRemote.Tests/Services/Conversation/SpeechSamples",
       "workingDirectory": "."
     },
     "FakeConversation": {
       "commandName": "Project",
-      "commandLineArgs": "--Conversation:UseFakes=true --telemetry:Publish=false",
+      "commandLineArgs": "--conversation:UseFakes=true --telemetry:Publish=false",
       "workingDirectory": "."
     },
     "FakeConversation with TelemtryLogging": {
       "commandName": "Project",
-      "commandLineArgs": "--Conversation:UseFakes=true --telemetry:Publish=false --telemetry:LogToConsole=true",
+      "commandLineArgs": "--conversation:UseFakes=true --telemetry:Publish=false --telemetry:LogToConsole=true",
       "workingDirectory": "."
     },
     "NormalRun": {
