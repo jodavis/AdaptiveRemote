@@ -12,8 +12,6 @@ internal static class Phrases
     public static string Conversation_AttentionPhrase => "Hey Remote";
     public static string Conversation_SystemFailed => "Conversation system error, try restarting";
 
-    public static string TiVoService_NotInitialized(string command) => $"Could not send '{command}' to the TiVo because the connection to the TiVo was not created.";
-
     private static string NumberOfTimes(int repeat)
         => repeat switch
         {

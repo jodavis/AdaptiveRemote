@@ -1,5 +1,5 @@
-﻿using System.Configuration;
-using System.Net;
+﻿using System.Net;
+using AdaptiveRemote.Models;
 using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.TiVo;
@@ -16,7 +16,7 @@ internal class StaticTiVoLocator : ITiVoLocator
     Task<EndPoint> ITiVoLocator.FindTiVoAsync(CancellationToken cancellationToken)
     {
         string ipString = _settings.IP
-            ?? throw new ConfigurationErrorsException("The StaticIP setting is required to connect to the TiVo");
+            ?? throw Errors.TiVo_IPAddressRequired("tivo", nameof(_settings.IP));
 
         EndPoint endpoint = IPEndPoint.Parse(ipString);
 
