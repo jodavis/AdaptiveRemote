@@ -40,12 +40,12 @@ public class TiVoServiceTests
             .Verifiable(Times.Once);
 
         MockConnection
-            .Setup(x => x.SendAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendIRCommandAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback(delegate (string commandId, CancellationToken cancellation)
             {
                 Assert.Fail("Did not expect {0}.{1}(\"{2}\")",
                     nameof(ITiVoConnection),
-                    nameof(ITiVoConnection.SendAsync),
+                    nameof(ITiVoConnection.SendIRCommandAsync),
                     commandId);
             });
         MockConnection
@@ -456,7 +456,7 @@ public class TiVoServiceTests
         ITiVoService sut = CreateSut();
 
         MockConnection
-            .Setup(x => x.SendAsync(input, It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendIRCommandAsync(input, It.IsAny<CancellationToken>()))
             .Returns(new TaskCompletionSource().Task)
             .Verifiable(Times.Once);
 
@@ -477,7 +477,7 @@ public class TiVoServiceTests
 
         TaskCompletionSource tcs = new TaskCompletionSource();
         MockConnection
-            .Setup(x => x.SendAsync(input, It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendIRCommandAsync(input, It.IsAny<CancellationToken>()))
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
@@ -532,12 +532,12 @@ public class TiVoServiceTests
 
     private void Expect_MockConnection_SendAsync(string expectedCommand, Task? result = default)
         => MockConnection
-            .Setup(x => x.SendAsync(expectedCommand, It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendIRCommandAsync(expectedCommand, It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(result)
             .Verifiable(Times.Once);
     private CancellationToken Expect_MockConnection_SendAsync_IsCanceled(string expectedCommand)
         => MockConnection
-            .Setup(x => x.SendAsync(expectedCommand, It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendIRCommandAsync(expectedCommand, It.IsAny<CancellationToken>()))
             .WithExpectedCancellation(false);
     private void Expect_MockConnection_Disposed()
         => MockConnection
