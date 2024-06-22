@@ -51,4 +51,10 @@ internal enum Message
     ApplicationLifecycle_CleanedUp = 705,
     ApplicationLifecycle_CleaningUpFailed = 706,
     ApplicationLifecycle_ShuttingDown = 707,
+    TiVoConnection_MessageSent = 801,
+    TiVoConnection_MessageReceived = 802,
+    TiVoConnection_EventReceived = 803,
+    TiVoConnection_Error = 804,
+    TiVoConnection_Connected = 805,
+    TiVoConnection_Disconnecting = 806,
 }
