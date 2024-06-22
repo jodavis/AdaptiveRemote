@@ -91,7 +91,7 @@ internal class LibraryTiVoConnectionFactory : ITiVoConnectionFactory
             return Task.CompletedTask;
         }
 
-        async Task ITiVoConnection.SendAsync(string commandId, CancellationToken cancellationToken)
+        async Task ITiVoConnection.SendIRCommandAsync(string commandId, CancellationToken cancellationToken)
         {
             Client client = _client
                 ?? throw new ObjectDisposedException(nameof(LibraryTiVoConnectionFactory));

@@ -47,6 +47,6 @@ internal class TiVoService : IScopedLifecycle, ITiVoService
             throw Errors.TiVo_NotInitialized(commandCode);
         }
 
-        await _connection.SendAsync(commandCode, cancellationToken);
+        await _connection.SendIRCommandAsync(commandCode, cancellationToken);
     }
 }
