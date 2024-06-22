@@ -34,7 +34,7 @@ internal static class TelemetryHostBuilderExtensions
                 tracing.AddAzureMonitorLogExporter(configure =>
                 {
                     configure.ConnectionString = settings.ConnectionString
-                        ?? throw Errors.Telemetry_ConnectionStringRequired(nameof(TelemetrySettings.ConnectionString));
+                        ?? throw Errors.Telemetry_SettingRequiredToPublish(nameof(TelemetrySettings.ConnectionString));
                     configure.Credential = new VisualStudioCredential();
                 });
             }
