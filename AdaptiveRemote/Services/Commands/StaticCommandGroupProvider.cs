@@ -1,6 +1,6 @@
 ﻿using AdaptiveRemote.Models;
 
-namespace AdaptiveRemote.Services.Impl;
+namespace AdaptiveRemote.Services.Commands;
 
 internal class StaticCommandGroupProvider : IRemoteDefinitionService
 {
