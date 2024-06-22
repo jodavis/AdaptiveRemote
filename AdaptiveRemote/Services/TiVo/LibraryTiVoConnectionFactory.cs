@@ -11,6 +11,8 @@ namespace AdaptiveRemote.Services.TiVo;
 
 internal class LibraryTiVoConnectionFactory : ITiVoConnectionFactory
 {
+    private const int DefaultTiVoPort = 31339;
+
     private readonly ILogger<Client> _logger;
 
     public LibraryTiVoConnectionFactory(ILogger<Client> logger)
@@ -22,7 +24,7 @@ internal class LibraryTiVoConnectionFactory : ITiVoConnectionFactory
     {
         if (GetHostAndPortFromEndpoint(endpoint, out string host, out int? port))
         {
-            return Task.FromResult<ITiVoConnection>(new Connection(host, port ?? 31339, _logger));
+            return Task.FromResult<ITiVoConnection>(new Connection(host, port ?? DefaultTiVoPort, _logger));
         }
         else
         {
