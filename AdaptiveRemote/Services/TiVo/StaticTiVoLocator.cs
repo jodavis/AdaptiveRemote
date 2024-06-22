@@ -16,7 +16,7 @@ internal class StaticTiVoLocator : ITiVoLocator
     Task<EndPoint> ITiVoLocator.FindTiVoAsync(CancellationToken cancellationToken)
     {
         string ipString = _settings.IP
-            ?? throw Errors.TiVo_IPAddressRequired(nameof(_settings.IP));
+            ?? throw Errors.TiVo_SettingRequiredToConnect(nameof(_settings.IP));
 
         EndPoint endpoint = IPEndPoint.Parse(ipString);
 
