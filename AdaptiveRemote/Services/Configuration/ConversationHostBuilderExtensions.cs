@@ -8,7 +8,7 @@ namespace AdaptiveRemote.Services.Configuration;
 internal static class ConversationHostBuilderExtensions
 {
     internal static IHostBuilder AddConversationSystem(this IHostBuilder hostBuilder)
-        => hostBuilder.ConfigureServices((context, services) => services.AddConversationServices(context.Configuration.GetSection("Conversation")));
+        => hostBuilder.ConfigureServices((context, services) => services.AddConversationServices(context.Configuration.GetSection(SettingsKeys.Conversation)));
 
     internal static IServiceCollection AddConversationServices(this IServiceCollection services)
         => services

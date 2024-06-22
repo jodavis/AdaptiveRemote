@@ -511,5 +511,59 @@ namespace AdaptiveRemote.Logging {
                 return ResourceManager.GetString("SpeechSynthesis_VoiceNotFound", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connected to TiVo {0}.
+        /// </summary>
+        internal static string TiVoConnection_Connected {
+            get {
+                return ResourceManager.GetString("TiVoConnection_Connected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Disconnecting from TiVo {0}.
+        /// </summary>
+        internal static string TiVoConnection_Disconnecting {
+            get {
+                return ResourceManager.GetString("TiVoConnection_Disconnecting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error: {0}.
+        /// </summary>
+        internal static string TiVoConnection_Error {
+            get {
+                return ResourceManager.GetString("TiVoConnection_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Event received: {0}.
+        /// </summary>
+        internal static string TiVoConnection_EventReceived {
+            get {
+                return ResourceManager.GetString("TiVoConnection_EventReceived", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message received: {0}.
+        /// </summary>
+        internal static string TiVoConnection_MessageReceived {
+            get {
+                return ResourceManager.GetString("TiVoConnection_MessageReceived", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message sent: {0}.
+        /// </summary>
+        internal static string TiVoConnection_MessageSent {
+            get {
+                return ResourceManager.GetString("TiVoConnection_MessageSent", resourceCulture);
+            }
+        }
     }
 }

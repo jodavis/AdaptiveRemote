@@ -319,4 +319,28 @@
     <value>Voice not found: '{0}'</value>
     <comment>0=Name of the missing voice</comment>
   </data>
+  <data name="TiVoConnection_Connected" xml:space="preserve">
+    <value>Connected to TiVo {0}</value>
+    <comment>0=Description of client</comment>
+  </data>
+  <data name="TiVoConnection_Disconnecting" xml:space="preserve">
+    <value>Disconnecting from TiVo {0}</value>
+    <comment>0=Description of client</comment>
+  </data>
+  <data name="TiVoConnection_Error" xml:space="preserve">
+    <value>Error: {0}</value>
+    <comment>0=Exception</comment>
+  </data>
+  <data name="TiVoConnection_EventReceived" xml:space="preserve">
+    <value>Event received: {0}</value>
+    <comment>0=Event</comment>
+  </data>
+  <data name="TiVoConnection_MessageReceived" xml:space="preserve">
+    <value>Message received: {0}</value>
+    <comment>0=Message</comment>
+  </data>
+  <data name="TiVoConnection_MessageSent" xml:space="preserve">
+    <value>Message sent: {0}</value>
+    <comment>0=Message</comment>
+  </data>
 </root>
