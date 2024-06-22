@@ -501,7 +501,7 @@ public class TiVoServiceTests
         Expect_Locator_IsNotCalled();
         Expect_MockConnectionFactory_IsNotCalled();
 
-        Exception expectedError = new InvalidOperationException(Models.Phrases.TiVoService_NotInitialized(input));
+        Exception expectedError = Models.Errors.TiVo_NotInitialized(input);
 
         // Act
         Task sendTask = sut.SendAsync(input, default);
@@ -518,7 +518,7 @@ public class TiVoServiceTests
 
         ITiVoService sut = CreateSut();
 
-        Exception expectedError = new InvalidOperationException(Models.Phrases.TiVoService_NotInitialized(input));
+        Exception expectedError = Models.Errors.TiVo_NotInitialized(input);
 
         Expect_MockConnection_Disposed();
         ((IScopedLifecycle)sut).CleanUpAsync(default);

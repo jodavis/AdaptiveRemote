@@ -1,4 +1,6 @@
-﻿namespace AdaptiveRemote.Services.TiVo;
+﻿using AdaptiveRemote.Models;
+
+namespace AdaptiveRemote.Services.TiVo;
 
 internal class TiVoService : IScopedLifecycle, ITiVoService
 {
@@ -42,7 +44,7 @@ internal class TiVoService : IScopedLifecycle, ITiVoService
     {
         if (_connection is null)
         {
-            throw new InvalidOperationException(Models.Phrases.TiVoService_NotInitialized(commandCode));
+            throw Errors.TiVo_NotInitialized(commandCode);
         }
 
         await _connection.SendAsync(commandCode, cancellationToken);
