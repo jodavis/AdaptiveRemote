@@ -19,7 +19,7 @@ internal static class HostBuilderExtensions
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
             .AddSingleton<ICommandService, CommandService>()
             .AddSingleton<IApplicationService, ApplicationService>()
-            .AddTiVoServices(configuration.GetSection("tivo"))
+            .AddTiVoServices(configuration.GetSection(SettingsKeys.TiVo))
             .AddBroadlinkServices();
 
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)

@@ -11,8 +11,6 @@ namespace AdaptiveRemote.Services.Configuration;
 
 internal static class TelemetryHostBuilderExtensions
 {
-    private const string SettingsKey = "telemetry";
-
     public static IHostBuilder ConfigureTelemetry(this IHostBuilder builder)
         => builder
             .ConfigureServices(services => services.ConfigureTelemetry())
@@ -36,14 +34,14 @@ internal static class TelemetryHostBuilderExtensions
                 tracing.AddAzureMonitorLogExporter(configure =>
                 {
                     configure.ConnectionString = settings.ConnectionString
-                        ?? throw Errors.Telemetry_ConnectionStringRequired(SettingsKey, nameof(TelemetrySettings.ConnectionString));
+                        ?? throw Errors.Telemetry_ConnectionStringRequired(nameof(TelemetrySettings.ConnectionString));
                     configure.Credential = new VisualStudioCredential();
                 });
             }
         });
 
     private static TelemetrySettings GetTelemetrySettings(this HostBuilderContext context)
-        => context.Configuration.GetSection(SettingsKey)?.Get<TelemetrySettings>() ?? new();
+        => context.Configuration.GetSection(SettingsKeys.Conversation)?.Get<TelemetrySettings>() ?? new();
 
     private class TelemetrySettings
     {
