@@ -5,7 +5,10 @@ namespace AdaptiveRemote.Models;
 public abstract class Command : RemoteLayoutElement
 {
     public static readonly MvvmProperty<bool> IsActiveProperty = new(nameof(IsActive));
-    public static readonly MvvmProperty<bool> IsVisibleProperty = new(nameof(IsVisible));
+    public static readonly MvvmProperty<bool> IsEnabledProperty = new(nameof(IsEnabled));
+    public static readonly MvvmProperty<ExecuteDelegate?> ExecuteAsyncProperty = new(nameof(ExecuteAsync));
+
+    public delegate Task ExecuteDelegate(CancellationToken cancellationToken);
 
     protected Command(
         string name,
@@ -30,10 +33,16 @@ public abstract class Command : RemoteLayoutElement
         set => SetValue(IsActiveProperty, value);
     }
 
-    public bool IsVisible
+    public bool IsEnabled
     {
-        get => GetValue(IsVisibleProperty);
-        set => SetValue(IsVisibleProperty, value);
+        get => GetValue(IsEnabledProperty);
+        set => SetValue(IsEnabledProperty, value);
+    }
+
+    public ExecuteDelegate? ExecuteAsync
+    {
+        get => GetValue(ExecuteAsyncProperty);
+        set => SetValue(ExecuteAsyncProperty, value);
     }
 
     public override string ToString() => $"{GetType().Name} '{Name}'";
