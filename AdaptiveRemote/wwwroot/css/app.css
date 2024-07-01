@@ -59,6 +59,11 @@ div.conversation-speaking-message {
 .btn-primary.btn-active {
   background-color: #88bbee;
 }
+.btn-primary.btn-disabled {
+  background-color: #888888;
+  color: #d4d4d4;
+  border-color: #555555;
+}
 .valid.modified:not([type=checkbox]) {
   outline: 1px solid #26b050;
 }

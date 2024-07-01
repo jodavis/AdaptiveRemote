@@ -16,12 +16,21 @@ internal class CommandService : ICommandService
         [nameof(IApplicationService.Exit)] = app => app.Exit()
     };
 
-    public CommandService(IApplicationService application, ITiVoService tivo, IBroadlinkService broadlink, ILogger<CommandService> logger)
+    public CommandService(IApplicationService application, ITiVoService tivo, IBroadlinkService broadlink, ILogger<CommandService> logger, IRemoteDefinitionService definitionService)
     {
         _application = application;
         _tivo = tivo;
         _broadlink = broadlink;
         _logger = logger;
+
+        foreach (Command command in definitionService.GetCommands())
+        {
+            if (command is ApplicationCommand)
+            {
+                command.ExecuteAsync = cancellationToken => ((ICommandService)this).ExecuteAsync(command, cancellationToken);
+                command.IsEnabled = true;
+            }
+        }
     }
 
     async Task ICommandService.ExecuteAsync(Command command, CancellationToken cancellationToken)

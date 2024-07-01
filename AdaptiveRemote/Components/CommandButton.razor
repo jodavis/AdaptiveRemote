@@ -1,12 +1,30 @@
-﻿@inject Services.ICommandService CommandService;
-
-<button class="btn-primary @(IsActive ? "btn-active" : null)" id="@Command?.CSSID" @onclick="Invoke">@Command?.Label</button>
+﻿<button class="@CssClasses" id="@ID" @onclick="Invoke">@Label</button>
 
 @code {
     [Parameter]
     public Models.Command? Command { get; set; }
 
     private bool IsActive => Command?.IsActive ?? false;
+    private bool IsEnabled => Command?.ExecuteAsync is not null && Command?.IsEnabled == true;
+    private string ID => Command?.CSSID ?? string.Empty;
+    private string Label => Command?.Label ?? string.Empty;
+
+    private string CssClasses => string.Join(" ", ComputeCssClasses());
+
+    private IEnumerable<string> ComputeCssClasses()
+    {
+        yield return "btn-primary";
+
+        if (IsActive)
+        {
+            yield return "btn-active";
+        }
+
+        if (!IsEnabled)
+        {
+            yield return "btn-disabled";
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -20,9 +38,6 @@
 
     private void Invoke()
     {
-        if (Command is not null)
-        {
-            _ = CommandService.ExecuteAsync(Command);
-        }
+        Command?.ExecuteAsync?.Invoke(default);
     }
 }

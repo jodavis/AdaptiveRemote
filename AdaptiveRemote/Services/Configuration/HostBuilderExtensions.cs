@@ -17,7 +17,7 @@ internal static class HostBuilderExtensions
             .AddHostedService<ApplicationLifecycle>()
             .AddSingleton<IApplicationScopeFactory, BlazorWindowScopeFactory>()
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
-            .AddSingleton<ICommandService, CommandService>()
+            .AddScoped<ICommandService, CommandService>()
             .AddSingleton<IApplicationService, ApplicationService>()
             .AddTiVoServices(configuration.GetSection(SettingsKeys.TiVo))
             .AddBroadlinkServices();
@@ -28,7 +28,7 @@ internal static class HostBuilderExtensions
 
     private static IServiceCollection AddTiVoServices(this IServiceCollection services, IConfiguration configuration)
         => services
-            .AddSingleton<TiVoService>() // TODO: This should be scoped, but it's not created in the right scope
+            .AddScoped<TiVoService>()
             .AddScoped(services => (ITiVoService)services.GetRequiredService<TiVoService>())
             .AddScoped(services => (IScopedLifecycle)services.GetRequiredService<TiVoService>())
             .AddSingleton<ITiVoConnectionFactory, LibraryTiVoConnectionFactory>()
