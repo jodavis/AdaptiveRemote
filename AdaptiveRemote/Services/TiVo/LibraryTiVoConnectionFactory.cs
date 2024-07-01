@@ -20,16 +20,19 @@ internal class LibraryTiVoConnectionFactory : ITiVoConnectionFactory
         _logger = logger;
     }
 
-    Task<ITiVoConnection> ITiVoConnectionFactory.ConnectAsync(EndPoint endpoint, CancellationToken cancellationToken)
+    async Task<ITiVoConnection> ITiVoConnectionFactory.ConnectAsync(EndPoint endpoint, CancellationToken cancellationToken)
     {
-        if (GetHostAndPortFromEndpoint(endpoint, out string host, out int? port))
+        return await Task.Run(() =>
         {
-            return Task.FromResult<ITiVoConnection>(new Connection(host, port ?? DefaultTiVoPort, _logger));
-        }
-        else
-        {
-            return Task.FromException<ITiVoConnection>(new ArgumentException($"EndPoint of type {endpoint.GetType().Name} is not supported", nameof(endpoint)));
-        }
+            if (GetHostAndPortFromEndpoint(endpoint, out string host, out int? port))
+            {
+                return new Connection(host, port ?? DefaultTiVoPort, _logger);
+            }
+            else
+            {
+                throw new ArgumentException($"EndPoint of type {endpoint.GetType().Name} is not supported", nameof(endpoint));
+            }
+        });
     }
 
     private static bool GetHostAndPortFromEndpoint(EndPoint endpoint, out string host, out int? port)
