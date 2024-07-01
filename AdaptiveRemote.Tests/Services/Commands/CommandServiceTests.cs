@@ -13,6 +13,7 @@ public class CommandServiceTests
     private readonly Mock<ITiVoService> MockTiVoService = new();
     private readonly Mock<IBroadlinkService> MockBroadlinkService = new();
     private readonly MockLogger<CommandService> MockLogger = new();
+    private readonly Mock<IRemoteDefinitionService> MockRemoteDefinition = new();
 
     private static readonly Command[] TestCommands =
     [
@@ -32,6 +33,9 @@ public class CommandServiceTests
         MockBroadlinkService
             .Setup(x => x.SendAsync(It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
+        MockRemoteDefinition
+            .Setup(x => x.RemoteRoot)
+            .Returns(new LayoutGroup("BLAH", []));
     }
 
     [TestCleanup]
@@ -259,7 +263,7 @@ public class CommandServiceTests
             Expect_ErrorMessage(input, expectedError));
     }
 
-    private ICommandService CreateSut() => new CommandService(MockApplicationService.Object, MockTiVoService.Object, MockBroadlinkService.Object, MockLogger);
+    private ICommandService CreateSut() => new CommandService(MockApplicationService.Object, MockTiVoService.Object, MockBroadlinkService.Object, MockLogger, MockRemoteDefinition.Object);
 
     private static string Expect_ExecutingMessage(Command command)
         => $"Information[601]: {string.Format(Logging.LoggingMessages.CommandService_Executing, command)}";
