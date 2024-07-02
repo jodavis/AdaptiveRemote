@@ -157,7 +157,7 @@ div.conversation-speaking-message {
   grid-row: 2;
   grid-column: 1;
   display: grid;
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   grid-template-columns: repeat(5, 1fr);
   grid-gap: 10px;
 }
