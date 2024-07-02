@@ -11,7 +11,6 @@ internal class ConversationController : IScopedLifecycle
     private readonly ConversationSettings _speechSettings;
     private readonly ISpeechRecognition _speechRecognition;
     private readonly ISpeechSynthesis _speechSynthesis;
-    private readonly ICommandService _commandService;
     private readonly IRemoteDefinitionService _definitionService;
     private readonly ILogger<ConversationController> _logger;
     private readonly ConversationView _viewModel;
@@ -23,14 +22,12 @@ internal class ConversationController : IScopedLifecycle
         ISpeechRecognition speechRecognition,
         ISpeechSynthesis speechSynthesis,
         IRemoteDefinitionService definitionService,
-        ICommandService commandService,
         ILogger<ConversationController> logger,
         ConversationView viewModel)
     {
         _speechSettings = options.Value;
         _speechRecognition = speechRecognition;
         _speechSynthesis = speechSynthesis;
-        _commandService = commandService;
         _definitionService = definitionService;
         _logger = logger;
         _viewModel = viewModel;
@@ -194,27 +191,41 @@ internal class ConversationController : IScopedLifecycle
 
     private async Task ExecuteCommandAsync(Command command, int repeat, CancellationToken cancellationToken)
     {
-        Task sayTask = SayAsync(Phrases.Conversation_Sent(command.Name, repeat), cancellationToken);
-
-        string previousMessage = _viewModel.StatusMessage;
-        _viewModel.StatusMessage = Phrases.Conversation_ImSending;
-
-        try
+        Command.ExecuteDelegate? executeAsync = command.ExecuteAsync;
+        if (executeAsync is null)
         {
-            for (int i = 0; i < repeat; i++)
-            {
-                _logger.LogInformation(Message.ConversationController_Executing, command.Name);
-
-                await _commandService.ExecuteAsync(command, cancellationToken);
-
-                _logger.LogInformation(Message.ConversationController_Executed, command.Name);
-            }
-
-            await sayTask;
+            _logger.LogError(Message.ConversationController_CommandMissingExecuteAction, command.Name);
+            await SayAsync(Phrases.Conversation_CommandDisabled(command.Name), cancellationToken);
         }
-        finally
+        else if (!command.IsEnabled)
         {
-            _viewModel.StatusMessage = previousMessage;
+            _logger.LogError(Message.ConversationController_CommandDisabled, command.Name);
+            await SayAsync(Phrases.Conversation_CommandDisabled(command.Name), cancellationToken);
+        }
+        else
+        {
+            Task sayTask = SayAsync(Phrases.Conversation_Sent(command.Name, repeat), cancellationToken);
+
+            string previousMessage = _viewModel.StatusMessage;
+            _viewModel.StatusMessage = Phrases.Conversation_ImSending;
+
+            try
+            {
+                for (int i = 0; i < repeat; i++)
+                {
+                    _logger.LogInformation(Message.ConversationController_Executing, command.Name);
+
+                    await executeAsync(cancellationToken);
+
+                    _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+                }
+
+                await sayTask;
+            }
+            finally
+            {
+                _viewModel.StatusMessage = previousMessage;
+            }
         }
     }
 

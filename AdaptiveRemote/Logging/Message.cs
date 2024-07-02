@@ -23,6 +23,8 @@ internal enum Message
     ConversationController_Executing = 210,
     ConversationController_Executed = 211,
     ConversationController_ListenForCommands = 212,
+    ConversationController_CommandMissingExecuteAction = 213,
+    ConversationController_CommandDisabled = 214,
     SpeechRecognition_RecognitionError = 302,
     SpeechRecognition_CancelledListeningMethod = 303,
     SpeechRecognition_ErrorInListeningMethod = 304,
