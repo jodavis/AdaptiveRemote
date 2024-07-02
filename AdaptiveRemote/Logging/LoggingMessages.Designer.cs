@@ -163,6 +163,24 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because it is not enabled.
+        /// </summary>
+        internal static string ConversationController_CommandDisabled {
+            get {
+                return ResourceManager.GetString("ConversationController_CommandDisabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because it is missing its execute action.
+        /// </summary>
+        internal static string ConversationController_CommandMissingExecuteAction {
+            get {
+                return ResourceManager.GetString("ConversationController_CommandMissingExecuteAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error in speech recognition loop: {0}.
         /// </summary>
         internal static string ConversationController_Error {
