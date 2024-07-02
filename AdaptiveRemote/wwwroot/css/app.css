@@ -181,29 +181,52 @@ div.conversation-speaking-message {
   grid-row: 1;
   grid-column: 5;
 }
-#ROOT #CHANNEL {
+#ROOT #CHANNELANDVOLUME {
   grid-row: 2;
   grid-column: 2;
   display: grid;
   grid-template-rows: 36pt 1fr 1fr;
-  grid-template-columns: 1;
+  grid-template-columns: 2fr 1fr 2fr;
   grid-gap: 10px;
-  padding: 0 200px;
 }
-#ROOT #CHANNEL:before {
+#ROOT #CHANNELANDVOLUME:before {
+  grid-row: 1;
+  grid-column: 1;
   font-size: 36pt;
   font-weight: bold;
   color: black;
   content: "Channel";
   text-align: center;
 }
-#ROOT #CHANNEL #CHANNELUP {
+#ROOT #CHANNELANDVOLUME:after {
+  grid-row: 1;
+  grid-column: 3;
+  font-size: 36pt;
+  font-weight: bold;
+  color: black;
+  content: "Volume";
+  text-align: center;
+}
+#ROOT #CHANNELANDVOLUME #CHANNELUP {
   grid-row: 2;
   grid-column: 1;
 }
-#ROOT #CHANNEL #CHANNELDOWN {
+#ROOT #CHANNELANDVOLUME #CHANNELDOWN {
   grid-row: 3;
   grid-column: 1;
+}
+#ROOT #CHANNELANDVOLUME #VOLUMEUP {
+  grid-row: 2;
+  grid-column: 3;
+}
+#ROOT #CHANNELANDVOLUME #VOLUMEDOWN {
+  grid-row: 3;
+  grid-column: 3;
+}
+#ROOT #CHANNELANDVOLUME #MUTE {
+  grid-row: 2;
+  grid-column: 2;
+  grid-row-end: span 2;
 }
 #ROOT #GUTTER {
   grid-row: 3;
@@ -211,7 +234,7 @@ div.conversation-speaking-message {
   grid-column-end: span 2;
   grid-gap: 20px;
   display: grid;
-  grid-template-rows: 1;
+  grid-template-rows: 1fr;
   grid-template-columns: 6fr 1fr 1fr;
   grid-gap: 10px;
 }
