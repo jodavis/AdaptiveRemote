@@ -209,16 +209,25 @@ div.conversation-speaking-message {
         }
     }
 
-    #CHANNEL {
+    #CHANNELANDVOLUME {
         .position(2, 2);
-        .define-grid(36pt 1fr 1fr, 1);
-        padding: 0 200px;
+        .define-grid(36pt 1fr 1fr, 2fr 1fr 2fr);
 
         &:before {
+            .position(1, 1);
             font-size: 36pt;
             font-weight: bold;
             color: black;
             content: "Channel";
+            text-align: center;
+        }
+
+        &:after {
+            .position(1, 3);
+            font-size: 36pt;
+            font-weight: bold;
+            color: black;
+            content: "Volume";
             text-align: center;
         }
 
@@ -229,6 +238,19 @@ div.conversation-speaking-message {
         #CHANNELDOWN {
             .position(3, 1);
         }
+
+        #VOLUMEUP {
+            .position(2, 3);
+        }
+
+        #VOLUMEDOWN {
+            .position(3, 3);
+        }
+
+        #MUTE {
+            .position (2, 2);
+            grid-row-end: span 2;
+        }
     }
 
     #GUTTER {
@@ -236,7 +258,7 @@ div.conversation-speaking-message {
         grid-column-start: 1;
         grid-column-end: span 2;
         grid-gap: 20px;
-        .define-grid(1, 6fr 1fr 1fr);
+        .define-grid(1fr, 6fr 1fr 1fr);
 
         #EXIT {
             .position(1, 3);
