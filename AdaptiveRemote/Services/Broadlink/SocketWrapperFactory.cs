@@ -7,22 +7,19 @@ namespace AdaptiveRemote.Services.Broadlink;
 [ExcludeFromCodeCoverage(Justification = "Simple wrapper around System.Net.Socket")]
 internal class SocketWrapperFactory : ISocketFactory
 {
-    ISocket ISocketFactory.Create(EndPoint targetEndPoint, SocketOptionName options)
+    ISocket ISocketFactory.CreateForBroadcast()
     {
-        Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        foreach (SocketOptionName option in Enum.GetValues(typeof(SocketOptionName)))
-        {
-            if ((options & option) == option)
-            {
-                socket.SetSocketOption(SocketOptionLevel.Socket, option, true);
-            }
-        }
-        socket.Bind(targetEndPoint);
+        Socket socket = CreateUdpSocket();
+        socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+        socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, true);
+        socket.Bind(IPEndPoint.Parse("255.255.255.255:80"));
 
         return new SocketWrapper(socket);
     }
 
-    ISocket ISocketFactory.CreateForBroadcast() => new SocketWrapper(new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp));
+    ISocket ISocketFactory.Create() => new SocketWrapper(CreateUdpSocket());
+
+    private static Socket CreateUdpSocket() => new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
     private class SocketWrapper : ISocket
     {

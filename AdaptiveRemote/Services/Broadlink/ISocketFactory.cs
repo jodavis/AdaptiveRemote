@@ -5,7 +5,7 @@ namespace AdaptiveRemote.Services.Broadlink;
 
 internal interface ISocketFactory
 {
-    ISocket Create(EndPoint targetEndPoint, SocketOptionName options);
-
     ISocket CreateForBroadcast();
+
+    ISocket Create();
 }

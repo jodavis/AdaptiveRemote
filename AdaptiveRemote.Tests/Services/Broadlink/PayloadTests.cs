@@ -22,7 +22,7 @@ public class PayloadTests
         // Assert
         MemoryAssert.WriteTo(TestContext, input, sut.GetBuffer());
 
-        MemoryAssert.AreEqual(input, sut.GetBuffer());
+        MemoryAssert.AreEqual(input, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
         Assert.AreEqual(input.Length, sut.Size, nameof(sut.Size));
     }
 
@@ -39,7 +39,7 @@ public class PayloadTests
         // Assert
         MemoryAssert.WriteTo(TestContext, expected, sut.GetBuffer());
 
-        MemoryAssert.AreEqual(expected, sut.GetBuffer());
+        MemoryAssert.AreEqual(expected, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
         Assert.AreEqual(expected.Length, sut.Size, nameof(sut.Size));
     }
 
@@ -58,7 +58,7 @@ public class PayloadTests
         // Assert
         MemoryAssert.WriteTo(TestContext, expected, sut.GetBuffer());
 
-        MemoryAssert.AreEqual(expected, sut.GetBuffer());
+        MemoryAssert.AreEqual(expected, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
         Assert.AreEqual(expected.Length, sut.Size, nameof(sut.Size));
 
         // TODO: Verify that changes to parent buffer are reflected in child, and vice versa
@@ -83,7 +83,7 @@ public class PayloadTests
         MemoryAssert.WriteTo(TestContext, expected, sut.GetBuffer());
 
         Assert.AreEqual(0x12345678, sut.IntValueAt0x02, nameof(sut.IntValueAt0x02));
-        MemoryAssert.AreEqual(expected, sut.GetBuffer());
+        MemoryAssert.AreEqual(expected, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
     }
 
     [TestMethod]
@@ -103,7 +103,7 @@ public class PayloadTests
         MemoryAssert.WriteTo(TestContext, expected, sut.GetBuffer());
 
         Assert.AreEqual(0x5678, sut.ShortValueAt0x06, nameof(sut.ShortValueAt0x06));
-        MemoryAssert.AreEqual(expected, sut.GetBuffer());
+        MemoryAssert.AreEqual(expected, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
     }
 
     [TestMethod]
@@ -129,7 +129,7 @@ public class PayloadTests
         MemoryAssert.WriteTo(TestContext, expected, sut.GetBuffer());
 
         Assert.AreEqual(0x123456789ABCDEF0, sut.LongValueAt0x08, nameof(sut.LongValueAt0x08));
-        MemoryAssert.AreEqual(expected, sut.GetBuffer());
+        MemoryAssert.AreEqual(expected, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
     }
 
     [TestMethod]
@@ -152,7 +152,7 @@ public class PayloadTests
         MemoryAssert.WriteTo(TestContext, expected, sut.GetBuffer());
 
         Assert.AreEqual("Hello", sut.StringValueAt0x10, nameof(sut.StringValueAt0x10));
-        MemoryAssert.AreEqual(expected, sut.GetBuffer());
+        MemoryAssert.AreEqual(expected, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
     }
 
     [TestMethod]
@@ -174,8 +174,8 @@ public class PayloadTests
         // Assert
         MemoryAssert.WriteTo(TestContext, expected, sut.GetBuffer());
 
-        MemoryAssert.AreEqual(input, sut.FourBytesAt0x20);
-        MemoryAssert.AreEqual(expected, sut.GetBuffer());
+        MemoryAssert.AreEqual(input, sut.FourBytesAt0x20, nameof(sut.FourBytesAt0x20));
+        MemoryAssert.AreEqual(expected, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
     }
 
     [TestMethod]
@@ -199,8 +199,8 @@ public class PayloadTests
         // Assert
         MemoryAssert.WriteTo(TestContext, expectedBuffer, sut.GetBuffer());
 
-        MemoryAssert.AreEqual(expected, sut.AllBytesAt0x20);
-        MemoryAssert.AreEqual(expectedBuffer, sut.GetBuffer());
+        MemoryAssert.AreEqual(expected, sut.AllBytesAt0x20, nameof(sut.AllBytesAt0x20));
+        MemoryAssert.AreEqual(expectedBuffer, sut.GetBuffer(), nameof(sut) + ".GetBuffer()");
     }
 
     private class TestPayload : Payload
@@ -270,7 +270,7 @@ public class PayloadTests
 
         // Assert
         MemoryAssert.WriteTo(TestContext, expected, result);
-        MemoryAssert.AreEqual(expected, result);
+        MemoryAssert.AreEqual(expected, result, nameof(result));
 
         Assert.AreEqual(0x50, sut.Size, nameof(sut.Size));
         Assert.AreEqual(-15438, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
@@ -293,7 +293,7 @@ public class PayloadTests
 
         // Assert
         Assert.AreEqual(0x2BAD, sut.DeviceID, nameof(sut.DeviceID));
-        MemoryAssert.AreEqual(input.AsSpan(0x04, 16).ToArray(), sut.EncryptionKey);
+        MemoryAssert.AreEqual(input.AsSpan(0x04, 16).ToArray(), sut.EncryptionKey, nameof(sut.EncryptionKey));
 
         Assert.AreEqual(input.Length, sut.Size, nameof(sut.Size));
         Assert.AreEqual(-14585, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
@@ -320,11 +320,11 @@ public class PayloadTests
 
         // Assert
         MemoryAssert.WriteTo(TestContext, expected, result);
-        MemoryAssert.AreEqual(expected, result);
+        MemoryAssert.AreEqual(expected, result, nameof(result));
 
         Assert.AreEqual(inputCommand, sut.Command, nameof(sut.Command));
         Assert.AreEqual(0x09, sut.CommandAndDataLength, nameof(sut.CommandAndDataLength));
-        MemoryAssert.AreEqual(inputData, sut.Data);
+        MemoryAssert.AreEqual(inputData, sut.Data, nameof(sut.Data));
         Assert.AreEqual(11, sut.Size, nameof(sut.Size));
     }
 
@@ -374,7 +374,7 @@ public class PayloadTests
 
         // Assert
         MemoryAssert.WriteTo(TestContext, expected, result);
-        MemoryAssert.AreEqual(expected, result);
+        MemoryAssert.AreEqual(expected, result, nameof(result));
 
         Assert.AreEqual(inputDeviceType, sut.DeviceType, nameof(sut.DeviceType));
         Assert.AreEqual(inputPacketType, sut.PacketType, nameof(sut.PacketType));
@@ -385,7 +385,7 @@ public class PayloadTests
         Assert.AreEqual(inputPayloadChecksum, sut.PayloadChecksum, nameof(sut.PayloadChecksum));
         Assert.AreEqual(0x38, sut.Size, nameof(sut.Size));
 
-        MemoryAssert.AreEqual(expected.AsSpan(0, 8).ToArray(), sut.Preamble);
+        MemoryAssert.AreEqual(expected.AsSpan(0, 8).ToArray(), sut.Preamble, nameof(sut.Preamble));
 
         Assert.AreEqual(-13473, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
     }
@@ -425,10 +425,10 @@ public class PayloadTests
 
         // Assert
         MemoryAssert.WriteTo(TestContext, expected, result);
-        MemoryAssert.AreEqual(expected, result);
+        MemoryAssert.AreEqual(expected, result, nameof(result));
 
         Assert.AreEqual(inputRequestTime, sut.RequestTime, nameof(sut.RequestTime));
-        MemoryAssert.AreEqual(inputIPAddress, sut.LocalIPAddress);
+        MemoryAssert.AreEqual(inputIPAddress, sut.LocalIPAddress, nameof(sut.LocalIPAddress));
         Assert.AreEqual(inputPort, sut.LocalPort, nameof(sut.LocalPort));
         Assert.AreEqual(inputChecksum, sut.Checksum, nameof(sut.Checksum));
         Assert.AreEqual(0x30, sut.Size, nameof(sut.Size));
@@ -529,7 +529,7 @@ public class PayloadTests
 
         // Assert
         MemoryAssert.WriteTo(TestContext, expected, result);
-        MemoryAssert.AreEqual(expected, result);
+        MemoryAssert.AreEqual(expected, result, nameof(result));
 
         Assert.AreEqual(inputDeviceType, sut.Header.DeviceType, nameof(sut.Header.DeviceType));
         Assert.AreEqual(inputPacketType, sut.Header.PacketType, nameof(sut.Header.PacketType));
@@ -540,8 +540,8 @@ public class PayloadTests
         Assert.AreEqual(inputPayloadChecksum, sut.Header.PayloadChecksum, nameof(sut.Header.PayloadChecksum));
         Assert.AreEqual(0x38 + 8, sut.Size, nameof(sut.Size));
 
-        MemoryAssert.AreEqual(expected.AsSpan(0, 8).ToArray(), sut.Header.Preamble);
-        MemoryAssert.AreEqual(inputPayload, sut.Payload.GetBuffer());
+        MemoryAssert.AreEqual(expected.AsSpan(0, 8).ToArray(), sut.Header.Preamble, nameof(sut.Header.Preamble));
+        MemoryAssert.AreEqual(inputPayload, sut.Payload.GetBuffer(), nameof(sut.Payload));
 
         Assert.AreEqual(-12557, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
     }
