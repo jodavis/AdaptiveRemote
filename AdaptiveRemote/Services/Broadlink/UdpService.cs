@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -20,17 +21,43 @@ internal class UdpService : IUdpService
 
     IAsyncEnumerable<ResponsePacket> IUdpService.BroadcastAsync(SendPacket packet, CancellationToken cancellationToken)
     {
-        // TODO: Implement this
+        //IPEndPoint discoverEndpoint = new(0, 0); // DefaultBroadcastEndPoint?
+
+        //ISocket socket = _socketFactory.CreateForBroadcast();
+
+        //socket.SetTimeout(TimeSpan.FromSeconds(_settings.ScanTimeout));
+
+        //// TODO: Retry with timeout (or don't, until it's needed?)
+
+        //// TODO: Await this
+        //// TODO: Pass cancellation
+        //_ = socket.SendToAsync(packet.GetBuffer(), discoverEndpoint, default);
+        //// TODO: Throw if cancelled
+
+        //Memory<byte> buffer = new byte[0x400];
+
+        //// TODO: Repeat the below to find more devices (or don't, until it's needed?)
+
+        //// TODO: Await this
+        //// TODO: Pass cancellation
+        //SocketReceiveFromResult result = socket.ReceiveFromAsync(buffer, new IPEndPoint(0, 0), default).Result;
+        //// TODO: Throw if cancelled
+        //buffer = buffer.Slice(0, result.ReceivedBytes);
+
+        //// TODO: What's the right return value here?
+        //yield return new ScanResponsePayload(buffer);
+
         throw new NotImplementedException();
     }
 
     Task<ResponsePacket> IUdpService.SendAsync(EndPoint remoteEndPoint, SendPacket packet, CancellationToken cancellationToken)
     {
+        // using (Dispose when done)
         ISocket socket = _socketFactory.Create();
 
         socket.SetTimeout(TimeSpan.FromSeconds(_settings.SendTimeout));
 
-        // TODO: Add retry (or wait until needed?)
+        // TODO: Add retry with timeout (or don't, until it's needed?)
 
         // TODO: Await this
         // TODO: Pass cancellation
