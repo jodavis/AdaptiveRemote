@@ -59,4 +59,10 @@ internal enum Message
     TiVoConnection_Error = 804,
     TiVoConnection_Connected = 805,
     TiVoConnection_Disconnecting = 806,
+    UdpService_Sending = 901,
+    UdpService_Sent = 902,
+    UdpService_ReceivedResponse = 903,
+    UdpService_Cancelled = 904,
+    UdpService_Failed = 905,
+    UdpService_UnexpectedError = 906,
 }

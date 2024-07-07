@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
+using AdaptiveRemote.Logging;
+using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -8,6 +9,8 @@ namespace AdaptiveRemote.Services.Broadlink;
 
 internal class UdpService : IUdpService
 {
+    private const int MinimumResponseSize = 0x30;
+
     private readonly ISocketFactory _socketFactory;
     private readonly BroadlinkSettings _settings;
     private readonly ILogger<UdpService> _logger;
@@ -50,32 +53,76 @@ internal class UdpService : IUdpService
         throw new NotImplementedException();
     }
 
-    Task<ResponsePacket> IUdpService.SendAsync(EndPoint remoteEndPoint, SendPacket packet, CancellationToken cancellationToken)
+    async Task<ResponsePacket> IUdpService.SendAsync(EndPoint remoteEndPoint, SendPacket packet, CancellationToken cancellationToken)
     {
-        // using (Dispose when done)
-        ISocket socket = _socketFactory.Create();
+        try
+        {
+            using ISocket socket = _socketFactory.Create();
 
-        socket.SetTimeout(TimeSpan.FromSeconds(_settings.SendTimeout));
+            DateTime startTime = DateTime.Now;
+            TimeSpan timeout = TimeSpan.FromSeconds(_settings.SendTimeout);
 
-        // TODO: Add retry with timeout (or don't, until it's needed?)
+            Memory<byte> responseBuffer = new byte[0x400];
 
-        // TODO: Await this
-        // TODO: Pass cancellation
-#pragma warning disable CA2012 // Use ValueTasks correctly -- this is work in progress
-        socket.SendToAsync(packet.GetBuffer(), remoteEndPoint, default);
-#pragma warning restore CA2012 // Use ValueTasks correctly
-                              // TODO: Throw if cancelled
+            while (true)
+            {
+                TimeSpan timeLeft = timeout - (DateTime.Now - startTime);
+                socket.SetTimeout(timeLeft);
 
-        Memory<byte> buffer = new byte[0x400];
+                _logger.LogInformation(Message.UdpService_Sending, packet.Header.MessageCount, packet.Size, remoteEndPoint);
 
-        // TODO: Await this
-        // TODO: Pass cancellation
-#pragma warning disable CA2012 // Use ValueTasks correctly -- this is work in progress
-        SocketReceiveFromResult result = socket.ReceiveFromAsync(buffer, remoteEndPoint, default).Result;
-#pragma warning restore CA2012 // Use ValueTasks correctly
-                              // TODO: Throw if cancelled
-        buffer = buffer.Slice(0, result.ReceivedBytes);
+                await socket.SendToAsync(packet.GetBuffer(), remoteEndPoint, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
 
-        return Task.FromResult(new ResponsePacket(remoteEndPoint, buffer));
+                _logger.LogInformation(Message.UdpService_Sent, packet.Header.MessageCount);
+
+                try
+                {
+                    SocketReceiveFromResult result = await socket.ReceiveFromAsync(responseBuffer, remoteEndPoint, cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    responseBuffer = responseBuffer.Slice(0, result.ReceivedBytes);
+
+                    _logger.LogInformation(Message.UdpService_ReceivedResponse, packet.Header.MessageCount, responseBuffer.Length, result.RemoteEndPoint);
+                    break;
+                }
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
+                {
+                    if (DateTime.Now - startTime > timeout)
+                    {
+                        throw Errors.UdpService_NetworkTimeoutError(timeout);
+                    }
+                }
+            }
+
+            if (responseBuffer.Length < MinimumResponseSize)
+            {
+                throw Errors.UdpService_ResponseTooShort(MinimumResponseSize, responseBuffer.Length);
+            }
+
+            ResponsePacket responsePacket = new ResponsePacket(remoteEndPoint, responseBuffer);
+            int realCheckSum = responsePacket.ComputeChecksum();
+
+            if (realCheckSum != responsePacket.Header.NominalChecksum)
+            {
+                throw Errors.UdpService_ChecksumMismatch(responsePacket.Header.NominalChecksum, realCheckSum);
+            }
+
+            return responsePacket;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation(Message.UdpService_Cancelled, packet.Header.MessageCount);
+            throw;
+        }
+        catch (UdpException error)
+        {
+            _logger.LogError(Message.UdpService_Failed, packet.Header.MessageCount, error.Message);
+            throw;
+        }
+        catch (Exception error)
+        {
+            _logger.LogError(Message.UdpService_UnexpectedError, packet.Header.MessageCount, error.Message);
+            throw;
+        }
     }
 }

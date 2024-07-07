@@ -4,7 +4,9 @@
 // initialize the ApplicationCommands
 internal class CommandServiceInitializerHack : IScopedLifecycle
 {
+#pragma warning disable IDE0060 // Remove unused parameter
     public CommandServiceInitializerHack(ICommandService commandService) { }
+#pragma warning restore IDE0060 // Remove unused parameter
 
     string IScopedLifecycle.Name => nameof(CommandServiceInitializerHack);
 

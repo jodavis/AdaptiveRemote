@@ -9,5 +9,4 @@ public interface ISocket : IDisposable
     ValueTask<int> SendToAsync(ReadOnlyMemory<byte> packet, EndPoint endPoint, CancellationToken cancellationToken);
     ValueTask<int> ReceiveAsync(Memory<byte> buffer, CancellationToken cancellationToken);
     ValueTask<SocketReceiveFromResult> ReceiveFromAsync(Memory<byte> buffer, EndPoint endPoint, CancellationToken cancellationToken);
-    void Close();
 }
