@@ -583,5 +583,59 @@ namespace AdaptiveRemote.Logging {
                 return ResourceManager.GetString("TiVoConnection_MessageSent", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message {0}: Cancelled.
+        /// </summary>
+        internal static string UdpService_Cancelled {
+            get {
+                return ResourceManager.GetString("UdpService_Cancelled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message {0}: Failed: {1}.
+        /// </summary>
+        internal static string UdpService_Failed {
+            get {
+                return ResourceManager.GetString("UdpService_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message {0}: Received {1} bytes from {2}.
+        /// </summary>
+        internal static string UdpService_ReceivedResponse {
+            get {
+                return ResourceManager.GetString("UdpService_ReceivedResponse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message {0}: Sending {1} bytes to {2}.
+        /// </summary>
+        internal static string UdpService_Sending {
+            get {
+                return ResourceManager.GetString("UdpService_Sending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message {0}: Sent, waiting for response.
+        /// </summary>
+        internal static string UdpService_Sent {
+            get {
+                return ResourceManager.GetString("UdpService_Sent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Message {0}: Unexpected {1}.
+        /// </summary>
+        internal static string UdpService_UnexpectedError {
+            get {
+                return ResourceManager.GetString("UdpService_UnexpectedError", resourceCulture);
+            }
+        }
     }
 }

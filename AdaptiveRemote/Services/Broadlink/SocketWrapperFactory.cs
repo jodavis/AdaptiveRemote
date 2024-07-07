@@ -43,7 +43,10 @@ internal class SocketWrapperFactory : ISocketFactory
             _socket.ReceiveTimeout = (int)time_left.TotalMilliseconds;
         }
 
-        void ISocket.Close() => _socket.Close();
-        void IDisposable.Dispose() => _socket.Dispose();
+        void IDisposable.Dispose()
+        {
+            _socket.Close();
+            _socket.Dispose();
+        }
     }
 }

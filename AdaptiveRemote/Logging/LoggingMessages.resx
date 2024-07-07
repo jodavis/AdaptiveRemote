@@ -351,4 +351,28 @@
     <value>Message sent: {0}</value>
     <comment>0=Message</comment>
   </data>
+  <data name="UdpService_Cancelled" xml:space="preserve">
+    <value>Message {0}: Cancelled</value>
+    <comment>0=MessageCount</comment>
+  </data>
+  <data name="UdpService_Failed" xml:space="preserve">
+    <value>Message {0}: Failed: {1}</value>
+    <comment>0=MessageCount,1=failure description</comment>
+  </data>
+  <data name="UdpService_ReceivedResponse" xml:space="preserve">
+    <value>Message {0}: Received {1} bytes from {2}</value>
+    <comment>0=MessageCount,1=result.ReceivedBytes,2=result.RemoteEndPoint</comment>
+  </data>
+  <data name="UdpService_Sending" xml:space="preserve">
+    <value>Message {0}: Sending {1} bytes to {2}</value>
+    <comment>0=MessageCount,1=packet.Size,2=remoteEndPoint</comment>
+  </data>
+  <data name="UdpService_Sent" xml:space="preserve">
+    <value>Message {0}: Sent, waiting for response</value>
+    <comment>0=MessageCount</comment>
+  </data>
+  <data name="UdpService_UnexpectedError" xml:space="preserve">
+    <value>Message {0}: Unexpected {1}</value>
+    <comment>0=MessageCount,1=Exception and callstack</comment>
+  </data>
 </root>

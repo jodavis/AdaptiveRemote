@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using AdaptiveRemote.Logging;
 using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -72,7 +73,7 @@ public class UdpServiceTests
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x33, 0xC5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0xAB, 0xBC, 0xCD, 0xDE, 0xEF, 0xED, 0xDC, 0xBA,
@@ -81,7 +82,7 @@ public class UdpServiceTests
         Expect_SocketFactory_Create();
         Expect_Socket_SetTimeout(Settings.SendTimeout);
         Expect_Socket_SendToAsync(inputPacket.GetBuffer());
-        Expect_Socket_ReadFromAsync(expectedResponse.GetBuffer());
+        Expect_Socket_ReadFromAsync(expectedResponse.GetBuffer(), inputEndPoint);
 
         // Act
         Task<ResponsePacket> resultTask = sut.SendAsync(inputEndPoint, inputPacket, default);
@@ -96,6 +97,12 @@ public class UdpServiceTests
         MemoryAssert.AreEqual(expectedResponse.GetBuffer(), result.GetBuffer(), nameof(result) + ".GetBuffer()");
 
         Assert.AreEqual(inputEndPoint, result.RemoteEndPoint, nameof(result.RemoteEndPoint));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_Sending(inputPacket.Header.MessageCount, inputPacket.Size, inputEndPoint),
+            ExpectMessage_Sent(inputPacket.Header.MessageCount),
+            ExpectMessage_ReceivedResponse(inputPacket.Header.MessageCount, expectedResponse.Size, inputEndPoint));
+        ;
     }
 
     private void Expect_SocketFactory_Create()
@@ -107,7 +114,10 @@ public class UdpServiceTests
     private void Expect_Socket_SetTimeout(int expectedTimeout)
         => MockSocket
             .Setup(x => x.SetTimeout(It.IsAny<TimeSpan>()))
-            .WithArgumentValidation("timeout", TimeSpan.FromSeconds(expectedTimeout))
+            .WithArgumentValidation("timeout", delegate (TimeSpan actualTimeout)
+            {
+                Assert.AreEqual((double)expectedTimeout, actualTimeout.TotalSeconds, delta: .1, "Argument 'timeout' in SetTimeout");
+            })
             .Verifiable(Times.Once);
 
     private void Expect_Socket_SendToAsync(ReadOnlyMemory<byte> expectedBytes)
@@ -123,7 +133,7 @@ public class UdpServiceTests
             .WithStandardTaskBehavior(returnValue: expectedBytes.Length)
             .Verifiable(Times.Once);
 
-    private void Expect_Socket_ReadFromAsync(ReadOnlyMemory<byte> responseBytes)
+    private void Expect_Socket_ReadFromAsync(ReadOnlyMemory<byte> responseBytes, EndPoint responseEndPoint)
         => MockSocket
             .Setup(x => x.ReceiveFromAsync(It.IsAny<Memory<byte>>(), It.IsAny<EndPoint>(), It.IsAny<CancellationToken>()))
             .WithArgumentValidation("buffer", delegate (Memory<byte> responseBuffer)
@@ -136,6 +146,13 @@ public class UdpServiceTests
 
                 responseBytes.CopyTo(responseBuffer);
             })
-            .WithStandardTaskBehavior(new SocketReceiveFromResult() { ReceivedBytes = responseBytes.Length })
+            .WithStandardTaskBehavior(new SocketReceiveFromResult() { ReceivedBytes = responseBytes.Length, RemoteEndPoint = responseEndPoint })
             .Verifiable(Times.Once);
+
+    private static string ExpectMessage_Sending(short messageCount, int bytesInPacket, EndPoint remoteEndPoint)
+        => $"Information[901]: {string.Format(LoggingMessages.UdpService_Sending, messageCount, bytesInPacket, remoteEndPoint)}";
+    private static string ExpectMessage_Sent(short messageCount)
+        => $"Information[902]: {string.Format(LoggingMessages.UdpService_Sent, messageCount)}";
+    private static string ExpectMessage_ReceivedResponse(short messageCount, int bytesInResponse, EndPoint remoteEndPoint)
+        => $"Information[903]: {string.Format(LoggingMessages.UdpService_ReceivedResponse, messageCount, bytesInResponse, remoteEndPoint)}";
 }
