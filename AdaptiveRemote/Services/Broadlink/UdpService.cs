@@ -1,5 +1,7 @@
 ﻿using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Threading.Channels;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
@@ -22,35 +24,92 @@ internal class UdpService : IUdpService
         _logger = logger;
     }
 
-    IAsyncEnumerable<ResponsePacket> IUdpService.BroadcastAsync(SendPacket packet, CancellationToken cancellationToken)
+    IAsyncEnumerable<ScanResponsePayload> IUdpService.BroadcastAsync(ScanRequestPayload packet, CancellationToken cancellationToken)
     {
-        //IPEndPoint discoverEndpoint = new(0, 0); // DefaultBroadcastEndPoint?
+        Channel<ScanResponsePayload> responseChannel = Channel.CreateUnbounded<ScanResponsePayload>(new()
+        {
+            AllowSynchronousContinuations = true,
+            SingleReader = true,
+            SingleWriter = true,
+        });
 
-        //ISocket socket = _socketFactory.CreateForBroadcast();
+        _ = Task.Run(async () =>
+        {
 
-        //socket.SetTimeout(TimeSpan.FromSeconds(_settings.ScanTimeout));
+            IPEndPoint discoverEndPoint = IPEndPoint.Parse("255.255.255.255:80");
 
-        //// TODO: Retry with timeout (or don't, until it's needed?)
+            using ISocket socket = _socketFactory.CreateForBroadcast();
 
-        //// TODO: Await this
-        //// TODO: Pass cancellation
-        //_ = socket.SendToAsync(packet.GetBuffer(), discoverEndpoint, default);
-        //// TODO: Throw if cancelled
+            DateTime startTime = DateTime.Now;
+            TimeSpan timeout = TimeSpan.FromSeconds(_settings.ScanTimeout);
+            HashSet<(EndPoint, PhysicalAddress, int)> discovered = new();
 
-        //Memory<byte> buffer = new byte[0x400];
+            try
+            {
+                while (DateTime.Now - startTime < timeout)
+                {
+                    TimeSpan timeLeft = timeout - (DateTime.Now - startTime);
+                    socket.SetTimeout(timeLeft);
 
-        //// TODO: Repeat the below to find more devices (or don't, until it's needed?)
+                    _logger.LogInformation(Message.UdpService_Sending, "Scan");
 
-        //// TODO: Await this
-        //// TODO: Pass cancellation
-        //SocketReceiveFromResult result = socket.ReceiveFromAsync(buffer, new IPEndPoint(0, 0), default).Result;
-        //// TODO: Throw if cancelled
-        //buffer = buffer.Slice(0, result.ReceivedBytes);
+                    await socket.SendToAsync(packet.GetBuffer(), discoverEndPoint, cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
 
-        //// TODO: What's the right return value here?
-        //yield return new ScanResponsePayload(buffer);
+                    _logger.LogInformation(Message.UdpService_Sent, packet);
 
-        throw new NotImplementedException();
+                    while (true)
+                    {
+                        Memory<byte> buffer = new byte[0x400];
+                        SocketReceiveFromResult result;
+                        try
+                        {
+                            result = await socket.ReceiveFromAsync(buffer, discoverEndPoint, cancellationToken);
+                            cancellationToken.ThrowIfCancellationRequested();
+                            buffer = buffer.Slice(result.ReceivedBytes);
+
+                            _logger.LogInformation(Message.UdpService_ReceivedResponse, packet);
+                        }
+                        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
+                        {
+                            break;
+                        }
+
+                        ScanResponsePayload response = new(buffer)
+                        {
+                            HostEndPoint = discoverEndPoint,
+                        };
+
+                        // TODO: add comparison for ScanResponsePayload so it can be added directly
+                        if (!discovered.Add((response.HostEndPoint, response.HostAddress, response.DeviceType)))
+                        {
+                            continue;
+                        }
+
+                        responseChannel.Writer.TryWrite(response);
+                    }
+                }
+
+                responseChannel.Writer.TryComplete();
+            }
+            catch (OperationCanceledException error)
+            {
+                _logger.LogInformation(Message.UdpService_Cancelled, packet);
+                responseChannel.Writer.TryComplete(error);
+            }
+            catch (UdpException error)
+            {
+                _logger.LogError(Message.UdpService_Failed, packet, error.Message);
+                responseChannel.Writer.TryComplete(error);
+            }
+            catch (Exception error)
+            {
+                _logger.LogError(Message.UdpService_UnexpectedError, packet, error.Message);
+                responseChannel.Writer.TryComplete(error);
+            }
+        }, cancellationToken);
+
+        return responseChannel.Reader.ReadAllAsync(cancellationToken);
     }
 
     async Task<ResponsePacket> IUdpService.SendAsync(EndPoint remoteEndPoint, SendPacket packet, CancellationToken cancellationToken)
@@ -69,12 +128,12 @@ internal class UdpService : IUdpService
                 TimeSpan timeLeft = timeout - (DateTime.Now - startTime);
                 socket.SetTimeout(timeLeft);
 
-                _logger.LogInformation(Message.UdpService_Sending, packet.Header.MessageCount, packet.Size, remoteEndPoint);
+                _logger.LogInformation(Message.UdpService_Sending, packet, packet.Size, remoteEndPoint);
 
                 await socket.SendToAsync(packet.GetBuffer(), remoteEndPoint, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
 
-                _logger.LogInformation(Message.UdpService_Sent, packet.Header.MessageCount);
+                _logger.LogInformation(Message.UdpService_Sent, packet);
 
                 try
                 {
@@ -82,7 +141,7 @@ internal class UdpService : IUdpService
                     cancellationToken.ThrowIfCancellationRequested();
                     responseBuffer = responseBuffer.Slice(0, result.ReceivedBytes);
 
-                    _logger.LogInformation(Message.UdpService_ReceivedResponse, packet.Header.MessageCount, responseBuffer.Length, result.RemoteEndPoint);
+                    _logger.LogInformation(Message.UdpService_ReceivedResponse, packet, responseBuffer.Length, result.RemoteEndPoint);
                     break;
                 }
                 catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut)
@@ -111,17 +170,17 @@ internal class UdpService : IUdpService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation(Message.UdpService_Cancelled, packet.Header.MessageCount);
+            _logger.LogInformation(Message.UdpService_Cancelled, packet);
             throw;
         }
         catch (UdpException error)
         {
-            _logger.LogError(Message.UdpService_Failed, packet.Header.MessageCount, error.Message);
+            _logger.LogError(Message.UdpService_Failed, packet, error.Message);
             throw;
         }
         catch (Exception error)
         {
-            _logger.LogError(Message.UdpService_UnexpectedError, packet.Header.MessageCount, error.Message);
+            _logger.LogError(Message.UdpService_UnexpectedError, packet, error.Message);
             throw;
         }
     }
