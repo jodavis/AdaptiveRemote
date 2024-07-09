@@ -6,5 +6,5 @@ internal interface IUdpService
 {
     Task<ResponsePacket> SendAsync(EndPoint remoteEndPoint, SendPacket packet, CancellationToken cancellationToken);
 
-    IAsyncEnumerable<ResponsePacket> BroadcastAsync(SendPacket packet, CancellationToken cancellationToken);
+    IAsyncEnumerable<ScanResponsePayload> BroadcastAsync(ScanRequestPayload packet, CancellationToken cancellationToken);
 }

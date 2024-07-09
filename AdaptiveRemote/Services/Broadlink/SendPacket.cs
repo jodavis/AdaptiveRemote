@@ -11,4 +11,6 @@ internal class SendPacket : Payload
 
     public SendPacketHeader Header { get; }
     public Payload Payload { get; }
+
+    public override string ToString() => $"Device {Header.DeviceID:X4}, Message {Header.MessageCount:X4}";
 }

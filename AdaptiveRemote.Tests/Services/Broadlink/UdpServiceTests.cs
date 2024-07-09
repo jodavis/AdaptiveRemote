@@ -99,10 +99,9 @@ public class UdpServiceTests
         Assert.AreEqual(inputEndPoint, result.RemoteEndPoint, nameof(result.RemoteEndPoint));
 
         MockLogger.VerifyMessages(
-            ExpectMessage_Sending(inputPacket.Header.MessageCount, inputPacket.Size, inputEndPoint),
-            ExpectMessage_Sent(inputPacket.Header.MessageCount),
-            ExpectMessage_ReceivedResponse(inputPacket.Header.MessageCount, expectedResponse.Size, inputEndPoint));
-        ;
+            ExpectMessage_Sending(inputPacket, inputPacket.Size, inputEndPoint),
+            ExpectMessage_Sent(inputPacket),
+            ExpectMessage_ReceivedResponse(inputPacket, expectedResponse.Size, inputEndPoint));
     }
 
     private void Expect_SocketFactory_Create()
@@ -149,10 +148,10 @@ public class UdpServiceTests
             .WithStandardTaskBehavior(new SocketReceiveFromResult() { ReceivedBytes = responseBytes.Length, RemoteEndPoint = responseEndPoint })
             .Verifiable(Times.Once);
 
-    private static string ExpectMessage_Sending(short messageCount, int bytesInPacket, EndPoint remoteEndPoint)
-        => $"Information[901]: {string.Format(LoggingMessages.UdpService_Sending, messageCount, bytesInPacket, remoteEndPoint)}";
-    private static string ExpectMessage_Sent(short messageCount)
-        => $"Information[902]: {string.Format(LoggingMessages.UdpService_Sent, messageCount)}";
-    private static string ExpectMessage_ReceivedResponse(short messageCount, int bytesInResponse, EndPoint remoteEndPoint)
-        => $"Information[903]: {string.Format(LoggingMessages.UdpService_ReceivedResponse, messageCount, bytesInResponse, remoteEndPoint)}";
+    private static string ExpectMessage_Sending(Payload packet, int bytesInPacket, EndPoint remoteEndPoint)
+        => $"Information[901]: {string.Format(LoggingMessages.UdpService_Sending, packet, bytesInPacket, remoteEndPoint)}";
+    private static string ExpectMessage_Sent(Payload packet)
+        => $"Information[902]: {string.Format(LoggingMessages.UdpService_Sent, packet)}";
+    private static string ExpectMessage_ReceivedResponse(Payload packet, int bytesInResponse, EndPoint remoteEndPoint)
+        => $"Information[903]: {string.Format(LoggingMessages.UdpService_ReceivedResponse, packet, bytesInResponse, remoteEndPoint)}";
 }

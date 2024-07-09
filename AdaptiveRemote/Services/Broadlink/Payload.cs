@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Text;
+﻿using System.Text;
 
 namespace AdaptiveRemote.Services.Broadlink;
 
@@ -73,4 +72,6 @@ internal class Payload
 
     protected Span<byte> Span(int position) => _buffer.Span.Slice(position);
     protected Span<byte> Span(int position, int length) => _buffer.Span.Slice(position, length);
+
+    public override string ToString() => $"{GetType().Name} ({Size} bytes)";
 }

@@ -585,7 +585,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Message {0}: Cancelled.
+        ///   Looks up a localized string similar to {0}: Cancelled.
         /// </summary>
         internal static string UdpService_Cancelled {
             get {
@@ -594,7 +594,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Message {0}: Failed: {1}.
+        ///   Looks up a localized string similar to {0}: Failed: {1}.
         /// </summary>
         internal static string UdpService_Failed {
             get {
@@ -603,7 +603,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Message {0}: Received {1} bytes from {2}.
+        ///   Looks up a localized string similar to {0}: Received {1} bytes from {2}.
         /// </summary>
         internal static string UdpService_ReceivedResponse {
             get {
@@ -612,7 +612,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Message {0}: Sending {1} bytes to {2}.
+        ///   Looks up a localized string similar to {0}: Sending {1} bytes to {2}.
         /// </summary>
         internal static string UdpService_Sending {
             get {
@@ -621,7 +621,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Message {0}: Sent, waiting for response.
+        ///   Looks up a localized string similar to {0}: Sent, waiting for response.
         /// </summary>
         internal static string UdpService_Sent {
             get {
@@ -630,7 +630,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Message {0}: Unexpected {1}.
+        ///   Looks up a localized string similar to {0}: Unexpected {1}.
         /// </summary>
         internal static string UdpService_UnexpectedError {
             get {
