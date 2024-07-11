@@ -26,6 +26,9 @@ internal static class Errors
     internal static Exception UdpService_ChecksumMismatch(short nominalChecksum, int realCheckSum)
         => new UdpException($"Received data packet check error: Expected a checksum of {nominalChecksum} but computed {realCheckSum}");
 
+    internal static Exception DeviceLocator_DeviceNotFound()
+        => new TimeoutException("No Broadlink device was found");
+
     private static ConfigurationErrorsException SettingRequired(string settingKey, string settingName, string requiredTo)
         => new($"The '{settingKey}:{settingName}' setting is required to {requiredTo}");
 }

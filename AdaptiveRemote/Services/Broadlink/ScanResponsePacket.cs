@@ -3,9 +3,9 @@ using System.Net.NetworkInformation;
 
 namespace AdaptiveRemote.Services.Broadlink;
 
-internal class ScanResponsePayload : Payload
+internal class ScanResponsePacket : Payload
 {
-    public ScanResponsePayload(Memory<byte> bytes)
+    public ScanResponsePacket(Memory<byte> bytes)
         : base(bytes)
     { }
 

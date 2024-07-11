@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace AdaptiveRemote.Services.Broadlink;
 
-namespace AdaptiveRemote.Services.Broadlink;
-
-internal class ScanRequestPayload : Payload
+internal class ScanRequestPacket : Payload
 {
-    public ScanRequestPayload()
+    public ScanRequestPacket()
         : base(0x30)
     {
         Set(0x26, 6);

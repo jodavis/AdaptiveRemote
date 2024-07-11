@@ -24,9 +24,9 @@ internal class UdpService : IUdpService
         _logger = logger;
     }
 
-    IAsyncEnumerable<ScanResponsePayload> IUdpService.BroadcastAsync(ScanRequestPayload packet, CancellationToken cancellationToken)
+    IAsyncEnumerable<ScanResponsePacket> IUdpService.BroadcastAsync(ScanRequestPacket packet, CancellationToken cancellationToken)
     {
-        Channel<ScanResponsePayload> responseChannel = Channel.CreateUnbounded<ScanResponsePayload>(new()
+        Channel<ScanResponsePacket> responseChannel = Channel.CreateUnbounded<ScanResponsePacket>(new()
         {
             AllowSynchronousContinuations = true,
             SingleReader = true,
@@ -75,7 +75,7 @@ internal class UdpService : IUdpService
                             break;
                         }
 
-                        ScanResponsePayload response = new(buffer)
+                        ScanResponsePacket response = new(buffer)
                         {
                             HostEndPoint = discoverEndPoint,
                         };

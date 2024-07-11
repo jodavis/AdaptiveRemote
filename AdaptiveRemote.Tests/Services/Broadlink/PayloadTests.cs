@@ -399,7 +399,7 @@ public class PayloadTests
         short inputPort = 0x0050;
         short inputChecksum = 0x5432;
 
-        ScanRequestPayload sut = new()
+        ScanRequestPacket sut = new()
         {
             RequestTime = inputRequestTime,
             LocalIPAddress = inputIPAddress,
@@ -465,7 +465,7 @@ public class PayloadTests
         ];
 
         // Act
-        ScanResponsePayload sut = new(input);
+        ScanResponsePacket sut = new(input);
 
         // Assert
         Assert.AreEqual(0x4365, sut.DeviceType, nameof(sut.DeviceType));
