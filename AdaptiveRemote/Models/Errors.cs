@@ -29,6 +29,31 @@ internal static class Errors
     internal static Exception DeviceLocator_DeviceNotFound()
         => new TimeoutException("No Broadlink device was found");
 
+    internal static Exception Broadlink_UnknownError()
+        => new BroadlinkException("Unknown error");
+    internal static Exception Broadlink_AuthenticationFailed()
+        => new BroadlinkException("Authentication failed");
+    internal static Exception Broadlink_Loggedout()
+        => new BroadlinkException("You have been logged out");
+    internal static Exception Broadlink_StorageError()
+        => new BroadlinkException("The device storage is full");
+    internal static Exception Broadlink_DeviceOffline()
+        => new BroadlinkException("The device is offline");
+    internal static Exception Broadlink_CommandNotSupported()
+        => new BroadlinkException("Command not supported");
+    internal static Exception Broadlink_AbnormalStructure()
+        => new BroadlinkException("Structure is abnormal");
+    internal static Exception Broadlink_ControlKeyExpired()
+        => new BroadlinkException("Control key is expired");
+    internal static Exception Broadlink_SendError()
+        => new BroadlinkException("Send error");
+    internal static Exception Broadlink_WriteError()
+        => new BroadlinkException("Write error");
+    internal static Exception Broadlink_ReadError()
+        => new BroadlinkException("Read error");
+    internal static Exception Broadlink_SsidNotFound()
+        => new BroadlinkException("SSID could not be found in AP configuration");
+
     private static ConfigurationErrorsException SettingRequired(string settingKey, string settingName, string requiredTo)
         => new($"The '{settingKey}:{settingName}' setting is required to {requiredTo}");
 }
