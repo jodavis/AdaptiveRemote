@@ -1,4 +1,5 @@
-﻿using AdaptiveRemote.Services.Commands;
+﻿using AdaptiveRemote.Services.Broadlink;
+using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.TiVo;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +22,7 @@ internal static class HostBuilderExtensions
             .AddScopedLifecycleService<CommandServiceInitializerHack>()
             .AddSingleton<IApplicationService, ApplicationService>()
             .AddTiVoServices(configuration.GetSection(SettingsKeys.TiVo))
+            .AddBroadlinkServices(configuration.GetSection(SettingsKeys.Broadlink))
             .AddBroadlinkServices();
 
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
@@ -35,6 +37,16 @@ internal static class HostBuilderExtensions
             .AddSingleton<ITiVoConnectionFactory, LibraryTiVoConnectionFactory>()
             .AddScoped<ITiVoLocator, StaticTiVoLocator>()
             .Configure<TiVoSettings>(configuration);
+
+    private static IServiceCollection AddBroadlinkServices(this IServiceCollection services, IConfiguration configuration)
+        => services
+            .AddScopedLifecycleService<BroadlinkCommandService>()
+            .AddSingleton<IEncryptionFactory, EncryptionFactory>()
+            .AddScoped<IDeviceLocator, DeviceLocator>()
+            .AddSingleton<IDeviceConnectionFactory, DeviceConnectionFactory>()
+            .AddSingleton<IUdpService, UdpService>()
+            .AddSingleton<ISocketFactory, SocketWrapperFactory>()
+            .Configure<BroadlinkSettings>(configuration);
 
     private static IServiceCollection AddBroadlinkServices(this IServiceCollection services)
         => services

@@ -465,7 +465,7 @@ public class PayloadTests
         ];
 
         // Act
-        ScanResponsePacket sut = new(input);
+        ScanResponsePacket sut = new(null!, input);
 
         // Assert
         Assert.AreEqual(0x4365, sut.DeviceType, nameof(sut.DeviceType));

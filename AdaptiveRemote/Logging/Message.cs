@@ -65,4 +65,8 @@ internal enum Message
     UdpService_Cancelled = 904,
     UdpService_Failed = 905,
     UdpService_UnexpectedError = 906,
+    BroadlinkCommandService_SearchingForDevice = 1001,
+    BroadlinkCommandService_Authenticating = 1002,
+    BroadlinkCommandService_Authenticated = 1003,
+    BroadlinkCommandService_Ready = 1004,
 }

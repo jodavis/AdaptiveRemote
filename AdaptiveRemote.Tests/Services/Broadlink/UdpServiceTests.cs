@@ -80,7 +80,6 @@ public class UdpServiceTests
             });
 
         Expect_SocketFactory_Create();
-        Expect_Socket_SetTimeout(Settings.SendTimeout);
         Expect_Socket_SendToAsync(inputPacket.GetBuffer());
         Expect_Socket_ReadFromAsync(expectedResponse.GetBuffer(), inputEndPoint);
 

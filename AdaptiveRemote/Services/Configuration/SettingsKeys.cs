@@ -16,4 +16,9 @@ internal class SettingsKeys
     /// Settings for <see cref="TelemetryHostBuilderExtensions.TelemetrySettings"/>
     /// </summary>
     public const string Telemetry = "telemetry";
+
+    /// <summary>
+    /// Settings for <see cref="Broadlink.BroadlinkSettings" />
+    /// </summary>
+    public const string Broadlink = "broadlink";
 }
