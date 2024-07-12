@@ -2,5 +2,5 @@
 
 internal interface IDeviceLocator
 {
-    Task<ScanResponsePacket> FindDevice(CancellationToken cancellationToken);
+    Task<ScanResponsePacket> FindDeviceAsync(CancellationToken cancellationToken);
 }

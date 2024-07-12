@@ -37,12 +37,12 @@ public class DeviceLocatorTests
         // Arrange
         IDeviceLocator sut = CreateSut();
 
-        ScanResponsePacket expectedPayload = new ScanResponsePacket(new byte[0x100]);
+        ScanResponsePacket expectedPayload = new ScanResponsePacket(IPEndPoint.Parse("1.2.3.4:5"), new byte[0x100]);
 
         Expect_UdpService_BroadcastAsync(expectedPayload);
 
         // Act
-        Task<ScanResponsePacket> resultTask = sut.FindDevice(default);
+        Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(default);
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask));
@@ -58,14 +58,14 @@ public class DeviceLocatorTests
         // Arrange
         IDeviceLocator sut = CreateSut();
 
-        ScanResponsePacket expectedPayload = new ScanResponsePacket(new byte[0x100]);
+        ScanResponsePacket expectedPayload = new ScanResponsePacket(IPEndPoint.Parse("1.2.3.4:5"), new byte[0x100]);
 
         Expect_UdpService_BroadcastAsync();
 
         Exception expectedException = Errors.DeviceLocator_DeviceNotFound();
 
         // Act
-        Task<ScanResponsePacket> resultTask = sut.FindDevice(default);
+        Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(default);
 
         // Assert
         TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
@@ -80,7 +80,7 @@ public class DeviceLocatorTests
         CancellationToken result = Expect_UdpService_BroadcastAsync_WaitForCancelled();
 
         CancellationTokenSource cts = new();
-        Task<ScanResponsePacket> resultTask = sut.FindDevice(cts.Token);
+        Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(cts.Token);
 
         // Act
         cts.Cancel();
@@ -99,7 +99,7 @@ public class DeviceLocatorTests
         CancellationToken result = Expect_UdpService_BroadcastAsync_WaitForCancelledAndComplete();
 
         CancellationTokenSource cts = new();
-        Task<ScanResponsePacket> resultTask = sut.FindDevice(cts.Token);
+        Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(cts.Token);
 
         // Act
         cts.Cancel();
@@ -115,14 +115,14 @@ public class DeviceLocatorTests
         // Arrange
         IDeviceLocator sut = CreateSut();
 
-        ScanResponsePacket expectedPayload = new ScanResponsePacket(new byte[0x100]);
+        ScanResponsePacket expectedPayload = new ScanResponsePacket(IPEndPoint.Parse("1.2.3.4:5"), new byte[0x100]);
 
         CancellationToken result = Expect_UdpService_BroadcastAsync_WaitForCancelled(expectedPayload);
 
         CancellationTokenSource cts = new();
 
         // Act
-        Task<ScanResponsePacket> resultTask = sut.FindDevice(cts.Token);
+        Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(cts.Token);
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask));

@@ -12,7 +12,7 @@ internal class SocketWrapperFactory : ISocketFactory
         Socket socket = CreateUdpSocket();
         socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
         socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.Broadcast, true);
-        socket.Bind(IPEndPoint.Parse("255.255.255.255:80"));
+        socket.Bind(new IPEndPoint(0, 0));
 
         return new SocketWrapper(socket);
     }

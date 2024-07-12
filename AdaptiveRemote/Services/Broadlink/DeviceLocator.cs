@@ -11,7 +11,7 @@ internal class DeviceLocator : IDeviceLocator
         _udpService = udpService;
     }
 
-    async Task<ScanResponsePacket> IDeviceLocator.FindDevice(CancellationToken cancellationToken)
+    async Task<ScanResponsePacket> IDeviceLocator.FindDeviceAsync(CancellationToken cancellationToken)
     {
         ScanRequestPacket requestPacket = new()
         {
