@@ -67,7 +67,7 @@ internal class UdpService : IUdpService
                         {
                             result = await socket.ReceiveFromAsync(buffer, discoverEndPoint, combinedCancel.Token);
                             cancellationToken.ThrowIfCancellationRequested();
-                            buffer = buffer.Slice(result.ReceivedBytes);
+                            buffer = buffer.Slice(0, result.ReceivedBytes);
 
                             _logger.LogInformation(Message.UdpService_ReceivedResponse, packet, result.ReceivedBytes, result.RemoteEndPoint);
                         }
