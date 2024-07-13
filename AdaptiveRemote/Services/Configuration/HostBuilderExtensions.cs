@@ -39,11 +39,11 @@ internal static class HostBuilderExtensions
     private static IServiceCollection AddBroadlinkServices(this IServiceCollection services, IConfiguration configuration)
         => services
             .AddScopedLifecycleService<BroadlinkCommandService>()
-            .AddSingleton<IEncryptionFactory, EncryptionFactory>()
+            .AddSingleton<IEncryptionFactory, AesWrapper.Factory>()
             .AddScoped<IDeviceLocator, DeviceLocator>()
-            .AddSingleton<IDeviceConnectionFactory, DeviceConnectionFactory>()
+            .AddSingleton<IDeviceConnectionFactory, DeviceConnection.Factory>()
             .AddSingleton<IUdpService, UdpService>()
-            .AddSingleton<ISocketFactory, SocketWrapperFactory>()
+            .AddSingleton<ISocketFactory, SocketWrapper.Factory>()
             .Configure<BroadlinkSettings>(configuration);
 
     private static IServiceCollection AddBroadlinkServices(this IServiceCollection services)
