@@ -31,9 +31,7 @@ internal static class HostBuilderExtensions
 
     private static IServiceCollection AddTiVoServices(this IServiceCollection services, IConfiguration configuration)
         => services
-            .AddScoped<TiVoService>()
-            .AddScoped(services => (ITiVoService)services.GetRequiredService<TiVoService>())
-            .AddScoped(services => (IScopedLifecycle)services.GetRequiredService<TiVoService>())
+            .AddScopedLifecycleService<TiVoService>()
             .AddSingleton<ITiVoConnectionFactory, LibraryTiVoConnectionFactory>()
             .AddScoped<ITiVoLocator, StaticTiVoLocator>()
             .Configure<TiVoSettings>(configuration);
