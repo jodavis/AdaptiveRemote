@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace AdaptiveRemote.Services.Broadlink;
 
@@ -50,7 +44,6 @@ internal class EncryptionFactory : IEncryptionFactory
 
         Memory<byte> IEncryption.Decrypt(Memory<byte> input)
         {
-
             using ICryptoTransform encryptor = _aes.CreateEncryptor();
             using MemoryStream toStream = new MemoryStream();
             using CryptoStream fromStream = new CryptoStream(toStream, encryptor, CryptoStreamMode.Write);

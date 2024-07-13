@@ -7,7 +7,6 @@ namespace AdaptiveRemote.Services.Commands;
 internal class CommandService : ICommandService
 {
     private readonly IApplicationService _application;
-    private readonly ITiVoService _tivo;
     private readonly IBroadlinkService _broadlink;
     private readonly ILogger<CommandService> _logger;
 
@@ -16,10 +15,9 @@ internal class CommandService : ICommandService
         [nameof(IApplicationService.Exit)] = app => app.Exit()
     };
 
-    public CommandService(IApplicationService application, ITiVoService tivo, IBroadlinkService broadlink, ILogger<CommandService> logger, IRemoteDefinitionService definitionService)
+    public CommandService(IApplicationService application, IBroadlinkService broadlink, ILogger<CommandService> logger, IRemoteDefinitionService definitionService)
     {
         _application = application;
-        _tivo = tivo;
         _broadlink = broadlink;
         _logger = logger;
 
@@ -42,9 +40,6 @@ internal class CommandService : ICommandService
             {
                 case ApplicationCommand applicationCommand:
                     _applicationStuff[applicationCommand.Name].Invoke(_application);
-                    break;
-                case TiVoCommand tivoCommand:
-                    await _tivo.SendAsync(tivoCommand.CommandId, cancellationToken);
                     break;
                 case BroadlinkCommand broadlinkCommand:
                     await _broadlink.SendAsync(cancellationToken);

@@ -69,14 +69,14 @@ internal class UdpService : IUdpService
                             cancellationToken.ThrowIfCancellationRequested();
                             buffer = buffer.Slice(result.ReceivedBytes);
 
-                            _logger.LogInformation(Message.UdpService_ReceivedResponse, packet);
+                            _logger.LogInformation(Message.UdpService_ReceivedResponse, packet, result.ReceivedBytes, result.RemoteEndPoint);
                         }
                         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                         {
                             break;
                         }
 
-                        ScanResponsePacket response = new(discoverEndPoint, buffer);
+                        ScanResponsePacket response = new((IPEndPoint)result.RemoteEndPoint, buffer);
 
                         // TODO: add comparison for ScanResponsePayload so it can be added directly
                         if (!discovered.Add((response.HostEndPoint, response.HostAddress, response.DeviceType)))
