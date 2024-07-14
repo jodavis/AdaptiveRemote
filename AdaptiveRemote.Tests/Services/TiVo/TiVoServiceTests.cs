@@ -12,6 +12,7 @@ public class TiVoServiceTests
     private readonly Mock<ITiVoConnectionFactory> MockConnectionFactory = new();
     private readonly Mock<ITiVoConnection> MockConnection = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinition = new();
+    private readonly MockLogger<TiVoService> MockLogger = new();
 
     private readonly LayoutGroup Commands = new("ROOT",
         [
@@ -22,7 +23,7 @@ public class TiVoServiceTests
         ]);
     private TiVoCommand PlayCommand => Commands.Elements.OfType<TiVoCommand>().First();
 
-    private TiVoService CreateUninitializedSut() => new(MockLocator.Object, MockConnectionFactory.Object, MockDefinition.Object);
+    private TiVoService CreateUninitializedSut() => new(MockLocator.Object, MockConnectionFactory.Object, MockDefinition.Object, MockLogger);
     private TiVoService CreateSut()
     {
         const int InitializeTimeoutInMilliseconds = 1000;
@@ -511,21 +512,21 @@ public class TiVoServiceTests
     }
 
     [TestMethod]
-    public void TiVoService_ExecuteAsync_NullIfNotInitialized()
+    public void TiVoService_ExecuteAsync_ErrorIfNotInitialized()
     {
         // Arrange
         Expect_Locator_IsNotCalled();
         Expect_MockConnectionFactory_IsNotCalled();
 
-        // Act
         CreateUninitializedSut();
 
+        Exception expectedException = Errors.CommandService_NotInitialized(PlayCommand);
+
+        // Act
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
+
         // Assert
-        foreach (TiVoCommand command in Commands.Elements.OfType<TiVoCommand>())
-        {
-            Assert.IsNull(command.ExecuteAsync, "Service set ExecuteAsync on {0} command", command.Name);
-            Assert.IsFalse(command.IsEnabled, "Service set IsEnabled on {0} command", command.Name);
-        }
+        TaskAssert.IsFaulted(executeTask, expectedException, nameof(executeTask));
     }
 
     [TestMethod]

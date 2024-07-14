@@ -54,6 +54,11 @@ internal static class Errors
     internal static Exception Broadlink_SsidNotFound()
         => new BroadlinkException("SSID could not be found in AP configuration");
 
+    internal static Exception CommandService_AlreadyCleanedUp(Command command)
+        => new InvalidOperationException($"Cannot execute {command} because the service has been shut down.");
+    internal static Exception CommandService_NotInitialized(Command command)
+        => new InvalidOperationException($"Cannot execute {command} because the service has not been started.");
+
     private static ConfigurationErrorsException SettingRequired(string settingKey, string settingName, string requiredTo)
         => new($"The '{settingKey}:{settingName}' setting is required to {requiredTo}");
 }

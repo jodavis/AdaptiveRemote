@@ -21,12 +21,6 @@ internal class SocketWrapper : ISocket
     ValueTask<SocketReceiveFromResult> ISocket.ReceiveFromAsync(Memory<byte> buffer, EndPoint remoteEP, CancellationToken cancellationToken)
         => _socket.ReceiveFromAsync(buffer, remoteEP, cancellationToken);
 
-    void ISocket.SetTimeout(TimeSpan time_left)
-    {
-        _socket.SendTimeout = (int)time_left.TotalMilliseconds;
-        _socket.ReceiveTimeout = (int)time_left.TotalMilliseconds;
-    }
-
     void IDisposable.Dispose()
     {
         _socket.Close();
