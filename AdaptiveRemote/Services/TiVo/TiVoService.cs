@@ -1,26 +1,25 @@
 ﻿using AdaptiveRemote.Models;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.TiVo;
 
-internal class TiVoService : IScopedLifecycle
+internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
 {
     private readonly ITiVoLocator _locator;
     private readonly ITiVoConnectionFactory _connectionFactory;
-    private readonly IEnumerable<TiVoCommand> _commands;
     private ITiVoConnection? _connection;
 
-    public TiVoService(ITiVoLocator locator, ITiVoConnectionFactory connectionFactory, IRemoteDefinitionService definitionService)
+    public TiVoService(ITiVoLocator locator, ITiVoConnectionFactory connectionFactory, IRemoteDefinitionService definitionService, ILogger<TiVoService> logger)
+        : base("TiVo Control System", definitionService)
     {
         _locator = locator;
         _connectionFactory = connectionFactory;
-        _commands = definitionService.GetCommands<TiVoCommand>().ToList();
-
-        // TODO: List commands and initialize ExecuteAsync/Enabled?
+        Logger = logger;
     }
 
-    string IScopedLifecycle.Name => "TiVo Control System";
+    protected override ILogger Logger { get; }
 
-    async Task IScopedLifecycle.InitializeAsync(CancellationToken cancellationToken)
+    public override async Task InitializeAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         System.Net.EndPoint endpoint = await _locator.FindTiVoAsync(cancellationToken);
@@ -34,24 +33,26 @@ internal class TiVoService : IScopedLifecycle
             throw new TaskCanceledException();
         }
 
-        foreach (TiVoCommand command in _commands)
-        {
-            command.ExecuteAsync = cancellationToken =>
-            {
-                // TODO: Logging/error handling/IsActive (using the shared wrapper)
-                return _connection.SendIRCommandAsync(command.CommandId, cancellationToken);
-            };
-            command.IsEnabled = true;
-        }
+        await base.InitializeAsync(cancellationToken);
     }
 
-    async Task IScopedLifecycle.CleanUpAsync(CancellationToken cancellationToken)
+    public override async Task CleanUpAsync(CancellationToken cancellationToken)
     {
-        // TODO: Clean up ExecuteAsync from all commands
+        await base.CleanUpAsync(cancellationToken);
+
         ITiVoConnection? connectionToDispose = Interlocked.Exchange(ref _connection, null);
         if (connectionToDispose is not null)
         {
             await connectionToDispose.DisposeAsync(cancellationToken);
         }
+    }
+
+    protected override Command.ExecuteDelegate CreateHandler(TiVoCommand command)
+    {
+        return cancellationToken =>
+        {
+            // TODO: Logging/error handling/IsActive (using the shared wrapper)
+            return _connection!.SendIRCommandAsync(command.CommandId, cancellationToken);
+        };
     }
 }

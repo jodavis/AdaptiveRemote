@@ -18,9 +18,7 @@ internal static class HostBuilderExtensions
             .AddHostedService<ApplicationLifecycle>()
             .AddSingleton<IApplicationScopeFactory, BlazorWindowScopeFactory>()
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
-            .AddScoped<ICommandService, CommandService>()
-            .AddScopedLifecycleService<CommandServiceInitializerHack>()
-            .AddSingleton<IApplicationService, ApplicationService>()
+            .AddScopedLifecycleService<ApplicationCommandService>()
             .AddTiVoServices(configuration.GetSection(SettingsKeys.TiVo))
             .AddBroadlinkServices(configuration.GetSection(SettingsKeys.Broadlink))
             .AddBroadlinkServices();

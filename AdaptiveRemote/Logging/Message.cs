@@ -46,6 +46,8 @@ internal enum Message
     CommandService_Executed = 602,
     CommandService_Error = 603,
     CommandService_Cancelled = 604,
+    CommandService_NotInitialized = 605,
+    CommandService_AlreadyCleanedUp = 606,
     ApplicationLifecycle_Initializing = 701,
     ApplicationLifecycle_Initialized = 702,
     ApplicationLifecycle_InitializingFailed = 703,

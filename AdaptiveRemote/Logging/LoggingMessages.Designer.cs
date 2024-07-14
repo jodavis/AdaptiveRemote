@@ -126,6 +126,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because the service has been shut down.
+        /// </summary>
+        internal static string CommandService_AlreadyCleanedUp {
+            get {
+                return ResourceManager.GetString("CommandService_AlreadyCleanedUp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancelled executing {0}.
         /// </summary>
         internal static string CommandService_Cancelled {
@@ -159,6 +168,15 @@ namespace AdaptiveRemote.Logging {
         internal static string CommandService_Executing {
             get {
                 return ResourceManager.GetString("CommandService_Executing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because the service has not been started.
+        /// </summary>
+        internal static string CommandService_NotInitialized {
+            get {
+                return ResourceManager.GetString("CommandService_NotInitialized", resourceCulture);
             }
         }
         

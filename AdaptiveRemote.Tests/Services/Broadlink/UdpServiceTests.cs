@@ -109,15 +109,6 @@ public class UdpServiceTests
             .Returns(MockSocket.Object)
             .Verifiable(Times.Once);
 
-    private void Expect_Socket_SetTimeout(int expectedTimeout)
-        => MockSocket
-            .Setup(x => x.SetTimeout(It.IsAny<TimeSpan>()))
-            .WithArgumentValidation("timeout", delegate (TimeSpan actualTimeout)
-            {
-                Assert.AreEqual((double)expectedTimeout, actualTimeout.TotalSeconds, delta: .1, "Argument 'timeout' in SetTimeout");
-            })
-            .Verifiable(Times.Once);
-
     private void Expect_Socket_SendToAsync(ReadOnlyMemory<byte> expectedBytes)
         => MockSocket
             .Setup(x => x.SendToAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<EndPoint>(), It.IsAny<CancellationToken>()))

@@ -146,6 +146,10 @@
   <data name="ApplicationLifecycle_ShuttingDown" xml:space="preserve">
     <value>Shutting down</value>
   </data>
+  <data name="CommandService_AlreadyCleanedUp" xml:space="preserve">
+    <value>Could not execute {0} because the service has been shut down</value>
+    <comment>0=Command type + name</comment>
+  </data>
   <data name="CommandService_Cancelled" xml:space="preserve">
     <value>Cancelled executing {0}</value>
     <comment>0=Description of the command</comment>
@@ -162,6 +166,10 @@
   <data name="CommandService_Executing" xml:space="preserve">
     <value>Executing {0}</value>
     <comment>0=Description of the command</comment>
+  </data>
+  <data name="CommandService_NotInitialized" xml:space="preserve">
+    <value>Could not execute {0} because the service has not been started</value>
+    <comment>0=Command type + name</comment>
   </data>
   <data name="ConversationController_CommandDisabled" xml:space="preserve">
     <value>Could not execute {0} because it is not enabled</value>
