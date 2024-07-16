@@ -30,18 +30,18 @@ internal static class HostBuilderExtensions
     private static IServiceCollection AddTiVoServices(this IServiceCollection services, IConfiguration configuration)
         => services
             .AddScopedLifecycleService<TiVoService>()
-            .AddSingleton<ITiVoConnectionFactory, LibraryTiVoConnectionFactory>()
+            .AddSingleton<ITiVoConnection.Factory, LibraryTiVoConnection.Factory>()
             .AddScoped<ITiVoLocator, StaticTiVoLocator>()
             .Configure<TiVoSettings>(configuration);
 
     private static IServiceCollection AddBroadlinkServices(this IServiceCollection services, IConfiguration configuration)
         => services
             .AddScopedLifecycleService<BroadlinkCommandService>()
-            .AddSingleton<IEncryptionFactory, AesWrapper.Factory>()
+            .AddSingleton<IEncryption.Factory, AesWrapper.Factory>()
             .AddScoped<IDeviceLocator, DeviceLocator>()
-            .AddSingleton<IDeviceConnectionFactory, DeviceConnection.Factory>()
+            .AddSingleton<IDeviceConnection.Factory, DeviceConnection.Factory>()
             .AddSingleton<IUdpService, UdpService>()
-            .AddSingleton<ISocketFactory, SocketWrapper.Factory>()
+            .AddSingleton<ISocket.Factory, SocketWrapper.Factory>()
             .Configure<BroadlinkSettings>(configuration);
 
     private static IServiceCollection AddBroadlinkServices(this IServiceCollection services)

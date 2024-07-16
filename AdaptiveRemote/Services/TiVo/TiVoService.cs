@@ -6,10 +6,10 @@ namespace AdaptiveRemote.Services.TiVo;
 internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
 {
     private readonly ITiVoLocator _locator;
-    private readonly ITiVoConnectionFactory _connectionFactory;
+    private readonly ITiVoConnection.Factory _connectionFactory;
     private ITiVoConnection? _connection;
 
-    public TiVoService(ITiVoLocator locator, ITiVoConnectionFactory connectionFactory, IRemoteDefinitionService definitionService, ILogger<TiVoService> logger)
+    public TiVoService(ITiVoLocator locator, ITiVoConnection.Factory connectionFactory, IRemoteDefinitionService definitionService, ILogger<TiVoService> logger)
         : base("TiVo Control System", definitionService)
     {
         _locator = locator;

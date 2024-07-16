@@ -18,7 +18,7 @@ public class DeviceLocatorTests
     public void SetupMocks()
     {
         MockUdpService
-            .Setup(x => x.SendAsync(It.IsAny<EndPoint>(), It.IsAny<SendPacket>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendAsync(It.IsAny<SendPacket>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
         MockUdpService
             .Setup(x => x.BroadcastAsync(It.IsAny<ScanRequestPacket>(), It.IsAny<CancellationToken>()))

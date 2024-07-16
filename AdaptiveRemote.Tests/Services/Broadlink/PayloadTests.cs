@@ -522,7 +522,7 @@ public class PayloadTests
             0x12, 0x34, 0x54, 0x32, 0x1F, 0xED, 0xCD, 0xEF
         ];
 
-        SendPacket sut = new(header, payload);
+        SendPacket sut = new(new MockEndPoint(), header, payload);
 
         // Act
         Memory<byte> result = sut.GetBuffer();

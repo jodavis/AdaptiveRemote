@@ -13,11 +13,11 @@ internal class UdpService : IUdpService
 {
     private const int MinimumResponseSize = 0x30;
 
-    private readonly ISocketFactory _socketFactory;
+    private readonly ISocket.Factory _socketFactory;
     private readonly BroadlinkSettings _settings;
     private readonly ILogger<UdpService> _logger;
 
-    public UdpService(ISocketFactory socketFactory, IOptions<BroadlinkSettings> settings, ILogger<UdpService> logger)
+    public UdpService(ISocket.Factory socketFactory, IOptions<BroadlinkSettings> settings, ILogger<UdpService> logger)
     {
         _socketFactory = socketFactory;
         _settings = settings.Value;
@@ -110,7 +110,7 @@ internal class UdpService : IUdpService
         return responseChannel.Reader.ReadAllAsync(cancellationToken);
     }
 
-    async Task<ResponsePacket> IUdpService.SendAsync(EndPoint remoteEndPoint, SendPacket packet, CancellationToken cancellationToken)
+    async Task<ResponsePacket> IUdpService.SendAsync(SendPacket packet, CancellationToken cancellationToken)
     {
         try
         {
@@ -128,16 +128,16 @@ internal class UdpService : IUdpService
                 using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(
                     cancellationToken, timeoutCancellation.Token);
 
-                _logger.LogInformation(Message.UdpService_Sending, packet, packet.Size, remoteEndPoint);
+                _logger.LogInformation(Message.UdpService_Sending, packet, packet.Size, packet.RemoteEndPoint);
 
                 try
                 {
-                    await socket.SendToAsync(packet.GetBuffer(), remoteEndPoint, combinedCancel.Token);
+                    await socket.SendToAsync(packet.GetBuffer(), packet.RemoteEndPoint, combinedCancel.Token);
                     combinedCancel.Token.ThrowIfCancellationRequested();
 
                     _logger.LogInformation(Message.UdpService_Sent, packet);
 
-                    SocketReceiveFromResult result = await socket.ReceiveFromAsync(responseBuffer, remoteEndPoint, combinedCancel.Token);
+                    SocketReceiveFromResult result = await socket.ReceiveFromAsync(responseBuffer, packet.RemoteEndPoint, combinedCancel.Token);
                     combinedCancel.Token.ThrowIfCancellationRequested();
                     responseBuffer = responseBuffer.Slice(0, result.ReceivedBytes);
 
@@ -158,7 +158,7 @@ internal class UdpService : IUdpService
                 throw Errors.UdpService_ResponseTooShort(MinimumResponseSize, responseBuffer.Length);
             }
 
-            ResponsePacket responsePacket = new ResponsePacket(remoteEndPoint, responseBuffer);
+            ResponsePacket responsePacket = new ResponsePacket(packet.RemoteEndPoint, responseBuffer);
             int realCheckSum = responsePacket.ComputeChecksum();
 
             if (realCheckSum != responsePacket.Header.NominalChecksum)

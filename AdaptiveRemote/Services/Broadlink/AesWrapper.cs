@@ -52,11 +52,11 @@ internal class AesWrapper : IEncryption
         return resultStream.ToArray();
     }
 
-    internal class Factory : IEncryptionFactory
+    internal class Factory : IEncryption.Factory
     {
-        IEncryption IEncryptionFactory.Default => _default;
+        IEncryption IEncryption.Factory.Default => _default;
 
-        IEncryption IEncryptionFactory.Create(byte[] encryptionKey) => new AesWrapper(encryptionKey);
+        IEncryption IEncryption.Factory.Create(byte[] encryptionKey) => new AesWrapper(encryptionKey);
 
     }
 }

@@ -11,7 +11,7 @@ namespace AdaptiveRemote.Services.Broadlink;
 [TestClass]
 public class UdpServiceTests
 {
-    private readonly Mock<ISocketFactory> MockSocketFactory = new();
+    private readonly Mock<ISocket.Factory> MockSocketFactory = new();
     private readonly Mock<ISocket> MockSocket = new();
     private readonly BroadlinkSettings Settings = new();
     private readonly MockLogger<UdpService> MockLogger = new();
@@ -54,6 +54,7 @@ public class UdpServiceTests
 
         EndPoint inputEndPoint = IPEndPoint.Parse("192.168.10.20:4321");
         SendPacket inputPacket = new(
+            inputEndPoint,
             new()
             {
                 DeviceID = 1,
@@ -84,7 +85,7 @@ public class UdpServiceTests
         Expect_Socket_ReadFromAsync(expectedResponse.GetBuffer(), inputEndPoint);
 
         // Act
-        Task<ResponsePacket> resultTask = sut.SendAsync(inputEndPoint, inputPacket, default);
+        Task<ResponsePacket> resultTask = sut.SendAsync(inputPacket, default);
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask));

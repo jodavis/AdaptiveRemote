@@ -16,8 +16,6 @@ internal class SocketWrapper : ISocket
 
     ValueTask<int> ISocket.SendToAsync(ReadOnlyMemory<byte> packet, EndPoint endPoint, CancellationToken cancellationToken)
         => _socket.SendToAsync(packet, endPoint, cancellationToken);
-    ValueTask<int> ISocket.ReceiveAsync(Memory<byte> buffer, CancellationToken cancellationToken)
-        => _socket.ReceiveAsync(buffer, cancellationToken);
     ValueTask<SocketReceiveFromResult> ISocket.ReceiveFromAsync(Memory<byte> buffer, EndPoint remoteEP, CancellationToken cancellationToken)
         => _socket.ReceiveFromAsync(buffer, remoteEP, cancellationToken);
 
@@ -27,9 +25,9 @@ internal class SocketWrapper : ISocket
         _socket.Dispose();
     }
 
-    internal class Factory : ISocketFactory
+    internal class Factory : ISocket.Factory
     {
-        ISocket ISocketFactory.CreateForBroadcast()
+        ISocket ISocket.Factory.CreateForBroadcast()
         {
             Socket socket = CreateUdpSocket();
             socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
@@ -39,7 +37,7 @@ internal class SocketWrapper : ISocket
             return new SocketWrapper(socket);
         }
 
-        ISocket ISocketFactory.Create() => new SocketWrapper(CreateUdpSocket());
+        ISocket ISocket.Factory.Create() => new SocketWrapper(CreateUdpSocket());
 
         private static Socket CreateUdpSocket() => new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
     }

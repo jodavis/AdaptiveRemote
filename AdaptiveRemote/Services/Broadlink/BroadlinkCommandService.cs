@@ -7,13 +7,13 @@ namespace AdaptiveRemote.Services.Broadlink;
 internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
 {
     private readonly IDeviceLocator _deviceLocator;
-    private readonly IDeviceConnectionFactory _connectionFactory;
+    private readonly IDeviceConnection.Factory _connectionFactory;
 
     private IDeviceConnection? _connection;
 
     public BroadlinkCommandService(
         IDeviceLocator deviceLocator,
-        IDeviceConnectionFactory connectionFactory,
+        IDeviceConnection.Factory connectionFactory,
         IRemoteDefinitionService definitionService,
         ILogger<BroadlinkCommandService> _logger)
         : base("Broadlink IR System", definitionService)

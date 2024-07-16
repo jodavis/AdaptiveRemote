@@ -1,6 +1,4 @@
-﻿
-using System.Net;
-using AdaptiveRemote.TestUtilities;
+﻿using AdaptiveRemote.TestUtilities;
 using Moq;
 
 namespace AdaptiveRemote.Services.Broadlink;
@@ -9,7 +7,7 @@ namespace AdaptiveRemote.Services.Broadlink;
 public class BroadlinkCommandServiceTests
 {
     private readonly Mock<IDeviceLocator> MockLocator = new();
-    private readonly Mock<IDeviceConnectionFactory> MockConnectionFactory = new();
+    private readonly Mock<IDeviceConnection.Factory> MockConnectionFactory = new();
     private readonly Mock<IDeviceConnection> MockConnection = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinitionService = new();
     private readonly MockLogger<BroadlinkCommandService> MockLogger = new();
