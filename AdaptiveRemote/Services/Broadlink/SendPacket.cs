@@ -1,14 +1,18 @@
-﻿namespace AdaptiveRemote.Services.Broadlink;
+﻿using System.Net;
+
+namespace AdaptiveRemote.Services.Broadlink;
 
 internal class SendPacket : Payload
 {
-    public SendPacket(SendPacketHeader header, Payload payload)
+    public SendPacket(EndPoint remoteEndPoint, SendPacketHeader header, Payload payload)
             : base(header, payload)
     {
+        RemoteEndPoint = remoteEndPoint;
         Header = header;
         Payload = payload;
     }
 
+    public EndPoint RemoteEndPoint { get; }
     public SendPacketHeader Header { get; }
     public Payload Payload { get; }
 

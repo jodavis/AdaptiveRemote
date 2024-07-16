@@ -10,13 +10,13 @@ internal class DeviceConnection : IDeviceConnection
     private readonly PhysicalAddress _hostAddress;
     private readonly short _deviceType;
     private readonly IUdpService _udpService;
-    private readonly IEncryptionFactory _encryptionFactory;
+    private readonly IEncryption.Factory _encryptionFactory;
 
     private short _deviceID;
     private int _messageCount;
     private IEncryption _encryption;
 
-    public DeviceConnection(IPEndPoint hostEndPoint, PhysicalAddress hostAddress, short deviceType, IUdpService udpService, IEncryptionFactory encryptionFactory)
+    public DeviceConnection(IPEndPoint hostEndPoint, PhysicalAddress hostAddress, short deviceType, IUdpService udpService, IEncryption.Factory encryptionFactory)
     {
         _hostEndPoint = hostEndPoint;
         _hostAddress = hostAddress;
@@ -68,10 +68,10 @@ internal class DeviceConnection : IDeviceConnection
         };
 
         payload = Encrypt(payload);
-        SendPacket packet = new(header, payload);
+        SendPacket packet = new(_hostEndPoint, header, payload);
         packet.Header.PacketChecksum = packet.ComputeChecksum();
 
-        return await _udpService.SendAsync(_hostEndPoint, packet, cancellationToken);
+        return await _udpService.SendAsync(packet, cancellationToken);
     }
 
     private DecryptedType Decrypt<DecryptedType>(Payload payload)
@@ -103,9 +103,9 @@ internal class DeviceConnection : IDeviceConnection
         }
     }
 
-    internal class Factory(IUdpService _udpService, IEncryptionFactory _encryptionFactory) : IDeviceConnectionFactory
+    internal class Factory(IUdpService _udpService, IEncryption.Factory _encryptionFactory) : IDeviceConnection.Factory
     {
-        IDeviceConnection IDeviceConnectionFactory.Create(IPEndPoint hostEndPoint, PhysicalAddress hostAddress, short deviceType)
+        IDeviceConnection IDeviceConnection.Factory.Create(IPEndPoint hostEndPoint, PhysicalAddress hostAddress, short deviceType)
             => new DeviceConnection(hostEndPoint, hostAddress, deviceType, _udpService, _encryptionFactory);
     }
 }

@@ -9,7 +9,7 @@ namespace AdaptiveRemote.Services.TiVo;
 public class TiVoServiceTests
 {
     private readonly Mock<ITiVoLocator> MockLocator = new();
-    private readonly Mock<ITiVoConnectionFactory> MockConnectionFactory = new();
+    private readonly Mock<ITiVoConnection.Factory> MockConnectionFactory = new();
     private readonly Mock<ITiVoConnection> MockConnection = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinition = new();
     private readonly MockLogger<TiVoService> MockLogger = new();
@@ -46,7 +46,7 @@ public class TiVoServiceTests
             .Setup(x => x.ConnectAsync(It.IsAny<EndPoint>(), It.IsAny<CancellationToken>()))
             .Callback(delegate (EndPoint ep, CancellationToken cancel)
             {
-                Assert.AreSame(mockEndPoint, ep, "Wrong endpoint was passed to " + nameof(ITiVoConnectionFactory.ConnectAsync));
+                Assert.AreSame(mockEndPoint, ep, "Wrong endpoint was passed to " + nameof(ITiVoConnection.Factory.ConnectAsync));
             })
             .Returns(Task.FromResult(MockConnection.Object))
             .Verifiable(Times.Once);
