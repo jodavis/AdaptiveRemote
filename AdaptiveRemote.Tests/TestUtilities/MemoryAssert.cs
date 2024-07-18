@@ -19,7 +19,7 @@ internal static class MemoryAssert
                 Assert.Fail("Same number of bytes were expected, but {0}.MoveNext() returned false", nameof(actualIter));
             }
 
-            Assert.AreEqual(expectedIter.Current.ToString("X2"), actualIter.Current.ToString("X2"), "{1}}[{0}]", index, name);
+            Assert.AreEqual(expectedIter.Current.ToString("X2"), actualIter.Current.ToString("X2"), "{1}[{0}]", index, name);
 
             index++;
         }

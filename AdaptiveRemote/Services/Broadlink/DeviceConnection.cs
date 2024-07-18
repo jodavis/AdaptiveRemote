@@ -6,6 +6,9 @@ namespace AdaptiveRemote.Services.Broadlink;
 
 internal class DeviceConnection : IDeviceConnection
 {
+    private const int AuthenticateCommandComde = 0x65;
+    private const int SendDataCommandCode = 0x6A;
+
     private readonly IPEndPoint _hostEndPoint;
     private readonly PhysicalAddress _hostAddress;
     private readonly short _deviceType;
@@ -36,7 +39,7 @@ internal class DeviceConnection : IDeviceConnection
 
         AuthenticateRequestPayload payload = new();
 
-        ResponsePacket response = await SendPacketAsync(0x65, payload, cancellationToken);
+        ResponsePacket response = await SendPacketAsync(AuthenticateCommandComde, payload, cancellationToken);
         CheckError(response.Header.ErrorCode);
         AuthenticateResponsePayload responsePayload = Decrypt<AuthenticateResponsePayload>(response.Payload);
 
@@ -49,7 +52,7 @@ internal class DeviceConnection : IDeviceConnection
     public async Task SendData(byte[] data, CancellationToken cancellationToken)
     {
         CommandPayload payload = new(0x2, data);
-        ResponsePacket response = await SendPacketAsync(0x6A, payload, cancellationToken);
+        ResponsePacket response = await SendPacketAsync(SendDataCommandCode, payload, cancellationToken);
         CheckError(response.Header.ErrorCode);
     }
 
