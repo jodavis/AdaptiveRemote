@@ -35,7 +35,7 @@ internal class UdpService : IUdpService
 
         _ = Task.Run(async () =>
         {
-            IPEndPoint discoverEndPoint = IPEndPoint.Parse("255.255.255.255:80");
+            IPEndPoint discoverEndPoint = new(IPAddress.Broadcast, 80);
 
             DateTime startTime = DateTime.Now;
             TimeSpan timeout = TimeSpan.FromSeconds(_settings.ScanTimeout);

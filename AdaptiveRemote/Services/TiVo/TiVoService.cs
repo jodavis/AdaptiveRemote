@@ -10,7 +10,7 @@ internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
     private ITiVoConnection? _connection;
 
     public TiVoService(ITiVoLocator locator, ITiVoConnection.Factory connectionFactory, IRemoteDefinitionService definitionService, ILogger<TiVoService> logger)
-        : base("TiVo Control System", definitionService)
+        : base("TiVo Commands", definitionService)
     {
         _locator = locator;
         _connectionFactory = connectionFactory;
@@ -51,7 +51,6 @@ internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
     {
         return cancellationToken =>
         {
-            // TODO: Logging/error handling/IsActive (using the shared wrapper)
             return _connection!.SendIRCommandAsync(command.CommandId, cancellationToken);
         };
     }

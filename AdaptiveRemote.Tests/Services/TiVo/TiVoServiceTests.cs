@@ -447,10 +447,10 @@ public class TiVoServiceTests
         Expect_MockConnection_SendAsync(PlayCommand.CommandId);
 
         // Act
-        Task sendTask = PlayCommand.ExecuteAsync!(default);
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsComplete(sendTask, nameof(sendTask));
+        TaskAssert.IsComplete(executeTask, nameof(executeTask));
     }
 
     [TestMethod]
@@ -462,13 +462,13 @@ public class TiVoServiceTests
         CancellationToken cancelled = Expect_MockConnection_SendAsync_IsCanceled(PlayCommand.CommandId);
 
         CancellationTokenSource cts = new();
-        Task sendTask = PlayCommand.ExecuteAsync!(cts.Token);
+        Task executeTask = PlayCommand.ExecuteAsync!(cts.Token);
 
         // Act
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsNotComplete(sendTask, nameof(sendTask));
+        TaskAssert.IsNotComplete(executeTask, nameof(executeTask));
         Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled));
     }
 
@@ -502,13 +502,13 @@ public class TiVoServiceTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        Task sendTask = PlayCommand.ExecuteAsync!(default);
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Act
         tcs.SetResult();
 
         // Assert
-        TaskAssert.IsComplete(sendTask, nameof(sendTask));
+        TaskAssert.IsComplete(executeTask, nameof(executeTask));
     }
 
     [TestMethod]

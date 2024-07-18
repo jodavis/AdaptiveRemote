@@ -16,7 +16,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         IDeviceConnection.Factory connectionFactory,
         IRemoteDefinitionService definitionService,
         ILogger<BroadlinkCommandService> _logger)
-        : base("Broadlink IR System", definitionService)
+        : base("Broadlink IR Commands", definitionService)
     {
         _deviceLocator = deviceLocator;
         _connectionFactory = connectionFactory;

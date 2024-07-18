@@ -1,0 +1,19 @@
+﻿using AdaptiveRemote.Services.TiVo;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+namespace AdaptiveRemote.Services.Configuration;
+
+internal static class TiVoHostBuilderExtensions
+{
+    public static IHostBuilder AddTiVoSupport(this IHostBuilder builder)
+        => builder.ConfigureServices((context, services) => services.AddTiVoServices(context.Configuration.GetSection(SettingsKeys.TiVo)));
+
+    private static IServiceCollection AddTiVoServices(this IServiceCollection services, IConfiguration configuration)
+        => services
+            .AddScopedLifecycleService<TiVoService>()
+            .AddSingleton<ITiVoConnection.Factory, LibraryTiVoConnection.Factory>()
+            .AddScoped<ITiVoLocator, StaticTiVoLocator>()
+            .Configure<TiVoSettings>(configuration);
+}
