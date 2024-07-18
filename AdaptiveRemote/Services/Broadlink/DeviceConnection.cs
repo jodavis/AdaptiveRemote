@@ -70,8 +70,7 @@ internal class DeviceConnection : IDeviceConnection
             PayloadChecksum = payload.ComputeChecksum()
         };
 
-        payload = Encrypt(payload);
-        SendPacket packet = new(_hostEndPoint, header, payload);
+        SendPacket packet = new(_hostEndPoint, header, Encrypt(payload));
         packet.Header.PacketChecksum = packet.ComputeChecksum();
 
         return await _udpService.SendAsync(packet, cancellationToken);
