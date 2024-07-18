@@ -2,8 +2,13 @@
 
 namespace AdaptiveRemote.Services.Broadlink;
 
+/// <summary>
+/// <see cref="https://github.com/mjg59/python-broadlink/blob/master/protocol.md#network-discovery"/>
+/// </summary>
 internal class Payload
 {
+    private const int ChecksumSeed = 0xBEAF;
+
     private Memory<byte> _buffer;
 
     public Payload(Memory<byte> buffer)
@@ -35,7 +40,7 @@ internal class Payload
 
     public short ComputeChecksum()
     {
-        int checksum = 0xBEAF;
+        int checksum = ChecksumSeed;
 
         Span<byte> span = _buffer.Span;
         for (int i = 0; i < span.Length; i++)

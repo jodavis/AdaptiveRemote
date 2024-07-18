@@ -394,10 +394,16 @@ public class PayloadTests
     public void ScanRequestPayload_GetBuffer()
     {
         // Arrange
-        DateTime inputRequestTime = DateTime.Parse("10/30/24 11:55 AM");
+        DateTime inputRequestTime = new(DateTime.Now.Year, 10, 30, 11, 55, 0);
         byte[] inputIPAddress = [192, 168, 200, 145];
         short inputPort = 0x0050;
         short inputChecksum = 0x5432;
+
+        // Offset difference for Daylight Savings Time
+        byte odst = DateTime.Now.IsDaylightSavingTime() ? (byte)0x03 : (byte)0x04;
+
+        // Checksum affected by odst
+        short expectedChecksum = (short)(-15208 + odst);
 
         ScanRequestPacket sut = new()
         {
@@ -410,8 +416,8 @@ public class PayloadTests
         byte[] expected =
         [
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x82, 0x8F, 0xAE, 0xD9, 0xF8, 0xDC, 0x08, // RequestTime
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0xD8, 0x5E, 0xAC, 0x00, 0x00, 0x00, 0x37, // RequestTime
+            0x0B, odst, 0x1E, 0x0A, 0x00, 0x00, 0x00, 0x00,
             192, 168, 200, 145, // LocalIPAddress
             0x50, 0x00, // LocalPort
             0x00, 0x00,
@@ -433,7 +439,7 @@ public class PayloadTests
         Assert.AreEqual(inputChecksum, sut.Checksum, nameof(sut.Checksum));
         Assert.AreEqual(0x30, sut.Size, nameof(sut.Size));
 
-        Assert.AreEqual(-14656, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
+        Assert.AreEqual(expectedChecksum, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
     }
 
     [TestMethod]
