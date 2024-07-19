@@ -17,7 +17,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
 
         foreach (CommandType command in _commands)
         {
-            command.ExecuteAsync = CreateNotInitializedHandler(command);
+            command.ExecuteAsync = CreateNotStartedHandler(command);
             command.IsEnabled = false;
         }
     }
@@ -41,7 +41,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     {
         foreach (CommandType command in _commands)
         {
-            command.ExecuteAsync = CreateCleanedUpdHandler(command);
+            command.ExecuteAsync = CreateShutDownHandler(command);
             command.IsEnabled = false;
         }
         return Task.CompletedTask;
@@ -76,21 +76,21 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
         };
     }
 
-    private Command.ExecuteDelegate CreateNotInitializedHandler(CommandType command)
+    private Command.ExecuteDelegate CreateNotStartedHandler(CommandType command)
     {
         return delegate (CancellationToken cancellationToken)
         {
-            Logger.LogError(Message.CommandService_NotInitialized, command);
-            return Task.FromException(Errors.CommandService_NotInitialized(command));
+            Logger.LogError(Message.CommandService_NotStarted, command);
+            return Task.FromException(Errors.CommandService_WasShutDown(command));
         };
     }
 
-    private Command.ExecuteDelegate CreateCleanedUpdHandler(CommandType command)
+    private Command.ExecuteDelegate CreateShutDownHandler(CommandType command)
     {
         return delegate (CancellationToken cancellationToken)
         {
-            Logger.LogError(Message.CommandService_AlreadyCleanedUp, command);
-            return Task.FromException(Errors.CommandService_AlreadyCleanedUp(command));
+            Logger.LogError(Message.CommandService_WasShutDown, command);
+            return Task.FromException(Errors.CommandService_NotStarted(command));
         };
     }
 }

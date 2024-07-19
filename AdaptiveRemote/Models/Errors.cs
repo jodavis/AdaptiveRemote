@@ -14,8 +14,6 @@ internal static class Errors
 
     internal static Exception TiVo_SettingRequiredToConnect(string settingName)
         => SettingRequired(SettingsKeys.TiVo, settingName, "connect to the TiVo");
-    internal static Exception TiVo_CannotInterpretCommand(string commandId, string argName)
-        => new ArgumentException($"Unable to interpret '{commandId}' as a TiVo command", argName);
     internal static Exception TiVo_NotInitialized(string command)
         => new InvalidOperationException($"Could not send '{command}' to the TiVo because the connection to the TiVo was not created.");
 
@@ -54,9 +52,9 @@ internal static class Errors
     internal static Exception Broadlink_SsidNotFound()
         => new BroadlinkException("SSID could not be found in AP configuration");
 
-    internal static Exception CommandService_AlreadyCleanedUp(Command command)
+    internal static Exception CommandService_NotStarted(Command command)
         => new InvalidOperationException($"Cannot execute {command} because the service has been shut down.");
-    internal static Exception CommandService_NotInitialized(Command command)
+    internal static Exception CommandService_WasShutDown(Command command)
         => new InvalidOperationException($"Cannot execute {command} because the service has not been started.");
 
     private static ConfigurationErrorsException SettingRequired(string settingKey, string settingName, string requiredTo)

@@ -126,11 +126,38 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Could not execute {0} because the service has been shut down.
+        ///   Looks up a localized string similar to Authenticated successfully with device at {0}.
         /// </summary>
-        internal static string CommandService_AlreadyCleanedUp {
+        internal static string BroadlinkCommandService_Authenticated {
             get {
-                return ResourceManager.GetString("CommandService_AlreadyCleanedUp", resourceCulture);
+                return ResourceManager.GetString("BroadlinkCommandService_Authenticated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Authenticating with device at {0}.
+        /// </summary>
+        internal static string BroadlinkCommandService_Authenticating {
+            get {
+                return ResourceManager.GetString("BroadlinkCommandService_Authenticating", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ready to send commands.
+        /// </summary>
+        internal static string BroadlinkCommandService_Ready {
+            get {
+                return ResourceManager.GetString("BroadlinkCommandService_Ready", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Searching for Broadlink devices....
+        /// </summary>
+        internal static string BroadlinkCommandService_SearchingForDevice {
+            get {
+                return ResourceManager.GetString("BroadlinkCommandService_SearchingForDevice", resourceCulture);
             }
         }
         
@@ -174,9 +201,18 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Could not execute {0} because the service has not been started.
         /// </summary>
-        internal static string CommandService_NotInitialized {
+        internal static string CommandService_NotStarted {
             get {
-                return ResourceManager.GetString("CommandService_NotInitialized", resourceCulture);
+                return ResourceManager.GetString("CommandService_NotStarted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because the service has been shut down.
+        /// </summary>
+        internal static string CommandService_WasShutDown {
+            get {
+                return ResourceManager.GetString("CommandService_WasShutDown", resourceCulture);
             }
         }
         
@@ -576,7 +612,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Event received: {0}.
+        ///   Looks up a localized string similar to Received event code &quot;{0}&quot; in response to &quot;{1}&quot;: &quot;{2}&quot;.
         /// </summary>
         internal static string TiVoConnection_EventReceived {
             get {

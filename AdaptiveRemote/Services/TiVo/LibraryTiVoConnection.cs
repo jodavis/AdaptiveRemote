@@ -55,8 +55,10 @@ internal class LibraryTiVoConnection : ITiVoConnection
         Client client = _client
             ?? throw new ObjectDisposedException(nameof(Factory));
 
-        I8BeefCommand command = CommandFactory.GetCommand("IRCODE " + commandId) ?? throw Errors.TiVo_CannotInterpretCommand(commandId, nameof(commandId));
-        await client.SendCommandAsync(command);
+        await client.SendCommandAsync(new IrCommand
+        {
+            IrCode = commandId
+        });
     }
 
     private void OnMessageSent(object? sender, MessageSentEventArgs e)
@@ -64,7 +66,7 @@ internal class LibraryTiVoConnection : ITiVoConnection
     private void OnMessageReceived(object? sender, MessageReceivedEventArgs e)
         => _logger.LogInformation(Message.TiVoConnection_MessageReceived, e.Message);
     private void OnEventReceived(object? sender, ResponseEventArgs e)
-        => _logger.LogInformation(Message.TiVoConnection_EventReceived, e.Response);
+        => _logger.LogInformation(Message.TiVoConnection_EventReceived, e.Response.Code, e.Response.InResponseToCode, e.Response.Value);
     private void OnError(object? sender, System.IO.ErrorEventArgs e)
         => _logger.LogInformation(Message.TiVoConnection_Error, e.GetException());
 
