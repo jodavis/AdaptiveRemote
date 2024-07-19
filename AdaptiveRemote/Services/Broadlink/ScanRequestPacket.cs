@@ -1,4 +1,6 @@
-﻿namespace AdaptiveRemote.Services.Broadlink;
+﻿using System.Diagnostics;
+
+namespace AdaptiveRemote.Services.Broadlink;
 
 /// <summary>
 /// <see cref="https://github.com/mjg59/python-broadlink/blob/master/protocol.md#network-discovery"/>
@@ -22,12 +24,15 @@ internal class ScanRequestPacket : Payload
     {
         get
         {
+            int offset = GetInt(RequestTimeOffsetPosition);
             byte[] bytes = GetBytes(RequestTimePosition, 6);
-            return new DateTime(DateTime.Now.Year, bytes[5], bytes[4], bytes[2], bytes[1], bytes[0]);
+            DateTime requestTime = new DateTime(DateTime.Now.Year, bytes[5], bytes[4], bytes[2], bytes[1], bytes[0], DateTimeKind.Utc);
+            Debug.Assert(requestTime.DayOfWeek == (DayOfWeek)bytes[3]);
+            return requestTime;
         }
         set
         {
-            long offset = value.ToFileTime() - value.ToFileTimeUtc();
+            int offset = (int)(value - value.ToUniversalTime()).TotalMinutes;
             Set(RequestTimeOffsetPosition, (int)offset);
 
             Set(RequestTimePosition, new byte[]
