@@ -403,7 +403,7 @@ public class PayloadTests
         byte odst = DateTime.Now.IsDaylightSavingTime() ? (byte)0x03 : (byte)0x04;
 
         // Checksum affected by odst
-        short expectedChecksum = (short)(-15208 + odst);
+        short expectedChecksum = (short)(-14834 + odst);
 
         ScanRequestPacket sut = new()
         {
@@ -416,7 +416,7 @@ public class PayloadTests
         byte[] expected =
         [
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0xD8, 0x5E, 0xAC, 0x00, 0x00, 0x00, 0x37, // RequestTime
+            0x5C, 0xFE, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x37, // RequestTime
             0x0B, odst, 0x1E, 0x0A, 0x00, 0x00, 0x00, 0x00,
             192, 168, 200, 145, // LocalIPAddress
             0x50, 0x00, // LocalPort
