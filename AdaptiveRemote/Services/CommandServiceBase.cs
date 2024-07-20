@@ -8,6 +8,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     where CommandType : Command
 {
     private readonly IEnumerable<CommandType> _commands;
+    private readonly CancellationTokenSource _stop = new();
 
     protected CommandServiceBase(string name, IRemoteDefinitionService remoteDefinition)
     {
@@ -15,10 +16,11 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
 
         _commands = remoteDefinition.GetCommands<CommandType>().ToList();
 
-        foreach (CommandType command in _commands)
+        foreach (Command command in _commands)
         {
             command.ExecuteAsync = CreateNotStartedHandler(command);
             command.IsEnabled = false;
+            command.IsActive = false;
         }
     }
 
@@ -39,35 +41,42 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
 
     public virtual Task CleanUpAsync(CancellationToken cancellationToken)
     {
-        foreach (CommandType command in _commands)
+        _stop.Cancel();
+
+        foreach (Command command in _commands)
         {
-            command.ExecuteAsync = CreateShutDownHandler(command);
             command.IsEnabled = false;
+            command.ExecuteAsync = CreateWasShutDownHandler(command);
         }
+
         return Task.CompletedTask;
     }
 
     private Command.ExecuteDelegate CreateWrappedHandler(CommandType command)
     {
-        Command.ExecuteDelegate action = CreateHandler(command);
+        Command.ExecuteDelegate callback = CreateHandler(command);
 
         return async delegate (CancellationToken cancellationToken)
         {
+            CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
+
             try
             {
                 command.IsActive = true;
 
                 Logger.LogInformation(Message.CommandService_Executing, command);
-                await action(cancellationToken);
+                await callback(linked.Token);
                 Logger.LogInformation(Message.CommandService_Executed, command);
             }
             catch (OperationCanceledException)
             {
                 Logger.LogWarning(Message.CommandService_Cancelled, command);
+                throw;
             }
             catch (Exception error)
             {
                 Logger.LogError(Message.CommandService_Error, command, error);
+                throw;
             }
             finally
             {
@@ -76,21 +85,21 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
         };
     }
 
-    private Command.ExecuteDelegate CreateNotStartedHandler(CommandType command)
+    private Command.ExecuteDelegate CreateNotStartedHandler(Command command)
     {
-        return delegate (CancellationToken cancellationToken)
+        return delegate (CancellationToken _)
         {
             Logger.LogError(Message.CommandService_NotStarted, command);
-            return Task.FromException(Errors.CommandService_WasShutDown(command));
+            return Task.FromException(Errors.CommandService_NotStarted(command));
         };
     }
 
-    private Command.ExecuteDelegate CreateShutDownHandler(CommandType command)
+    private Command.ExecuteDelegate CreateWasShutDownHandler(Command command)
     {
-        return delegate (CancellationToken cancellationToken)
+        return delegate (CancellationToken _)
         {
             Logger.LogError(Message.CommandService_WasShutDown, command);
-            return Task.FromException(Errors.CommandService_NotStarted(command));
+            return Task.FromException(Errors.CommandService_WasShutDown(command));
         };
     }
 }
