@@ -347,6 +347,8 @@ public class TiVoServiceTests
 
         // Assert
         TaskAssert.IsNotComplete(cleanUpTask, nameof(cleanUpTask));
+
+        Assert.IsFalse(PlayCommand.IsEnabled, nameof(PlayCommand.IsEnabled));
     }
 
     [TestMethod]
@@ -530,24 +532,43 @@ public class TiVoServiceTests
     }
 
     [TestMethod]
-    public void TiVoService_SendAsync_ThrowsIfDisposed()
+    public void TiVoService_ExecuteAsync_ThrowsIfDisposed()
     {
         // Arrange
-        const string input = "HELLO";
-
         IScopedLifecycle sut = CreateSut();
 
-        Exception expectedError = Models.Errors.TiVo_NotInitialized(input);
+        Exception expectedError = Errors.CommandService_WasShutDown(PlayCommand);
 
         Expect_MockConnection_Disposed();
         sut.CleanUpAsync(default);
 
         // Act
-        Assert.Inconclusive("Need to test this as part of CleanupAsync");
-        //Task sendTask = sut.SendAsync(input, default);
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        //TaskAssert.IsFaulted(sendTask, expectedError, nameof(sendTask));
+        TaskAssert.IsFaulted(executeTask, expectedError, nameof(executeTask));
+    }
+
+    [TestMethod]
+    public void TiVoService_ExecuteAsync_ThrowsIfDisposing()
+    {
+        // Arrange
+        IScopedLifecycle sut = CreateSut();
+
+        Exception expectedError = Errors.CommandService_WasShutDown(PlayCommand);
+
+        MockConnection
+            .Setup(x => x.DisposeAsync(It.IsAny<CancellationToken>()))
+            .Returns(new TaskCompletionSource().Task)
+            .Verifiable(Times.Once);
+
+        sut.CleanUpAsync(default);
+
+        // Act
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
+
+        // Assert
+        TaskAssert.IsFaulted(executeTask, expectedError, nameof(executeTask));
     }
 
     private void Expect_MockConnection_SendAsync(string expectedCommand, Task? result = default)
