@@ -520,7 +520,7 @@ public class TiVoServiceTests
 
         CreateUninitializedSut();
 
-        Exception expectedException = Errors.CommandService_WasShutDown(PlayCommand);
+        Exception expectedException = Errors.CommandService_NotStarted(PlayCommand);
 
         // Act
         Task executeTask = PlayCommand.ExecuteAsync!(default);
