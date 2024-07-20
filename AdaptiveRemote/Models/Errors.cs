@@ -9,13 +9,8 @@ internal static class Errors
     public static Exception Telemetry_SettingRequiredToPublish(string settingName)
         => SettingRequired(SettingsKeys.Telemetry, settingName, "publish telemetry");
 
-    public static Exception Commands_UnsupportedCommandType(Command command, string argumentName)
-        => new ArgumentException($"Cannot execute {command}", argumentName);
-
     internal static Exception TiVo_SettingRequiredToConnect(string settingName)
         => SettingRequired(SettingsKeys.TiVo, settingName, "connect to the TiVo");
-    internal static Exception TiVo_NotInitialized(string command)
-        => new InvalidOperationException($"Could not send '{command}' to the TiVo because the connection to the TiVo was not created.");
 
     internal static Exception UdpService_NetworkTimeoutError(TimeSpan timeout)
         => new UdpException($"Network timeout: No response received within {timeout.TotalSeconds}s");
