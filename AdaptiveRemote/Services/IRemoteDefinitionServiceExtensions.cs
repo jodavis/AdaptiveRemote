@@ -9,6 +9,12 @@ internal static class IRemoteDefinitionServiceExtensions
         return service.GetAllElements().OfType<Command>();
     }
 
+    internal static IEnumerable<CommandType> GetCommands<CommandType>(this IRemoteDefinitionService service)
+        where CommandType : Command
+    {
+        return service.GetAllElements().OfType<CommandType>();
+    }
+
     internal static ElementType GetElement<ElementType>(this IRemoteDefinitionService service)
     {
         return service.GetAllElements().OfType<ElementType>().First();

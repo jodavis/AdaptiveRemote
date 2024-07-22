@@ -12,6 +12,8 @@ public static class AppHostBuilderExtensions
             .AddBlazorUI()
             .ConfigureTelemetry()
             .AddRemoteServices()
+            .AddBroadlinkSupport()
+            .AddTiVoSupport()
             .AddConversationSystem();
 
     public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)

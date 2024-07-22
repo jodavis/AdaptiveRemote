@@ -1,22 +1,25 @@
 ﻿using AdaptiveRemote.Models;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.TiVo;
 
-internal class TiVoService : IScopedLifecycle, ITiVoService
+internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
 {
     private readonly ITiVoLocator _locator;
-    private readonly ITiVoConnectionFactory _connectionFactory;
+    private readonly ITiVoConnection.Factory _connectionFactory;
     private ITiVoConnection? _connection;
 
-    public TiVoService(ITiVoLocator locator, ITiVoConnectionFactory connectionFactory)
+    public TiVoService(ITiVoLocator locator, ITiVoConnection.Factory connectionFactory, IRemoteDefinitionService definitionService, ILogger<TiVoService> logger)
+        : base("TiVo Commands", definitionService)
     {
         _locator = locator;
         _connectionFactory = connectionFactory;
+        Logger = logger;
     }
 
-    string IScopedLifecycle.Name => "TiVo Control System";
+    protected override ILogger Logger { get; }
 
-    async Task IScopedLifecycle.InitializeAsync(CancellationToken cancellationToken)
+    public override async Task InitializeAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         System.Net.EndPoint endpoint = await _locator.FindTiVoAsync(cancellationToken);
@@ -29,10 +32,14 @@ internal class TiVoService : IScopedLifecycle, ITiVoService
             await ((IScopedLifecycle)this).CleanUpAsync(default);
             throw new TaskCanceledException();
         }
+
+        await base.InitializeAsync(cancellationToken);
     }
 
-    async Task IScopedLifecycle.CleanUpAsync(CancellationToken cancellationToken)
+    public override async Task CleanUpAsync(CancellationToken cancellationToken)
     {
+        await base.CleanUpAsync(cancellationToken);
+
         ITiVoConnection? connectionToDispose = Interlocked.Exchange(ref _connection, null);
         if (connectionToDispose is not null)
         {
@@ -40,13 +47,11 @@ internal class TiVoService : IScopedLifecycle, ITiVoService
         }
     }
 
-    async Task ITiVoService.SendAsync(string commandCode, CancellationToken cancellationToken)
+    protected override Command.ExecuteDelegate CreateHandler(TiVoCommand command)
     {
-        if (_connection is null)
+        return cancellationToken =>
         {
-            throw Errors.TiVo_NotInitialized(commandCode);
-        }
-
-        await _connection.SendIRCommandAsync(commandCode, cancellationToken);
+            return _connection!.SendIRCommandAsync(command.CommandId, cancellationToken);
+        };
     }
 }

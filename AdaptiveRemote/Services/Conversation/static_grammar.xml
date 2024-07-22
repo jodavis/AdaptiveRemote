@@ -51,6 +51,24 @@
     <one-of>
       <item>
         <one-of>
+          <item>On</item>
+          <item>Power On</item>
+          <item>Turn On</item>
+          <item>Turn On the TV</item>
+        </one-of>
+        <tag>out.command="PowerOn"</tag>
+      </item>
+      <item>
+        <one-of>
+          <item>Off</item>
+          <item>Power Off</item>
+          <item>Turn Off</item>
+          <item>Turn Off the TV</item>
+        </one-of>
+        <tag>out.command="PowerOff"</tag>
+      </item>
+      <item>
+        <one-of>
           <item>Select</item>
           <item>OK</item>
         </one-of>
