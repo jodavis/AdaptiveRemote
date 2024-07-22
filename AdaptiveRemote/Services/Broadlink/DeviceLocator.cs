@@ -15,7 +15,7 @@ internal class DeviceLocator : IDeviceLocator
     {
         ScanRequestPacket requestPacket = new()
         {
-            RequestTime = DateTime.Now
+            RequestTime = DateTimeOffset.Now
         };
 
         CancellationTokenSource stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

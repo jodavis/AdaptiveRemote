@@ -20,20 +20,19 @@ internal class ScanRequestPacket : Payload
     /// <summary>
     /// The time when the request was sent, encoded in some weird format
     /// </summary>
-    public DateTime RequestTime
+    public DateTimeOffset RequestTime
     {
         get
         {
-            int offset = GetInt(RequestTimeOffsetPosition);
+            TimeSpan offset = TimeSpan.FromMinutes(GetInt(RequestTimeOffsetPosition));
             byte[] bytes = GetBytes(RequestTimePosition, 6);
-            DateTime requestTime = new DateTime(DateTime.Now.Year, bytes[5], bytes[4], bytes[2], bytes[1], bytes[0], DateTimeKind.Utc);
+            DateTimeOffset requestTime = new(DateTime.Now.Year, bytes[5], bytes[4], bytes[2], bytes[1], bytes[0], offset);
             Debug.Assert(requestTime.DayOfWeek == (DayOfWeek)bytes[3]);
             return requestTime;
         }
         set
         {
-            int offset = (int)(value - value.ToUniversalTime()).TotalMinutes;
-            Set(RequestTimeOffsetPosition, (int)offset);
+            Set(RequestTimeOffsetPosition, (int)value.Offset.TotalMinutes);
 
             Set(RequestTimePosition, new byte[]
             {
