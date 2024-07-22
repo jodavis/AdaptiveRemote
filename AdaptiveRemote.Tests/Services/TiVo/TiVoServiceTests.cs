@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using AdaptiveRemote.Models;
 using AdaptiveRemote.TestUtilities;
 using Moq;
 
@@ -8,10 +9,21 @@ namespace AdaptiveRemote.Services.TiVo;
 public class TiVoServiceTests
 {
     private readonly Mock<ITiVoLocator> MockLocator = new();
-    private readonly Mock<ITiVoConnectionFactory> MockConnectionFactory = new();
+    private readonly Mock<ITiVoConnection.Factory> MockConnectionFactory = new();
     private readonly Mock<ITiVoConnection> MockConnection = new();
+    private readonly Mock<IRemoteDefinitionService> MockDefinition = new();
+    private readonly MockLogger<TiVoService> MockLogger = new();
 
-    private TiVoService CreateUninitializedSut() => new TiVoService(MockLocator.Object, MockConnectionFactory.Object);
+    private readonly LayoutGroup Commands = new("ROOT",
+        [
+            new ApplicationCommand("UNUSED1"),
+            new TiVoCommand("Play"),
+            new TiVoCommand("Stop"),
+            new ApplicationCommand("UNUSED2"),
+        ]);
+    private TiVoCommand PlayCommand => Commands.Elements.OfType<TiVoCommand>().First();
+
+    private TiVoService CreateUninitializedSut() => new(MockLocator.Object, MockConnectionFactory.Object, MockDefinition.Object, MockLogger);
     private TiVoService CreateSut()
     {
         const int InitializeTimeoutInMilliseconds = 1000;
@@ -34,7 +46,7 @@ public class TiVoServiceTests
             .Setup(x => x.ConnectAsync(It.IsAny<EndPoint>(), It.IsAny<CancellationToken>()))
             .Callback(delegate (EndPoint ep, CancellationToken cancel)
             {
-                Assert.AreSame(mockEndPoint, ep, "Wrong endpoint was passed to " + nameof(ITiVoConnectionFactory.ConnectAsync));
+                Assert.AreSame(mockEndPoint, ep, "Wrong endpoint was passed to " + nameof(ITiVoConnection.Factory.ConnectAsync));
             })
             .Returns(Task.FromResult(MockConnection.Object))
             .Verifiable(Times.Once);
@@ -51,6 +63,11 @@ public class TiVoServiceTests
         MockConnection
             .Setup(x => x.DisposeAsync(It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
+
+        MockDefinition
+            .SetupGet(x => x.RemoteRoot)
+            .Returns(Commands)
+            .Verifiable(Times.Once);
     }
 
     [TestCleanup]
@@ -59,6 +76,7 @@ public class TiVoServiceTests
         MockLocator.Verify();
         MockConnectionFactory.Verify();
         MockConnection.Verify();
+        MockDefinition.Verify();
     }
 
     [TestMethod]
@@ -92,7 +110,7 @@ public class TiVoServiceTests
     }
 
     [TestMethod]
-    public void TiVoService_InitializeAsync_CreatesTiVoConnection()
+    public void TiVoService_InitializeAsync_CreatesTiVoConnectionAndEnablesCommands()
     {
         // Arrange
         IScopedLifecycle sut = CreateUninitializedSut();
@@ -102,6 +120,16 @@ public class TiVoServiceTests
 
         // Assert
         TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
+
+        foreach (TiVoCommand command in Commands.Elements.OfType<TiVoCommand>())
+        {
+            Assert.IsNotNull(command.ExecuteAsync, "Service did not set {0} on {1} command",
+                nameof(command.ExecuteAsync),
+                command.Name);
+            Assert.IsTrue(command.IsEnabled, "Service did not set {0} on {1} command",
+                nameof(command.IsEnabled),
+                command.Name);
+        }
     }
 
     [TestMethod]
@@ -184,6 +212,7 @@ public class TiVoServiceTests
 
         // Assert
         TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
+        Assert.IsNotNull(PlayCommand.ExecuteAsync, "Service did not set ExecuteAsync on PlayCommand");
     }
 
     [TestMethod]
@@ -318,6 +347,8 @@ public class TiVoServiceTests
 
         // Assert
         TaskAssert.IsNotComplete(cleanUpTask, nameof(cleanUpTask));
+
+        Assert.IsFalse(PlayCommand.IsEnabled, nameof(PlayCommand.IsEnabled));
     }
 
     [TestMethod]
@@ -410,124 +441,134 @@ public class TiVoServiceTests
     }
 
     [TestMethod]
-    public void TiVoService_SendAsync_SendsCommandToTiVoConnection()
+    public void TiVoService_ExecuteAsync_SendsCommandToTiVoConnection()
     {
         // Arrange
-        const string input = "HELLO";
+        CreateSut();
 
-        ITiVoService sut = CreateSut();
-
-        Expect_MockConnection_SendAsync(input);
+        Expect_MockConnection_SendAsync(PlayCommand.CommandId);
 
         // Act
-        Task sendTask = sut.SendAsync(input, default);
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsComplete(sendTask, nameof(sendTask));
+        TaskAssert.IsComplete(executeTask, nameof(executeTask));
     }
 
     [TestMethod]
-    public void TiVoService_SendAsync_PassesCancellationTokenToConnection()
+    public void TiVoService_ExecuteAsync_PassesCancellationTokenToConnection()
     {
         // Arrange
-        const string input = "HELLO";
+        CreateSut();
 
-        ITiVoService sut = CreateSut();
-
-        CancellationToken cancelled = Expect_MockConnection_SendAsync_IsCanceled(input);
+        CancellationToken cancelled = Expect_MockConnection_SendAsync_IsCanceled(PlayCommand.CommandId);
 
         CancellationTokenSource cts = new();
-        Task sendTask = sut.SendAsync(input, cts.Token);
+        Task executeTask = PlayCommand.ExecuteAsync!(cts.Token);
 
         // Act
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsNotComplete(sendTask, nameof(sendTask));
+        TaskAssert.IsNotComplete(executeTask, nameof(executeTask));
         Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled));
     }
 
     [TestMethod]
-    public void TiVoService_SendAsync_WaitsForTiVoConnectionSendAsync()
+    public void TiVoService_ExecuteAsync_WaitsForTiVoConnectionSendAsync()
     {
         // Arrange
-        const string input = "HELLO";
-
-        ITiVoService sut = CreateSut();
+        CreateSut();
 
         MockConnection
-            .Setup(x => x.SendIRCommandAsync(input, It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendIRCommandAsync(PlayCommand.CommandId, It.IsAny<CancellationToken>()))
             .Returns(new TaskCompletionSource().Task)
             .Verifiable(Times.Once);
 
         // Act
-        Task sendTask = sut.SendAsync(input, default);
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsNotComplete(sendTask, nameof(sendTask));
+        TaskAssert.IsNotComplete(executeTask, nameof(executeTask));
     }
 
     [TestMethod]
-    public void TiVoService_SendAsync_CompletesWhenTiVoConnectionSendAsyncCompletes()
+    public void TiVoService_ExecuteAsync_CompletesWhenTiVoConnectionSendAsyncCompletes()
     {
         // Arrange
-        const string input = "HELLO";
-
-        ITiVoService sut = CreateSut();
+        CreateSut();
 
         TaskCompletionSource tcs = new TaskCompletionSource();
         MockConnection
-            .Setup(x => x.SendIRCommandAsync(input, It.IsAny<CancellationToken>()))
+            .Setup(x => x.SendIRCommandAsync(PlayCommand.CommandId, It.IsAny<CancellationToken>()))
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        Task sendTask = sut.SendAsync(input, default);
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Act
         tcs.SetResult();
 
         // Assert
-        TaskAssert.IsComplete(sendTask, nameof(sendTask));
+        TaskAssert.IsComplete(executeTask, nameof(executeTask));
     }
 
     [TestMethod]
-    public void TiVoService_SendAsync_ThrowsIfNotInitialized()
+    public void TiVoService_ExecuteAsync_ErrorIfNotInitialized()
     {
         // Arrange
-        const string input = "HELLO";
-
-        ITiVoService sut = CreateUninitializedSut();
-
         Expect_Locator_IsNotCalled();
         Expect_MockConnectionFactory_IsNotCalled();
 
-        Exception expectedError = Models.Errors.TiVo_NotInitialized(input);
+        CreateUninitializedSut();
+
+        Exception expectedException = Errors.CommandService_NotStarted(PlayCommand);
 
         // Act
-        Task sendTask = sut.SendAsync(input, default);
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsFaulted(sendTask, expectedError, nameof(sendTask));
+        TaskAssert.IsFaulted(executeTask, expectedException, nameof(executeTask));
     }
 
     [TestMethod]
-    public void TiVoService_SendAsync_ThrowsIfDisposed()
+    public void TiVoService_ExecuteAsync_ThrowsIfDisposed()
     {
         // Arrange
-        const string input = "HELLO";
+        IScopedLifecycle sut = CreateSut();
 
-        ITiVoService sut = CreateSut();
-
-        Exception expectedError = Models.Errors.TiVo_NotInitialized(input);
+        Exception expectedError = Errors.CommandService_WasShutDown(PlayCommand);
 
         Expect_MockConnection_Disposed();
-        ((IScopedLifecycle)sut).CleanUpAsync(default);
+        sut.CleanUpAsync(default);
 
         // Act
-        Task sendTask = sut.SendAsync(input, default);
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsFaulted(sendTask, expectedError, nameof(sendTask));
+        TaskAssert.IsFaulted(executeTask, expectedError, nameof(executeTask));
+    }
+
+    [TestMethod]
+    public void TiVoService_ExecuteAsync_ThrowsIfDisposing()
+    {
+        // Arrange
+        IScopedLifecycle sut = CreateSut();
+
+        Exception expectedError = Errors.CommandService_WasShutDown(PlayCommand);
+
+        MockConnection
+            .Setup(x => x.DisposeAsync(It.IsAny<CancellationToken>()))
+            .Returns(new TaskCompletionSource().Task)
+            .Verifiable(Times.Once);
+
+        sut.CleanUpAsync(default);
+
+        // Act
+        Task executeTask = PlayCommand.ExecuteAsync!(default);
+
+        // Assert
+        TaskAssert.IsFaulted(executeTask, expectedError, nameof(executeTask));
     }
 
     private void Expect_MockConnection_SendAsync(string expectedCommand, Task? result = default)

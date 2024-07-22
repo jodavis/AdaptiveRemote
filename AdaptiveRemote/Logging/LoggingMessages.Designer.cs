@@ -126,6 +126,42 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Authenticated successfully with device at {0}.
+        /// </summary>
+        internal static string BroadlinkCommandService_Authenticated {
+            get {
+                return ResourceManager.GetString("BroadlinkCommandService_Authenticated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Authenticating with device at {0}.
+        /// </summary>
+        internal static string BroadlinkCommandService_Authenticating {
+            get {
+                return ResourceManager.GetString("BroadlinkCommandService_Authenticating", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ready to send commands.
+        /// </summary>
+        internal static string BroadlinkCommandService_Ready {
+            get {
+                return ResourceManager.GetString("BroadlinkCommandService_Ready", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Searching for Broadlink devices....
+        /// </summary>
+        internal static string BroadlinkCommandService_SearchingForDevice {
+            get {
+                return ResourceManager.GetString("BroadlinkCommandService_SearchingForDevice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cancelled executing {0}.
         /// </summary>
         internal static string CommandService_Cancelled {
@@ -159,6 +195,42 @@ namespace AdaptiveRemote.Logging {
         internal static string CommandService_Executing {
             get {
                 return ResourceManager.GetString("CommandService_Executing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because the service has not been started.
+        /// </summary>
+        internal static string CommandService_NotStarted {
+            get {
+                return ResourceManager.GetString("CommandService_NotStarted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because the service has been shut down.
+        /// </summary>
+        internal static string CommandService_WasShutDown {
+            get {
+                return ResourceManager.GetString("CommandService_WasShutDown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because it is not enabled.
+        /// </summary>
+        internal static string ConversationController_CommandDisabled {
+            get {
+                return ResourceManager.GetString("ConversationController_CommandDisabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not execute {0} because it is missing its execute action.
+        /// </summary>
+        internal static string ConversationController_CommandMissingExecuteAction {
+            get {
+                return ResourceManager.GetString("ConversationController_CommandMissingExecuteAction", resourceCulture);
             }
         }
         
@@ -540,7 +612,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Event received: {0}.
+        ///   Looks up a localized string similar to Received event code &quot;{0}&quot; in response to &quot;{1}&quot;: &quot;{2}&quot;.
         /// </summary>
         internal static string TiVoConnection_EventReceived {
             get {
@@ -563,6 +635,60 @@ namespace AdaptiveRemote.Logging {
         internal static string TiVoConnection_MessageSent {
             get {
                 return ResourceManager.GetString("TiVoConnection_MessageSent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: Cancelled.
+        /// </summary>
+        internal static string UdpService_Cancelled {
+            get {
+                return ResourceManager.GetString("UdpService_Cancelled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: Failed: {1}.
+        /// </summary>
+        internal static string UdpService_Failed {
+            get {
+                return ResourceManager.GetString("UdpService_Failed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: Received {1} bytes from {2}.
+        /// </summary>
+        internal static string UdpService_ReceivedResponse {
+            get {
+                return ResourceManager.GetString("UdpService_ReceivedResponse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: Sending {1} bytes to {2}.
+        /// </summary>
+        internal static string UdpService_Sending {
+            get {
+                return ResourceManager.GetString("UdpService_Sending", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: Sent, waiting for response.
+        /// </summary>
+        internal static string UdpService_Sent {
+            get {
+                return ResourceManager.GetString("UdpService_Sent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0}: Unexpected {1}.
+        /// </summary>
+        internal static string UdpService_UnexpectedError {
+            get {
+                return ResourceManager.GetString("UdpService_UnexpectedError", resourceCulture);
             }
         }
     }
