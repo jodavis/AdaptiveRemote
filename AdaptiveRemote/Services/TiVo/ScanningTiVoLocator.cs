@@ -4,11 +4,11 @@ using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.TiVo;
 
-internal class StaticTiVoLocator : ITiVoLocator
+internal class ScanningTiVoLocator : ITiVoLocator
 {
     private readonly TiVoSettings _settings;
 
-    public StaticTiVoLocator(IOptionsSnapshot<TiVoSettings> settings)
+    public ScanningTiVoLocator(IOptionsSnapshot<TiVoSettings> settings)
     {
         _settings = settings.Value;
     }
