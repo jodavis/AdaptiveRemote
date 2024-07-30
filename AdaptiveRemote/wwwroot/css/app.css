@@ -4,20 +4,21 @@ body {
   font-size: 36pt;
   font-weight: bold;
   margin: 0;
+  background-color: #222;
 }
 h1:focus {
   outline: none;
 }
 a,
 .btn-link {
-  color: #0071c1;
+  color: #6bc1fd;
 }
 div.conversation-border {
   pointer-events: none;
   position: fixed;
   top: -20px;
   left: -20px;
-  border-color: red;
+  border-color: #ffea00;
   border-style: solid;
   border-width: 30px;
   border-radius: 40px;
@@ -28,7 +29,7 @@ div.conversation-border div {
   margin: -10px;
 }
 div.conversation-status-message {
-  color: red;
+  color: #ffea00;
 }
 div.conversation-speaking-message,
 div.conversation-status-message {
@@ -43,21 +44,21 @@ div.conversation-speaking-message {
   margin: -5px;
 }
 .btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #0f3b68;
+  color: #222;
   border-radius: 10px;
   font-size: 36pt;
   font-weight: bold;
+  background-color: #62b0ff;
+  border-color: #007dfb;
 }
 .btn-primary:hover {
-  background-color: #2e87e2;
+  background-color: #7cbdff;
 }
 .btn-primary:active {
-  background-color: #88bbee;
+  background-color: #afd6ff;
 }
 .btn-primary.btn-active {
-  background-color: #88bbee;
+  background-color: #afd6ff;
 }
 .btn-primary.btn-disabled {
   background-color: #888888;
@@ -133,9 +134,21 @@ div.conversation-speaking-message {
   grid-column: 1;
   margin: 20px;
   background-color: darkred;
+  border-color: #250000;
+}
+#ROOT #DPAD #POWER:hover {
+  background-color: #a40000;
+}
+#ROOT #DPAD #POWER:active {
+  background-color: #d70000;
+}
+#ROOT #DPAD #POWER.btn-active {
+  background-color: #d70000;
 }
 #ROOT #DPAD #POWER.btn-disabled {
   background-color: #888888;
+  color: #d4d4d4;
+  border-color: #555555;
 }
 #ROOT #DPAD #POWERON {
   display: none;
@@ -209,7 +222,7 @@ div.conversation-speaking-message {
   grid-column: 1;
   font-size: 36pt;
   font-weight: bold;
-  color: black;
+  color: #62b0ff;
   content: "Channel";
   text-align: center;
 }
@@ -218,7 +231,7 @@ div.conversation-speaking-message {
   grid-column: 3;
   font-size: 36pt;
   font-weight: bold;
-  color: black;
+  color: #62b0ff;
   content: "Volume";
   text-align: center;
 }
