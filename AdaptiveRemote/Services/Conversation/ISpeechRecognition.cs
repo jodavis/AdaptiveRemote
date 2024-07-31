@@ -7,4 +7,6 @@ internal interface ISpeechRecognition
     Task<bool> ListenForYesNoAsync(CancellationToken cancellationToken);
 
     IAsyncEnumerable<IRecognitionResult> ListenForCommandsAsync(CancellationToken cancellationToken);
+
+    void ToggleListening();
 }

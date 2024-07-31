@@ -84,6 +84,8 @@ internal class ConversationController : IScopedLifecycle
         int errorCount = 0;
         while (true)
         {
+            _viewModel.ToggleListening = _speechRecognition.ToggleListening;
+
             try
             {
                 await ListenAsync(commands, cancellationToken);
@@ -108,6 +110,10 @@ internal class ConversationController : IScopedLifecycle
                 {
                     _logger.LogWarning(Message.ConversationController_Retrying, errorCount);
                 }
+            }
+            finally
+            {
+                _viewModel.ToggleListening = null;
             }
         }
     }
