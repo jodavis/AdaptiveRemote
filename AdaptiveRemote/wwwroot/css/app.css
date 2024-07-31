@@ -6,13 +6,6 @@ body {
   margin: 0;
   background-color: #222;
 }
-h1:focus {
-  outline: none;
-}
-a,
-.btn-link {
-  color: #6bc1fd;
-}
 div.conversation-border {
   pointer-events: none;
   position: fixed;
@@ -31,17 +24,21 @@ div.conversation-border div {
 div.conversation-status-message {
   color: #ffea00;
 }
-div.conversation-speaking-message,
 div.conversation-status-message {
   text-align: center;
-  vertical-align: middle;
   padding: 20px;
 }
 div.conversation-speaking-message {
-  background-color: burlywood;
+  background-color: #222;
   border-radius: 10px;
-  border: 5px solid red;
+  border: 5px solid #ffea00;
   margin: -5px;
+  color: white;
+  padding: 40px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 .btn-primary {
   color: #222;
