@@ -374,6 +374,60 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Setting {0}={1}.
+        /// </summary>
+        internal static string ProgrammaticSettings_AddSetting {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_AddSetting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loaded {0} settings from {1}.
+        /// </summary>
+        internal static string ProgrammaticSettings_LoadedExistingSettings {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_LoadedExistingSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loading existing settings from {0}.
+        /// </summary>
+        internal static string ProgrammaticSettings_LoadingExistingSettings {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_LoadingExistingSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Replacing {0}={1} with {0}={2}.
+        /// </summary>
+        internal static string ProgrammaticSettings_ReplaceSetting {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_ReplaceSetting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saved settings to {0}.
+        /// </summary>
+        internal static string ProgrammaticSettings_SavedSettings {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_SavedSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saving {0} settings to {1}.
+        /// </summary>
+        internal static string ProgrammaticSettings_SavingSettings {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_SavingSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Startup canceled.
         /// </summary>
         internal static string ScopedBackgroundProcess_CanceledBeforeStarted {

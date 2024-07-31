@@ -257,6 +257,30 @@ Last error: {1}</value>
 {0}</value>
     <comment>0=Exception</comment>
   </data>
+  <data name="ProgrammaticSettings_AddSetting" xml:space="preserve">
+    <value>Setting {0}={1}</value>
+    <comment>0=Setting name,1=Setting value</comment>
+  </data>
+  <data name="ProgrammaticSettings_LoadedExistingSettings" xml:space="preserve">
+    <value>Loaded {0} settings from {1}</value>
+    <comment>0=Settings file path,1=Number of settings</comment>
+  </data>
+  <data name="ProgrammaticSettings_LoadingExistingSettings" xml:space="preserve">
+    <value>Loading existing settings from {0}</value>
+    <comment>0=Settings file path</comment>
+  </data>
+  <data name="ProgrammaticSettings_ReplaceSetting" xml:space="preserve">
+    <value>Replacing {0}={1} with {0}={2}</value>
+    <comment>0=Setting name,1=Old value,2=New value</comment>
+  </data>
+  <data name="ProgrammaticSettings_SavedSettings" xml:space="preserve">
+    <value>Saved settings to {0}</value>
+    <comment>0=Settings file path</comment>
+  </data>
+  <data name="ProgrammaticSettings_SavingSettings" xml:space="preserve">
+    <value>Saving {0} settings to {1}</value>
+    <comment>0=Settings file path,1=Number of settings</comment>
+  </data>
   <data name="ScopedBackgroundProcess_CanceledBeforeStarted" xml:space="preserve">
     <value>Startup canceled</value>
   </data>
