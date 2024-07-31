@@ -108,9 +108,28 @@ internal class MockFileSystem : Mock<IFileSystem>
 
         // OpenWrite defaults to Create behavior, so always create a new stream
         MemoryStream fileStream = new MemoryStream();
-        _files.Add(path, fileStream);
+        _files[path] = fileStream;
 
         return new DoNotDisposeStream(fileStream, canWrite: true);
+    }
+
+    internal void VerifyFileContents(string path, string expectedContent)
+    {
+        Assert.IsTrue(_files.TryGetValue(path, out Stream? fileStream), "Expected file was not found: {0}", path);
+
+        long restorePosition = fileStream.Position;
+        string actualContent;
+        try
+        {
+            fileStream.Position = 0;
+            actualContent = new StreamReader(fileStream).ReadToEnd();
+        }
+        finally
+        {
+            fileStream.Position = restorePosition;
+        }
+
+        Assert.AreEqual(expectedContent, actualContent, "File content for {0}", path);
     }
 
     private class DoNotDisposeStream : Stream
