@@ -11,8 +11,6 @@ namespace AdaptiveRemote.Services.Conversation;
 
 internal class SpeechRecognition : ISpeechRecognition, IDisposable
 {
-    private static readonly string[] SemanticKeyList = ["command", "repeat", "system"];
-
     private readonly ISpeechRecognitionEngine _engine;
     private readonly IListeningController _listeningController;
     private readonly ILogger _logger;
@@ -84,11 +82,6 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         if (e.Result.ContainsSemanticValue("command"))
         {
             _commandChannel.Writer.TryWrite(e.Result);
-        }
-
-        if (_settings.RecordSamples)
-        {
-            RecordSpeechSample(e.Result);
         }
     }
 
@@ -262,30 +255,11 @@ internal class SpeechRecognition : ISpeechRecognition, IDisposable
         UnloadGrammar(_commandsGrammar);
     }
 
-    private void RecordSpeechSample(IRecognitionResult result)
+    public void ToggleListening()
     {
-        string outputPath = _settings.RecordingOutputPath ?? ".";
-        string userName = _settings.RecordingUserName ?? "User";
-
-        string text = result.Text.ToPascalCase();
-        string fileName = $"{userName}_{text}_{DateTime.Now:hhmmss}";
-        string path = $"{outputPath}\\{fileName}.wav";
-        using (Stream waveStream = File.OpenWrite(path))
+        if (!_attentionTcs.TrySetResult())
         {
-            result.WriteToWaveStream(waveStream);
-            waveStream.Flush();
-        }
-
-        string dataRowsPath = $"{outputPath}\\Datarows.txt";
-        string semantics = string.Join(",", SemanticKeyList
-            .Select(key => result.TryGetSemanticValue(key, out string? value) ? $"{key}={value}" : null)
-            .OfType<string>());
-
-        using (Stream dataRowsStream = File.Open(dataRowsPath, FileMode.Append))
-        {
-            StreamWriter writer = new(dataRowsStream);
-            writer.WriteLine($"    [DataRow(\"{fileName}\", \"{result.Text}\", \"{semantics}\", DisplayName = \"{fileName}\")]");
-            writer.Flush();
+            _commandChannel.Writer.TryComplete();
         }
     }
 }

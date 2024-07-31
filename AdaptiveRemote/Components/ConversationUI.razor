@@ -8,7 +8,14 @@
     <div class="conversation-speaking-message"><span>"@SpeakingMessage"</span></div>
 }
 
-<div class="conversation-status-message">@StatusMessage</div>
+@if (ToggleListening is not null)
+{
+    <div class="conversation-status-message clickable" @onclick="@ToggleListening">@StatusMessage</div>
+}
+else 
+{
+    <div class="conversation-status-message">@StatusMessage</div>
+}
 
 @code {
     [Parameter]
@@ -17,6 +24,7 @@
     private bool IsListening => ViewModel?.IsListening ?? false;
     private string? StatusMessage => ViewModel?.StatusMessage;
     private string? SpeakingMessage => ViewModel?.SpeakingMessage;
+    private Action? ToggleListening => ViewModel?.ToggleListening;
 
     protected override void OnInitialized()
     {

@@ -14,6 +14,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     private readonly ILogger<SpeechRecognitionEngine> _logger;
 
     private event EventHandler<RecognitionResultEventArgs>? _speechRecognized;
+    private event EventHandler<RecognitionResultEventArgs>? _speechRejected;
 
     public SpeechRecognitionEngineWrapper(ILogger<SpeechRecognitionEngine> logger, IAudioConfigurationService audioConfiguration)
     {
@@ -30,12 +31,15 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
         _engine.SpeechRecognized += OnSpeechRecognized;
 
         _engine.SpeechRecognized += BroadcastSpeechRecognized;
+        _engine.SpeechRecognitionRejected += BroadcastSpeechRejected;
 
         audioConfiguration.Configure(_engine);
     }
 
     private void BroadcastSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
         => _speechRecognized?.Invoke(this, new RecognitionResultEventArgs(WrapRequired(e.Result)));
+    private void BroadcastSpeechRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
+        => _speechRejected?.Invoke(this, new RecognitionResultEventArgs(WrapRequired(e.Result)));
 
     public void LoadGrammar(Grammar grammar) => _engine.LoadGrammar(grammar);
     public void UnloadGrammar(Grammar grammar) => _engine.UnloadGrammar(grammar);
@@ -47,6 +51,12 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     {
         add => _speechRecognized += value;
         remove => _speechRecognized -= value;
+    }
+
+    public event EventHandler<RecognitionResultEventArgs> SpeechRejected
+    {
+        add => _speechRejected += value;
+        remove => _speechRejected -= value;
     }
 
     public event EventHandler<RecognitionErrorEventArgs> RecognitionError

@@ -1,0 +1,47 @@
+[09:44:48] AudioState:Speech
+[09:44:48] Detected: 00:00:04.6800000
+[09:44:48] Hypothesized: Text: I'm
+   Words: [a͡im 0.058415167]
+   Confidence: 0.058415167
+   Alternates: 'I'm:0.058415167'
+   Homophones: ''
+   Semantics: 
+   Grammar: Commands
+[09:44:48] Hypothesized: Text: Right
+   Words: [ɻa͡it 0.84695786]
+   Confidence: 0.84695786
+   Alternates: 'Right:0.84695786'
+   Homophones: ''
+   Semantics: 
+   Grammar: Commands
+[09:44:49] Hypothesized: Text: I'm
+   Words: [a͡im 0.12958327]
+   Confidence: 0.12958327
+   Alternates: 'I'm:0.12958327'
+   Homophones: ''
+   Semantics: 
+   Grammar: Commands
+[09:44:49] Hypothesized: Text: I'm Done
+   Words: [a͡im 0.582538/dʌn 0.002558116]
+   Confidence: 0.41682947
+   Alternates: 'I'm Done:0.41682947'
+   Homophones: ''
+   Semantics: 
+   Grammar: Commands
+[09:44:50] Hypothesized: Text: Right one time
+   Words: [ɻa͡it 0.84695786/wɑn 0.003794939/ta͡im 0.72641915]
+   Confidence: 0.5199799
+   Alternates: 'Right one time:0.5199799'
+   Homophones: ''
+   Semantics: 
+   Grammar: Commands
+[09:44:50] AudioSignalProblemOccurred:TooSoft at 00:00:06.6200000 (0) with AudioLevel:00:00:06.9200000
+[09:44:50] AudioSignalProblemOccurred:TooSlow at 00:00:06.6200000 (0) with AudioLevel:00:00:06.9200000
+[09:44:50] AudioState:Silence
+[09:44:50] Recognition rejected: Text: Right one time
+   Words: [ɻa͡it 0.84695786/wɑn 0.003794939/ta͡im 0.72641915]
+   Confidence: 0.5199799
+   Alternates: 'Right one time:0.5199799', 'I'm Done:0.4592218', 'Guide:0.5199799'
+   Homophones: ''
+   Semantics: command:Right, repeat:1
+   Grammar: Commands

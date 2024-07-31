@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.Configuration;
 
@@ -26,6 +27,7 @@ internal static class ConversationHostBuilderExtensions
         => services
             .AddConversationServices()
             .OptionallyAddFakeSpeechRecognition(config)
+            .OptionallyAddSamplesRecorder(config)
             .Configure<ConversationSettings>(config);
 
     private static Models.ConversationView GetConversationViewModel(IServiceProvider provider)
@@ -35,7 +37,14 @@ internal static class ConversationHostBuilderExtensions
     }
 
     private static IServiceCollection OptionallyAddFakeSpeechRecognition(this IServiceCollection services, IConfiguration config)
-        => config.GetValue<bool>("UseFakes") == true
+        => config.GetValue<bool>(nameof(ConversationSettings.Fake)) == true
             ? services.AddSingleton<ISpeechRecognitionEngine, FakeSpeechRecognitionEngine>()
             : services;
+
+    private static IServiceCollection OptionallyAddSamplesRecorder(this IServiceCollection services, IConfiguration config)
+        => config.GetValue<bool>(nameof(ConversationSettings.RecordSamples)) == false
+            ? services
+            : services
+                .AddHostedService<SamplesRecorder>()
+                .AddSingleton<ILoggerProvider, SamplesRecorder.LoggerProvider>();
 }
