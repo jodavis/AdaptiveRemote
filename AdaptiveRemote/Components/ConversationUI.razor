@@ -5,12 +5,10 @@
 
 @if (SpeakingMessage is not null)
 {
-    <div class="conversation-speaking-message">"@SpeakingMessage"</div>
+    <div class="conversation-speaking-message"><span>"@SpeakingMessage"</span></div>
 }
-else
-{
-    <div class="conversation-status-message">@StatusMessage</div>
-}
+
+<div class="conversation-status-message">@StatusMessage</div>
 
 @code {
     [Parameter]
