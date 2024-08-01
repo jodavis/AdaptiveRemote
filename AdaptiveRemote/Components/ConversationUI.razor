@@ -30,7 +30,7 @@ else
     {
         if (ViewModel is not null)
         {
-            ViewModel.PropertyChanged += (sender, args) => StateHasChanged();
+            ViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
         }
 
         base.OnInitialized();

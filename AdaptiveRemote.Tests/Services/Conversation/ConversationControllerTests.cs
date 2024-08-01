@@ -44,10 +44,16 @@ public class ConversationControllerTests
         => $"Warning[206]: {string.Format(LoggingMessages.ConversationController_Retrying, times)}";
     private static string Expected_RetryLimitReached(int times)
         => $"Warning[205]: {string.Format(LoggingMessages.ConversationController_RetryLimitReached, times)}";
+    private static string Expected_Starting
+        => $"Information[1201]: {LoggingMessages.ScopedBackgroundProcess_Starting}";
+    private static string Expected_Started
+        => $"Information[1202]: {LoggingMessages.ScopedBackgroundProcess_Started}";
     private static string Expected_Stopping
-        => $"Information[202]: {LoggingMessages.ConversationController_Stopping}";
+        => $"Information[1203]: {LoggingMessages.ScopedBackgroundProcess_Stopping}";
     private static string Expected_Stopped
-        => $"Information[203]: {LoggingMessages.ConversationController_Stopped}";
+        => $"Information[1204]: {LoggingMessages.ScopedBackgroundProcess_Stopped}";
+    private static string Expected_StoppedEarly
+        => $"Warning[1205]: {LoggingMessages.ScopedBackgroundProcess_StoppedEarly}";
     private static string Expected_CommandMissingExecuteAction(string command)
         => $"Error[213]: {string.Format(LoggingMessages.ConversationController_CommandMissingExecuteAction, command)}";
     private static string Expected_CommandDisabled(string command)
@@ -174,7 +180,9 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            Expected_ErrorDuringStartup(exception));
+            Expected_Starting,
+            Expected_ErrorDuringStartup(exception),
+            Expected_StoppedEarly);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -197,7 +205,9 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            Expected_ListenForAttention);
+            Expected_Starting,
+            Expected_ListenForAttention,
+            Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -228,7 +238,9 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            Expected_ListenForAttention);
+            Expected_Starting,
+            Expected_ListenForAttention,
+            Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -236,7 +248,7 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_OnAttention_CancelsSayingImListeningIfStopped()
+    public void ConversationController_OnAttention_CleanUpWaitsForSayingImListening()
     {
         // Arrange
         ConversationController sut = CreateSut();
@@ -249,18 +261,30 @@ public class ConversationControllerTests
 
         MockSynthesis
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
-            .Callback(delegate (string phrase, CancellationToken cancellation) { cancellation.Register(tcs.SetCanceled); })
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
-        sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(default);
 
         // Assert
+        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
+            Expected_Stopping);
+
+        // Act
+        tcs.SetResult();
+
+        MockLogger.VerifyMessages(
+            Expected_Starting,
+            Expected_ListenForAttention,
+            Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
 
@@ -296,8 +320,10 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
-            Expected_ListenForCommands);
+            Expected_ListenForCommands,
+            Expected_Started);
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -342,10 +368,12 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
             Expected_Recognized(result.Object.Text, Command1.Name),
-            Expected_Executing(Command1.Name));
+            Expected_Executing(Command1.Name),
+            Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -374,14 +402,16 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_ListenForCommands,
             Expected_Recognized(result.Object.Text, result.Object.Text),
             Expected_UnknownCommand("Not a command"));
@@ -421,14 +451,16 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_ListenForCommands,
             Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
@@ -471,14 +503,16 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_ListenForCommands,
             Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
@@ -490,7 +524,7 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_OnCompletedFirstCommand_CancelsWhileAnnouncingSent()
+    public void ConversationController_OnCompletedFirstCommand_CleanUpWaitsForSayingSent()
     {
         // Arrange
         ConversationController sut = CreateSut();
@@ -512,7 +546,6 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
         MockSynthesis
             .Setup(x => x.SayAsync(Phrases.Conversation_Sent(Command1.Name), It.IsAny<CancellationToken>()))
-            .Callback(delegate (string phrase, CancellationToken cancellation) { cancellation.Register(tcs.SetCanceled); })
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
@@ -521,18 +554,38 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
-        sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(default);
 
         // Assert
+        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
             Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
+            Expected_Started,
+            Expected_Stopping);
+
+        // Act
+        tcs.SetResult();
+
+        // Assert
+        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+
+        MockLogger.VerifyMessages(
+            Expected_Starting,
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Recognized(result1.Object.Text, Command1.Name),
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name),
+            Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
 
@@ -571,14 +624,16 @@ public class ConversationControllerTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Exactly(3));
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_ListenForCommands,
             Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
@@ -618,14 +673,16 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_ListenForCommands);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -634,7 +691,7 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_OnAttentionAndStopListening_CancelsSayAsyncWhenStopped()
+    public void ConversationController_OnAttentionAndStopListening_CleanUpWaitsForSayAsync()
     {
         // Arrange
         ConversationController sut = CreateSut();
@@ -654,24 +711,40 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
         MockSynthesis
             .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
-            .Callback(delegate (string phrase, CancellationToken cancellation) { cancellation.Register(tcs.SetCanceled); })
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
-        sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(default);
 
         // Assert
+        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
+            Expected_Started,
+            Expected_Stopping);
+
+        // Act
+        tcs.SetResult();
+
+        // Assert
+        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+
+        MockLogger.VerifyMessages(
+            Expected_Starting,
+            Expected_ListenForAttention,
+            Expected_ListenForCommands,
+            Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
@@ -699,14 +772,16 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_ListenForCommands,
             Expected_ListenForAttention);
 
@@ -739,7 +814,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_StoppedListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Exactly(2));
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
         tcs.SetResult();
 
         // Act
@@ -747,7 +822,9 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_ListenForCommands,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
@@ -780,14 +857,16 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
         tcs.SetResult();
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_ListenForCommands,
             Expected_Error(exception),
             Expected_Retrying(1),
@@ -817,6 +896,7 @@ public class ConversationControllerTests
         // Assert
         string expectedErrorMessage = Expected_Error(exception);
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             expectedErrorMessage,
             Expected_Retrying(1),
@@ -846,7 +926,8 @@ public class ConversationControllerTests
             Expected_Retrying(9),
             Expected_ListenForAttention,
             expectedErrorMessage,
-            Expected_RetryLimitReached(10));
+            Expected_RetryLimitReached(10),
+            Expected_StoppedEarly);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -854,7 +935,7 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_StopWhileWaitingForAttention_CancelsWaitingForAttention()
+    public void ConversationController_CleanUpWhileWaitingForAttention_CancelsWaitingForAttention()
     {
         // Arrange
         ConversationController sut = CreateSut();
@@ -866,25 +947,29 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
-        sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(default);
 
         // Assert
+        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
-    public void ConversationController_StopCancelsListenForAttention_LogsStopped()
+    public void ConversationController_CleanUpCancelsListenForAttention_LogsStopped()
     {
         // Arrange
         ConversationController sut = CreateSut();
@@ -896,14 +981,18 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
-        sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(default);
 
         // Assert
+        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
+            Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
 
@@ -913,7 +1002,7 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_StopWhileWaitingForCommands_CancelsWaitingForCommands()
+    public void ConversationController_CleanUpWhileWaitingForCommands_CancelsWaitingForCommands()
     {
         // Arrange
         ConversationController sut = CreateSut();
@@ -933,21 +1022,25 @@ public class ConversationControllerTests
             .Returns(AsyncEnumerate(complete: false))
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
-        sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(default);
 
         // Assert
+        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
+            Expected_Started,
             Expected_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
@@ -975,9 +1068,10 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Stopped);
+            Expected_StoppedEarly);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -985,7 +1079,7 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_StopWhileExecutingCommand_CancelsExecutingCommand()
+    public void ConversationController_CleanUpWhileExecutingCommand_CancelsExecutingCommand()
     {
         // Arrange
         ConversationController sut = CreateSut();
@@ -1015,23 +1109,27 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
-        sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(default);
 
         // Assert
+        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
             Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
+            Expected_Started,
             Expected_Stopping);
 
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
@@ -1066,17 +1164,21 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
 
         // Act
-        sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(default);
 
         // Assert
+        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
             Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
+            Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
 
@@ -1111,14 +1213,18 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         // Act
-        sut.InitializeAsync(default);
+        Task resultTask = sut.InitializeAsync(default);
 
         // Assert
+        TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
             Expected_Recognized(result1.Object.Text, Command2.Name),
-            Expected_CommandMissingExecuteAction(Command2.Name));
+            Expected_CommandMissingExecuteAction(Command2.Name),
+            Expected_Started);
     }
 
     [TestMethod]
@@ -1149,14 +1255,18 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         // Act
-        sut.InitializeAsync(default);
+        Task resultTask = sut.InitializeAsync(default);
 
         // Assert
+        TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+
         MockLogger.VerifyMessages(
+            Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
             Expected_Recognized(result1.Object.Text, Command1.Name),
-            Expected_CommandDisabled(Command1.Name));
+            Expected_CommandDisabled(Command1.Name),
+            Expected_Started);
     }
 
     private static async IAsyncEnumerable<IRecognitionResult> AsyncEnumerate(bool complete, params IRecognitionResult[] commands)
