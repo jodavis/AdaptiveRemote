@@ -382,6 +382,61 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Terminated due to error
+        ///{0}.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Error {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Started.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Started {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Started", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starting.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Starting {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Starting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stopped.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Stopped {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Stopped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stopped early.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_StoppedEarly {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_StoppedEarly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stopping.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Stopping {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Stopping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} was cancelled..
         /// </summary>
         internal static string SpeechRecognition_CancelledListeningMethod {

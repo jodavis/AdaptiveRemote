@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-internal class ConversationController : IScopedLifecycle
+internal class ConversationController : ScopedBackgroundProcess
 {
     private readonly ConversationSettings _speechSettings;
     private readonly ISpeechRecognition _speechRecognition;
@@ -24,6 +24,7 @@ internal class ConversationController : IScopedLifecycle
         IRemoteDefinitionService definitionService,
         ILogger<ConversationController> logger,
         ConversationView viewModel)
+        : base("Conversation system", logger)
     {
         _speechSettings = options.Value;
         _speechRecognition = speechRecognition;
@@ -36,26 +37,11 @@ internal class ConversationController : IScopedLifecycle
         _viewModel.StatusMessage = Phrases.Conversation_WaitingForActivation;
     }
 
-    string IScopedLifecycle.Name => "Conversation system";
-
-    public Task InitializeAsync(CancellationToken cancellationToken)
+    public override Task CleanUpAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyDictionary<string, Command>? commands = GetCommands();
+        _viewModel.StatusMessage = "Shutting down...";
 
-        if (commands is not null)
-        {
-            _ = ListenWithRetriesAsync(commands, _stop.Token);
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public Task CleanUpAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation(Message.ConversationController_Stopping);
-        _stop.Cancel();
-
-        return Task.CompletedTask;
+        return base.CleanUpAsync(cancellationToken);
     }
 
     private IReadOnlyDictionary<string, Command>? GetCommands()
@@ -79,8 +65,14 @@ internal class ConversationController : IScopedLifecycle
         }
     }
 
-    private async Task ListenWithRetriesAsync(IReadOnlyDictionary<string, Command> commands, CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
+        IReadOnlyDictionary<string, Command>? commands = GetCommands();
+        if (commands is null)
+        {
+            return;
+        }
+
         int errorCount = 0;
         while (true)
         {
@@ -92,7 +84,6 @@ internal class ConversationController : IScopedLifecycle
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation(Message.ConversationController_Stopped);
                 break;
             }
             catch (Exception ex)
@@ -179,7 +170,7 @@ internal class ConversationController : IScopedLifecycle
             await SayAsync(Phrases.Conversation_ImListening, cancellationToken);
 
             _viewModel.IsListening = true;
-            _logger.LogInformation(Message.ConversationController_ListenForCommands);
+            _logger.LogInformation(Message.ConversationController_ListenForCommands, cancellationToken);
 
             await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
             {
@@ -242,7 +233,8 @@ internal class ConversationController : IScopedLifecycle
         {
             _viewModel.IsListening = false;
             _viewModel.SpeakingMessage = phrase;
-            await _speechSynthesis.SayAsync(phrase, cancellationToken);
+            await _speechSynthesis.SayAsync(phrase, default);
+            cancellationToken.ThrowIfCancellationRequested();
         }
         finally
         {

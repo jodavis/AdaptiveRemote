@@ -71,4 +71,10 @@ internal enum Message
     BroadlinkCommandService_Authenticating = 1002,
     BroadlinkCommandService_Authenticated = 1003,
     BroadlinkCommandService_Ready = 1004,
+    ScopedBackgroundProcess_Starting = 1201,
+    ScopedBackgroundProcess_Started = 1202,
+    ScopedBackgroundProcess_Stopping = 1203,
+    ScopedBackgroundProcess_Stopped = 1204,
+    ScopedBackgroundProcess_StoppedEarly = 1205,
+    ScopedBackgroundProcess_Error = 1206,
 }

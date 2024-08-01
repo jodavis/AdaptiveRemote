@@ -256,6 +256,26 @@
 {0}</value>
     <comment>0=Exception</comment>
   </data>
+  <data name="ScopedBackgroundProcess_Error" xml:space="preserve">
+    <value>Terminated due to error
+{0}</value>
+    <comment>0=Exception</comment>
+  </data>
+  <data name="ScopedBackgroundProcess_Started" xml:space="preserve">
+    <value>Started</value>
+  </data>
+  <data name="ScopedBackgroundProcess_Starting" xml:space="preserve">
+    <value>Starting</value>
+  </data>
+  <data name="ScopedBackgroundProcess_Stopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="ScopedBackgroundProcess_StoppedEarly" xml:space="preserve">
+    <value>Stopped early</value>
+  </data>
+  <data name="ScopedBackgroundProcess_Stopping" xml:space="preserve">
+    <value>Stopping</value>
+  </data>
   <data name="SpeechRecognitionEngine_AudioSignalProblemOccurred" xml:space="preserve">
     <value>AudioSignalProblemOccurred:{0} at {3} ({1}) with AudioLevel:{2}</value>
     <comment>0=Code for the audio problem that occurred;1=Recognizer position in the audio stream;2=Audio level at time of error;3=Position in the audio stream</comment>
