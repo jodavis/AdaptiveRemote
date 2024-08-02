@@ -44,7 +44,7 @@ internal class ConversationController : ScopedBackgroundProcess
         return base.CleanUpAsync(cancellationToken);
     }
 
-    private IReadOnlyDictionary<string, Command>? GetCommands()
+    private IReadOnlyDictionary<string, Command> GetCommands()
     {
         Dictionary<string, Command> commands = new(StringComparer.Ordinal);
         try
@@ -56,22 +56,16 @@ internal class ConversationController : ScopedBackgroundProcess
 
             return commands;
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(Message.ConversationController_ErrorDuringStartup, ex);
             _viewModel.StatusMessage = Phrases.Conversation_SystemFailed;
-
-            return null;
+            throw;
         }
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyDictionary<string, Command>? commands = GetCommands();
-        if (commands is null)
-        {
-            return;
-        }
+        IReadOnlyDictionary<string, Command> commands = GetCommands();
 
         int errorCount = 0;
         while (true)
@@ -88,18 +82,16 @@ internal class ConversationController : ScopedBackgroundProcess
             }
             catch (Exception ex)
             {
-                _logger.LogError(Message.ConversationController_Error, ex);
-
                 errorCount++;
                 if (errorCount >= _speechSettings.ErrorRetryLimit)
                 {
                     _logger.LogWarning(Message.ConversationController_RetryLimitReached, errorCount);
                     _viewModel.StatusMessage = Phrases.Conversation_SystemFailed;
-                    break;
+                    throw;
                 }
                 else
                 {
-                    _logger.LogWarning(Message.ConversationController_Retrying, errorCount);
+                    _logger.LogWarning(Message.ConversationController_Retrying, errorCount, ex);
                 }
             }
             finally
@@ -170,7 +162,7 @@ internal class ConversationController : ScopedBackgroundProcess
             await SayAsync(Phrases.Conversation_ImListening, cancellationToken);
 
             _viewModel.IsListening = true;
-            _logger.LogInformation(Message.ConversationController_ListenForCommands, cancellationToken);
+            _logger.LogInformation(Message.ConversationController_ListenForCommands);
 
             await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
             {
