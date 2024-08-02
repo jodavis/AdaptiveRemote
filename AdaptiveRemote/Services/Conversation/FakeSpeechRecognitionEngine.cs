@@ -22,6 +22,12 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         remove => _recognized -= value;
     }
 
+    event EventHandler<RecognitionResultEventArgs> ISpeechRecognitionEngine.SpeechRejected
+    {
+        add { }
+        remove { }
+    }
+
     event EventHandler<RecognitionErrorEventArgs> ISpeechRecognitionEngine.RecognitionError
     {
         add { }
@@ -75,6 +81,9 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
             yield return Command("Go up", "Up");
             yield return Command("Down three", "Down", 3);
             yield return Command("TiVo", "TiVo");
+            yield return Command("Louder 5 times", "VolumeUp", 5);
+            yield return Command("Mute", "Mute");
+            yield return Command("Volume Down 5", "VolumeDown", 5);
             yield return Command("Guide", "Guide");
             yield return Command("Go up", "Up");
             yield return Command("Down three", "Down", 3);

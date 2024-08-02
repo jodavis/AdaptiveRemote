@@ -22,4 +22,12 @@ internal static class HostBuilderExtensions
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle
         => services.AddScoped<IScopedLifecycle, ServiceType>();
+
+    internal static IHostBuilder AddNullCommandSupport<CommandType>(this IHostBuilder hostBuilder)
+        where CommandType : Models.Command
+        => hostBuilder.ConfigureServices(services => services.AddNullCommandService<CommandType>());
+
+    internal static IServiceCollection AddNullCommandService<CommandType>(this IServiceCollection services)
+        where CommandType : Models.Command
+        => services.AddScopedLifecycleService<NullCommandService<CommandType>>();
 }

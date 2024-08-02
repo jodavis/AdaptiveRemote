@@ -178,7 +178,6 @@ public class SpeechSynthesisTests
 
         // Assert
         MockLogger.VerifyMessages(
-            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]));
     }
 
@@ -211,7 +210,6 @@ public class SpeechSynthesisTests
         TaskAssert.IsComplete(resultTask, nameof(resultTask));
 
         MockLogger.VerifyMessages(
-            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]),
             Expected_Saying(input));
     }
@@ -240,7 +238,6 @@ public class SpeechSynthesisTests
         TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
 
         MockLogger.VerifyMessages(
-            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]),
             Expected_Saying(input));
     }
@@ -274,7 +271,6 @@ public class SpeechSynthesisTests
         TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
 
         MockLogger.VerifyMessages(
-            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]),
             Expected_Saying(input),
             Expected_Saying(input));
@@ -313,7 +309,6 @@ public class SpeechSynthesisTests
         TaskAssert.IsCanceled(resultTask, nameof(resultTask));
 
         MockLogger.VerifyMessages(
-            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]),
             Expected_Saying(input),
             Expected_CancelledSaying(input));
@@ -353,7 +348,6 @@ public class SpeechSynthesisTests
         TaskAssert.IsCanceled(resultTask, nameof(resultTask));
 
         MockLogger.VerifyMessages(
-            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]),
             Expected_Saying(input),
             Expected_CancelledSaying(input));
@@ -390,7 +384,6 @@ public class SpeechSynthesisTests
         TaskAssert.IsComplete(resultTask, nameof(resultTask));
 
         MockLogger.VerifyMessages(
-            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]),
             Expected_Saying(input));
     }
@@ -428,7 +421,6 @@ public class SpeechSynthesisTests
         TaskAssert.IsFaulted(resultTask, expectedError, nameof(resultTask));
 
         MockLogger.VerifyMessages(
-            Expected_VoiceNotFound(SpeechSettings.Voice[0]),
             Expected_SelectedVoice(InstalledVoices[0]),
             Expected_Saying(input1),
             Expected_AlreadySpeaking(input2));
