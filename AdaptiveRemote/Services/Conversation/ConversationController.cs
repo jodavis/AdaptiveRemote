@@ -12,7 +12,6 @@ internal class ConversationController : ScopedBackgroundProcess
     private readonly ISpeechRecognition _speechRecognition;
     private readonly ISpeechSynthesis _speechSynthesis;
     private readonly IRemoteDefinitionService _definitionService;
-    private readonly ILogger<ConversationController> _logger;
     private readonly ConversationView _viewModel;
 
     private readonly CancellationTokenSource _stop = new();
@@ -30,7 +29,6 @@ internal class ConversationController : ScopedBackgroundProcess
         _speechRecognition = speechRecognition;
         _speechSynthesis = speechSynthesis;
         _definitionService = definitionService;
-        _logger = logger;
         _viewModel = viewModel;
 
         _viewModel.IsListening = false;
@@ -85,13 +83,13 @@ internal class ConversationController : ScopedBackgroundProcess
                 errorCount++;
                 if (errorCount >= _speechSettings.ErrorRetryLimit)
                 {
-                    _logger.LogWarning(Message.ConversationController_RetryLimitReached, errorCount);
+                    Logger.LogWarning(Message.ConversationController_RetryLimitReached, errorCount);
                     _viewModel.StatusMessage = Phrases.Conversation_SystemFailed;
                     throw;
                 }
                 else
                 {
-                    _logger.LogWarning(Message.ConversationController_Retrying, errorCount, ex);
+                    Logger.LogWarning(Message.ConversationController_Retrying, errorCount, ex);
                 }
             }
             finally
@@ -111,7 +109,7 @@ internal class ConversationController : ScopedBackgroundProcess
             {
                 if (result.TryGetSemanticValue("command", out string? commandName))
                 {
-                    _logger.LogInformation(Message.ConversationController_Recognized, result.Text, commandName);
+                    Logger.LogInformation(Message.ConversationController_Recognized, result.Text, commandName);
 
                     if (commands.TryGetValue(commandName, out Command? command))
                     {
@@ -121,7 +119,7 @@ internal class ConversationController : ScopedBackgroundProcess
                     }
                     else
                     {
-                        _logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
+                        Logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
                     }
                 }
             }
@@ -144,7 +142,7 @@ internal class ConversationController : ScopedBackgroundProcess
         try
         {
             _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
-            _logger.LogInformation(Message.ConversationController_ListenForAttention);
+            Logger.LogInformation(Message.ConversationController_ListenForAttention);
 
             await _speechRecognition.ListenForAttentionAsync(cancellationToken);
         }
@@ -162,7 +160,7 @@ internal class ConversationController : ScopedBackgroundProcess
             await SayAsync(Phrases.Conversation_ImListening, cancellationToken);
 
             _viewModel.IsListening = true;
-            _logger.LogInformation(Message.ConversationController_ListenForCommands);
+            Logger.LogInformation(Message.ConversationController_ListenForCommands);
 
             await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
             {
@@ -183,12 +181,12 @@ internal class ConversationController : ScopedBackgroundProcess
         Command.ExecuteDelegate? executeAsync = command.ExecuteAsync;
         if (executeAsync is null)
         {
-            _logger.LogError(Message.ConversationController_CommandMissingExecuteAction, command.Name);
+            Logger.LogError(Message.ConversationController_CommandMissingExecuteAction, command.Name);
             await SayAsync(Phrases.Conversation_CommandDisabled(command.Name), cancellationToken);
         }
         else if (!command.IsEnabled)
         {
-            _logger.LogError(Message.ConversationController_CommandDisabled, command.Name);
+            Logger.LogError(Message.ConversationController_CommandDisabled, command.Name);
             await SayAsync(Phrases.Conversation_CommandDisabled(command.Name), cancellationToken);
         }
         else
@@ -202,11 +200,11 @@ internal class ConversationController : ScopedBackgroundProcess
             {
                 for (int i = 0; i < repeat; i++)
                 {
-                    _logger.LogInformation(Message.ConversationController_Executing, command.Name);
+                    Logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
                     await executeAsync(cancellationToken);
 
-                    _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+                    Logger.LogInformation(Message.ConversationController_Executed, command.Name);
                 }
 
                 await sayTask;

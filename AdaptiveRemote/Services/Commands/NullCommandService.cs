@@ -7,12 +7,8 @@ internal class NullCommandService<CommandType> : CommandServiceBase<CommandType>
     where CommandType : Command
 {
     public NullCommandService(IRemoteDefinitionService remoteDefinition, ILogger<NullCommandService<CommandType>> logger)
-        : base($"Null {typeof(CommandType).Name}s", remoteDefinition)
-    {
-        Logger = logger;
-    }
-
-    protected override ILogger Logger { get; }
+        : base($"Null {typeof(CommandType).Name}s", remoteDefinition, logger)
+    { }
 
     protected override Command.ExecuteDelegate CreateHandler(CommandType command)
     {

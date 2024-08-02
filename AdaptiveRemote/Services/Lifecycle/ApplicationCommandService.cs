@@ -9,13 +9,10 @@ internal class ApplicationCommandService : CommandServiceBase<ApplicationCommand
     private readonly IHostApplicationLifetime _applicationLifetime;
 
     public ApplicationCommandService(IHostApplicationLifetime applicationLifetime, IRemoteDefinitionService remoteDefinition, ILogger<ApplicationCommandService> logger)
-        : base("Application Commands", remoteDefinition)
+        : base("Application Commands", remoteDefinition, logger)
     {
         _applicationLifetime = applicationLifetime;
-        Logger = logger;
     }
-
-    protected override ILogger Logger { get; }
 
     protected override Command.ExecuteDelegate CreateHandler(ApplicationCommand command)
         => command.Name switch

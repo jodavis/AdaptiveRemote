@@ -15,15 +15,12 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         IDeviceLocator deviceLocator,
         IDeviceConnection.Factory connectionFactory,
         IRemoteDefinitionService definitionService,
-        ILogger<BroadlinkCommandService> _logger)
-        : base("Broadlink IR Commands", definitionService)
+        ILogger<BroadlinkCommandService> logger)
+        : base("Broadlink IR Commands", definitionService, logger)
     {
         _deviceLocator = deviceLocator;
         _connectionFactory = connectionFactory;
-        Logger = _logger;
     }
-
-    protected override ILogger Logger { get; }
 
     public async override Task InitializeAsync(CancellationToken cancellationToken)
     {
