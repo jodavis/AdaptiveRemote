@@ -36,12 +36,8 @@ public class ConversationControllerTests
         => $"Information[211]: {string.Format(LoggingMessages.ConversationController_Executed, command)}";
     private static string Expected_UnknownCommand(string command)
         => $"Error[208]: {string.Format(LoggingMessages.ConversationController_UnknownCommand, command)}";
-    private static string Expected_ErrorDuringStartup(Exception error)
-        => $"Error[201]: {string.Format(LoggingMessages.ConversationController_ErrorDuringStartup, error)}";
-    private static string Expected_Error(Exception error)
-        => $"Error[204]: {string.Format(LoggingMessages.ConversationController_Error, error)}";
-    private static string Expected_Retrying(int times)
-        => $"Warning[206]: {string.Format(LoggingMessages.ConversationController_Retrying, times)}";
+    private static string Expected_Retrying(int times, Exception latestError)
+        => $"Warning[206]: {string.Format(LoggingMessages.ConversationController_Retrying, times, latestError)}";
     private static string Expected_RetryLimitReached(int times)
         => $"Warning[205]: {string.Format(LoggingMessages.ConversationController_RetryLimitReached, times)}";
     private static string Expected_Starting
@@ -54,6 +50,8 @@ public class ConversationControllerTests
         => $"Information[1204]: {LoggingMessages.ScopedBackgroundProcess_Stopped}";
     private static string Expected_StoppedEarly
         => $"Warning[1205]: {LoggingMessages.ScopedBackgroundProcess_StoppedEarly}";
+    private static string Expected_Error(Exception error)
+        => $"Error[1206]: {string.Format(LoggingMessages.ScopedBackgroundProcess_Error, error)}";
     private static string Expected_CommandMissingExecuteAction(string command)
         => $"Error[213]: {string.Format(LoggingMessages.ConversationController_CommandMissingExecuteAction, command)}";
     private static string Expected_CommandDisabled(string command)
@@ -181,8 +179,7 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ErrorDuringStartup(exception),
-            Expected_StoppedEarly);
+            Expected_Error(exception));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -868,8 +865,7 @@ public class ConversationControllerTests
             Expected_ListenForAttention,
             Expected_Started,
             Expected_ListenForCommands,
-            Expected_Error(exception),
-            Expected_Retrying(1),
+            Expected_Retrying(1, exception),
             Expected_ListenForAttention);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -894,40 +890,29 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         // Assert
-        string expectedErrorMessage = Expected_Error(exception);
         MockLogger.VerifyMessages(
             Expected_Starting,
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(1),
+            Expected_Retrying(1, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(2),
+            Expected_Retrying(2, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(3),
+            Expected_Retrying(3, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(4),
+            Expected_Retrying(4, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(5),
+            Expected_Retrying(5, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(6),
+            Expected_Retrying(6, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(7),
+            Expected_Retrying(7, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(8),
+            Expected_Retrying(8, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
-            Expected_Retrying(9),
+            Expected_Retrying(9, exception),
             Expected_ListenForAttention,
-            expectedErrorMessage,
             Expected_RetryLimitReached(10),
-            Expected_StoppedEarly);
+            Expected_Error(exception));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));

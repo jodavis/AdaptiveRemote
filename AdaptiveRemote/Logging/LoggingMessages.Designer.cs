@@ -235,24 +235,6 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error in speech recognition loop: {0}.
-        /// </summary>
-        internal static string ConversationController_Error {
-            get {
-                return ResourceManager.GetString("ConversationController_Error", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Error initializing speech recognition: {0}.
-        /// </summary>
-        internal static string ConversationController_ErrorDuringStartup {
-            get {
-                return ResourceManager.GetString("ConversationController_ErrorDuringStartup", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Executed command &apos;{0}&apos;.
         /// </summary>
         internal static string ConversationController_Executed {
@@ -298,7 +280,8 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restarting after {0} error(s).
+        ///   Looks up a localized string similar to Restarting after {0} error(s) in speech recognition loop
+        ///Last error: {1}.
         /// </summary>
         internal static string ConversationController_Retrying {
             get {
@@ -312,24 +295,6 @@ namespace AdaptiveRemote.Logging {
         internal static string ConversationController_RetryLimitReached {
             get {
                 return ResourceManager.GetString("ConversationController_RetryLimitReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Stopped.
-        /// </summary>
-        internal static string ConversationController_Stopped {
-            get {
-                return ResourceManager.GetString("ConversationController_Stopped", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Stopping.
-        /// </summary>
-        internal static string ConversationController_Stopping {
-            get {
-                return ResourceManager.GetString("ConversationController_Stopping", resourceCulture);
             }
         }
         

@@ -47,6 +47,11 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
                     await executeTask;
                 }
 
+                if (executeTask.IsFaulted)
+                {
+                    await executeTask;
+                }
+
                 if (!stopToken.IsCancellationRequested)
                 {
                     _logger.LogWarning(Message.ScopedBackgroundProcess_StoppedEarly);
