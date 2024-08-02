@@ -36,8 +36,8 @@ internal class SamplesRecorder : IHostedService
 
     Task IHostedService.StopAsync(CancellationToken cancellationToken)
     {
-        _engine.SpeechRecognized += OnSpeechRecognized;
-        _engine.SpeechRejected += OnSpeechRejected;
+        _engine.SpeechRecognized -= OnSpeechRecognized;
+        _engine.SpeechRejected -= OnSpeechRejected;
 
         _logger.LogInformation("Stopped listening for speech samples");
 

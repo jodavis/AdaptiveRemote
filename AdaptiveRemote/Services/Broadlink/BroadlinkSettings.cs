@@ -3,6 +3,12 @@
 public class BroadlinkSettings
 {
     /// <summary>
+    /// If true, Broadlink services will not start, but all Broadlink commands will
+    /// be enabled as no-ops.
+    /// </summary>
+    public bool Fake { get; set; } = false;
+
+    /// <summary>
     /// Amount of time, in seconds, that we will wait for a response to sending data.
     /// </summary>
     public int SendTimeout { get; set; } = 5;
