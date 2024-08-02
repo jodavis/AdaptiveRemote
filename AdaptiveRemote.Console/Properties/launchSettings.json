@@ -2,7 +2,7 @@
   "profiles": {
     "RecordSamples": {
       "commandName": "Project",
-      "commandLineArgs": "--conversation:RecordSamples=true --conversation:RecordingUserName=TestUser1 --conversation:RecordingOutputPath=../AdaptiveRemote.Tests/Services/Conversation/SpeechSamples --tivo:Fake=True --broadlink:Fake=True",
+      "commandLineArgs": "--conversation:RecordSamples=true --conversation:RecordingUserName=User1 --conversation:RecordingOutputPath=../AdaptiveRemote.Tests/Services/Conversation/SpeechSamples --tivo:Fake=True --broadlink:Fake=True",
       "workingDirectory": "."
     },
     "FakeConversation": {

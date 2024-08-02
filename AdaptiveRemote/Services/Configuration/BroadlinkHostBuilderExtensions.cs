@@ -11,7 +11,7 @@ internal static class BroadlinkHostBuilderExtensions
         => builder.ConfigureServices((context, services) => services.AddBroadlinkServices(context.Configuration.GetSection(SettingsKeys.Broadlink)));
 
     private static IServiceCollection AddBroadlinkServices(this IServiceCollection services, IConfiguration configuration)
-        => configuration.GetValue<bool>("Fake")
+        => configuration.GetValue<bool>(nameof(BroadlinkSettings.Fake))
             ? services.AddNullCommandService<Models.IRCommand>()
             : services
                 .AddScopedLifecycleService<BroadlinkCommandService>()
