@@ -2,8 +2,9 @@
 
 internal class ConversationSettings
 {
+    public bool Fake { get; set; } = false;
     public int ErrorRetryLimit { get; set; } = 10;
-    public string[] Voice { get; set; } = ["Jenny", "Zira"];
+    public string[] Voice { get; set; } = ["Zira"];
     public int CommandBufferSize { get; set; } = 2;
     public int SpeakingRate { get; set; } = 3;
 
