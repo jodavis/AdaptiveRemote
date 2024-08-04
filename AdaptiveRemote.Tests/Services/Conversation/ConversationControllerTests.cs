@@ -178,11 +178,10 @@ public class ConversationControllerTests
 
         // Assert
         MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_Error(exception));
+            Expected_Starting);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_WaitingForActivation, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
@@ -911,8 +910,7 @@ public class ConversationControllerTests
             Expected_ListenForAttention,
             Expected_Retrying(9, exception),
             Expected_ListenForAttention,
-            Expected_RetryLimitReached(10),
-            Expected_Error(exception));
+            Expected_RetryLimitReached(10));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -1056,7 +1054,7 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_StoppedEarly);
+            Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
