@@ -41,6 +41,12 @@ steps:
     command: 'publish'
     publishWebProjects: false
     projects: '**/AdaptiveRemote.csproj'
-    arguments: '/p:PublishProfile=ClickOnceProfile'
+    arguments: '/p:PublishProfile=ClickOnceProfile /p:PublishDir="$(Build.ArtifactStagingDirectory)\installer"'
     zipAfterPublish: false
     modifyOutputPath: false
+    
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)\installer'
+    ArtifactName: 'installer'
+    publishLocation: 'Container'
