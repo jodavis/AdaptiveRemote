@@ -36,14 +36,12 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- task: DotNetCoreCLI@2
+- task: VSBuild@1
   inputs:
-    command: 'publish'
-    publishWebProjects: false
-    projects: '**/AdaptiveRemote.csproj'
-    arguments: '/p:PublishProfile=ClickOnceProfile /p:PublishDir="$(Build.ArtifactStagingDirectory)\installer"'
-    zipAfterPublish: false
-    modifyOutputPath: false
+    solution: '**\*.sln'
+    msbuildArgs: '/t:Publish /p:PublishProfile=ClickOnceProfile /p:PublishDir="$(Build.ArtifactStagingDirectory)\installer"'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
     
 - task: PublishBuildArtifacts@1
   inputs:
