@@ -39,7 +39,7 @@ steps:
 - task: VSBuild@1
   inputs:
     solution: '**\AdaptiveRemote.csproj'
-    msbuildArgs: '/t:Publish /p:PublishProfile=ClickOnceProfile /p:PublishDir="$(Build.ArtifactStagingDirectory)\installer"'
+    msbuildArgs: '/t:Publish /p:PublishProfile=ClickOnceProfile /p:PublishDir="$(Build.ArtifactStagingDirectory)\installer" /p:PublishReadyToRun=True'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
     
