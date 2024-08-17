@@ -35,3 +35,16 @@ steps:
   inputs:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+- task: VSBuild@1
+  inputs:
+    solution: '**\AdaptiveRemote.csproj'
+    msbuildArgs: '/t:Restore,Publish /p:PublishProfile=ClickOnceProfile /p:PublishDir="$(Build.ArtifactStagingDirectory)\installer" /p:PublishReadyToRun=True'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+    
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)\installer'
+    ArtifactName: 'installer'
+    publishLocation: 'Container'
