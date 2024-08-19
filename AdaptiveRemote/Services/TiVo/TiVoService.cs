@@ -10,14 +10,11 @@ internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
     private ITiVoConnection? _connection;
 
     public TiVoService(ITiVoLocator locator, ITiVoConnection.Factory connectionFactory, IRemoteDefinitionService definitionService, ILogger<TiVoService> logger)
-        : base("TiVo Commands", definitionService)
+        : base("TiVo Commands", definitionService, logger)
     {
         _locator = locator;
         _connectionFactory = connectionFactory;
-        Logger = logger;
     }
-
-    protected override ILogger Logger { get; }
 
     public override async Task InitializeAsync(CancellationToken cancellationToken)
     {

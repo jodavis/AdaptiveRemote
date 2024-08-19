@@ -353,13 +353,11 @@ public class CommandServiceBaseTests
         private readonly Task _returns;
 
         public MockCommandService(IRemoteDefinitionService remoteDefinition, ILogger logger, Task returns)
-            : base(nameof(MockCommandService), remoteDefinition)
+            : base(nameof(MockCommandService), remoteDefinition, logger)
         {
-            Logger = logger;
             _returns = returns;
         }
 
-        protected override ILogger Logger { get; }
         public List<Command> ExecutedCommands { get; } = new();
         public List<CancellationToken> CancelTokens { get; } = new();
 

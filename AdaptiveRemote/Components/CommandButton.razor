@@ -30,7 +30,7 @@
     {
         if (Command is not null)
         {
-            Command.PropertyChanged += (sender, args) => StateHasChanged();
+            Command.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
         }
 
         base.OnInitialized();

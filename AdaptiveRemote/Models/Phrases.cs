@@ -13,6 +13,7 @@ internal static class Phrases
     public static string Conversation_AttentionPhrase => "Hey Remote";
     public static string Conversation_SystemFailed => "Conversation system error, try restarting";
     public static string Conversation_CommandDisabled(string name) => $"I can't do that. {name} is disabled.";
+    public static string Conversation_ShuttingDown => "Shutting down...";
 
     private static string NumberOfTimes(int repeat)
         => repeat switch
