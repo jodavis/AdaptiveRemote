@@ -163,7 +163,7 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_OnErrorDuringInitialization_LogsError()
+    public void ConversationController_OnErrorDuringInitialization_StopsButDoesNotLogError()
     {
         // Arrange
         ConversationController sut = CreateSut();
@@ -174,14 +174,16 @@ public class ConversationControllerTests
             .Throws(exception);
 
         // Act
-        sut.InitializeAsync(default);
+        Task initializeTask = sut.InitializeAsync(default);
 
         // Assert
+        TaskAssert.IsFaulted(initializeTask, exception, TimeSpan.FromSeconds(1), nameof(initializeTask));
+
         MockLogger.VerifyMessages(
             Expected_Starting);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_WaitingForActivation, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
