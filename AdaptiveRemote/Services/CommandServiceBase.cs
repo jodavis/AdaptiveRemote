@@ -10,9 +10,10 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     private readonly IEnumerable<CommandType> _commands;
     private readonly CancellationTokenSource _stop = new();
 
-    protected CommandServiceBase(string name, IRemoteDefinitionService remoteDefinition)
+    protected CommandServiceBase(string name, IRemoteDefinitionService remoteDefinition, ILogger logger)
     {
         Name = name;
+        Logger = logger;
 
         _commands = remoteDefinition.GetCommands<CommandType>().ToList();
 
@@ -25,7 +26,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     }
 
     public string Name { get; }
-    protected abstract ILogger Logger { get; }
+    protected ILogger Logger { get; }
 
     protected abstract Command.ExecuteDelegate CreateHandler(CommandType command);
 

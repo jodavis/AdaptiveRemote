@@ -235,24 +235,6 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error in speech recognition loop: {0}.
-        /// </summary>
-        internal static string ConversationController_Error {
-            get {
-                return ResourceManager.GetString("ConversationController_Error", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Error initializing speech recognition: {0}.
-        /// </summary>
-        internal static string ConversationController_ErrorDuringStartup {
-            get {
-                return ResourceManager.GetString("ConversationController_ErrorDuringStartup", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Executed command &apos;{0}&apos;.
         /// </summary>
         internal static string ConversationController_Executed {
@@ -298,7 +280,8 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restarting after {0} error(s).
+        ///   Looks up a localized string similar to Restarting after {0} error(s) in speech recognition loop
+        ///Last error: {1}.
         /// </summary>
         internal static string ConversationController_Retrying {
             get {
@@ -312,24 +295,6 @@ namespace AdaptiveRemote.Logging {
         internal static string ConversationController_RetryLimitReached {
             get {
                 return ResourceManager.GetString("ConversationController_RetryLimitReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Stopped.
-        /// </summary>
-        internal static string ConversationController_Stopped {
-            get {
-                return ResourceManager.GetString("ConversationController_Stopped", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Stopping.
-        /// </summary>
-        internal static string ConversationController_Stopping {
-            get {
-                return ResourceManager.GetString("ConversationController_Stopping", resourceCulture);
             }
         }
         
@@ -378,6 +343,70 @@ namespace AdaptiveRemote.Logging {
         internal static string ListeningController_UpdateListenStateError {
             get {
                 return ResourceManager.GetString("ListeningController_UpdateListenStateError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Startup canceled.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_CanceledBeforeStarted {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_CanceledBeforeStarted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Terminated due to error
+        ///{0}.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Error {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Started.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Started {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Started", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starting.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Starting {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Starting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stopped.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Stopped {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Stopped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stopped early.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_StoppedEarly {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_StoppedEarly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stopping.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_Stopping {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_Stopping", resourceCulture);
             }
         }
         

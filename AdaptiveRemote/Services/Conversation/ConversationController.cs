@@ -6,13 +6,12 @@ using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-internal class ConversationController : IScopedLifecycle
+internal class ConversationController : ScopedBackgroundProcess
 {
     private readonly ConversationSettings _speechSettings;
     private readonly ISpeechRecognition _speechRecognition;
     private readonly ISpeechSynthesis _speechSynthesis;
     private readonly IRemoteDefinitionService _definitionService;
-    private readonly ILogger<ConversationController> _logger;
     private readonly ConversationView _viewModel;
 
     private readonly CancellationTokenSource _stop = new();
@@ -24,41 +23,26 @@ internal class ConversationController : IScopedLifecycle
         IRemoteDefinitionService definitionService,
         ILogger<ConversationController> logger,
         ConversationView viewModel)
+        : base("Conversation system", logger)
     {
         _speechSettings = options.Value;
         _speechRecognition = speechRecognition;
         _speechSynthesis = speechSynthesis;
         _definitionService = definitionService;
-        _logger = logger;
         _viewModel = viewModel;
 
         _viewModel.IsListening = false;
         _viewModel.StatusMessage = Phrases.Conversation_WaitingForActivation;
     }
 
-    string IScopedLifecycle.Name => "Conversation system";
-
-    public Task InitializeAsync(CancellationToken cancellationToken)
+    public override Task CleanUpAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyDictionary<string, Command>? commands = GetCommands();
+        _viewModel.StatusMessage = "Shutting down...";
 
-        if (commands is not null)
-        {
-            _ = ListenWithRetriesAsync(commands, _stop.Token);
-        }
-
-        return Task.CompletedTask;
+        return base.CleanUpAsync(cancellationToken);
     }
 
-    public Task CleanUpAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation(Message.ConversationController_Stopping);
-        _stop.Cancel();
-
-        return Task.CompletedTask;
-    }
-
-    private IReadOnlyDictionary<string, Command>? GetCommands()
+    private IReadOnlyDictionary<string, Command> GetCommands()
     {
         Dictionary<string, Command> commands = new(StringComparer.Ordinal);
         try
@@ -70,17 +54,17 @@ internal class ConversationController : IScopedLifecycle
 
             return commands;
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(Message.ConversationController_ErrorDuringStartup, ex);
             _viewModel.StatusMessage = Phrases.Conversation_SystemFailed;
-
-            return null;
+            throw;
         }
     }
 
-    private async Task ListenWithRetriesAsync(IReadOnlyDictionary<string, Command> commands, CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
+        IReadOnlyDictionary<string, Command> commands = GetCommands();
+
         int errorCount = 0;
         while (true)
         {
@@ -92,23 +76,20 @@ internal class ConversationController : IScopedLifecycle
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation(Message.ConversationController_Stopped);
                 break;
             }
             catch (Exception ex)
             {
-                _logger.LogError(Message.ConversationController_Error, ex);
-
                 errorCount++;
                 if (errorCount >= _speechSettings.ErrorRetryLimit)
                 {
-                    _logger.LogWarning(Message.ConversationController_RetryLimitReached, errorCount);
+                    Logger.LogWarning(Message.ConversationController_RetryLimitReached, errorCount);
                     _viewModel.StatusMessage = Phrases.Conversation_SystemFailed;
-                    break;
+                    throw;
                 }
                 else
                 {
-                    _logger.LogWarning(Message.ConversationController_Retrying, errorCount);
+                    Logger.LogWarning(Message.ConversationController_Retrying, errorCount, ex);
                 }
             }
             finally
@@ -128,7 +109,7 @@ internal class ConversationController : IScopedLifecycle
             {
                 if (result.TryGetSemanticValue("command", out string? commandName))
                 {
-                    _logger.LogInformation(Message.ConversationController_Recognized, result.Text, commandName);
+                    Logger.LogInformation(Message.ConversationController_Recognized, result.Text, commandName);
 
                     if (commands.TryGetValue(commandName, out Command? command))
                     {
@@ -138,7 +119,7 @@ internal class ConversationController : IScopedLifecycle
                     }
                     else
                     {
-                        _logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
+                        Logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
                     }
                 }
             }
@@ -161,7 +142,7 @@ internal class ConversationController : IScopedLifecycle
         try
         {
             _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
-            _logger.LogInformation(Message.ConversationController_ListenForAttention);
+            Logger.LogInformation(Message.ConversationController_ListenForAttention);
 
             await _speechRecognition.ListenForAttentionAsync(cancellationToken);
         }
@@ -179,7 +160,7 @@ internal class ConversationController : IScopedLifecycle
             await SayAsync(Phrases.Conversation_ImListening, cancellationToken);
 
             _viewModel.IsListening = true;
-            _logger.LogInformation(Message.ConversationController_ListenForCommands);
+            Logger.LogInformation(Message.ConversationController_ListenForCommands);
 
             await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
             {
@@ -200,12 +181,12 @@ internal class ConversationController : IScopedLifecycle
         Command.ExecuteDelegate? executeAsync = command.ExecuteAsync;
         if (executeAsync is null)
         {
-            _logger.LogError(Message.ConversationController_CommandMissingExecuteAction, command.Name);
+            Logger.LogError(Message.ConversationController_CommandMissingExecuteAction, command.Name);
             await SayAsync(Phrases.Conversation_CommandDisabled(command.Name), cancellationToken);
         }
         else if (!command.IsEnabled)
         {
-            _logger.LogError(Message.ConversationController_CommandDisabled, command.Name);
+            Logger.LogError(Message.ConversationController_CommandDisabled, command.Name);
             await SayAsync(Phrases.Conversation_CommandDisabled(command.Name), cancellationToken);
         }
         else
@@ -219,11 +200,11 @@ internal class ConversationController : IScopedLifecycle
             {
                 for (int i = 0; i < repeat; i++)
                 {
-                    _logger.LogInformation(Message.ConversationController_Executing, command.Name);
+                    Logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
                     await executeAsync(cancellationToken);
 
-                    _logger.LogInformation(Message.ConversationController_Executed, command.Name);
+                    Logger.LogInformation(Message.ConversationController_Executed, command.Name);
                 }
 
                 await sayTask;
@@ -242,7 +223,8 @@ internal class ConversationController : IScopedLifecycle
         {
             _viewModel.IsListening = false;
             _viewModel.SpeakingMessage = phrase;
-            await _speechSynthesis.SayAsync(phrase, cancellationToken);
+            await _speechSynthesis.SayAsync(phrase, default);
+            cancellationToken.ThrowIfCancellationRequested();
         }
         finally
         {
