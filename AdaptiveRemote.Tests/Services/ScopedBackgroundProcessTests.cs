@@ -51,8 +51,10 @@ public class ScopedBackgroundProcessTests
         // Arrange
         TestBackgroundProcess sut = CreateSut()
             .Expect_ExecuteAsync_IsNotCalled()
-            .Expect_ExecuteOnThreadAsync_IsNotCalled()
-            .Expect_LogMessages();
+            .Expect_MoveToWorkerThreadAsync_IsNotCalled()
+            .Expect_LogMessages(
+                Expect_CanceledBeforeStarted
+            );
 
         CancellationTokenSource cancelled = new();
         cancelled.Cancel();
@@ -62,14 +64,14 @@ public class ScopedBackgroundProcessTests
 
         // Assert
         TaskAssert.IsCanceled(resultTask, nameof(resultTask));
-        Assert.IsNull(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
     }
 
     [TestMethod]
-    public void ScopedBackgroundProcess_InitializeAsync_CancelledBeforeExecuteOnThread_LogsCancellation()
+    public void ScopedBackgroundProcess_InitializeAsync_CancelledBeforeMoveToWorkerThread_LogsCancellation()
     {
         // Arrange
         TestBackgroundProcess sut = CreateSut()
@@ -79,7 +81,7 @@ public class ScopedBackgroundProcessTests
                 Expect_CanceledBeforeStarted);
 
         CancellationTokenSource cts = new();
-        sut.BeforeExecuteOnThreadAsyncCallback = cts.Cancel;
+        sut.BeforeMoveToWorkerThreadAsyncCallback = cts.Cancel;
 
         // Act
         Task resultTask = sut.InitializeAsync(cts.Token);
@@ -103,7 +105,7 @@ public class ScopedBackgroundProcessTests
                 Expect_CanceledBeforeStarted);
 
         CancellationTokenSource cts = new();
-        sut.AfterExecuteOnThreadAsyncCallback = cts.Cancel;
+        sut.AfterMoveToWorkerThreadAsyncCallback = cts.Cancel;
 
         // Act
         Task resultTask = sut.InitializeAsync(cts.Token);
@@ -376,7 +378,7 @@ public class ScopedBackgroundProcessTests
         // Arrange
         TestBackgroundProcess sut = CreateSut()
             .Expect_ExecuteAsync_IsNotCalled()
-            .Expect_ExecuteOnThreadAsync_IsNotCalled()
+            .Expect_MoveToWorkerThreadAsync_IsNotCalled()
             .Expect_ExecuteAsync_IgnoresCancellationToken();
 
         // Act
@@ -478,13 +480,13 @@ public class ScopedBackgroundProcessTests
     {
         private readonly Mock<IMockMethods> _mockMethods = new();
         private readonly List<string> _expectedLogMessages = new();
-        private readonly TaskCompletionSource _executeOnThreadTcs = new();
+        private readonly TaskCompletionSource _MoveToWorkerThreadTcs = new();
         private Task? _initializeTask = null;
 
         public TaskCompletionSource ExecuteCompletionSource { get; } = new();
 
-        public Action? BeforeExecuteOnThreadAsyncCallback { get; set; }
-        public Action? AfterExecuteOnThreadAsyncCallback { get; set; }
+        public Action? BeforeMoveToWorkerThreadAsyncCallback { get; set; }
+        public Action? AfterMoveToWorkerThreadAsyncCallback { get; set; }
         public Action? ExecuteAsyncCallback { get; set; }
 
         public TestBackgroundProcess()
@@ -502,16 +504,16 @@ public class ScopedBackgroundProcessTests
                 .Verifiable(Times.Once);
 
             _mockMethods
-                .Setup(x => x.ExecuteOnThreadAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.MoveToWorkerThreadAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(async (Func<Task> task, CancellationToken cancellationToken) =>
                 {
-                    Assert.IsNull(_initializeTask, nameof(_initializeTask) + " during " + nameof(ExecuteOnThreadAsync));
-                    BeforeExecuteOnThreadAsyncCallback?.Invoke();
-                    await _executeOnThreadTcs.Task;
+                    Assert.IsNull(_initializeTask, nameof(_initializeTask) + " during " + nameof(MoveToWorkerThreadAsync));
+                    BeforeMoveToWorkerThreadAsyncCallback?.Invoke();
+                    await _MoveToWorkerThreadTcs.Task;
 
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    AfterExecuteOnThreadAsyncCallback?.Invoke();
+                    AfterMoveToWorkerThreadAsyncCallback?.Invoke();
                     await task();
                 })
                 .Verifiable(Times.Once);
@@ -520,14 +522,14 @@ public class ScopedBackgroundProcessTests
         public override Task InitializeAsync(CancellationToken cancellationToken)
         {
             _initializeTask = base.InitializeAsync(cancellationToken);
-            _executeOnThreadTcs.TrySetResult();
+            _MoveToWorkerThreadTcs.TrySetResult();
             return _initializeTask;
         }
 
         protected override Task ExecuteAsync(CancellationToken stopToken)
             => _mockMethods.Object.ExecuteAsync(stopToken);
-        protected override Task ExecuteOnThreadAsync(Func<Task> task, CancellationToken cancellationToken)
-            => _mockMethods.Object.ExecuteOnThreadAsync(task, cancellationToken);
+        protected override Task MoveToWorkerThreadAsync(Func<Task> task, CancellationToken cancellationToken)
+            => _mockMethods.Object.MoveToWorkerThreadAsync(task, cancellationToken);
 
         public void VerifyMethodCalls() => _mockMethods.Verify();
         public void VerifyLogMessages() => ((MockLogger<TestBackgroundProcess>)Logger).VerifyMessages(_expectedLogMessages.ToArray());
@@ -540,10 +542,10 @@ public class ScopedBackgroundProcessTests
             return this;
         }
 
-        public TestBackgroundProcess Expect_ExecuteOnThreadAsync_IsNotCalled()
+        public TestBackgroundProcess Expect_MoveToWorkerThreadAsync_IsNotCalled()
         {
             _mockMethods
-                .Setup(x => x.ExecuteOnThreadAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.MoveToWorkerThreadAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
                 .Verifiable(Times.Never);
             return this;
         }
@@ -575,6 +577,6 @@ public class ScopedBackgroundProcessTests
     {
         Task ExecuteAsync(CancellationToken stopToken);
 
-        Task ExecuteOnThreadAsync(Func<Task> task, CancellationToken cancellationToken);
+        Task MoveToWorkerThreadAsync(Func<Task> task, CancellationToken cancellationToken);
     }
 }
