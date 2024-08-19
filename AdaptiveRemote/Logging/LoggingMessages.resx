@@ -243,6 +243,9 @@ Last error: {1}</value>
 {0}</value>
     <comment>0=Exception</comment>
   </data>
+  <data name="ScopedBackgroundProcess_CanceledBeforeStarted" xml:space="preserve">
+    <value>Startup canceled</value>
+  </data>
   <data name="ScopedBackgroundProcess_Error" xml:space="preserve">
     <value>Terminated due to error
 {0}</value>
