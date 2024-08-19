@@ -20,80 +20,81 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
 
     protected abstract Task ExecuteAsync(CancellationToken stopToken);
 
-    protected virtual Task ExecuteOnThreadAsync(Func<Task> task, CancellationToken cancellationToken)
+    protected virtual Task MoveToWorkerThreadAsync(Func<Task> task, CancellationToken cancellationToken)
         => Task.Run(() => task(), cancellationToken);
 
     public virtual Task InitializeAsync(CancellationToken cancellationToken)
     {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            return Task.FromCanceled(cancellationToken);
-        }
-
-        Logger.LogInformation(Message.ScopedBackgroundProcess_Starting);
-
         TaskCompletionSource startTcs = new();
 
-        ExecuteTask = ExecuteOnThreadAsync(() => StartProcess(cancellationToken), cancellationToken);
-        ExecuteTask.ContinueWith(t =>
+        ExecuteTask = StartExecutingWithErrorHandling(startTcs, _stopToken.Token, cancellationToken);
+
+        return startTcs.Task;
+    }
+
+    private async Task StartExecutingWithErrorHandling(TaskCompletionSource startTcs, CancellationToken stopToken, CancellationToken initializationToken)
+    {
+        try
         {
-            if (startTcs.TrySetCanceled())
+            initializationToken.ThrowIfCancellationRequested();
+
+            Logger.LogInformation(Message.ScopedBackgroundProcess_Starting);
+
+            await MoveToWorkerThreadAsync(() => StartExecutingOnWorkerThread(startTcs, stopToken, initializationToken), initializationToken);
+
+            if (!stopToken.IsCancellationRequested)
+            {
+                Logger.LogWarning(Message.ScopedBackgroundProcess_StoppedEarly);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            if (startTcs.TrySetCanceled(CancellationToken.None))
             {
                 Logger.LogWarning(Message.ScopedBackgroundProcess_CanceledBeforeStarted);
             }
-        }, TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnCanceled);
-
-        return startTcs.Task;
-
-        async Task StartProcess(CancellationToken cancellationToken)
+            else if (stopToken.IsCancellationRequested)
+            {
+                // Normal stop
+                return;
+            }
+            else
+            {
+                Logger.LogWarning(Message.ScopedBackgroundProcess_StoppedEarly);
+            }
+            throw;
+        }
+        catch (Exception error)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            try
+            if (!startTcs.TrySetException(error))
             {
-                CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(_stopToken.Token);
-
-                // TODO: If cancellationToken is called before this returns, ExecuteAsync should be cancelled
-                // But if cancellationToken is triggered after this returns, ExecuteAsync should not be cancelled
-                Task task;
-                using (cancellationToken.Register(linked.Cancel))
-                {
-                    task = ExecuteAsync(linked.Token);
-                }
-
-                if (!task.IsFaulted && !task.IsCanceled && startTcs.TrySetResult())
-                {
-                    Logger.LogInformation(Message.ScopedBackgroundProcess_Started);
-                }
-
-                await task;
-
-                if (!_stopToken.IsCancellationRequested && !startTcs.TrySetCanceled(CancellationToken.None))
-                {
-                    Logger.LogWarning(Message.ScopedBackgroundProcess_StoppedEarly);
-                }
+                Logger.LogError(Message.ScopedBackgroundProcess_Error, error);
             }
-            catch (OperationCanceledException)
-            {
-                if (startTcs.TrySetCanceled(CancellationToken.None))
-                {
-                    Logger.LogWarning(Message.ScopedBackgroundProcess_CanceledBeforeStarted);
-                    throw;
-                }
-                else if (!_stopToken.IsCancellationRequested)
-                {
-                    Logger.LogWarning(Message.ScopedBackgroundProcess_StoppedEarly);
-                    throw;
-                }
-            }
-            catch (Exception error)
-            {
-                if (!startTcs.TrySetException(error))
-                {
-                    Logger.LogError(Message.ScopedBackgroundProcess_Error, error);
-                }
-                throw;
-            }
+            throw;
+        }
+    }
+
+    private Task StartExecutingOnWorkerThread(TaskCompletionSource startTcs, CancellationToken stopToken, CancellationToken initializationToken)
+    {
+        initializationToken.ThrowIfCancellationRequested();
+
+        Task task = StartExecutingWithInitializationCancellation(stopToken, initializationToken);
+
+        if (!task.IsCompleted && startTcs.TrySetResult())
+        {
+            Logger.LogInformation(Message.ScopedBackgroundProcess_Started);
+        }
+
+        return task;
+    }
+
+    private Task StartExecutingWithInitializationCancellation(CancellationToken stopToken, CancellationToken cancellationToken)
+    {
+        CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(stopToken);
+
+        using (cancellationToken.Register(linked.Cancel))
+        {
+            return ExecuteAsync(linked.Token);
         }
     }
 
