@@ -480,7 +480,7 @@ public class ScopedBackgroundProcessTests
     {
         private readonly Mock<IMockMethods> _mockMethods = new();
         private readonly List<string> _expectedLogMessages = new();
-        private readonly TaskCompletionSource _MoveToWorkerThreadTcs = new();
+        private readonly TaskCompletionSource _moveToWorkerThreadTcs = new();
         private Task? _initializeTask = null;
 
         public TaskCompletionSource ExecuteCompletionSource { get; } = new();
@@ -509,7 +509,7 @@ public class ScopedBackgroundProcessTests
                 {
                     Assert.IsNull(_initializeTask, nameof(_initializeTask) + " during " + nameof(MoveToWorkerThreadAsync));
                     BeforeMoveToWorkerThreadAsyncCallback?.Invoke();
-                    await _MoveToWorkerThreadTcs.Task;
+                    await _moveToWorkerThreadTcs.Task;
 
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -522,7 +522,7 @@ public class ScopedBackgroundProcessTests
         public override Task InitializeAsync(CancellationToken cancellationToken)
         {
             _initializeTask = base.InitializeAsync(cancellationToken);
-            _MoveToWorkerThreadTcs.TrySetResult();
+            _moveToWorkerThreadTcs.TrySetResult();
             return _initializeTask;
         }
 

@@ -105,8 +105,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
             Logger.LogInformation(Message.ScopedBackgroundProcess_Stopping);
 
             _stopToken.Cancel();
-            //// TODO: What if ExecuteTask is not started? (is null?)
-            //// TODO: What if Initialize is called after Cleanup
+
             await Task.WhenAny(ExecuteTask!);
 
             Logger.LogInformation(Message.ScopedBackgroundProcess_Stopped);
