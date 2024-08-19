@@ -1054,7 +1054,8 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Started);
+            Expected_Started,
+            Expected_StoppedEarly);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));

@@ -347,6 +347,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Startup canceled.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_CanceledBeforeStarted {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_CanceledBeforeStarted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Terminated due to error
         ///{0}.
         /// </summary>
