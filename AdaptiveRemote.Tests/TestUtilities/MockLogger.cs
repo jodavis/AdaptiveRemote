@@ -2,6 +2,10 @@
 
 namespace AdaptiveRemote.TestUtilities;
 
+internal class MockLogger<LoggerType1, LoggerType2> : MockLogger<LoggerType1>, ILogger<LoggerType2>
+{
+}
+
 internal class MockLogger<LoggerType> : ILogger<LoggerType>
 {
     private readonly List<string> _messages = new();

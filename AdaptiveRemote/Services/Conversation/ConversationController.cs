@@ -11,7 +11,7 @@ internal class ConversationController : ScopedBackgroundProcess
     private readonly ConversationSettings _speechSettings;
     private readonly ISpeechRecognition _speechRecognition;
     private readonly ISpeechSynthesis _speechSynthesis;
-    private readonly IRemoteDefinitionService _definitionService;
+    private readonly ConversationStateMachine _stateMachine;
     private readonly ConversationView _viewModel;
 
     private readonly CancellationTokenSource _stop = new();
@@ -20,15 +20,15 @@ internal class ConversationController : ScopedBackgroundProcess
         IOptionsSnapshot<ConversationSettings> options,
         ISpeechRecognition speechRecognition,
         ISpeechSynthesis speechSynthesis,
-        IRemoteDefinitionService definitionService,
         ILogger<ConversationController> logger,
+        ConversationStateMachine stateMachine,
         ConversationView viewModel)
         : base("Conversation system", logger)
     {
         _speechSettings = options.Value;
         _speechRecognition = speechRecognition;
         _speechSynthesis = speechSynthesis;
-        _definitionService = definitionService;
+        _stateMachine = stateMachine;
         _viewModel = viewModel;
 
         _viewModel.IsListening = false;
@@ -42,29 +42,8 @@ internal class ConversationController : ScopedBackgroundProcess
         return base.CleanUpAsync(cancellationToken);
     }
 
-    private IReadOnlyDictionary<string, Command> GetCommands()
-    {
-        Dictionary<string, Command> commands = new(StringComparer.Ordinal);
-        try
-        {
-            foreach (Command command in _definitionService.GetCommands())
-            {
-                commands[command.Name] = command;
-            }
-
-            return commands;
-        }
-        catch
-        {
-            _viewModel.StatusMessage = Phrases.Conversation_SystemFailed;
-            throw;
-        }
-    }
-
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyDictionary<string, Command> commands = GetCommands();
-
         int errorCount = 0;
         while (true)
         {
@@ -72,7 +51,7 @@ internal class ConversationController : ScopedBackgroundProcess
 
             try
             {
-                await ListenAsync(commands, cancellationToken);
+                await ListenAsync(cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -99,7 +78,7 @@ internal class ConversationController : ScopedBackgroundProcess
         }
     }
 
-    private async Task ListenAsync(IReadOnlyDictionary<string, Command> commands, CancellationToken cancellationToken)
+    private async Task ListenAsync(CancellationToken cancellationToken)
     {
         while (true)
         {
@@ -107,33 +86,23 @@ internal class ConversationController : ScopedBackgroundProcess
 
             await foreach (IRecognitionResult result in ListenForCommandsAsync(cancellationToken))
             {
-                if (result.TryGetSemanticValue("command", out string? commandName))
+                string previousMessage = _viewModel.StatusMessage;
+                _viewModel.StatusMessage = Phrases.Conversation_ImSending;
+
+                try
                 {
-                    Logger.LogInformation(Message.ConversationController_Recognized, result.Text, commandName);
+                    ConversationResponse response = _stateMachine.RespondTo(result);
 
-                    if (commands.TryGetValue(commandName, out Command? command))
-                    {
-                        int repeat = ParseRepeat(result);
+                    Task speakingTask = SayAsync(response.Phrases, cancellationToken);
+                    Task commandTask = ExecuteCommandsAsync(response.Commands, cancellationToken);
 
-                        await ExecuteCommandAsync(command, repeat, cancellationToken);
-                    }
-                    else
-                    {
-                        Logger.LogError(Message.ConversationController_UnknownCommand, result.Text);
-                    }
+                    await Task.WhenAll(speakingTask, commandTask);
+                }
+                finally
+                {
+                    _viewModel.StatusMessage = previousMessage;
                 }
             }
-        }
-
-        static int ParseRepeat(IRecognitionResult result)
-        {
-            if (result.TryGetSemanticValue("repeat", out string? repeatString) &&
-                int.TryParse(repeatString, out int repeat))
-            {
-                return repeat;
-            }
-
-            return 1;
         }
     }
 
@@ -176,43 +145,32 @@ internal class ConversationController : ScopedBackgroundProcess
         await SayAsync(Phrases.Conversation_StoppedListening, cancellationToken);
     }
 
+    private async Task ExecuteCommandsAsync(IEnumerable<Command> commands, CancellationToken cancellationToken)
+    {
+        foreach (Command command in commands)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await ExecuteCommandAsync(command, 1, cancellationToken);
+        }
+    }
+
     private async Task ExecuteCommandAsync(Command command, int repeat, CancellationToken cancellationToken)
     {
-        Command.ExecuteDelegate? executeAsync = command.ExecuteAsync;
-        if (executeAsync is null)
+        for (int i = 0; i < repeat; i++)
         {
-            Logger.LogError(Message.ConversationController_CommandMissingExecuteAction, command.Name);
-            await SayAsync(Phrases.Conversation_CommandDisabled(command.Name), cancellationToken);
+            Logger.LogInformation(Message.ConversationController_Executing, command.Name);
+
+            await command.ExecuteAsync!(cancellationToken);
+
+            Logger.LogInformation(Message.ConversationController_Executed, command.Name);
         }
-        else if (!command.IsEnabled)
+    }
+
+    private async Task SayAsync(IEnumerable<string> phrases, CancellationToken cancellationToken)
+    {
+        foreach (string phrase in phrases)
         {
-            Logger.LogError(Message.ConversationController_CommandDisabled, command.Name);
-            await SayAsync(Phrases.Conversation_CommandDisabled(command.Name), cancellationToken);
-        }
-        else
-        {
-            Task sayTask = SayAsync(Phrases.Conversation_Sent(command.Name, repeat), cancellationToken);
-
-            string previousMessage = _viewModel.StatusMessage;
-            _viewModel.StatusMessage = Phrases.Conversation_ImSending;
-
-            try
-            {
-                for (int i = 0; i < repeat; i++)
-                {
-                    Logger.LogInformation(Message.ConversationController_Executing, command.Name);
-
-                    await executeAsync(cancellationToken);
-
-                    Logger.LogInformation(Message.ConversationController_Executed, command.Name);
-                }
-
-                await sayTask;
-            }
-            finally
-            {
-                _viewModel.StatusMessage = previousMessage;
-            }
+            await SayAsync(phrase, cancellationToken);
         }
     }
 
