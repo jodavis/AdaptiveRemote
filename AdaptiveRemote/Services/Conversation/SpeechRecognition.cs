@@ -1,9 +1,7 @@
-﻿using System.IO;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Speech.Recognition;
 using System.Threading.Channels;
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

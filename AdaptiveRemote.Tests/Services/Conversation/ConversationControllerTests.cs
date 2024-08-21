@@ -11,7 +11,7 @@ public class ConversationControllerTests
 {
     private static readonly Task IncompleteTask = new TaskCompletionSource().Task;
 
-    private readonly MockLogger<ConversationController> MockLogger = new();
+    private readonly MockLogger<ConversationController, ConversationStateMachine> MockLogger = new();
     private readonly Mock<ISpeechRecognition> MockRecognition = new();
     private readonly Mock<ISpeechSynthesis> MockSynthesis = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinition = new();
@@ -61,8 +61,8 @@ public class ConversationControllerTests
         MockOptions.Object,
         MockRecognition.Object,
         MockSynthesis.Object,
-        MockDefinition.Object,
         MockLogger,
+        new ConversationStateMachine(MockDefinition.Object, MockLogger),
         ViewModel);
 
     private static Mock<IRecognitionResult> CreateMockResult(string text, params string[] semanticValues)
@@ -149,41 +149,12 @@ public class ConversationControllerTests
         ViewModel.IsListening = true;
         ViewModel.StatusMessage = "Status message was not changed";
 
-        MockDefinition
-            .SetupGet(x => x.RemoteRoot)
-            .Verifiable(Times.Never);
-
         // Act
         ConversationController sut = CreateSut();
 
         // Assert
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_WaitingForActivation, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
-    }
-
-    [TestMethod]
-    public void ConversationController_OnErrorDuringInitialization_StopsButDoesNotLogError()
-    {
-        // Arrange
-        ConversationController sut = CreateSut();
-
-        Exception exception = new DataMisalignedException();
-        MockDefinition
-            .SetupGet(x => x.RemoteRoot)
-            .Throws(exception);
-
-        // Act
-        Task initializeTask = sut.InitializeAsync(default);
-
-        // Assert
-        TaskAssert.IsFaulted(initializeTask, exception, TimeSpan.FromSeconds(1), nameof(initializeTask));
-
-        MockLogger.VerifyMessages(
-            Expected_Starting);
-
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
