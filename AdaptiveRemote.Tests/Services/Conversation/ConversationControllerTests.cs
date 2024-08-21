@@ -713,7 +713,7 @@ public class ConversationControllerTests
             Expected_Stopped);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 

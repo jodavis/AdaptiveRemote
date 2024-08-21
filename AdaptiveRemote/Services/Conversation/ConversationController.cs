@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using AdaptiveRemote.Logging;
+﻿using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -35,11 +34,18 @@ internal class ConversationController : ScopedBackgroundProcess
         _viewModel.StatusMessage = Phrases.Conversation_WaitingForActivation;
     }
 
-    public override Task CleanUpAsync(CancellationToken cancellationToken)
+    public override async Task CleanUpAsync(CancellationToken cancellationToken)
     {
-        _viewModel.StatusMessage = "Shutting down...";
+        try
+        {
+            _viewModel.StatusMessage = "Shutting down...";
 
-        return base.CleanUpAsync(cancellationToken);
+            await base.CleanUpAsync(cancellationToken);
+        }
+        finally
+        {
+            _viewModel.StatusMessage = string.Empty;
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -55,6 +61,7 @@ internal class ConversationController : ScopedBackgroundProcess
             }
             catch (OperationCanceledException)
             {
+                _viewModel.StatusMessage = string.Empty;
                 break;
             }
             catch (Exception ex)
@@ -73,6 +80,8 @@ internal class ConversationController : ScopedBackgroundProcess
             }
             finally
             {
+                _stateMachine.IsListening = false;
+                _viewModel.IsListening = false;
                 _viewModel.ToggleListening = null;
             }
         }
@@ -82,67 +91,45 @@ internal class ConversationController : ScopedBackgroundProcess
     {
         while (true)
         {
-            await ListenForAttentionAsync(cancellationToken);
-
-            await foreach (IRecognitionResult result in ListenForCommandsAsync(cancellationToken))
+            if (_stateMachine.IsListening)
             {
-                string previousMessage = _viewModel.StatusMessage;
-                _viewModel.StatusMessage = Phrases.Conversation_ImSending;
+                _viewModel.StatusMessage = Phrases.Conversation_ImListening;
+                await SayAsync(Phrases.Conversation_ImListening, cancellationToken);
 
-                try
+                _viewModel.IsListening = true;
+                Logger.LogInformation(Message.ConversationController_ListenForCommands);
+
+                await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
                 {
+                    _viewModel.StatusMessage = Phrases.Conversation_ImSending;
+
                     ConversationResponse response = _stateMachine.RespondTo(result);
 
-                    Task speakingTask = SayAsync(response.Phrases, cancellationToken);
                     Task commandTask = ExecuteCommandsAsync(response.Commands, cancellationToken);
+                    Task speakingTask = SayAsync(response.Phrases, cancellationToken);
 
-                    await Task.WhenAll(speakingTask, commandTask);
+                    await speakingTask;
+                    await commandTask;
+
+                    _viewModel.StatusMessage = Phrases.Conversation_ImListening;
                 }
-                finally
-                {
-                    _viewModel.StatusMessage = previousMessage;
-                }
+
+                _stateMachine.IsListening = false;
+                _viewModel.StatusMessage = string.Empty;
+
+                await SayAsync(Phrases.Conversation_StoppedListening, cancellationToken);
             }
-        }
-    }
-
-    private async Task ListenForAttentionAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
-            Logger.LogInformation(Message.ConversationController_ListenForAttention);
-
-            await _speechRecognition.ListenForAttentionAsync(cancellationToken);
-        }
-        finally
-        {
-            _viewModel.StatusMessage = string.Empty;
-        }
-    }
-
-    private async IAsyncEnumerable<IRecognitionResult> ListenForCommandsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        try
-        {
-            _viewModel.StatusMessage = Phrases.Conversation_ImListening;
-            await SayAsync(Phrases.Conversation_ImListening, cancellationToken);
-
-            _viewModel.IsListening = true;
-            Logger.LogInformation(Message.ConversationController_ListenForCommands);
-
-            await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
+            else
             {
-                yield return result;
+                _viewModel.IsListening = false;
+                _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
+                Logger.LogInformation(Message.ConversationController_ListenForAttention);
+
+                await _speechRecognition.ListenForAttentionAsync(cancellationToken);
+
+                _stateMachine.IsListening = true;
             }
         }
-        finally
-        {
-            _viewModel.IsListening = false;
-            _viewModel.StatusMessage = string.Empty;
-        }
-
-        await SayAsync(Phrases.Conversation_StoppedListening, cancellationToken);
     }
 
     private async Task ExecuteCommandsAsync(IEnumerable<Command> commands, CancellationToken cancellationToken)

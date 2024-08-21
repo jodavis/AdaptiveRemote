@@ -16,6 +16,7 @@ internal class ConversationStateMachine
     }
 
     public ILogger Logger { get; }
+    public bool IsListening { get; internal set; }
 
     internal ConversationResponse RespondTo(IRecognitionResult result)
     {
