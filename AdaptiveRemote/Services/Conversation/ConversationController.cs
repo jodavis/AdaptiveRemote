@@ -1,4 +1,5 @@
-﻿using AdaptiveRemote.Logging;
+﻿using System.Runtime.CompilerServices;
+using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -87,47 +88,72 @@ internal class ConversationController : ScopedBackgroundProcess
         }
     }
 
-    private async Task ListenAsync(CancellationToken cancellationToken)
+    private async IAsyncEnumerable<ConversationResponse> GetResponsesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         while (true)
         {
+            await _speechRecognition.ListenForAttentionAsync(cancellationToken);
+
+            _stateMachine.IsListening = true;
+
+            yield return new([Phrases.Conversation_ImListening], Array.Empty<Command>());
+
+            await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
+            {
+                yield return _stateMachine.RespondTo(result);
+            }
+
+            _stateMachine.IsListening = false;
+
+            yield return new([Phrases.Conversation_StoppedListening], Array.Empty<Command>());
+        }
+    }
+
+    private async Task ListenAsync(CancellationToken cancellationToken)
+    {
+        _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
+        Logger.LogInformation(Message.ConversationController_ListenForAttention);
+
+        bool wasListening = _stateMachine.IsListening;
+
+        await foreach (ConversationResponse response in GetResponsesAsync(cancellationToken))
+        {
             if (_stateMachine.IsListening)
             {
-                _viewModel.StatusMessage = Phrases.Conversation_ImListening;
-                await SayAsync(Phrases.Conversation_ImListening, cancellationToken);
-
-                _viewModel.IsListening = true;
-                Logger.LogInformation(Message.ConversationController_ListenForCommands);
-
-                await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
+                if (!wasListening)
                 {
-                    _viewModel.StatusMessage = Phrases.Conversation_ImSending;
-
-                    ConversationResponse response = _stateMachine.RespondTo(result);
-
-                    Task commandTask = ExecuteCommandsAsync(response.Commands, cancellationToken);
-                    Task speakingTask = SayAsync(response.Phrases, cancellationToken);
-
-                    await speakingTask;
-                    await commandTask;
-
-                    _viewModel.StatusMessage = Phrases.Conversation_ImListening;
+                    wasListening = true;
+                    Logger.LogInformation(Message.ConversationController_ListenForCommands);
                 }
 
-                _stateMachine.IsListening = false;
-                _viewModel.StatusMessage = string.Empty;
+                _viewModel.StatusMessage = Phrases.Conversation_ImListening;
+                _viewModel.IsListening = true;
 
-                await SayAsync(Phrases.Conversation_StoppedListening, cancellationToken);
+                if (response.Commands.Any())
+                {
+                    _viewModel.StatusMessage = Phrases.Conversation_ImSending;
+                }
+
+                Task commandTask = ExecuteCommandsAsync(response.Commands, cancellationToken);
+                Task speakingTask = SayAsync(response.Phrases, cancellationToken);
+
+                await speakingTask;
+                await commandTask;
+
+                _viewModel.StatusMessage = Phrases.Conversation_ImListening;
             }
             else
             {
-                _viewModel.IsListening = false;
                 _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
-                Logger.LogInformation(Message.ConversationController_ListenForAttention);
+                _viewModel.IsListening = false;
 
-                await _speechRecognition.ListenForAttentionAsync(cancellationToken);
+                await SayAsync(response.Phrases, cancellationToken);
 
-                _stateMachine.IsListening = true;
+                if (wasListening)
+                {
+                    wasListening = false;
+                    Logger.LogInformation(Message.ConversationController_ListenForAttention);
+                }
             }
         }
     }
