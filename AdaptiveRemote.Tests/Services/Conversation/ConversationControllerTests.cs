@@ -209,6 +209,7 @@ public class ConversationControllerTests
         MockLogger.VerifyMessages(
             Expected_Starting,
             Expected_ListenForAttention,
+            Expected_ListenForCommands,
             Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -244,6 +245,7 @@ public class ConversationControllerTests
         MockLogger.VerifyMessages(
             Expected_Starting,
             Expected_ListenForAttention,
+            Expected_ListenForCommands,
             Expected_Started,
             Expected_Stopping);
 
@@ -253,6 +255,7 @@ public class ConversationControllerTests
         MockLogger.VerifyMessages(
             Expected_Starting,
             Expected_ListenForAttention,
+            Expected_ListenForCommands,
             Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
@@ -655,7 +658,7 @@ public class ConversationControllerTests
             Expected_ListenForCommands);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.AreEqual(Phrases.Conversation_StoppedListening, ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
