@@ -16,7 +16,11 @@ internal class ConversationStateMachine
     }
 
     public ILogger Logger { get; }
-    public bool IsListening { get; internal set; }
+    public bool WantsCommands { get; internal set; }
+#pragma warning disable CA1822 // Mark members as static -- work in progress, these will non-static later
+    public bool WantsAttention => false;
+    public bool WantsConfirmation => false;
+#pragma warning restore CA1822 // Mark members as static
 
     internal ConversationResponse RespondTo(IRecognitionResult result)
     {
