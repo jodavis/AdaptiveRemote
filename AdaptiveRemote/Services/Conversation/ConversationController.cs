@@ -81,7 +81,7 @@ internal class ConversationController : ScopedBackgroundProcess
             }
             finally
             {
-                _stateMachine.IsListening = false;
+                _stateMachine.WantsCommands = false;
                 _viewModel.IsListening = false;
                 _viewModel.ToggleListening = null;
             }
@@ -94,7 +94,7 @@ internal class ConversationController : ScopedBackgroundProcess
         {
             await _speechRecognition.ListenForAttentionAsync(cancellationToken);
 
-            _stateMachine.IsListening = true;
+            _stateMachine.WantsCommands = true;
 
             yield return new([Phrases.Conversation_ImListening], Array.Empty<Command>());
 
@@ -103,7 +103,7 @@ internal class ConversationController : ScopedBackgroundProcess
                 yield return _stateMachine.RespondTo(result);
             }
 
-            _stateMachine.IsListening = false;
+            _stateMachine.WantsCommands = false;
 
             yield return new([Phrases.Conversation_StoppedListening], Array.Empty<Command>());
         }
@@ -114,11 +114,11 @@ internal class ConversationController : ScopedBackgroundProcess
         _viewModel.StatusMessage = Phrases.Conversation_ListeningForAttention;
         Logger.LogInformation(Message.ConversationController_ListenForAttention);
 
-        bool wasListening = _stateMachine.IsListening;
+        bool wasListening = _stateMachine.WantsCommands;
 
         await foreach (ConversationResponse response in GetResponsesAsync(cancellationToken))
         {
-            if (_stateMachine.IsListening)
+            if (_stateMachine.WantsCommands)
             {
                 if (!wasListening)
                 {
