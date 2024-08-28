@@ -551,6 +551,40 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {name}: {description}
+        ///   Selected: {selected}
+        ///   ID: {id}
+        ///   Culture: {culture}
+        ///   Supported Formats:{supported}
+        ///   Additional Information:{additional} .
+        /// </summary>
+        internal static string SpeechRecognitionEngine_RecognizerInfo {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 
+        ///      {0}: {1}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 
+        ///      {0} ({1}k bits/s).
+        /// </summary>
+        internal static string SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Recognizer update reached at {0} ({1}).
         /// </summary>
         internal static string SpeechRecognitionEngine_UpdateReached {

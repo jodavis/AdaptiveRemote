@@ -300,6 +300,24 @@ Last error: {1}</value>
     <value>Recognized {0}</value>
     <comment>0=Recognition result</comment>
   </data>
+  <data name="SpeechRecognitionEngine_RecognizerInfo" xml:space="preserve">
+    <value>{name}: {description}
+   Selected: {selected}
+   ID: {id}
+   Culture: {culture}
+   Supported Formats:{supported}
+   Additional Information:{additional} </value>
+  </data>
+  <data name="SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat" xml:space="preserve">
+    <value>
+      {0}: {1}</value>
+    <comment>Format for {additional} in SpeechRecognitionEngine_RecognizerInfo</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat" xml:space="preserve">
+    <value>
+      {0} ({1}k bits/s)</value>
+    <comment>Format for {supported} in SpeechRecognitionEngine_RecognizerInfo</comment>
+  </data>
   <data name="SpeechRecognitionEngine_UpdateReached" xml:space="preserve">
     <value>Recognizer update reached at {0} ({1})</value>
     <comment>0=Position in the audio stream,1=UserToken</comment>

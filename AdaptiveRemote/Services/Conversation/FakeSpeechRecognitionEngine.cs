@@ -8,7 +8,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 {
     private readonly Dictionary<string, Grammar> _grammars = new();
 
-    private event EventHandler<RecognitionResultEventArgs>? _recognized;
+    private event EventHandler<RecognizedSpeechEventArgs>? _recognized;
     private TaskCompletionSource _pause = new();
 
     public FakeSpeechRecognitionEngine()
@@ -16,13 +16,13 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         _ = RecognitionLoop();
     }
 
-    event EventHandler<RecognitionResultEventArgs> ISpeechRecognitionEngine.SpeechRecognized
+    event EventHandler<RecognizedSpeechEventArgs> ISpeechRecognitionEngine.SpeechRecognized
     {
         add => _recognized += value;
         remove => _recognized -= value;
     }
 
-    event EventHandler<RecognitionResultEventArgs> ISpeechRecognitionEngine.SpeechRejected
+    event EventHandler<RecognizedSpeechEventArgs> ISpeechRecognitionEngine.SpeechRejected
     {
         add { }
         remove { }
@@ -36,8 +36,10 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 
     void ISpeechRecognitionEngine.LoadGrammar(Grammar grammar) => _grammars.Add(grammar.Name, grammar);
     void ISpeechRecognitionEngine.UnloadGrammar(Grammar grammar) => _grammars.Remove(grammar.Name);
+    void ISpeechRecognitionEngine.UnloadAllGrammars() => _grammars.Clear();
     void ISpeechRecognitionEngine.RecognizeAsync() => _pause.TrySetResult();
     void ISpeechRecognitionEngine.RecognizeAsyncCancel() => _pause = new();
+    void ISpeechRecognitionEngine.UpdateRecognizerSetting(string name, int value) { }
 
     private async Task RecognitionLoop()
     {
@@ -105,7 +107,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         _recognized?.Invoke(this, new(result));
     }
 
-    private class FakeRecognitionResult : IRecognitionResult
+    private class FakeRecognitionResult : IRecognizedSpeech
     {
         internal FakeRecognitionResult(string text, params (string, string)[] semantics)
         {
@@ -117,11 +119,11 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 
         private readonly (string, string)[] _semantics;
 
-        bool IRecognitionResult.ContainsSemanticValue(string key)
+        bool IRecognizedSpeech.ContainsSemanticValue(string key)
             => _semantics.Any(x => x.Item1 == key);
-        bool IRecognitionResult.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
+        bool IRecognizedSpeech.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
             => (value = _semantics.Where(x => x.Item1 == key).Select(x => x.Item2).FirstOrDefault()) is not null;
 
-        void IRecognitionResult.WriteToWaveStream(Stream waveStream) => throw new NotImplementedException();
+        void IRecognizedSpeech.WriteToWaveStream(Stream waveStream) => throw new NotImplementedException();
     }
 }

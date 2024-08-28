@@ -3,7 +3,7 @@ using System.IO;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-public interface IRecognitionResult
+public interface IRecognizedSpeech
 {
     /// <summary>
     /// The text representation of the speech that was recognized
