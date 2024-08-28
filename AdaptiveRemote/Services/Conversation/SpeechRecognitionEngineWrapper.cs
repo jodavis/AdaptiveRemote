@@ -13,8 +13,8 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     private readonly SpeechRecognitionEngine _engine = new(new CultureInfo("en-US"));
     private readonly ILogger<SpeechRecognitionEngine> _logger;
 
-    private event EventHandler<RecognitionResultEventArgs>? _speechRecognized;
-    private event EventHandler<RecognitionResultEventArgs>? _speechRejected;
+    private event EventHandler<RecognizedSpeechEventArgs>? _speechRecognized;
+    private event EventHandler<RecognizedSpeechEventArgs>? _speechRejected;
 
     public SpeechRecognitionEngineWrapper(ILogger<SpeechRecognitionEngine> logger, IAudioConfigurationService audioConfiguration)
     {
@@ -34,26 +34,33 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
         _engine.SpeechRecognitionRejected += BroadcastSpeechRejected;
 
         audioConfiguration.Configure(_engine);
+
+        foreach (RecognizerInfo recognizer in SpeechRecognitionEngine.InstalledRecognizers())
+        {
+            LogRecognizerInfo(recognizer, _engine.RecognizerInfo.Id == recognizer.Id);
+        }
     }
 
     private void BroadcastSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
-        => _speechRecognized?.Invoke(this, new RecognitionResultEventArgs(WrapRequired(e.Result)));
+        => _speechRecognized?.Invoke(this, new RecognizedSpeechEventArgs(WrapRequired(e.Result)));
     private void BroadcastSpeechRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
-        => _speechRejected?.Invoke(this, new RecognitionResultEventArgs(WrapRequired(e.Result)));
+        => _speechRejected?.Invoke(this, new RecognizedSpeechEventArgs(WrapRequired(e.Result)));
 
     public void LoadGrammar(Grammar grammar) => _engine.LoadGrammar(grammar);
     public void UnloadGrammar(Grammar grammar) => _engine.UnloadGrammar(grammar);
+    public void UnloadAllGrammars() => _engine.UnloadAllGrammars();
     public void SetInputToDefaultAudioDevice() => _engine.SetInputToDefaultAudioDevice();
     public void RecognizeAsync() => _engine.RecognizeAsync(RecognizeMode.Multiple);
     public void RecognizeAsyncCancel() => _engine.RecognizeAsyncCancel();
+    public void UpdateRecognizerSetting(string name, int value) => _engine.UpdateRecognizerSetting(name, value);
 
-    public event EventHandler<RecognitionResultEventArgs> SpeechRecognized
+    public event EventHandler<RecognizedSpeechEventArgs> SpeechRecognized
     {
         add => _speechRecognized += value;
         remove => _speechRecognized -= value;
     }
 
-    public event EventHandler<RecognitionResultEventArgs> SpeechRejected
+    public event EventHandler<RecognizedSpeechEventArgs> SpeechRejected
     {
         add => _speechRejected += value;
         remove => _speechRejected -= value;
@@ -92,7 +99,19 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 
     public void Dispose() => _engine.Dispose();
 
-    private class ResultWrapper : IRecognitionResult
+    private void LogRecognizerInfo(RecognizerInfo recognizerInfo, bool selected)
+        => _logger.LogInformation(Message.SpeechRecognitionEngine_RecognizerInfo,
+                recognizerInfo.Name,
+                recognizerInfo.Description,
+                selected,
+                recognizerInfo.Id,
+                recognizerInfo.Culture,
+                string.Concat(recognizerInfo.SupportedAudioFormats.Select(
+                    x => string.Format(LoggingMessages.SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat, x.EncodingFormat, x.SamplesPerSecond * x.BitsPerSample / 1000))),
+                string.Concat(recognizerInfo.AdditionalInfo.Select(
+                    x => string.Format(LoggingMessages.SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat, x.Key, x.Value))));
+
+    private class ResultWrapper : IRecognizedSpeech
     {
         private readonly RecognitionResult _result;
 
@@ -101,12 +120,12 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
             _result = result;
         }
 
-        string IRecognitionResult.Text => _result.Text;
+        string IRecognizedSpeech.Text => _result.Text;
 
-        bool IRecognitionResult.ContainsSemanticValue(string key) => _result.Semantics.ContainsKey(key);
-        void IRecognitionResult.WriteToWaveStream(Stream waveStream) => _result.Audio.WriteToWaveStream(waveStream);
+        bool IRecognizedSpeech.ContainsSemanticValue(string key) => _result.Semantics.ContainsKey(key);
+        void IRecognizedSpeech.WriteToWaveStream(Stream waveStream) => _result.Audio.WriteToWaveStream(waveStream);
 
-        bool IRecognitionResult.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
+        bool IRecognizedSpeech.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
         {
             if (_result.Semantics.ContainsKey(key) &&
                 _result.Semantics[key]?.Value is string v)

@@ -12,7 +12,7 @@ public class ConversationControllerTests
     private static readonly Task IncompleteTask = new TaskCompletionSource().Task;
 
     private readonly MockLogger<ConversationController, ConversationStateMachine> MockLogger = new();
-    private readonly Mock<ISpeechRecognition> MockRecognition = new();
+    private readonly Mock<Old_ISpeechRecognition> MockRecognition = new();
     private readonly Mock<ISpeechSynthesis> MockSynthesis = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinition = new();
     private readonly Mock<IOptionsSnapshot<ConversationSettings>> MockOptions = new();
@@ -65,11 +65,11 @@ public class ConversationControllerTests
         new ConversationStateMachine(MockDefinition.Object, MockLogger),
         ViewModel);
 
-    private static Mock<IRecognitionResult> CreateMockResult(string text, params string[] semanticValues)
+    private static Mock<IRecognizedSpeech> CreateMockResult(string text, params string[] semanticValues)
     {
         string? nullValue;
 
-        Mock<IRecognitionResult> mockResult = new();
+        Mock<IRecognizedSpeech> mockResult = new();
         mockResult
             .Setup(x => x.ContainsSemanticValue(It.IsAny<string>()))
             .Returns(false);
@@ -308,7 +308,7 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+        Mock<IRecognizedSpeech> result = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -358,7 +358,7 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result = CreateMockResult("Not a command", "command=Not a command");
+        Mock<IRecognizedSpeech> result = CreateMockResult("Not a command", "command=Not a command");
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -399,7 +399,7 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+        Mock<IRecognizedSpeech> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -449,8 +449,8 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
-        Mock<IRecognitionResult> result2 = CreateMockResult(Command2.Name, "command=" + Command2.Name);
+        Mock<IRecognizedSpeech> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+        Mock<IRecognizedSpeech> result2 = CreateMockResult(Command2.Name, "command=" + Command2.Name);
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -501,7 +501,7 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+        Mock<IRecognizedSpeech> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -572,7 +572,7 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name, "repeat=3");
+        Mock<IRecognizedSpeech> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name, "repeat=3");
 
         TaskCompletionSource tcs = new();
         MockRecognition
@@ -1052,7 +1052,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+        Mock<IRecognizedSpeech> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         MockRecognition
             .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
@@ -1106,7 +1106,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+        Mock<IRecognizedSpeech> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         MockRecognition
             .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
@@ -1160,7 +1160,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        Mock<IRecognitionResult> result1 = CreateMockResult(Command2.Name, "command=" + Command2.Name);
+        Mock<IRecognizedSpeech> result1 = CreateMockResult(Command2.Name, "command=" + Command2.Name);
 
         MockRecognition
             .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
@@ -1202,7 +1202,7 @@ public class ConversationControllerTests
             .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
             .Verifiable(Times.Once);
 
-        Mock<IRecognitionResult> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
+        Mock<IRecognizedSpeech> result1 = CreateMockResult(Command1.Name, "command=" + Command1.Name);
 
         MockRecognition
             .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
@@ -1228,9 +1228,9 @@ public class ConversationControllerTests
             Expected_Started);
     }
 
-    private static async IAsyncEnumerable<IRecognitionResult> AsyncEnumerate(bool complete, params IRecognitionResult[] commands)
+    private static async IAsyncEnumerable<IRecognizedSpeech> AsyncEnumerate(bool complete, params IRecognizedSpeech[] commands)
     {
-        foreach (IRecognitionResult command in commands)
+        foreach (IRecognizedSpeech command in commands)
         {
             yield return command;
         }
@@ -1241,7 +1241,7 @@ public class ConversationControllerTests
         }
     }
 
-    private static async IAsyncEnumerable<IRecognitionResult> CancelAsyncEnumerate(bool cancel = true)
+    private static async IAsyncEnumerable<IRecognizedSpeech> CancelAsyncEnumerate(bool cancel = true)
     {
         if (cancel)
         {

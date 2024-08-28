@@ -9,7 +9,7 @@ namespace AdaptiveRemote.Services.Conversation;
 internal class ConversationController : ScopedBackgroundProcess
 {
     private readonly ConversationSettings _speechSettings;
-    private readonly ISpeechRecognition _speechRecognition;
+    private readonly Old_ISpeechRecognition _speechRecognition;
     private readonly ISpeechSynthesis _speechSynthesis;
     private readonly ConversationStateMachine _stateMachine;
     private readonly ConversationView _viewModel;
@@ -18,7 +18,7 @@ internal class ConversationController : ScopedBackgroundProcess
 
     public ConversationController(
         IOptionsSnapshot<ConversationSettings> options,
-        ISpeechRecognition speechRecognition,
+        Old_ISpeechRecognition speechRecognition,
         ISpeechSynthesis speechSynthesis,
         ILogger<ConversationController> logger,
         ConversationStateMachine stateMachine,
@@ -98,7 +98,7 @@ internal class ConversationController : ScopedBackgroundProcess
 
             yield return new([Phrases.Conversation_ImListening], Array.Empty<Command>());
 
-            await foreach (IRecognitionResult result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
+            await foreach (IRecognizedSpeech result in _speechRecognition.ListenForCommandsAsync(cancellationToken))
             {
                 yield return _stateMachine.RespondTo(result);
             }

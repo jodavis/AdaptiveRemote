@@ -105,7 +105,7 @@ public class GrammarTests
         // Arrange
         Stopwatch.Start();
 
-        ISpeechRecognition speechRecognition = CreateSut();
+        Old_ISpeechRecognition speechRecognition = CreateSut();
 
         audioConfiguration.SetAudioInputToWaveStream(waveFileName);
 
@@ -113,14 +113,14 @@ public class GrammarTests
             TaskContinuationOptions.ExecuteSynchronously);
 
         // Act
-        Task<IRecognitionResult> resultTask = GetFirstResult(speechRecognition, _cts.Token);
+        Task<IRecognizedSpeech> resultTask = GetFirstResult(speechRecognition, _cts.Token);
         Log("Waiting for a command");
         await Task.WhenAny(resultTask, timeoutTask);
         Log("Done waiting");
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask) + " timed out");
-        IRecognitionResult result = resultTask.Result;
+        IRecognizedSpeech result = resultTask.Result;
 
         Assert.AreEqual(expectedText, result.Text, nameof(result) + "." + nameof(result.Text));
 
@@ -137,10 +137,10 @@ public class GrammarTests
         }
     }
 
-    private async Task<IRecognitionResult> GetFirstResult(ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
+    private async Task<IRecognizedSpeech> GetFirstResult(Old_ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
     {
         Log("ListenForCommandsAsync");
-        await foreach (IRecognitionResult result in speechRecognition.ListenForCommandsAsync(cancellationToken))
+        await foreach (IRecognizedSpeech result in speechRecognition.ListenForCommandsAsync(cancellationToken))
         {
             Log("Received a command");
             return result;
@@ -150,8 +150,8 @@ public class GrammarTests
         return default!; // We won't get here.
     }
 
-    private ISpeechRecognition CreateSut()
-        => CreateTestHost().Services.GetRequiredService<ISpeechRecognition>();
+    private Old_ISpeechRecognition CreateSut()
+        => CreateTestHost().Services.GetRequiredService<Old_ISpeechRecognition>();
 
     private IHost CreateTestHost() =>
         Host.CreateDefaultBuilder()

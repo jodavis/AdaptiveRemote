@@ -2,11 +2,7 @@
 
 internal interface ISpeechRecognition
 {
-    Task ListenForAttentionAsync(CancellationToken cancellationToken);
+    void SetFilter(PhraseKinds filter);
 
-    Task<bool> ListenForYesNoAsync(CancellationToken cancellationToken);
-
-    IAsyncEnumerable<IRecognitionResult> ListenForCommandsAsync(CancellationToken cancellationToken);
-
-    void ToggleListening();
+    IAsyncEnumerable<IRecognizedSpeech> RecognizeAsync(CancellationToken stopToken);
 }

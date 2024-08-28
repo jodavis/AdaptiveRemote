@@ -22,7 +22,7 @@ internal class ConversationStateMachine
     public bool WantsConfirmation => false;
 #pragma warning restore CA1822 // Mark members as static
 
-    internal ConversationResponse RespondTo(IRecognitionResult result)
+    internal ConversationResponse RespondTo(IRecognizedSpeech result)
     {
         List<string> phrases = new();
         List<Command> commands = new();
@@ -60,7 +60,7 @@ internal class ConversationStateMachine
 
         return new(phrases, commands);
 
-        static int ParseRepeat(IRecognitionResult result)
+        static int ParseRepeat(IRecognizedSpeech result)
         {
             if (result.TryGetSemanticValue("repeat", out string? repeatString) &&
                 int.TryParse(repeatString, out int repeat))

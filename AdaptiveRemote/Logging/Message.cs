@@ -11,6 +11,7 @@ internal enum Message
     SpeechRecognitionEngine_LoadGrammarCompleted = 107,
     SpeechRecognitionEngine_AudioStateChanged = 108,
     SpeechRecognitionEngine_AudioSignalProblemOccurred = 109,
+    SpeechRecognitionEngine_RecognizerInfo = 110,
     ConversationController_RetryLimitReached = 205,
     ConversationController_Retrying = 206,
     ConversationController_Recognized = 207,
