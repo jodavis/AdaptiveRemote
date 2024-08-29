@@ -6,7 +6,7 @@ namespace AdaptiveRemote.Services.Conversation;
 
 internal static class ConversationStateExtensions
 {
-    public static (ConversationState, ConversationResponse) RespondTo(this ConversationState state, IRecognizedSpeech speech, ILogger logger)
+    public static ConversationState RespondTo(this ConversationState state, IRecognizedSpeech speech, ILogger? logger)
     {
         List<string> phrases = new();
         List<Command> commands = new();
@@ -38,7 +38,7 @@ internal static class ConversationStateExtensions
             // TODO: Handle missing Execute message
             // TODO: Handle disabled
 
-            logger.LogInformation(Message.ConversationController_Recognized, speech.Text, command);
+            logger?.LogInformation(Message.ConversationController_Recognized, speech.Text, command);
             state = state with
             {
                 WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
@@ -52,7 +52,8 @@ internal static class ConversationStateExtensions
             // TODO: Handle unknown command
         }
 
-        logger.LogInformation(Message.ConverationState_Updated, state);
-        return (state, new(phrases, commands));
+        state = state with { LastResponse = new(phrases, commands) };
+        logger?.LogInformation(Message.ConverationState_Updated, state);
+        return state;
     }
 }

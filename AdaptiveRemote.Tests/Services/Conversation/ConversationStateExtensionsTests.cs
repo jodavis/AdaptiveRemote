@@ -77,18 +77,21 @@ public class ConversationStateExtensionsTests
 
         ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.WakeWord, LastCommand: lastCommand);
 
-        ConversationState expectedState = sut with { WantsPhrases = PhraseKinds.Commands, LastCommand = null };
+        ConversationState expected = sut with
+        {
+            WantsPhrases = PhraseKinds.Commands,
+            LastCommand = null,
+            LastResponse = new([Phrases.Conversation_ImListening], [])
+        };
 
         // Act
-        (ConversationState State, ConversationResponse Response) result = sut.RespondTo(input, MockLogger);
+        ConversationState result = sut.RespondTo(input, MockLogger);
 
         // Assert
-        Assert.AreEqual(expectedState, result.State, nameof(result.State));
-        AssertCollectionsEqual([Phrases.Conversation_ImListening], result.Response.Phrases, "result.Response.Phrases");
-        AssertCollectionEmpty(result.Response.Commands, "result.Response.Commands");
+        Assert.AreEqual(expected, result, nameof(result));
 
         MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expectedState));
+            ExpectMessage_Updated(expected));
     }
 
     [TestMethod]
@@ -104,19 +107,21 @@ public class ConversationStateExtensionsTests
 
         ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands, LastCommand: lastCommand);
 
-        ConversationState expectedState = sut with { WantsPhrases = PhraseKinds.WakeWord, LastCommand = null };
+        ConversationState expected = sut with
+        {
+            WantsPhrases = PhraseKinds.WakeWord,
+            LastCommand = null,
+            LastResponse = new([Phrases.Conversation_StoppedListening], [])
+        };
 
         // Act
-        (ConversationState State, ConversationResponse Response) result = sut.RespondTo(input, MockLogger);
+        ConversationState result = sut.RespondTo(input, MockLogger);
 
         // Assert
-        Assert.AreEqual(expectedState, result.State, nameof(result.State));
-
-        AssertCollectionsEqual([Phrases.Conversation_StoppedListening], result.Response.Phrases, "result.Response.Phrases");
-        AssertCollectionEmpty(result.Response.Commands, "result.Response.Commands");
+        Assert.AreEqual(expected, result, nameof(result));
 
         MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expectedState));
+            ExpectMessage_Updated(expected));
     }
 
     [TestMethod]
@@ -133,19 +138,21 @@ public class ConversationStateExtensionsTests
 
         ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands, LastCommand: lastCommand);
 
-        ConversationState expectedState = sut with { WantsPhrases = PhraseKinds.WakeWord, LastCommand = null };
+        ConversationState expected = sut with
+        {
+            WantsPhrases = PhraseKinds.WakeWord,
+            LastCommand = null,
+            LastResponse = new([Phrases.Conversation_YoureWelcome], [])
+        };
 
         // Act
-        (ConversationState State, ConversationResponse Response) result = sut.RespondTo(input, MockLogger);
+        ConversationState result = sut.RespondTo(input, MockLogger);
 
         // Assert
-        Assert.AreEqual(expectedState, result.State, nameof(result.State));
-
-        AssertCollectionsEqual([Phrases.Conversation_YoureWelcome], result.Response.Phrases, "result.Response.Phrases");
-        AssertCollectionEmpty(result.Response.Commands, "result.Response.Commands");
+        Assert.AreEqual(expected, result, nameof(result));
 
         MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expectedState));
+            ExpectMessage_Updated(expected));
     }
 
     [TestMethod]
@@ -159,67 +166,21 @@ public class ConversationStateExtensionsTests
 
         ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands);
 
-        ConversationState expectedState = sut with { LastCommand = input, WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction };
+        ConversationState expected = sut with
+        {
+            LastCommand = input,
+            WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
+            LastResponse = new([MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]])
+        };
 
         // Act
-        (ConversationState State, ConversationResponse Response) result = sut.RespondTo(input, MockLogger);
+        ConversationState result = sut.RespondTo(input, MockLogger);
 
         // Assert
-        Assert.AreEqual(expectedState, result.State, nameof(result.State));
-
-        AssertCollectionsEqual([MockCommands["Play"].SpeakPhrase], result.Response.Phrases, "result.Response.Phrases");
-        AssertCollectionsEqual([MockCommands["Play"]], result.Response.Commands, "result.Response.Commands");
+        Assert.AreEqual(expected, result, nameof(result));
 
         MockLogger.VerifyMessages(
             ExpectMessage_Recognized(input.Text, "Play"),
-            ExpectMessage_Updated(expectedState));
-    }
-
-    private static void AssertCollectionEmpty<ItemType>(IEnumerable<ItemType> actual, string name)
-        => AssertCollectionsEqual(Array.Empty<ItemType>(), actual, name);
-    private static void AssertCollectionsEqual<ItemType>(IEnumerable<ItemType> expected, IEnumerable<ItemType> actual, string name)
-    {
-        Assert.IsNotNull(actual, name);
-
-        IEnumerator<ItemType> expectedIter = expected.GetEnumerator();
-        IEnumerator<ItemType> actualIter = actual.GetEnumerator();
-
-        int count = 0;
-
-        while (expectedIter.MoveNext())
-        {
-            if (!actualIter.MoveNext())
-            {
-                int expectedCount = count;
-                List<string> missingMessages = GetRemaining(expectedIter, ref expectedCount);
-                Assert.AreEqual(expectedCount, count, "Wrong number of items. Did not find:\n{0}",
-                    string.Join("\n", missingMessages));
-            }
-
-            Assert.AreEqual($"\n{expectedIter.Current}", $"\n{actualIter.Current}", "{1}[{0}]", count, name);
-
-            count++;
-        }
-
-        if (actualIter.MoveNext())
-        {
-            List<string> unexpectedMessages = GetRemaining(actualIter, ref count);
-            Assert.AreEqual(expected.Count(), count,
-                "Wrong number of items. Did not expect to find:\n{0}",
-                string.Join("\n", unexpectedMessages));
-        }
-
-        static List<string> GetRemaining(IEnumerator<ItemType> iter, ref int count)
-        {
-            List<string> remaining = new();
-
-            do
-            {
-                remaining.Add($"[{count}]: {iter.Current}");
-                count++;
-            } while (iter.MoveNext());
-
-            return remaining;
-        }
+            ExpectMessage_Updated(expected));
     }
 }
