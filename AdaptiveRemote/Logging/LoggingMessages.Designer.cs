@@ -217,6 +217,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {new_state}.
+        /// </summary>
+        internal static string ConverationState_Updated {
+            get {
+                return ResourceManager.GetString("ConverationState_Updated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Could not execute {0} because it is not enabled.
         /// </summary>
         internal static string ConversationController_CommandDisabled {

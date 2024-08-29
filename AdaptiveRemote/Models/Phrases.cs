@@ -8,12 +8,14 @@ internal static class Phrases
     public static string Conversation_Sent(string command) => $"Sent {command}";
     public static string Conversation_Sent(string command, int repeat) => $"Sent {command}{NumberOfTimes(repeat)}";
     public static string Conversation_StoppedListening => "Okay";
+    public static string Conversation_YoureWelcome => "You're welcome!";
     public static string Conversation_WaitingForActivation => "Conversation system not started";
     public static string Conversation_ListeningForAttention => $"Say \"{Conversation_AttentionPhrase}\" to get my attention";
     public static string Conversation_AttentionPhrase => "Hey Remote";
     public static string Conversation_SystemFailed => "Conversation system error, try restarting";
     public static string Conversation_CommandDisabled(string name) => $"I can't do that. {name} is disabled.";
     public static string Conversation_ShuttingDown => "Shutting down...";
+    public static string Conversation_Goodbye => "Goodbye";
 
     private static string NumberOfTimes(int repeat)
         => repeat switch

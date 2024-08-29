@@ -185,6 +185,10 @@
     <value>Could not execute {0} because the service has been shut down</value>
     <comment>0=Command type + name</comment>
   </data>
+  <data name="ConverationState_Updated" xml:space="preserve">
+    <value>{new_state}</value>
+    <comment>0=ConversationState.ToString()</comment>
+  </data>
   <data name="ConversationController_CommandDisabled" xml:space="preserve">
     <value>Could not execute {0} because it is not enabled</value>
     <comment>0=Name of the disabled command</comment>

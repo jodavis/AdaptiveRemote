@@ -75,4 +75,5 @@ internal enum Message
     ScopedBackgroundProcess_StoppedEarly = 1205,
     ScopedBackgroundProcess_Error = 1206,
     ScopedBackgroundProcess_CanceledBeforeStarted = 1207,
+    ConverationState_Updated = 1301,
 }

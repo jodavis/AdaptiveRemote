@@ -1,6 +1,7 @@
 ﻿using System.Speech.Recognition;
 using System.Threading.Channels;
 using AdaptiveRemote.Logging;
+using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -57,25 +58,32 @@ internal class SpeechRecognition : ISpeechRecognition
     IAsyncEnumerable<IRecognizedSpeech> ISpeechRecognition.RecognizeAsync(CancellationToken stopToken)
     {
         Channel<IRecognizedSpeech> channel = Channel.CreateBounded<IRecognizedSpeech>(_settings.CommandBufferSize);
-        stopToken.Register(() => channel.Writer.TryComplete());
 
-        if (!stopToken.IsCancellationRequested)
-        {
-            _ = StartlisteningAsync(channel);
-        }
+        _ = StartlisteningAsync();
 
         return channel.Reader.ReadAllAsync(stopToken);
 
-        async Task StartlisteningAsync(Channel<IRecognizedSpeech> channel)
+        async Task StartlisteningAsync()
         {
-            EventHandler<RecognizedSpeechEventArgs> handler = (sender, args) => channel.Writer.TryWrite(args.Result);
-            using (_listeningController.Listen())
+            try
             {
-                _engine.SpeechRecognized += handler;
+                if (!stopToken.IsCancellationRequested)
+                {
+                    EventHandler<RecognizedSpeechEventArgs> handler = (sender, args) => channel.Writer.TryWrite(args.Result);
+                    using (_listeningController.Listen())
+                    {
+                        _engine.SpeechRecognized += handler;
 
-                await channel.Reader.Completion;
+                        await stopToken.WaitForCancelled();
 
-                _engine.SpeechRecognized -= handler;
+                        _engine.SpeechRecognized -= handler;
+                    }
+                }
+                channel.Writer.TryComplete();
+            }
+            catch (Exception error)
+            {
+                channel.Writer.TryComplete(error);
             }
         }
     }
