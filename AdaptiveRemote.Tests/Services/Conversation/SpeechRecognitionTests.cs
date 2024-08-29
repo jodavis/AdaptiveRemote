@@ -288,6 +288,7 @@ public class SpeechRecognitionTests
     {
         // Arrange
         Expect_ListenAsync();
+        Expect_ListenDisposed();
         Expect_SpeechRecognized_EventHandlerRemoved();
 
         CancellationTokenSource cts = new();
