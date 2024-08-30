@@ -90,7 +90,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
             yield return Command("Go up", "Up");
             yield return Command("Down three", "Down", 3);
             yield return Command("Back", "Back");
-            yield return new FakeRecognitionResult("I'm done", ("system", "STOPLISTENING"));
+            yield return new FakeRecognitionResult("Thank you", ("system", "STOPLISTENING"), ("thankyou", "true"));
         }
 
         static FakeRecognitionResult Command(string text, string command, int? repeat = default)

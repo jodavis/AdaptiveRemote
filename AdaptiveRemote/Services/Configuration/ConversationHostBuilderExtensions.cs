@@ -14,7 +14,7 @@ internal static class ConversationHostBuilderExtensions
     internal static IServiceCollection AddConversationServices(this IServiceCollection services)
         => services
             .AddScopedLifecycleService<ConversationController>()
-            .AddScoped<Old_ISpeechRecognition, Old_SpeechRecognition>()
+            .AddScoped<ISpeechRecognition, SpeechRecognition>()
             .AddScoped<ISpeechSynthesis, SpeechSynthesis>()
             .AddScoped<IGrammarProvider, StaticGrammarProvider>()
             .AddScoped<ConversationStateMachine>()

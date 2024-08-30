@@ -105,9 +105,11 @@ public class GrammarTests
         // Arrange
         Stopwatch.Start();
 
-        Old_ISpeechRecognition speechRecognition = CreateSut();
+        ISpeechRecognition speechRecognition = CreateSut();
 
         audioConfiguration.SetAudioInputToWaveStream(waveFileName);
+
+        speechRecognition.SetFilter(PhraseKinds.All);
 
         Task timeoutTask = Task.Delay(2000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
             TaskContinuationOptions.ExecuteSynchronously);
@@ -137,10 +139,10 @@ public class GrammarTests
         }
     }
 
-    private async Task<IRecognizedSpeech> GetFirstResult(Old_ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
+    private async Task<IRecognizedSpeech> GetFirstResult(ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
     {
         Log("ListenForCommandsAsync");
-        await foreach (IRecognizedSpeech result in speechRecognition.ListenForCommandsAsync(cancellationToken))
+        await foreach (IRecognizedSpeech result in speechRecognition.RecognizeAsync(cancellationToken))
         {
             Log("Received a command");
             return result;
@@ -150,8 +152,8 @@ public class GrammarTests
         return default!; // We won't get here.
     }
 
-    private Old_ISpeechRecognition CreateSut()
-        => CreateTestHost().Services.GetRequiredService<Old_ISpeechRecognition>();
+    private ISpeechRecognition CreateSut()
+        => CreateTestHost().Services.GetRequiredService<ISpeechRecognition>();
 
     private IHost CreateTestHost() =>
         Host.CreateDefaultBuilder()

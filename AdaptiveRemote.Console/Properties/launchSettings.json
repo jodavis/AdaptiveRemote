@@ -7,7 +7,7 @@
     },
     "FakeConversation": {
       "commandName": "Project",
-      "commandLineArgs": "--conversation:Fake=true --telemetry:Publish=false",
+      "commandLineArgs": "--conversation:Fake=true --telemetry:Publish=false --tivo:Fake=True --broadlink:Fake=True",
       "workingDirectory": "."
     },
     "FakeConversation with TelemtryLogging": {

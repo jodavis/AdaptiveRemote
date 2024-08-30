@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using AdaptiveRemote.TestUtilities;
@@ -28,8 +29,6 @@ public class ConversationControllerTests
         => $"Information[209]: {LoggingMessages.ConversationController_ListenForAttention}";
     private static string Expected_ListenForCommands
         => $"Information[212]: {LoggingMessages.ConversationController_ListenForCommands}";
-    private static string Expected_Recognized(string text, string semantics)
-        => $"Information[207]: {string.Format(LoggingMessages.ConversationController_Recognized, text, semantics)}";
     private static string Expected_Executing(string command)
         => $"Information[210]: {string.Format(LoggingMessages.ConversationController_Executing, command)}";
     private static string Expected_Executed(string command)
@@ -50,19 +49,66 @@ public class ConversationControllerTests
         => $"Information[1204]: {LoggingMessages.ScopedBackgroundProcess_Stopped}";
     private static string Expected_StoppedEarly
         => $"Warning[1205]: {LoggingMessages.ScopedBackgroundProcess_StoppedEarly}";
-    private static string Expected_Error(Exception error)
-        => $"Error[1206]: {string.Format(LoggingMessages.ScopedBackgroundProcess_Error, error)}";
     private static string Expected_CommandMissingExecuteAction(string command)
         => $"Error[213]: {string.Format(LoggingMessages.ConversationController_CommandMissingExecuteAction, command)}";
     private static string Expected_CommandDisabled(string command)
         => $"Error[214]: {string.Format(LoggingMessages.ConversationController_CommandDisabled, command)}";
 
-    private ConversationController CreateSut() => new(
+    private class OldSpeechRecognitionWrapper : ISpeechRecognition
+    {
+        private readonly Old_ISpeechRecognition _oldRecognition;
+
+        public OldSpeechRecognitionWrapper(Old_ISpeechRecognition oldRecognition)
+        {
+            _oldRecognition = oldRecognition;
+        }
+
+        public async IAsyncEnumerable<IRecognizedSpeech> RecognizeAsync([EnumeratorCancellation] CancellationToken stopToken)
+        {
+            while (true)
+            {
+                try
+                {
+                    await _oldRecognition.ListenForAttentionAsync(stopToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    yield break;
+                }
+
+                yield return CreateMockResult("Hey Remote", "system=STARTLISTENING").Object;
+
+                IAsyncEnumerator<IRecognizedSpeech> speech = _oldRecognition.ListenForCommandsAsync(stopToken).GetAsyncEnumerator(stopToken);
+                while (true)
+                {
+                    try
+                    {
+                        if (!await speech.MoveNextAsync())
+                        {
+                            break;
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        yield break;
+                    }
+
+                    yield return speech.Current;
+                }
+
+                yield return CreateMockResult("Stop Listening", "system=STOPLISTENING").Object;
+            }
+        }
+
+        public void SetFilter(PhraseKinds filter) { }
+    }
+
+    private ConversationController CreateSut() => new ConversationController(
         MockOptions.Object,
-        MockRecognition.Object,
+        new OldSpeechRecognitionWrapper(MockRecognition.Object),
         MockSynthesis.Object,
         MockLogger,
-        new ConversationStateMachine(MockDefinition.Object, MockLogger),
+        new ConversationStateMachine(MockDefinition.Object, new MockLogger<ConversationStateMachine>()),
         ViewModel);
 
     private static Mock<IRecognizedSpeech> CreateMockResult(string text, params string[] semanticValues)
@@ -94,6 +140,10 @@ public class ConversationControllerTests
                 .Setup(x => x.TryGetSemanticValue(key, out value))
                 .Returns(true);
         }
+
+        mockResult
+            .Setup(x => x.ToString())
+            .Returns($"{text} ({string.Join(", ", semanticValues)})");
 
         return mockResult;
     }
@@ -343,7 +393,6 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Started);
 
@@ -384,9 +433,7 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_Started,
-            Expected_ListenForCommands,
-            Expected_Recognized(result.Object.Text, result.Object.Text),
-            Expected_UnknownCommand("Not a command"));
+            Expected_ListenForCommands);
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -434,7 +481,6 @@ public class ConversationControllerTests
             Expected_ListenForAttention,
             Expected_Started,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name));
 
@@ -486,7 +532,6 @@ public class ConversationControllerTests
             Expected_ListenForAttention,
             Expected_Started,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name));
 
@@ -538,7 +583,6 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Started,
@@ -554,7 +598,6 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Started,
@@ -607,7 +650,6 @@ public class ConversationControllerTests
             Expected_ListenForAttention,
             Expected_Started,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Executing(Command1.Name),
@@ -1080,7 +1122,6 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Started,
             Expected_Stopping);
@@ -1135,7 +1176,6 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command1.Name),
             Expected_Executing(Command1.Name),
             Expected_Started,
             Expected_Stopping,
@@ -1181,8 +1221,6 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command2.Name),
-            Expected_CommandMissingExecuteAction(Command2.Name),
             Expected_Started);
     }
 
@@ -1223,8 +1261,6 @@ public class ConversationControllerTests
             Expected_Starting,
             Expected_ListenForAttention,
             Expected_ListenForCommands,
-            Expected_Recognized(result1.Object.Text, Command1.Name),
-            Expected_CommandDisabled(Command1.Name),
             Expected_Started);
     }
 

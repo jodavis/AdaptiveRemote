@@ -185,10 +185,6 @@
     <value>Could not execute {0} because the service has been shut down</value>
     <comment>0=Command type + name</comment>
   </data>
-  <data name="ConverationState_Updated" xml:space="preserve">
-    <value>{new_state}</value>
-    <comment>0=ConversationState.ToString()</comment>
-  </data>
   <data name="ConversationController_CommandDisabled" xml:space="preserve">
     <value>Could not execute {0} because it is not enabled</value>
     <comment>0=Name of the disabled command</comment>
@@ -227,6 +223,18 @@ Last error: {1}</value>
   <data name="ConversationController_UnknownCommand" xml:space="preserve">
     <value>Recognized an unknown command: {0}</value>
     <comment>0=Speech that was recognized but did not map to a command</comment>
+  </data>
+  <data name="ConversationState_InvalidSemanticValue" xml:space="preserve">
+    <value>Received an invalid semantic value for '{semantic_key}': {semantic_value}</value>
+    <comment>semantic_key=key name,semantic_value=an invalid value</comment>
+  </data>
+  <data name="ConversationState_UnexpectedSpeechDetected" xml:space="preserve">
+    <value>Did not expect {phrase_kind} but received "{recognized_speech}"</value>
+    <comment>phrase_kind=A member of the PhraseKind enum, recognized_speech=speech text and semantic information</comment>
+  </data>
+  <data name="ConversationState_Updated" xml:space="preserve">
+    <value>{new_state}</value>
+    <comment>0=ConversationState.ToString()</comment>
   </data>
   <data name="ListeningController_RecognizeAsyncCancelError" xml:space="preserve">
     <value>Error calling RecognizeAsyncCancel
@@ -329,6 +337,10 @@ Last error: {1}</value>
   <data name="SpeechRecognition_CancelledListeningMethod" xml:space="preserve">
     <value>{0} was cancelled.</value>
     <comment>0=Cancelled method</comment>
+  </data>
+  <data name="SpeechRecognition_CouldNotConfigureSetting" xml:space="preserve">
+    <value>Could not set '{recognizer_setting}': {error_message}</value>
+    <comment>recognizer_setting=Name of a setting,error_messae=exception message</comment>
   </data>
   <data name="SpeechRecognition_ErrorInListeningMethod" xml:space="preserve">
     <value>An error occurred in {0}

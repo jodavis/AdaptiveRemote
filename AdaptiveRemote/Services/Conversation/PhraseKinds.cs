@@ -10,8 +10,23 @@ internal enum PhraseKinds
     More = 16,
     Less = 32,
 
-    CommandsAndConfirmation = 6,
+    CommandsAndConfirmation = Commands | Confirmation,
 
     None = 0,
-    All = 63,
+    RequiresLastCommand =
+        Confirmation
+        | Correction
+        | More
+        | Less,
+    RequiresRepeatableCommand =
+        More
+        | Less,
+    RequiresUndoableCommand =
+        Less,
+    All = WakeWord
+        | Commands
+        | Confirmation
+        | Correction
+        | More
+        | Less,
 }
