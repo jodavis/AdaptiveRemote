@@ -29,6 +29,7 @@ internal enum Message
     SpeechRecognition_ListeningMethodAlreadyInProgress = 308,
     SpeechRecognition_GrammarFailedToLoad = 309,
     SpeechRecognition_GrammarFailedToUnload = 310,
+    SpeechRecognition_CouldNotConfigureSetting = 311,
     SpeechSynthesis_SelectedVoice = 401,
     SpeechSynthesis_VoiceNotFound = 402,
     SpeechSynthesis_Saying = 403,
@@ -75,5 +76,7 @@ internal enum Message
     ScopedBackgroundProcess_StoppedEarly = 1205,
     ScopedBackgroundProcess_Error = 1206,
     ScopedBackgroundProcess_CanceledBeforeStarted = 1207,
-    ConverationState_Updated = 1301,
+    ConversationState_Updated = 1301,
+    ConversationState_UnexpectedSpeechDetected = 1302,
+    ConversationState_InvalidSemanticValue = 1303,
 }
