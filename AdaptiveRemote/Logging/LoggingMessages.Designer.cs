@@ -253,24 +253,6 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Waiting for attention.
-        /// </summary>
-        internal static string ConversationController_ListenForAttention {
-            get {
-                return ResourceManager.GetString("ConversationController_ListenForAttention", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Listening for commands.
-        /// </summary>
-        internal static string ConversationController_ListenForCommands {
-            get {
-                return ResourceManager.GetString("ConversationController_ListenForCommands", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Recognized &apos;{0}&apos; as &apos;{1}&apos;.
         /// </summary>
         internal static string ConversationController_Recognized {

@@ -5,13 +5,17 @@ namespace AdaptiveRemote.Services.Conversation;
 
 internal class ConversationStateMachine
 {
+    private static readonly IReadOnlyDictionary<string, Command> EmptyCommands = new Dictionary<string, Command>();
+
     private ConversationState _state;
+    private readonly IRemoteDefinitionService _definitionService;
 
     public ConversationStateMachine(IRemoteDefinitionService definitionService, ILogger<ConversationStateMachine> logger)
     {
+        _definitionService = definitionService;
         Logger = logger;
 
-        _state = new(GetCommands(definitionService), WantsPhrases: PhraseKinds.WakeWord);
+        _state = new(EmptyCommands);
     }
 
     public ILogger Logger { get; }
@@ -38,5 +42,10 @@ internal class ConversationStateMachine
     internal void ToggleListening()
     {
         throw new NotImplementedException();
+    }
+
+    internal void Reset()
+    {
+        _state = new(GetCommands(_definitionService), WantsPhrases: PhraseKinds.WakeWord);
     }
 }
