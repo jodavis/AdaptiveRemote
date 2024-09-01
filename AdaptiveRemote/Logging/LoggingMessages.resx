@@ -201,12 +201,6 @@
     <value>Executing command '{0}'</value>
     <comment>0=Command name</comment>
   </data>
-  <data name="ConversationController_ListenForAttention" xml:space="preserve">
-    <value>Waiting for attention</value>
-  </data>
-  <data name="ConversationController_ListenForCommands" xml:space="preserve">
-    <value>Listening for commands</value>
-  </data>
   <data name="ConversationController_Recognized" xml:space="preserve">
     <value>Recognized '{0}' as '{1}'</value>
     <comment>0=Result text,1=Semantic meaning</comment>

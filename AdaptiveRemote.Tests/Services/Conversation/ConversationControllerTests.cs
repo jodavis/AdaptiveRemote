@@ -25,16 +25,10 @@ public class ConversationControllerTests
 
     private readonly ConversationView ViewModel = new("MOCKGROUP");
 
-    private static string Expected_ListenForAttention
-        => $"Information[209]: {LoggingMessages.ConversationController_ListenForAttention}";
-    private static string Expected_ListenForCommands
-        => $"Information[212]: {LoggingMessages.ConversationController_ListenForCommands}";
     private static string Expected_Executing(string command)
         => $"Information[210]: {string.Format(LoggingMessages.ConversationController_Executing, command)}";
     private static string Expected_Executed(string command)
         => $"Information[211]: {string.Format(LoggingMessages.ConversationController_Executed, command)}";
-    private static string Expected_UnknownCommand(string command)
-        => $"Error[208]: {string.Format(LoggingMessages.ConversationController_UnknownCommand, command)}";
     private static string Expected_Retrying(int times, Exception latestError)
         => $"Warning[206]: {string.Format(LoggingMessages.ConversationController_Retrying, times, latestError)}";
     private static string Expected_RetryLimitReached(int times)
@@ -151,14 +145,7 @@ public class ConversationControllerTests
     [TestInitialize]
     public void InitializeMocks()
     {
-        MockDefinition
-            .SetupGet(x => x.RemoteRoot)
-            .Returns(new LayoutGroup("COMMANDS",
-            [
-                Command1,
-                Command2
-            ]))
-            .Verifiable(Times.Once);
+        Expect_GetRemoteDefinition(Times.Once());
 
         Command1Execute
             .Setup(x => x.ExecuteAsync(It.IsAny<CancellationToken>()))
@@ -183,6 +170,16 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
     }
 
+    private void Expect_GetRemoteDefinition(Times times)
+        => MockDefinition
+            .SetupGet(x => x.RemoteRoot)
+            .Returns(new LayoutGroup("COMMANDS",
+            [
+                Command1,
+                Command2
+            ]))
+            .Verifiable(times);
+
     [TestCleanup]
     public void VerifyAllMocks()
     {
@@ -196,6 +193,8 @@ public class ConversationControllerTests
     public void ConversationController_OnConstruction_InitializesViewModel()
     {
         // Arrange
+        Expect_GetRemoteDefinition(Times.Never());
+
         ViewModel.IsListening = true;
         ViewModel.StatusMessage = "Status message was not changed";
 
@@ -225,7 +224,6 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
             Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -258,8 +256,6 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -294,8 +290,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started,
             Expected_Stopping);
 
@@ -304,8 +298,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
@@ -343,8 +335,6 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started);
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -391,53 +381,12 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Executing(Command1.Name),
             Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.AreEqual(Phrases.Conversation_Sent(Command1.Name), ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
-    }
-
-    [TestMethod]
-    public void ConversationController_OnUnrecognizedCommand_LogsError()
-    {
-        // Arrange
-        ConversationController sut = CreateSut();
-
-        Mock<IRecognizedSpeech> result = CreateMockResult("Not a command", "command=Not a command");
-
-        TaskCompletionSource tcs = new();
-        MockRecognition
-            .Setup(x => x.ListenForAttentionAsync(It.IsAny<CancellationToken>()))
-            .Returns(tcs.Task)
-            .Verifiable(Times.Once);
-        MockRecognition
-            .Setup(x => x.ListenForCommandsAsync(It.IsAny<CancellationToken>()))
-            .Returns(AsyncEnumerate(false, result.Object))
-            .Verifiable(Times.Once);
-
-        MockSynthesis
-            .Setup(x => x.SayAsync(Phrases.Conversation_ImListening, It.IsAny<CancellationToken>()))
-            .Verifiable(Times.Once);
-
-        TaskAssert.IsComplete(sut.InitializeAsync(default), TimeSpan.FromSeconds(1), "InitializeAsync");
-
-        // Act
-        tcs.SetResult();
-
-        // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_Started,
-            Expected_ListenForCommands);
-
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
     [TestMethod]
@@ -478,9 +427,7 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
             Expected_Started,
-            Expected_ListenForCommands,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name));
 
@@ -529,9 +476,7 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
             Expected_Started,
-            Expected_ListenForCommands,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name));
 
@@ -581,8 +526,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Started,
@@ -596,8 +539,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Started,
@@ -647,9 +588,7 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
             Expected_Started,
-            Expected_ListenForCommands,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Executing(Command1.Name),
@@ -695,9 +634,7 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_Started,
-            Expected_ListenForCommands);
+            Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -738,8 +675,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started,
             Expected_Stopping);
 
@@ -751,8 +686,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
@@ -794,10 +727,7 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_Started,
-            Expected_ListenForCommands,
-            Expected_ListenForAttention);
+            Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -837,12 +767,7 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_Started,
-            Expected_ListenForCommands,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
-            Expected_ListenForAttention);
+            Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -853,6 +778,8 @@ public class ConversationControllerTests
     public void ConversationController_OnError_RestartsListeningForAttention()
     {
         // Arrange
+        Expect_GetRemoteDefinition(Times.Exactly(2));
+
         ConversationController sut = CreateSut();
 
         TaskCompletionSource tcs = new();
@@ -879,11 +806,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
             Expected_Started,
-            Expected_ListenForCommands,
-            Expected_Retrying(1, exception),
-            Expected_ListenForAttention);
+            Expected_Retrying(1, exception));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
         Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
@@ -895,6 +819,8 @@ public class ConversationControllerTests
     public void ConversationController_OnRepeatedErrors_StopsRestartingAfterErrorLimit()
     {
         // Arrange
+        Expect_GetRemoteDefinition(Times.Exactly(10));
+
         ConversationController sut = CreateSut();
 
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
@@ -909,25 +835,15 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
             Expected_Retrying(1, exception),
-            Expected_ListenForAttention,
             Expected_Retrying(2, exception),
-            Expected_ListenForAttention,
             Expected_Retrying(3, exception),
-            Expected_ListenForAttention,
             Expected_Retrying(4, exception),
-            Expected_ListenForAttention,
             Expected_Retrying(5, exception),
-            Expected_ListenForAttention,
             Expected_Retrying(6, exception),
-            Expected_ListenForAttention,
             Expected_Retrying(7, exception),
-            Expected_ListenForAttention,
             Expected_Retrying(8, exception),
-            Expected_ListenForAttention,
             Expected_Retrying(9, exception),
-            Expected_ListenForAttention,
             Expected_RetryLimitReached(10));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -958,7 +874,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
             Expected_Started,
             Expected_Stopping);
 
@@ -992,7 +907,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
             Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
@@ -1033,8 +947,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started,
             Expected_Stopping);
 
@@ -1070,8 +982,6 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_StoppedEarly);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -1120,8 +1030,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Executing(Command1.Name),
             Expected_Started,
             Expected_Stopping);
@@ -1174,8 +1082,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Executing(Command1.Name),
             Expected_Started,
             Expected_Stopping,
@@ -1219,8 +1125,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started);
     }
 
@@ -1259,8 +1163,6 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
-            Expected_ListenForAttention,
-            Expected_ListenForCommands,
             Expected_Started);
     }
 
