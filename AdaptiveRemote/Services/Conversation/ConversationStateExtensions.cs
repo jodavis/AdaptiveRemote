@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Collections.Immutable;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
@@ -9,162 +9,173 @@ internal static class ConversationStateExtensions
 {
     public static ConversationState RespondTo(this ConversationState state, IRecognizedSpeech speech, ILogger? logger = default)
     {
-        List<string> phrases = new();
-        List<Command> commands = new();
+        RespondContext context = new(state, speech, logger);
 
-        state = state with { LastResponse = new(new List<string>(), new List<Command>()) };
+        context = context.RespondTo(speech);
 
+        state = context.State with
+        {
+            LastResponse = new(context.ResponsePhrases, context.ResponseCommands)
+        };
+
+        logger?.LogInformation(Message.ConversationState_Updated, state);
+        return state;
+    }
+
+    private static RespondContext RespondTo(this RespondContext context, IRecognizedSpeech speech)
+    {
         if (speech.TryGetSemanticValue("system", out string? systemCommand))
         {
             switch (systemCommand)
             {
                 case "STARTLISTENING":
-                    state = state.RejectUnexpectedPhraseKind(PhraseKinds.WakeWord, speech, logger)
-                        ?? state.EnterListingState();
+                    context = context
+                        .StopUnless(AcceptPhraseKind(PhraseKinds.WakeWord))
+                        .Transform(EnterListeningState);
                     break;
 
                 case "STOPLISTENING":
-                    state = state.RejectUnexpectedPhraseKind(PhraseKinds.Commands, speech, logger)
-                        ?? state.ExitListingState(speech);
+                    context = context
+                        .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
+                        .Transform(ExitListeningState);
                     break;
             }
         }
 
         if (speech.TryGetSemanticValue("command", out string? commandName))
         {
-            state = state.AddCommands(commandName, speech, logger);
+            context = context
+                .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
+                .Transform(DecodeCommandFor(commandName))
+                .StopUnless(CommandExists)
+                .StopUnless(CommandEnabled, ifStopped: RespondCommandDisabled)
+                .StopUnless(CommandHasExecuteAsync, ifStopped: RespondCommandDisabled)
+                .Transform(AddCommands);
         }
 
-        logger?.LogInformation(Message.ConversationState_Updated, state);
-        return state;
+        return context;
     }
 
-    private static ConversationState AddCommands(this ConversationState state, string commandName, IRecognizedSpeech speech, ILogger? logger)
-    {
-        return state.RejectUnexpectedPhraseKind(PhraseKinds.Commands, speech, logger)
-            ?? state.TryGetCommandFor(commandName, logger, out Command? command)
-            ?? state.RejectDisabledCommand(command, logger)
-            ?? state.RejectCommandWithoutExecuteAsync(command, logger)
-            ?? state.AddCommands(speech, command, logger);
-    }
-
-    private static ConversationState EnterListingState(this ConversationState state)
-    {
-        List<string> phrases = (List<string>)state.LastResponse!.Phrases;
-        phrases.Add(Phrases.Conversation_ImListening);
-
-        return state with
+    private static RespondContext EnterListeningState(RespondContext context)
+        => context with
         {
-            WantsPhrases = PhraseKinds.Commands,
-            LastCommand = default
-        };
-    }
-
-    private static ConversationState ExitListingState(this ConversationState state, IRecognizedSpeech speech)
-    {
-        List<string> phrases = (List<string>)state.LastResponse!.Phrases;
-        phrases.Add(speech.ContainsSemanticValue("thankyou")
-            ? Phrases.Conversation_YoureWelcome
-            : Phrases.Conversation_StoppedListening);
-
-        return state with
-        {
-            WantsPhrases = PhraseKinds.WakeWord,
-            LastCommand = default
-        };
-    }
-
-    private static ConversationState? RejectUnexpectedPhraseKind(this ConversationState state, PhraseKinds received, IRecognizedSpeech speech, ILogger? logger)
-    {
-        if (state.WantsPhrases.HasFlag(received))
-        {
-            return default; // continue
-        }
-        else
-        {
-            logger?.LogWarning(Message.ConversationState_UnexpectedSpeechDetected, PhraseKinds.Commands, speech);
-            return state;
-        }
-    }
-
-    private static ConversationState? TryGetCommandFor(this ConversationState state, string commandName, ILogger? logger, [NotNull] out Command? command)
-    {
-        if (state.Commands.TryGetValue(commandName, out command))
-        {
-            return default; // contniue
-        }
-        else
-        {
-            command = null!;
-            logger?.LogError(Message.ConversationController_UnknownCommand, commandName);
-            return state;
-        }
-    }
-
-    private static ConversationState? RejectDisabledCommand(this ConversationState state, Command command, ILogger? logger)
-    {
-        if (command.IsEnabled)
-        {
-            return default; // continue
-        }
-        else
-        {
-            List<string> phrases = (List<string>)state.LastResponse!.Phrases;
-
-            logger?.LogError(Message.ConversationController_CommandDisabled, command.Name);
-            phrases.Add(Phrases.Conversation_CommandDisabled(command.Name));
-            return state with
+            ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_ImListening),
+            State = context.State with
             {
                 WantsPhrases = PhraseKinds.Commands,
                 LastCommand = default
-            };
-        }
+            }
+        };
+
+    private static RespondContext ExitListeningState(RespondContext context)
+        => context with
+        {
+            ResponsePhrases = context.ResponsePhrases.Add(context.Speech.ContainsSemanticValue("thankyou") ? Phrases.Conversation_YoureWelcome : Phrases.Conversation_StoppedListening),
+            State = context.State with
+            {
+                WantsPhrases = PhraseKinds.WakeWord,
+                LastCommand = default
+            }
+        };
+
+    private static Func<RespondContext, bool> AcceptPhraseKind(PhraseKinds received)
+        => context => context.State.WantsPhrases.HasFlag(received)
+            .LogErrorIf(false, context.Logger, Message.ConversationState_UnexpectedSpeechDetected, received, context.Speech);
+
+    private static Func<RespondContext, RespondContext> DecodeCommandFor(string commandName)
+        => context => context.State.Commands.TryGetValue(commandName, out Command? command)
+            ? context with { DecodedCommand = command }
+            : context;
+
+    private static RespondContext RespondCommandNotFound(this RespondContext context, string commandName)
+    {
+        context.Logger?.LogError(Message.ConversationController_UnknownCommand, commandName);
+        return context with { Continue = false };
     }
 
-    private static ConversationState? RejectCommandWithoutExecuteAsync(this ConversationState state, Command command, ILogger? logger)
+    private static TestType LogErrorIf<TestType>(this TestType checkValue, TestType equalsValue, ILogger? logger, Message message, params object?[] arguments)
+        where TestType : struct, IEquatable<TestType>
     {
-        if (command.ExecuteAsync is not null)
+        if (logger is not null && checkValue.Equals(equalsValue))
         {
-            return default; // continue
+            logger.LogError(message, arguments);
         }
-        else
-        {
-            List<string> phrases = (List<string>)state.LastResponse!.Phrases;
 
-            logger?.LogError(Message.ConversationController_CommandMissingExecuteAction, command.Name);
-            phrases.Add(Phrases.Conversation_CommandDisabled(command.Name));
-            return state with
+        return checkValue;
+    }
+
+    private static bool CommandExists(RespondContext context)
+        => (context.DecodedCommand is not null)
+            .LogErrorIf(false, context.Logger, Message.ConversationController_UnknownCommand, context.Speech.Text);
+
+    private static bool CommandEnabled(RespondContext context)
+        => (context.DecodedCommand?.IsEnabled == true)
+            .LogErrorIf(false, context.Logger, Message.ConversationController_CommandDisabled, context.DecodedCommand?.Name);
+
+    private static bool CommandHasExecuteAsync(RespondContext context)
+        => (context.DecodedCommand?.ExecuteAsync is not null)
+            .LogErrorIf(false, context.Logger, Message.ConversationController_CommandMissingExecuteAction, context.DecodedCommand?.Name);
+
+    private static RespondContext RespondCommandDisabled(RespondContext context)
+        => context with
+        {
+            ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_CommandDisabled(context.DecodedCommand!.Name)),
+            State = context.State with
             {
                 WantsPhrases = PhraseKinds.Commands,
                 LastCommand = default
-            };
-        }
-    }
+            }
+        };
 
-    private static ConversationState AddCommands(this ConversationState state, IRecognizedSpeech speech, Command command, ILogger? logger)
+    private static RespondContext AddCommands(RespondContext context)
     {
-        List<string> phrases = (List<string>)state.LastResponse!.Phrases;
-        List<Command> commands = (List<Command>)state.LastResponse!.Commands;
+        Command command = context.DecodedCommand ?? throw new ArgumentNullException(nameof(context), nameof(context.DecodedCommand) + " should not be null");
 
-        logger?.LogInformation(Message.ConversationController_Recognized, speech.Text, command.Name);
+        context.Logger?.LogInformation(Message.ConversationController_Recognized, context.Speech.Text, command.Name);
 
         int repeat = 1;
-        if (speech.TryGetSemanticValue("repeat", out string? repeatAsString))
+        if (context.Speech.TryGetSemanticValue("repeat", out string? repeatAsString))
         {
             if (!int.TryParse(repeatAsString, out repeat))
             {
-                logger?.LogWarning(Message.ConversationState_InvalidSemanticValue, "repeat", repeatAsString);
+                context.Logger?.LogWarning(Message.ConversationState_InvalidSemanticValue, "repeat", repeatAsString);
                 repeat = 1;
             }
         }
 
-        phrases.Add(Phrases.RepeatAction(command.SpeakPhrase, repeat));
-        commands.AddRange(Enumerable.Repeat(command, repeat));
-
-        return state with
+        return context with
         {
-            WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
-            LastCommand = speech
+            ResponsePhrases = context.ResponsePhrases.Add(Phrases.RepeatAction(command.SpeakPhrase, repeat)),
+            ResponseCommands = context.ResponseCommands.AddRange(Enumerable.Repeat(command, repeat)),
+            State = context.State with
+            {
+                WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
+                LastCommand = context.Speech
+            }
         };
+    }
+
+    private record RespondContext(
+        ConversationState State,
+        IRecognizedSpeech Speech,
+        ImmutableList<string> ResponsePhrases,
+        ImmutableList<Command> ResponseCommands,
+        bool Continue,
+        ILogger? Logger,
+        Command? DecodedCommand = default)
+    {
+        internal RespondContext(ConversationState state, IRecognizedSpeech speech, ILogger? logger)
+            : this(state, speech, ImmutableList<string>.Empty, ImmutableList<Command>.Empty, true, logger)
+        { }
+
+        internal RespondContext StopUnless(Func<RespondContext, bool> condition, Func<RespondContext, RespondContext>? ifStopped = default)
+            => Continue
+            ? condition(this) ? this : (ifStopped ?? DoNothing)(this with { Continue = false })
+            : this;
+
+        internal RespondContext Transform(Func<RespondContext, RespondContext> transform)
+            => Continue ? transform(this) : this;
+
+        private static RespondContext DoNothing(RespondContext context) => context;
     }
 }

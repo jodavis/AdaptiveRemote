@@ -54,15 +54,9 @@ public class ConversationStateExtensionsTests
     private static string ExpectMessage_Updated(ConversationState state)
         => $"Information[1301]: {LoggingMessages.ConversationState_Updated.AsMessageTemplate(state)}";
     private static string ExpectMessage_UnexpectedSpeechDetected(PhraseKinds unexpected, IRecognizedSpeech speech)
-        => $"Warning[1302]: {LoggingMessages.ConversationState_UnexpectedSpeechDetected.AsMessageTemplate(unexpected, speech)}";
+        => $"Error[1302]: {LoggingMessages.ConversationState_UnexpectedSpeechDetected.AsMessageTemplate(unexpected, speech)}";
     private static string ExpectMessage_Recognized(string text, string semantics)
         => $"Information[207]: {string.Format(LoggingMessages.ConversationController_Recognized, text, semantics)}";
-    private static string Expected_Executing(string command)
-        => $"Information[210]: {string.Format(LoggingMessages.ConversationController_Executing, command)}";
-    private static string Expected_Executed(string command)
-        => $"Information[211]: {string.Format(LoggingMessages.ConversationController_Executed, command)}";
-    private static string ExpectMessage_UnknownCommand(string command)
-        => $"Error[208]: {string.Format(LoggingMessages.ConversationController_UnknownCommand, command)}";
     private static string ExpectMessage_CommandMissingExecuteAction(string command)
         => $"Error[213]: {string.Format(LoggingMessages.ConversationController_CommandMissingExecuteAction, command)}";
     private static string ExpectMessage_CommandDisabled(string command)
