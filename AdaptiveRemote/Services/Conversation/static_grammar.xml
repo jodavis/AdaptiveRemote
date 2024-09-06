@@ -1,17 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <grammar version="1.0" xml:lang="en-US"
          xmlns="http://www.w3.org/2001/06/grammar"
-         tag-format="semantics/1.0" root="Attention">
+         tag-format="semantics/1.0" root="WakeWord">
 
-  <rule id="Attention" scope="public">
+  <rule id="WakeWord" scope="public">
     <one-of>
       <item>Hey Remote</item>
-      <item>Hey TV</item>
     </one-of>
     <tag>out.system="STARTLISTENING"</tag>
   </rule>
 
-  <rule id="YesNo" scope="public">
+  <rule id="Confirmation" scope="public">
     <one-of>
       <item>
         <one-of>
@@ -44,13 +43,10 @@
       <item>
         <ruleref uri="#Stop"></ruleref>
       </item>
-      <item>
-        <ruleref uri="#Correction"></ruleref>
-      </item>
     </one-of>
   </rule>
 
-  <rule id="Correction">
+  <rule id="Correction" scope="public">
     <one-of>
       <item>That's wrong</item>
       <item>No, that's wrong</item>
@@ -229,12 +225,19 @@
 
   <rule id="Stop">
     <one-of>
-      <item>Stop Listening</item>
-      <item>Done</item>
-      <item>I'm Done</item>
-      <item>Thank you</item>
+      <item>
+        <one-of>
+          <item>Stop Listening</item>
+          <item>Done</item>
+          <item>I'm Done</item>
+        </one-of>
+        <tag>out.system="STOPLISTENING"</tag>
+      </item>
+      <item>
+        Thank you
+        <tag>out={system:"STOPLISTENING",thankyou:true}</tag>
+      </item>
     </one-of>
-    <tag>out.system="STOPLISTENING"</tag>
   </rule>
 
   <rule id="Typing">

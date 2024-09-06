@@ -9,14 +9,20 @@ namespace AdaptiveRemote.Services.Conversation;
 
 internal class SpeechRecognition : ISpeechRecognition
 {
+    private static readonly IEnumerable<PhraseKinds> GrammarKinds =
+        [
+            PhraseKinds.WakeWord,
+            PhraseKinds.Commands,
+            PhraseKinds.Confirmation,
+            PhraseKinds.Correction
+        ];
+
     private readonly ConversationSettings _settings;
     private readonly ISpeechRecognitionEngine _engine;
     private readonly IListeningController _listeningController;
     private readonly ILogger<SpeechRecognition> _logger;
 
-    private readonly Grammar _wakeWordGrammar;
-    private readonly Grammar _commandsGrammar;
-    private readonly Grammar _confirmationGrammar;
+    private readonly IReadOnlyDictionary<PhraseKinds, Grammar> _grammars;
 
     public SpeechRecognition(IOptions<ConversationSettings> settings, ISpeechRecognitionEngine engine, IListeningController listeningController, IGrammarProvider grammarProvider, ILogger<SpeechRecognition> logger)
     {
@@ -27,22 +33,22 @@ internal class SpeechRecognition : ISpeechRecognition
 
         _engine.UnloadAllGrammars();
 
-        LoadGrammarIntoEngine(_wakeWordGrammar = grammarProvider.LoadAttentionGrammar());
-        LoadGrammarIntoEngine(_commandsGrammar = grammarProvider.LoadCommandsGrammar());
-        LoadGrammarIntoEngine(_confirmationGrammar = grammarProvider.LoadYesNoGrammar());
+        _grammars = GrammarKinds.ToDictionary(x => x, x => LoadGrammarIntoEngine(grammarProvider.LoadGrammar(x)));
 
-        void LoadGrammarIntoEngine(Grammar grammar)
+        Grammar LoadGrammarIntoEngine(Grammar grammar)
         {
             grammar.Enabled = false;
             _engine.LoadGrammar(grammar);
+            return grammar;
         }
     }
 
     void ISpeechRecognition.SetFilter(PhraseKinds filter)
     {
-        _wakeWordGrammar.Enabled = filter.HasFlag(PhraseKinds.WakeWord);
-        _commandsGrammar.Enabled = filter.HasFlag(PhraseKinds.Commands);
-        _confirmationGrammar.Enabled = filter.HasFlag(PhraseKinds.Confirmation);
+        foreach (KeyValuePair<PhraseKinds, Grammar> grammar in _grammars)
+        {
+            grammar.Value.Enabled = filter.HasFlag(grammar.Key);
+        }
 
         if (filter != PhraseKinds.None)
         {
