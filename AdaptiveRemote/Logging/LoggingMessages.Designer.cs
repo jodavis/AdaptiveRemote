@@ -290,6 +290,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not reverse {command_to_reverse}. Could not find a command named &apos;{reverse_command}&apos;..
+        /// </summary>
+        internal static string ConversationState_CouldNotFindReverseCommand {
+            get {
+                return ResourceManager.GetString("ConversationState_CouldNotFindReverseCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Received an invalid semantic value for &apos;{semantic_key}&apos;: {semantic_value}.
         /// </summary>
         internal static string ConversationState_InvalidSemanticValue {
@@ -313,6 +322,15 @@ namespace AdaptiveRemote.Logging {
         internal static string ConversationState_Updated {
             get {
                 return ResourceManager.GetString("ConversationState_Updated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User reported recognition error: {speech}.
+        /// </summary>
+        internal static string ConversationState_UserReportedRecognitionError {
+            get {
+                return ResourceManager.GetString("ConversationState_UserReportedRecognitionError", resourceCulture);
             }
         }
         

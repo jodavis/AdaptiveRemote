@@ -15,6 +15,7 @@ internal static class Phrases
     public static string Conversation_CommandDisabled(string name) => $"I can't do that. {name} is disabled.";
     public static string Conversation_ShuttingDown => "Shutting down...";
     public static string Conversation_Goodbye => "Goodbye";
+    public static string Conversation_ImSorry => "I'm sorry.";
 
     internal static string RepeatAction(string action, int repeat)
         => repeat switch

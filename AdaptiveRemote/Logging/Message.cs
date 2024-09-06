@@ -79,4 +79,6 @@ internal enum Message
     ConversationState_Updated = 1301,
     ConversationState_UnexpectedSpeechDetected = 1302,
     ConversationState_InvalidSemanticValue = 1303,
+    ConversationState_UserReportedRecognitionError = 1304,
+    ConversationState_CouldNotFindReverseCommand = 1305,
 }

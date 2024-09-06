@@ -14,7 +14,10 @@ public class ConversationStateExtensionsTests
     {
         new TiVoCommand("Play", speakPhrase: "Playing...") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
         new TiVoCommand("Disabled") { ExecuteAsync = cancel => Task.CompletedTask },
-        new TiVoCommand("MissingExecAsyncCmd") { IsEnabled = true }
+        new TiVoCommand("MissingExecAsyncCmd") { IsEnabled = true },
+        new TiVoCommand("VolumeUp", reverse: "VolumeDown") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
+        new TiVoCommand("VolumeDown", reverse: "VolumeUp") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
+        new TiVoCommand("CommandWithInvalidReverse", reverse: "InvalidReverse") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
     }.ToDictionary(x => x.Name);
 
     private static IRecognizedSpeech CreateMockSpeech(string text)
@@ -57,12 +60,18 @@ public class ConversationStateExtensionsTests
         => $"Error[1302]: {LoggingMessages.ConversationState_UnexpectedSpeechDetected.AsMessageTemplate(unexpected, speech)}";
     private static string ExpectMessage_Recognized(string text, string semantics)
         => $"Information[207]: {string.Format(LoggingMessages.ConversationController_Recognized, text, semantics)}";
+    private static string ExpectMessage_UnknownCommand(string command)
+        => $"Error[208]: {string.Format(LoggingMessages.ConversationController_UnknownCommand, command)}";
     private static string ExpectMessage_CommandMissingExecuteAction(string command)
         => $"Error[213]: {string.Format(LoggingMessages.ConversationController_CommandMissingExecuteAction, command)}";
     private static string ExpectMessage_CommandDisabled(string command)
         => $"Error[214]: {string.Format(LoggingMessages.ConversationController_CommandDisabled, command)}";
     private static string ExpectMessage_InvalidSemanticValue(string semanticKey, string invalidValue)
         => $"Warning[1303]: {LoggingMessages.ConversationState_InvalidSemanticValue.AsMessageTemplate(semanticKey, invalidValue)}";
+    private static string ExpectMessage_UserReportedRecognitionError(IRecognizedSpeech speech)
+        => $"Error[1304]: {LoggingMessages.ConversationState_UserReportedRecognitionError.AsMessageTemplate(speech)}";
+    private static string ExpectMessage_CouldNotFindReverseCommand(Command command)
+        => $"Error[1305]: {LoggingMessages.ConversationState_CouldNotFindReverseCommand.AsMessageTemplate(command, command.Reverse)}";
 
     [TestMethod]
     public void ConversationStateExtensions_RespondTo_WakeWords_EntersListeningMode()
@@ -186,7 +195,7 @@ public class ConversationStateExtensionsTests
     }
 
     [TestMethod]
-    public void ConversationStateExtensions_RespondTo_SimpleCommandRl_WithRepeat_ReturnsCommandMultipleTimes()
+    public void ConversationStateExtensions_RespondTo_RepeatedCommand_ReturnsCommandMultipleTimes()
     {
         // Arrange
         Command expectedCommand = MockCommands["Play"];
@@ -217,7 +226,7 @@ public class ConversationStateExtensionsTests
     }
 
     [TestMethod]
-    public void ConversationStateExtensions_RespondTo_SimpleCommand_WithRepeatThatsInvalid_ReturnsCommandMultipleTimes()
+    public void ConversationStateExtensions_RespondTo_RepeatedCommand_WithInvalidRepeat_ReturnsCommandMultipleTimes()
     {
         // Arrange
         Command expectedCommand = MockCommands["Play"];
@@ -336,6 +345,176 @@ public class ConversationStateExtensionsTests
 
         MockLogger.VerifyMessages(
             ExpectMessage_UnexpectedSpeechDetected(PhraseKinds.Commands, input),
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
+    public void ConversationStateExtensions_RespondTo_Correction_ApologizesAndLogsError()
+    {
+        // Arrange
+        IRecognizedSpeech previous = CreateMockSpeech("Previous", new());
+        IRecognizedSpeech input = CreateMockSpeech("That's wrong", new()
+        {
+            ["correction"] = "true",
+        });
+
+        Command nonReversableCommand = MockCommands.Values.First(x => x.Reverse is null);
+        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
+            LastResponse: new([], [nonReversableCommand]));
+
+        ConversationState expected = sut with
+        {
+            LastCommand = input,
+            LastResponse = new([Phrases.Conversation_ImSorry], [])
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_UserReportedRecognitionError(previous),
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
+    public void ConversationStateExtensions_RespondTo_Correction_WhenDoesntWantCorrection_LogsError()
+    {
+        // Arrange
+        IRecognizedSpeech input = CreateMockSpeech("That's wrong", new()
+        {
+            ["correction"] = "true",
+        });
+
+        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands);
+
+        ConversationState expected = sut with
+        {
+            LastResponse = new([], [])
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_UnexpectedSpeechDetected(PhraseKinds.Correction, input),
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
+    public void ConversationStateExtensions_RespondTo_Correction_LogsErrorForCommandWithInvalidReverse()
+    {
+        // Arrange
+        IRecognizedSpeech previous = CreateMockSpeech("Previous", new());
+        IRecognizedSpeech input = CreateMockSpeech("That's wrong", new()
+        {
+            ["correction"] = "true",
+        });
+
+        Command commandWithInvalidReverse = MockCommands["CommandWithInvalidReverse"];
+        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
+            LastResponse: new([], [commandWithInvalidReverse]));
+
+        ConversationState expected = sut with
+        {
+            LastCommand = input,
+            LastResponse = new([Phrases.Conversation_ImSorry], [])
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_UserReportedRecognitionError(previous),
+            ExpectMessage_CouldNotFindReverseCommand(commandWithInvalidReverse),
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
+    public void ConversationStateExtensions_RespondTo_Correction_ReversesReversableCommands()
+    {
+        // Arrange
+        IRecognizedSpeech previous = CreateMockSpeech("Volume up 3 times", new()
+        {
+            ["command"] = "VolumeUp",
+            ["repeat"] = "3"
+        });
+
+        IRecognizedSpeech input = CreateMockSpeech("That's wrong", new()
+        {
+            ["correction"] = "true",
+        });
+
+        Command commandToReverse = MockCommands.Values.First(x => x.Reverse is not null);
+        Command reverseCommand = MockCommands[commandToReverse.Reverse!];
+
+        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
+            LastResponse: new([], [commandToReverse, commandToReverse, commandToReverse]));
+
+        ConversationState expected = sut with
+        {
+            LastCommand = input,
+            LastResponse = new(
+                [Phrases.Conversation_ImSorry, Phrases.RepeatAction(reverseCommand.SpeakPhrase, 3)],
+                [reverseCommand, reverseCommand, reverseCommand])
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_UserReportedRecognitionError(previous),
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
+    public void ConversationStateExtensions_RespondTo_Correction_ReversesDifferentReversableCommands()
+    {
+        // Arrange
+        IRecognizedSpeech previous = CreateMockSpeech("Volume up and down", new()
+        {
+            ["command"] = "VolumeDown",
+            ["repeat"] = "1"
+        });
+
+        IRecognizedSpeech input = CreateMockSpeech("That's wrong", new()
+        {
+            ["correction"] = "true",
+        });
+
+        Command commandToReverse = MockCommands.Values.First(x => x.Reverse is not null);
+        Command reverseCommand = MockCommands[commandToReverse.Reverse!];
+
+        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
+            LastResponse: new([], [commandToReverse, commandToReverse, reverseCommand]));
+
+        ConversationState expected = sut with
+        {
+            LastCommand = input,
+            LastResponse = new(
+                [Phrases.Conversation_ImSorry, commandToReverse.SpeakPhrase, Phrases.RepeatAction(reverseCommand.SpeakPhrase, 2)],
+                [commandToReverse, reverseCommand, reverseCommand])
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_UserReportedRecognitionError(previous),
             ExpectMessage_Updated(expected));
     }
 }
