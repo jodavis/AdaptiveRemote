@@ -44,7 +44,18 @@
       <item>
         <ruleref uri="#Stop"></ruleref>
       </item>
+      <item>
+        <ruleref uri="#Correction"></ruleref>
+      </item>
     </one-of>
+  </rule>
+
+  <rule id="Correction">
+    <one-of>
+      <item>That's wrong</item>
+      <item>No, that's wrong</item>
+    </one-of>
+    <tag>out.correction="true"</tag>
   </rule>
 
   <rule id="Command">

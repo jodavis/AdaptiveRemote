@@ -82,13 +82,14 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         {
             yield return Command("Go up", "Up");
             yield return Command("Down three", "Down", 3);
+            yield return new FakeRecognitionResult("That's wrong", ("correction", "true"));
             yield return Command("TiVo", "TiVo");
             yield return Command("Louder 5 times", "VolumeUp", 5);
             yield return Command("Mute", "Mute");
             yield return Command("Volume Down 5", "VolumeDown", 5);
             yield return Command("Guide", "Guide");
             yield return Command("Go up", "Up");
-            yield return Command("Down three", "Down", 3);
+            yield return new FakeRecognitionResult("That's wrong", ("correction", "true"));
             yield return Command("Back", "Back");
             yield return new FakeRecognitionResult("Thank you", ("system", "STOPLISTENING"), ("thankyou", "true"));
         }

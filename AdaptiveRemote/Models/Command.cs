@@ -16,6 +16,7 @@ public abstract class Command : RemoteLayoutElement
         string? label,
         string? cssid,
         string? glyph,
+        string? reverse,
         string? speakPhrase)
         : base(cssid ?? name.ToUpperInvariant(), placement)
     {
@@ -23,12 +24,14 @@ public abstract class Command : RemoteLayoutElement
         Label = label ?? name;
         Glyph = glyph;
         SpeakPhrase = speakPhrase ?? name;
+        Reverse = reverse;
     }
 
     public string Name { get; }
     public string Label { get; }
     public string? Glyph { get; }
     public string SpeakPhrase { get; }
+    public string? Reverse { get; }
 
     public bool IsActive
     {

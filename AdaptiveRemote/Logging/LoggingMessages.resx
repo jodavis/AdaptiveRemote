@@ -218,6 +218,10 @@ Last error: {1}</value>
     <value>Recognized an unknown command: {0}</value>
     <comment>0=Speech that was recognized but did not map to a command</comment>
   </data>
+  <data name="ConversationState_CouldNotFindReverseCommand" xml:space="preserve">
+    <value>Could not reverse {command_to_reverse}. Could not find a command named '{reverse_command}'.</value>
+    <comment>command_to_reverse=the ToString of the command that has a reverse value,reverse_command=command_to_reverse.Reverse</comment>
+  </data>
   <data name="ConversationState_InvalidSemanticValue" xml:space="preserve">
     <value>Received an invalid semantic value for '{semantic_key}': {semantic_value}</value>
     <comment>semantic_key=key name,semantic_value=an invalid value</comment>
@@ -229,6 +233,10 @@ Last error: {1}</value>
   <data name="ConversationState_Updated" xml:space="preserve">
     <value>{new_state}</value>
     <comment>0=ConversationState.ToString()</comment>
+  </data>
+  <data name="ConversationState_UserReportedRecognitionError" xml:space="preserve">
+    <value>User reported recognition error: {speech}</value>
+    <comment>speech=The recognized speech</comment>
   </data>
   <data name="ListeningController_RecognizeAsyncCancelError" xml:space="preserve">
     <value>Error calling RecognizeAsyncCancel

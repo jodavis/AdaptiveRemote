@@ -31,13 +31,13 @@ internal static class ConversationStateExtensions
                 case "STARTLISTENING":
                     context = context
                         .StopUnless(AcceptPhraseKind(PhraseKinds.WakeWord))
-                        .Transform(EnterListeningState);
+                        .Apply(EnterListeningState);
                     break;
 
                 case "STOPLISTENING":
                     context = context
                         .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
-                        .Transform(ExitListeningState);
+                        .Apply(ExitListeningState);
                     break;
             }
         }
@@ -46,11 +46,87 @@ internal static class ConversationStateExtensions
         {
             context = context
                 .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
-                .Transform(DecodeCommandFor(commandName))
+                .Apply(DecodeCommandFor(commandName))
                 .StopUnless(CommandExists)
                 .StopUnless(CommandEnabled, ifStopped: RespondCommandDisabled)
                 .StopUnless(CommandHasExecuteAsync, ifStopped: RespondCommandDisabled)
-                .Transform(AddCommands);
+                .Apply(AddCommands);
+        }
+
+        if (speech.TryGetSemanticValue("correction", out _))
+        {
+            context = context
+                .StopUnless(AcceptPhraseKind(PhraseKinds.Correction))
+                .Apply(Apologize)
+                .Apply(ReverseLastCommands);
+        }
+
+        return context;
+    }
+
+    private static RespondContext Apologize(RespondContext context)
+    {
+        context.Logger?.LogError(Message.ConversationState_UserReportedRecognitionError, context.State.LastCommand);
+        return context with
+        {
+            ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_ImSorry),
+            State = context.State with
+            {
+                LastCommand = context.Speech
+            }
+        };
+    }
+
+    private static RespondContext ReverseLastCommands(RespondContext context)
+    {
+        if (context.State.LastResponse is not null)
+        {
+            List<Command> reverseCommands = new();
+            List<string> reversePhrases = new();
+            Command? lastReverseCommand = null;
+            int lastReverseCommandCount = 0;
+
+            foreach (Command commandToReverse in context.State.LastResponse.Commands.Reverse())
+            {
+                if (commandToReverse.Reverse is null)
+                {
+                    continue;
+                }
+
+                if (!context.State.Commands.TryGetValue(commandToReverse.Reverse, out Command? reverseCommand))
+                {
+                    context.Logger?.LogError(Message.ConversationState_CouldNotFindReverseCommand, commandToReverse, commandToReverse.Reverse);
+                    continue;
+                }
+
+                reverseCommands.Add(reverseCommand);
+
+                if (reverseCommand == lastReverseCommand)
+                {
+                    lastReverseCommandCount++;
+                }
+                else
+                {
+                    if (lastReverseCommand is not null)
+                    {
+                        reversePhrases.Add(Phrases.RepeatAction(lastReverseCommand.SpeakPhrase, lastReverseCommandCount));
+                    }
+
+                    lastReverseCommand = reverseCommand;
+                    lastReverseCommandCount = 1;
+                }
+            }
+
+            if (lastReverseCommand is not null)
+            {
+                reversePhrases.Add(Phrases.RepeatAction(lastReverseCommand.SpeakPhrase, lastReverseCommandCount));
+
+                return context with
+                {
+                    ResponseCommands = context.ResponseCommands.AddRange(reverseCommands),
+                    ResponsePhrases = context.ResponsePhrases.AddRange(reversePhrases),
+                };
+            }
         }
 
         return context;
@@ -173,7 +249,7 @@ internal static class ConversationStateExtensions
             ? condition(this) ? this : (ifStopped ?? DoNothing)(this with { Continue = false })
             : this;
 
-        internal RespondContext Transform(Func<RespondContext, RespondContext> transform)
+        internal RespondContext Apply(Func<RespondContext, RespondContext> transform)
             => Continue ? transform(this) : this;
 
         private static RespondContext DoNothing(RespondContext context) => context;

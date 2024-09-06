@@ -9,8 +9,9 @@ internal class IRCommand : Command
         string? label = null,
         string? cssid = null,
         string? glyph = null,
+        string? reverse = null,
         string? speakPhrase = null)
-        : base(name, placement, label, cssid, glyph, speakPhrase ?? Phrases.Conversation_Sent(name))
+        : base(name, placement, label, cssid, glyph, reverse, speakPhrase ?? Phrases.Conversation_Sent(name))
     {
         Data = data;
     }

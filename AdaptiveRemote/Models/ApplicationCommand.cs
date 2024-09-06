@@ -8,8 +8,9 @@ public class ApplicationCommand : Command
         string? label = null,
         string? cssid = null,
         string? glyph = null,
+        string? reverse = null,
         string? speakPhrase = null)
-        : base(name, placement, label, cssid, glyph, speakPhrase)
+        : base(name, placement, label, cssid, glyph, reverse, speakPhrase)
     {
     }
 }

@@ -6,7 +6,7 @@ internal static class StringExtensions
 {
     private static readonly Regex PlaceHolderRegex = new("{\\w+}");
 
-    internal static FormattableString AsMessageTemplate(this string format, params object[] args)
+    internal static FormattableString AsMessageTemplate(this string format, params object?[] args)
     {
         Dictionary<string, string> placeholders = new();
         format = PlaceHolderRegex.Replace(format, match =>
