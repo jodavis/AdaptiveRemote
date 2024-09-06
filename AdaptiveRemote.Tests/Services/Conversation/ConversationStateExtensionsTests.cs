@@ -517,4 +517,59 @@ public class ConversationStateExtensionsTests
             ExpectMessage_UserReportedRecognitionError(previous),
             ExpectMessage_Updated(expected));
     }
+
+    [TestMethod]
+    public void ConversationStateExtensions_ToggleListening_WhenWaitingForWakeWord_EntersListening()
+    {
+        // Arrange
+        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.WakeWord, LastCommand: CreateMockSpeech("What?!?"));
+
+        ConversationState expected = sut with
+        {
+            WantsPhrases = PhraseKinds.Commands,
+            LastResponse = new([], []),
+            LastCommand = null
+        };
+
+        // Act
+        ConversationState result = sut.ToggleListening(MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
+    public void ConversationStateExtensions_ToggleListening_WhenWaitingForAnythingButWakeWord_ExitsListening()
+    {
+        for (int i = 1; i < (int)PhraseKinds.All; i++)
+        {
+            if (i == (int)PhraseKinds.WakeWord)
+            {
+                continue;
+            }
+
+            // Arrange
+            ConversationState sut = new(MockCommands, WantsPhrases: (PhraseKinds)i, LastCommand: CreateMockSpeech("What?!?"));
+
+            ConversationState expected = sut with
+            {
+                WantsPhrases = PhraseKinds.WakeWord,
+                LastCommand = null,
+                LastResponse = new([], [])
+            };
+
+            // Act
+            ConversationState result = sut.ToggleListening(MockLogger);
+
+            // Assert
+            Assert.AreEqual(expected, result, nameof(result) + " when WantsPhrases started as {0}", (PhraseKinds)i);
+
+            MockLogger.VerifyMessages(
+                ExpectMessage_Updated(expected));
+            MockLogger.ClearMessages();
+        }
+    }
 }

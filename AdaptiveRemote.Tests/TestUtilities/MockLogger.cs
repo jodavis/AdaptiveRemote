@@ -93,4 +93,9 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
 
         return remaining;
     }
+
+    internal void ClearMessages()
+    {
+        _messages.Clear();
+    }
 }
