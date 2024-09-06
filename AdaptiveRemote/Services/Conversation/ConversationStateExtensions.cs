@@ -7,6 +7,21 @@ namespace AdaptiveRemote.Services.Conversation;
 
 internal static class ConversationStateExtensions
 {
+    public static ConversationState ToggleListening(this ConversationState state, ILogger? logger = default)
+        => (state.WantsPhrases == PhraseKinds.WakeWord
+            ? state with
+            {
+                WantsPhrases = PhraseKinds.Commands,
+                LastResponse = new([], []),
+                LastCommand = default
+            }
+            : state with
+            {
+                WantsPhrases = PhraseKinds.WakeWord,
+                LastResponse = new([], []),
+                LastCommand = default
+            }).LogUpdateTo(logger);
+
     public static ConversationState RespondTo(this ConversationState state, IRecognizedSpeech speech, ILogger? logger = default)
     {
         RespondContext context = new(state, speech, logger);
@@ -18,8 +33,7 @@ internal static class ConversationStateExtensions
             LastResponse = new(context.ResponsePhrases, context.ResponseCommands)
         };
 
-        logger?.LogInformation(Message.ConversationState_Updated, state);
-        return state;
+        return state.LogUpdateTo(logger);
     }
 
     private static RespondContext RespondTo(this RespondContext context, IRecognizedSpeech speech)
@@ -167,6 +181,12 @@ internal static class ConversationStateExtensions
     {
         context.Logger?.LogError(Message.ConversationController_UnknownCommand, commandName);
         return context with { Continue = false };
+    }
+
+    private static ConversationState LogUpdateTo(this ConversationState state, ILogger? logger)
+    {
+        logger?.LogInformation(Message.ConversationState_Updated, state);
+        return state;
     }
 
     private static TestType LogErrorIf<TestType>(this TestType checkValue, TestType equalsValue, ILogger? logger, Message message, params object?[] arguments)

@@ -41,7 +41,7 @@ internal class ConversationStateMachine
 
     internal void ToggleListening()
     {
-        throw new NotImplementedException();
+        _state = _state.ToggleListening(Logger);
     }
 
     internal void Reset()

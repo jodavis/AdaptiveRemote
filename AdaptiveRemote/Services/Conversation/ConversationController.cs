@@ -52,7 +52,7 @@ internal class ConversationController : ScopedBackgroundProcess
         int errorCount = 0;
         while (true)
         {
-            _viewModel.ToggleListening = _stateMachine.ToggleListening;
+            _viewModel.ToggleListening = ToggleListening;
 
             try
             {
@@ -86,6 +86,12 @@ internal class ConversationController : ScopedBackgroundProcess
                 _viewModel.ToggleListening = null;
             }
         }
+    }
+
+    private void ToggleListening()
+    {
+        _stateMachine.ToggleListening();
+        UpdateViewModelAndRecognition();
     }
 
     private async Task ListenAsync(CancellationToken cancellationToken)
