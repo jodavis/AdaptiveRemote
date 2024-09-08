@@ -14,4 +14,5 @@ internal class ConversationSettings
 
     public int ListeningConfidenceThreshold { get; set; } = 30;
     public int WakeWordConfidenceThreshold { get; set; } = 70;
+    public int HighConfidenceThreshold { get; set; } = 70;
 }

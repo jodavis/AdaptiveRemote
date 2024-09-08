@@ -11,6 +11,12 @@ public interface IRecognizedSpeech
     string Text { get; }
 
     /// <summary>
+    /// A value between 0 and 100 representing how confident the recognition engine is
+    /// in the accuracy of the recognized speech
+    /// </summary>
+    int Confidence { get; }
+
+    /// <summary>
     /// Check whether a semantic value was provided by the grammar for the recognized phrase
     /// </summary>
     /// <param name="key">The key for the semantic value</param>

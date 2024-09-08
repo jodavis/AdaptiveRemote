@@ -132,8 +132,10 @@ internal class ConversationController : ScopedBackgroundProcess
 
     private async Task ExecuteResponseAsync(ConversationResponse response, CancellationToken cancellationToken)
     {
+        bool isAsking = _stateMachine.WantPhrases.HasFlag(PhraseKinds.Confirmation);
+
         Task commandTask = ExecuteCommandsAsync(response.Commands, cancellationToken);
-        Task speakingTask = SayAsync(response.Phrases);
+        Task speakingTask = SayAsync(response.Phrases, isAsking, cancellationToken);
 
         await speakingTask;
         await commandTask;
@@ -153,7 +155,7 @@ internal class ConversationController : ScopedBackgroundProcess
         }
     }
 
-    private async Task SayAsync(IEnumerable<string> phrases)
+    private async Task SayAsync(IEnumerable<string> phrases, bool isAsking, CancellationToken cancellationToken)
     {
         bool wasListening = _viewModel.IsListening;
         try
@@ -168,7 +170,10 @@ internal class ConversationController : ScopedBackgroundProcess
         finally
         {
             _viewModel.IsListening = wasListening;
-            _viewModel.SpeakingMessage = null;
+            if (!isAsking)
+            {
+                _viewModel.SpeakingMessage = null;
+            }
         }
     }
 }

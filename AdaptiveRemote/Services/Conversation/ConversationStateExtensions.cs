@@ -62,6 +62,7 @@ internal static class ConversationStateExtensions
                 .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
                 .Apply(DecodeCommandFor(commandName))
                 .StopUnless(CommandExists)
+                .StopUnless(IsHighConfidence, ifStopped: AskForConfirmation)
                 .StopUnless(CommandEnabled, ifStopped: RespondCommandDisabled)
                 .StopUnless(CommandHasExecuteAsync, ifStopped: RespondCommandDisabled)
                 .Apply(AddCommands);
@@ -77,6 +78,19 @@ internal static class ConversationStateExtensions
 
         return context;
     }
+
+    private static bool IsHighConfidence(RespondContext context)
+        => context.Speech.Confidence >= context.State.HighConfidenceThreshold;
+    private static RespondContext AskForConfirmation(RespondContext context)
+        => context with
+        {
+            ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_DidYouSay(context.Speech.Text)),
+            State = context.State with
+            {
+                LastCommand = context.Speech,
+                WantsPhrases = PhraseKinds.Commands | PhraseKinds.Confirmation,
+            }
+        };
 
     private static RespondContext Apologize(RespondContext context)
     {

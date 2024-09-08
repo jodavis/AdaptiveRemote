@@ -8,6 +8,8 @@ namespace AdaptiveRemote.Services.Conversation;
 [TestClass]
 public class ConversationStateExtensionsTests
 {
+    private const int TestConfidenceThreshold = 70;
+
     private readonly MockLogger<ConversationState> MockLogger = new();
 
     private static readonly IReadOnlyDictionary<string, Command> MockCommands = new List<Command>
@@ -22,12 +24,15 @@ public class ConversationStateExtensionsTests
 
     private static IRecognizedSpeech CreateMockSpeech(string text)
         => CreateMockSpeech(text, new());
-    private static IRecognizedSpeech CreateMockSpeech(string text, Dictionary<string, string> semantics)
+    private static IRecognizedSpeech CreateMockSpeech(string text, Dictionary<string, string> semantics, int confidence = TestConfidenceThreshold)
     {
         Mock<IRecognizedSpeech> mockSpeech = new();
         mockSpeech
             .SetupGet(x => x.Text)
             .Returns(text);
+        mockSpeech
+            .SetupGet(x => x.Confidence)
+            .Returns(confidence);
 
         string? value = null;
         mockSpeech
@@ -84,7 +89,7 @@ public class ConversationStateExtensionsTests
             ["system"] = "STARTLISTENING"
         });
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.WakeWord, LastCommand: lastCommand);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.WakeWord, LastCommand: lastCommand);
 
         ConversationState expected = sut with
         {
@@ -114,7 +119,7 @@ public class ConversationStateExtensionsTests
             ["system"] = "STOPLISTENING"
         });
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands, LastCommand: lastCommand);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands, LastCommand: lastCommand);
 
         ConversationState expected = sut with
         {
@@ -145,7 +150,7 @@ public class ConversationStateExtensionsTests
             ["thankyou"] = "true"
         });
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands, LastCommand: lastCommand);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands, LastCommand: lastCommand);
 
         ConversationState expected = sut with
         {
@@ -174,7 +179,7 @@ public class ConversationStateExtensionsTests
             ["command"] = expectedCommand.Name
         });
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
 
         ConversationState expected = sut with
         {
@@ -205,7 +210,7 @@ public class ConversationStateExtensionsTests
             ["repeat"] = "3"
         });
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
 
         ConversationState expected = sut with
         {
@@ -236,7 +241,7 @@ public class ConversationStateExtensionsTests
             ["repeat"] = "The United States of America"
         });
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
 
         ConversationState expected = sut with
         {
@@ -269,7 +274,7 @@ public class ConversationStateExtensionsTests
             ["command"] = expectedCommand.Name
         });
 
-        ConversationState sut = new(MockCommands, LastCommand: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastCommand: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
@@ -301,7 +306,7 @@ public class ConversationStateExtensionsTests
             ["command"] = expectedCommand.Name
         });
 
-        ConversationState sut = new(MockCommands, LastCommand: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastCommand: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
@@ -330,7 +335,7 @@ public class ConversationStateExtensionsTests
             ["command"] = "Play"
         });
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.WakeWord);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.WakeWord);
 
         ConversationState expected = sut with
         {
@@ -359,7 +364,7 @@ public class ConversationStateExtensionsTests
         });
 
         Command nonReversableCommand = MockCommands.Values.First(x => x.Reverse is null);
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
             LastResponse: new([], [nonReversableCommand]));
 
         ConversationState expected = sut with
@@ -388,7 +393,7 @@ public class ConversationStateExtensionsTests
             ["correction"] = "true",
         });
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
 
         ConversationState expected = sut with
         {
@@ -417,7 +422,7 @@ public class ConversationStateExtensionsTests
         });
 
         Command commandWithInvalidReverse = MockCommands["CommandWithInvalidReverse"];
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
             LastResponse: new([], [commandWithInvalidReverse]));
 
         ConversationState expected = sut with
@@ -456,7 +461,7 @@ public class ConversationStateExtensionsTests
         Command commandToReverse = MockCommands.Values.First(x => x.Reverse is not null);
         Command reverseCommand = MockCommands[commandToReverse.Reverse!];
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
             LastResponse: new([], [commandToReverse, commandToReverse, commandToReverse]));
 
         ConversationState expected = sut with
@@ -496,7 +501,7 @@ public class ConversationStateExtensionsTests
         Command commandToReverse = MockCommands.Values.First(x => x.Reverse is not null);
         Command reverseCommand = MockCommands[commandToReverse.Reverse!];
 
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
             LastResponse: new([], [commandToReverse, commandToReverse, reverseCommand]));
 
         ConversationState expected = sut with
@@ -519,10 +524,38 @@ public class ConversationStateExtensionsTests
     }
 
     [TestMethod]
+    public void ConversationStateExtensions_RespondTo_SimpleCommand_WithLowConfidence_AsksForConfirmaion()
+    {
+        // Arrange
+        IRecognizedSpeech input = CreateMockSpeech("Play", new()
+        {
+            ["command"] = "Play"
+        }, confidence: TestConfidenceThreshold - 1);
+
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
+
+        ConversationState expected = sut with
+        {
+            LastCommand = input,
+            LastResponse = new([Phrases.Conversation_DidYouSay(input.Text)], []),
+            WantsPhrases = PhraseKinds.Commands | PhraseKinds.Confirmation
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
     public void ConversationStateExtensions_ToggleListening_WhenWaitingForWakeWord_EntersListening()
     {
         // Arrange
-        ConversationState sut = new(MockCommands, WantsPhrases: PhraseKinds.WakeWord, LastCommand: CreateMockSpeech("What?!?"));
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.WakeWord, LastCommand: CreateMockSpeech("What?!?"));
 
         ConversationState expected = sut with
         {
@@ -552,7 +585,7 @@ public class ConversationStateExtensionsTests
             }
 
             // Arrange
-            ConversationState sut = new(MockCommands, WantsPhrases: (PhraseKinds)i, LastCommand: CreateMockSpeech("What?!?"));
+            ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: (PhraseKinds)i, LastCommand: CreateMockSpeech("What?!?"));
 
             ConversationState expected = sut with
             {
