@@ -26,7 +26,7 @@ internal class ConversationStateMachine
 
     internal ConversationResponse RespondTo(IRecognizedSpeech result)
     {
-        return (_state = _state.RespondTo(result, Logger)).LastResponse
+        return (_state = _state.RespondTo(result, Logger)).CurrentResponse
             ?? throw new Exception("State machine did not produce a ConversationResponse");
     }
 
