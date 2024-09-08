@@ -83,7 +83,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
             yield return new FakeRecognitionResult("Yes, I did", 80, ("confirmation", "YES"));
             yield return Command("Volume Down 5", "VolumeDown", repeat: 5);
             yield return Command("Guide", "Guide", confidence: 40);
-            yield return new FakeRecognitionResult("No", 80, ("confirmation", "YES"));
+            yield return new FakeRecognitionResult("No", 80, ("confirmation", "NO"));
             yield return Command("Go up", "Up");
             yield return new FakeRecognitionResult("That's wrong", 80, ("correction", "true"));
             yield return Command("Back", "Back");

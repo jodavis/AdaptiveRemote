@@ -552,6 +552,111 @@ public class ConversationStateExtensionsTests
     }
 
     [TestMethod]
+    public void ConversationStateExtensions_RespondTo_ConfirmationF_WhenNotExpected_RejectsSpeech()
+    {
+        // Arrange
+        IRecognizedSpeech command = CreateMockSpeech("Play", new()
+        {
+            ["command"] = "Play"
+        });
+
+        IRecognizedSpeech input = CreateMockSpeech("Yes", new()
+        {
+            ["confirmation"] = "YES"
+        });
+
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastCommand: command, LastResponse: new([MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]]), WantsPhrases: PhraseKinds.Commands);
+
+        ConversationState expected = sut with
+        {
+            LastResponse = new([], [])
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_UnexpectedSpeechDetected(PhraseKinds.Confirmation, input),
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
+    public void ConversationStateExtensions_RespondTo_ConfirmationForCommand_Yes_ExecuetesPreviousCommand()
+    {
+        // Arrange
+        IRecognizedSpeech command = CreateMockSpeech("Play", new()
+        {
+            ["command"] = "Play"
+        }, confidence: TestConfidenceThreshold - 1);
+
+        IRecognizedSpeech input = CreateMockSpeech("Yes", new()
+        {
+            ["confirmation"] = "YES"
+        });
+
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastCommand: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+
+        ConversationState expected = sut with
+        {
+            LastCommand = command,
+            LastResponse = new([MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]]),
+            WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_Recognized("Play", "Play"),
+            ExpectMessage_Updated(expected));
+    }
+
+    [TestMethod]
+    public void ConversationStateExtensions_RespondTo_ConfirmationForCommand_No_Apologizes()
+    {
+        // Arrange
+        IRecognizedSpeech command = CreateMockSpeech("Play", new()
+        {
+            ["command"] = "Play"
+        }, confidence: TestConfidenceThreshold - 1);
+
+        IRecognizedSpeech input = CreateMockSpeech("No, that's wrong", new()
+        {
+            ["confirmation"] = "NO"
+        });
+
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastCommand: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+
+        ConversationState expected = sut with
+        {
+            LastCommand = default,
+            LastResponse = new([Phrases.Conversation_ImSorry], []),
+            WantsPhrases = PhraseKinds.Commands
+        };
+
+        // Act
+        ConversationState result = sut.RespondTo(input, MockLogger);
+
+        // Assert
+        Assert.AreEqual(expected, result, nameof(result));
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_UserReportedRecognitionError(command),
+            ExpectMessage_Updated(expected));
+    }
+
+    // TODO: Low confidence for other phrases
+    //  Correction
+    //  Stop listening
+    //  Confirmation?
+
+    [TestMethod]
     public void ConversationStateExtensions_ToggleListening_WhenWaitingForWakeWord_EntersListening()
     {
         // Arrange

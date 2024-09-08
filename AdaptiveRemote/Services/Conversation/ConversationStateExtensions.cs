@@ -26,7 +26,7 @@ internal static class ConversationStateExtensions
     {
         RespondContext context = new(state, speech, logger);
 
-        context = context.RespondTo(speech);
+        context = context.RespondTo();
 
         state = context.State with
         {
@@ -36,42 +36,50 @@ internal static class ConversationStateExtensions
         return state.LogUpdateTo(logger);
     }
 
-    private static RespondContext RespondTo(this RespondContext context, IRecognizedSpeech speech)
+    private static RespondContext RespondTo(this RespondContext context)
     {
-        if (speech.TryGetSemanticValue("system", out string? systemCommand))
+        if (context.Speech.TryGetSemanticValue("system", out string? systemCommand))
         {
             switch (systemCommand)
             {
                 case "STARTLISTENING":
                     context = context
-                        .StopUnless(AcceptPhraseKind(PhraseKinds.WakeWord))
+                        .StopUnless(PhraseKindIsAccepted(PhraseKinds.WakeWord))
                         .Apply(EnterListeningState);
                     break;
 
                 case "STOPLISTENING":
                     context = context
-                        .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
+                        .StopUnless(PhraseKindIsAccepted(PhraseKinds.Commands))
                         .Apply(ExitListeningState);
                     break;
             }
         }
 
-        if (speech.TryGetSemanticValue("command", out string? commandName))
+        if (context.Speech.TryGetSemanticValue("confirmation", out string? confirmationValue))
         {
             context = context
-                .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
+                .StopUnless(PhraseKindIsAccepted(PhraseKinds.Confirmation))
+                .StopUnless(ConfirmationIsAffirmative(confirmationValue), ifStopped: RejectLastCommand)
+                .Apply(ConfirmLastCommand);
+        }
+
+        if (context.Speech.TryGetSemanticValue("command", out string? commandName))
+        {
+            context = context
+                .StopUnless(PhraseKindIsAccepted(PhraseKinds.Commands))
                 .Apply(DecodeCommandFor(commandName))
                 .StopUnless(CommandExists)
-                .StopUnless(IsHighConfidence, ifStopped: AskForConfirmation)
+                .StopUnless(SpeechIsHighConfidence, ifStopped: AskForConfirmation)
                 .StopUnless(CommandEnabled, ifStopped: RespondCommandDisabled)
                 .StopUnless(CommandHasExecuteAsync, ifStopped: RespondCommandDisabled)
                 .Apply(AddCommands);
         }
 
-        if (speech.TryGetSemanticValue("correction", out _))
+        if (context.Speech.TryGetSemanticValue("correction", out _))
         {
             context = context
-                .StopUnless(AcceptPhraseKind(PhraseKinds.Correction))
+                .StopUnless(PhraseKindIsAccepted(PhraseKinds.Correction))
                 .Apply(Apologize)
                 .Apply(ReverseLastCommands);
         }
@@ -79,8 +87,9 @@ internal static class ConversationStateExtensions
         return context;
     }
 
-    private static bool IsHighConfidence(RespondContext context)
-        => context.Speech.Confidence >= context.State.HighConfidenceThreshold;
+    private static bool SpeechIsHighConfidence(RespondContext context)
+        => context.SpeechConfirmed || context.Speech.Confidence >= context.State.HighConfidenceThreshold;
+
     private static RespondContext AskForConfirmation(RespondContext context)
         => context with
         {
@@ -92,8 +101,34 @@ internal static class ConversationStateExtensions
             }
         };
 
+    private static Func<RespondContext, bool> ConfirmationIsAffirmative(string confirmationValue)
+        => context => confirmationValue.Equals("YES", StringComparison.OrdinalIgnoreCase);
+
+    private static RespondContext ConfirmLastCommand(RespondContext context)
+        => context with
+        {
+            Speech = context.State.LastCommand!,
+            SpeechConfirmed = true,
+        };
+
+    private static RespondContext RejectLastCommand(RespondContext context)
+        => Apologize(context) with
+        {
+            State = context.State with
+            {
+                LastCommand = null,
+                WantsPhrases = PhraseKinds.Commands
+            }
+        };
+
     private static RespondContext Apologize(RespondContext context)
     {
+        if (context.ResponsePhrases.Contains(Phrases.Conversation_ImSorry))
+        {
+            // Already apologized, don't do it again
+            return context;
+        }
+
         context.Logger?.LogError(Message.ConversationState_UserReportedRecognitionError, context.State.LastCommand);
         return context with
         {
@@ -182,7 +217,7 @@ internal static class ConversationStateExtensions
             }
         };
 
-    private static Func<RespondContext, bool> AcceptPhraseKind(PhraseKinds received)
+    private static Func<RespondContext, bool> PhraseKindIsAccepted(PhraseKinds received)
         => context => context.State.WantsPhrases.HasFlag(received)
             .LogErrorIf(false, context.Logger, Message.ConversationState_UnexpectedSpeechDetected, received, context.Speech);
 
@@ -272,7 +307,8 @@ internal static class ConversationStateExtensions
         ImmutableList<Command> ResponseCommands,
         bool Continue,
         ILogger? Logger,
-        Command? DecodedCommand = default)
+        Command? DecodedCommand = default,
+        bool SpeechConfirmed = false)
     {
         internal RespondContext(ConversationState state, IRecognizedSpeech speech, ILogger? logger)
             : this(state, speech, ImmutableList<string>.Empty, ImmutableList<Command>.Empty, true, logger)
