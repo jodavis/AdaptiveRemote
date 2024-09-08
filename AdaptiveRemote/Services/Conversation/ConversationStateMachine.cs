@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
 
@@ -8,14 +9,16 @@ internal class ConversationStateMachine
     private static readonly IReadOnlyDictionary<string, Command> EmptyCommands = new Dictionary<string, Command>();
 
     private ConversationState _state;
+    private readonly ConversationSettings _settings;
     private readonly IRemoteDefinitionService _definitionService;
 
-    public ConversationStateMachine(IRemoteDefinitionService definitionService, ILogger<ConversationStateMachine> logger)
+    public ConversationStateMachine(IRemoteDefinitionService definitionService, IOptions<ConversationSettings> settings, ILogger<ConversationStateMachine> logger)
     {
         _definitionService = definitionService;
         Logger = logger;
 
-        _state = new(EmptyCommands);
+        _state = new(EmptyCommands, 101);
+        _settings = settings.Value;
     }
 
     public ILogger Logger { get; }
@@ -35,6 +38,6 @@ internal class ConversationStateMachine
     internal void Reset()
     {
         IReadOnlyDictionary<string, Command> commands = _definitionService.GetCommands().ToDictionary(x => x.Name);
-        _state = new(commands, WantsPhrases: PhraseKinds.WakeWord);
+        _state = new(commands, HighConfidenceThreshold: _settings.HighConfidenceThreshold, WantsPhrases: PhraseKinds.WakeWord);
     }
 }
