@@ -48,6 +48,14 @@ internal static class ConversationStateExtensions
 
     private static RespondContext RespondTo(this RespondContext context)
     {
+        if (context.Speech.TryGetSemanticValue("confirmation", out string? confirmationValue))
+        {
+            context = context
+                .StopUnless(PhraseKindIsAccepted(PhraseKinds.Confirmation))
+                .StopUnless(ConfirmationIsAffirmative(confirmationValue), ifStopped: RejectLastSpeech)
+                .Apply(ConfirmLastCommand);
+        }
+
         if (context.Speech.TryGetSemanticValue("system", out string? systemCommand))
         {
             switch (systemCommand)
@@ -61,17 +69,10 @@ internal static class ConversationStateExtensions
                 case "STOPLISTENING":
                     context = context
                         .StopUnless(PhraseKindIsAccepted(PhraseKinds.Commands))
+                        .StopUnless(SpeechIsHighConfidence, ifStopped: AskForConfirmation)
                         .Apply(ExitListeningState);
                     break;
             }
-        }
-
-        if (context.Speech.TryGetSemanticValue("confirmation", out string? confirmationValue))
-        {
-            context = context
-                .StopUnless(PhraseKindIsAccepted(PhraseKinds.Confirmation))
-                .StopUnless(ConfirmationIsAffirmative(confirmationValue), ifStopped: RejectLastSpeech)
-                .Apply(ConfirmLastCommand);
         }
 
         if (context.Speech.TryGetSemanticValue("command", out string? commandName))
