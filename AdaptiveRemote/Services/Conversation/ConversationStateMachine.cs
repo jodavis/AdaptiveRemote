@@ -27,18 +27,6 @@ internal class ConversationStateMachine
             ?? throw new Exception("State machine did not produce a ConversationResponse");
     }
 
-    private static IReadOnlyDictionary<string, Command> GetCommands(IRemoteDefinitionService definitionService)
-    {
-        Dictionary<string, Command> commands = new(StringComparer.Ordinal);
-
-        foreach (Command command in definitionService.GetCommands())
-        {
-            commands[command.Name] = command;
-        }
-
-        return commands;
-    }
-
     internal void ToggleListening()
     {
         _state = _state.ToggleListening(Logger);
@@ -46,6 +34,7 @@ internal class ConversationStateMachine
 
     internal void Reset()
     {
-        _state = new(GetCommands(_definitionService), WantsPhrases: PhraseKinds.WakeWord);
+        IReadOnlyDictionary<string, Command> commands = _definitionService.GetCommands().ToDictionary(x => x.Name);
+        _state = new(commands, WantsPhrases: PhraseKinds.WakeWord);
     }
 }

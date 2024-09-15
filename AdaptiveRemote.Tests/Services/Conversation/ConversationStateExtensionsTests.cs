@@ -12,7 +12,7 @@ public class ConversationStateExtensionsTests
 
     private static readonly IReadOnlyDictionary<string, Command> MockCommands = new List<Command>
     {
-        new TiVoCommand("Play", speakPhrase: "Playing...") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
+        new TiVoCommand("Play", speakName: "Playing...") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
         new TiVoCommand("Disabled") { ExecuteAsync = cancel => Task.CompletedTask },
         new TiVoCommand("MissingExecAsyncCmd") { IsEnabled = true },
         new TiVoCommand("VolumeUp", reverse: "VolumeDown") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
@@ -269,7 +269,7 @@ public class ConversationStateExtensionsTests
             ["command"] = expectedCommand.Name
         });
 
-        ConversationState sut = new(MockCommands, LastCommand: lastCommand, WantsPhrases: PhraseKinds.CommandsAndConfirmation);
+        ConversationState sut = new(MockCommands, LastCommand: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
@@ -301,7 +301,7 @@ public class ConversationStateExtensionsTests
             ["command"] = expectedCommand.Name
         });
 
-        ConversationState sut = new(MockCommands, LastCommand: lastCommand, WantsPhrases: PhraseKinds.CommandsAndConfirmation);
+        ConversationState sut = new(MockCommands, LastCommand: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {

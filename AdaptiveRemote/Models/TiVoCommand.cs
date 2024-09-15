@@ -10,8 +10,8 @@ public class TiVoCommand : Command
         string? cssid = null,
         string? glyph = null,
         string? reverse = null,
-        string? speakPhrase = null)
-        : base(name, placement, label, cssid ?? commandId, glyph, reverse, speakPhrase ?? Phrases.Conversation_Sent(name))
+        string? speakName = null)
+        : base(name, placement, label, cssid ?? commandId, glyph, reverse, Phrases.Conversation_Sent(speakName ?? name))
     {
         CommandId = commandId ?? name.ToUpperInvariant();
     }
