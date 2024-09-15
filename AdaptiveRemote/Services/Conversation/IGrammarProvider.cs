@@ -2,9 +2,13 @@
 
 namespace AdaptiveRemote.Services.Conversation;
 
-public interface IGrammarProvider
+/// <summary>
+/// Loader for Grammar objects
+/// </summary>
+internal interface IGrammarProvider
 {
-    Grammar LoadAttentionGrammar();
-    Grammar LoadCommandsGrammar();
-    Grammar LoadYesNoGrammar();
+    /// <summary>
+    /// Load a grammar that supports the given kind of phrases
+    /// </summary>
+    Grammar LoadGrammar(PhraseKinds phraseKind);
 }

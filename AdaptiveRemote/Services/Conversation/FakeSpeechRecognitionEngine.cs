@@ -8,7 +8,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 {
     private readonly Dictionary<string, Grammar> _grammars = new();
 
-    private event EventHandler<RecognitionResultEventArgs>? _recognized;
+    private event EventHandler<RecognizedSpeechEventArgs>? _recognized;
     private TaskCompletionSource _pause = new();
 
     public FakeSpeechRecognitionEngine()
@@ -16,19 +16,13 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         _ = RecognitionLoop();
     }
 
-    event EventHandler<RecognitionResultEventArgs> ISpeechRecognitionEngine.SpeechRecognized
+    event EventHandler<RecognizedSpeechEventArgs> ISpeechRecognitionEngine.SpeechRecognized
     {
         add => _recognized += value;
         remove => _recognized -= value;
     }
 
-    event EventHandler<RecognitionResultEventArgs> ISpeechRecognitionEngine.SpeechRejected
-    {
-        add { }
-        remove { }
-    }
-
-    event EventHandler<RecognitionErrorEventArgs> ISpeechRecognitionEngine.RecognitionError
+    event EventHandler<RecognizedSpeechEventArgs> ISpeechRecognitionEngine.SpeechRejected
     {
         add { }
         remove { }
@@ -36,8 +30,10 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 
     void ISpeechRecognitionEngine.LoadGrammar(Grammar grammar) => _grammars.Add(grammar.Name, grammar);
     void ISpeechRecognitionEngine.UnloadGrammar(Grammar grammar) => _grammars.Remove(grammar.Name);
+    void ISpeechRecognitionEngine.UnloadAllGrammars() => _grammars.Clear();
     void ISpeechRecognitionEngine.RecognizeAsync() => _pause.TrySetResult();
     void ISpeechRecognitionEngine.RecognizeAsyncCancel() => _pause = new();
+    void ISpeechRecognitionEngine.SetConfidenceThreshold(int threshold) { }
 
     private async Task RecognitionLoop()
     {
@@ -50,7 +46,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
             await Task.Delay(1000);
             ticks++;
 
-            if (IsEnabled("Attention"))
+            if (IsEnabled("WakeWord"))
             {
                 if (ticks >= 5)
                 {
@@ -80,15 +76,16 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         {
             yield return Command("Go up", "Up");
             yield return Command("Down three", "Down", 3);
+            yield return new FakeRecognitionResult("That's wrong", ("correction", "true"));
             yield return Command("TiVo", "TiVo");
             yield return Command("Louder 5 times", "VolumeUp", 5);
             yield return Command("Mute", "Mute");
             yield return Command("Volume Down 5", "VolumeDown", 5);
             yield return Command("Guide", "Guide");
             yield return Command("Go up", "Up");
-            yield return Command("Down three", "Down", 3);
+            yield return new FakeRecognitionResult("That's wrong", ("correction", "true"));
             yield return Command("Back", "Back");
-            yield return new FakeRecognitionResult("I'm done", ("system", "STOPLISTENING"));
+            yield return new FakeRecognitionResult("Thank you", ("system", "STOPLISTENING"), ("thankyou", "true"));
         }
 
         static FakeRecognitionResult Command(string text, string command, int? repeat = default)
@@ -105,7 +102,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         _recognized?.Invoke(this, new(result));
     }
 
-    private class FakeRecognitionResult : IRecognitionResult
+    private class FakeRecognitionResult : IRecognizedSpeech
     {
         internal FakeRecognitionResult(string text, params (string, string)[] semantics)
         {
@@ -117,11 +114,11 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 
         private readonly (string, string)[] _semantics;
 
-        bool IRecognitionResult.ContainsSemanticValue(string key)
+        bool IRecognizedSpeech.ContainsSemanticValue(string key)
             => _semantics.Any(x => x.Item1 == key);
-        bool IRecognitionResult.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
+        bool IRecognizedSpeech.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
             => (value = _semantics.Where(x => x.Item1 == key).Select(x => x.Item2).FirstOrDefault()) is not null;
 
-        void IRecognitionResult.WriteToWaveStream(Stream waveStream) => throw new NotImplementedException();
+        void IRecognizedSpeech.WriteToWaveStream(Stream waveStream) => throw new NotImplementedException();
     }
 }

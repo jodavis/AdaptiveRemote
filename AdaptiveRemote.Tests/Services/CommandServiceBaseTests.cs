@@ -375,14 +375,14 @@ public class CommandServiceBaseTests
     private class MockCommand : Command
     {
         public MockCommand(string name)
-            : base(name, null, null, null, null)
+            : base(name, null, null, null, null, null, speakPhrase: null)
         { }
     }
 
     private class OtherCommand : Command
     {
         public OtherCommand(string name)
-            : base(name, null, null, null, null)
+            : base(name, null, null, null, null, null, speakPhrase: null)
         { }
     }
 }

@@ -44,17 +44,17 @@ internal class SamplesRecorder : IHostedService
         return Task.CompletedTask;
     }
 
-    private void OnSpeechRecognized(object? sender, RecognitionResultEventArgs e)
+    private void OnSpeechRecognized(object? sender, RecognizedSpeechEventArgs e)
     {
         RecordSpeechSample(e.Result);
     }
 
-    private void OnSpeechRejected(object? sender, RecognitionResultEventArgs e)
+    private void OnSpeechRejected(object? sender, RecognizedSpeechEventArgs e)
     {
         RecordSpeechSample(e.Result, suffix: "_Rejected");
     }
 
-    private void RecordSpeechSample(IRecognitionResult result, string suffix = "")
+    private void RecordSpeechSample(IRecognizedSpeech result, string suffix = "")
     {
         string outputPath = _settings.RecordingOutputPath ?? ".";
 

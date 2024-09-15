@@ -253,24 +253,6 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Waiting for attention.
-        /// </summary>
-        internal static string ConversationController_ListenForAttention {
-            get {
-                return ResourceManager.GetString("ConversationController_ListenForAttention", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Listening for commands.
-        /// </summary>
-        internal static string ConversationController_ListenForCommands {
-            get {
-                return ResourceManager.GetString("ConversationController_ListenForCommands", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Recognized &apos;{0}&apos; as &apos;{1}&apos;.
         /// </summary>
         internal static string ConversationController_Recognized {
@@ -304,6 +286,51 @@ namespace AdaptiveRemote.Logging {
         internal static string ConversationController_UnknownCommand {
             get {
                 return ResourceManager.GetString("ConversationController_UnknownCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not reverse {command_to_reverse}. Could not find a command named &apos;{reverse_command}&apos;..
+        /// </summary>
+        internal static string ConversationState_CouldNotFindReverseCommand {
+            get {
+                return ResourceManager.GetString("ConversationState_CouldNotFindReverseCommand", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Received an invalid semantic value for &apos;{semantic_key}&apos;: {semantic_value}.
+        /// </summary>
+        internal static string ConversationState_InvalidSemanticValue {
+            get {
+                return ResourceManager.GetString("ConversationState_InvalidSemanticValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Did not expect {phrase_kind} but received &quot;{recognized_speech}&quot;.
+        /// </summary>
+        internal static string ConversationState_UnexpectedSpeechDetected {
+            get {
+                return ResourceManager.GetString("ConversationState_UnexpectedSpeechDetected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {new_state}.
+        /// </summary>
+        internal static string ConversationState_Updated {
+            get {
+                return ResourceManager.GetString("ConversationState_Updated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to User reported recognition error: {speech}.
+        /// </summary>
+        internal static string ConversationState_UserReportedRecognitionError {
+            get {
+                return ResourceManager.GetString("ConversationState_UserReportedRecognitionError", resourceCulture);
             }
         }
         
@@ -416,6 +443,15 @@ namespace AdaptiveRemote.Logging {
         internal static string SpeechRecognition_CancelledListeningMethod {
             get {
                 return ResourceManager.GetString("SpeechRecognition_CancelledListeningMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not set &apos;{recognizer_setting}&apos;: {error_message}.
+        /// </summary>
+        internal static string SpeechRecognition_CouldNotConfigureSetting {
+            get {
+                return ResourceManager.GetString("SpeechRecognition_CouldNotConfigureSetting", resourceCulture);
             }
         }
         
@@ -547,6 +583,40 @@ namespace AdaptiveRemote.Logging {
         internal static string SpeechRecognitionEngine_Recognized {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_Recognized", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {name}: {description}
+        ///   Selected: {selected}
+        ///   ID: {id}
+        ///   Culture: {culture}
+        ///   Supported Formats:{supported}
+        ///   Additional Information:{additional} .
+        /// </summary>
+        internal static string SpeechRecognitionEngine_RecognizerInfo {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 
+        ///      {0}: {1}.
+        /// </summary>
+        internal static string SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 
+        ///      {0} ({1}k bits/s).
+        /// </summary>
+        internal static string SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat {
+            get {
+                return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat", resourceCulture);
             }
         }
         

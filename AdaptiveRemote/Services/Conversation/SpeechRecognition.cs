@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Runtime.CompilerServices;
-using System.Speech.Recognition;
+﻿using System.Speech.Recognition;
 using System.Threading.Channels;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Utilities;
@@ -9,257 +7,101 @@ using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-internal class SpeechRecognition : ISpeechRecognition, IDisposable
+internal class SpeechRecognition : ISpeechRecognition
 {
+    private static readonly IEnumerable<PhraseKinds> GrammarKinds =
+        [
+            PhraseKinds.WakeWord,
+            PhraseKinds.Commands,
+            PhraseKinds.Confirmation,
+            PhraseKinds.Correction
+        ];
+
+    private readonly ConversationSettings _settings;
     private readonly ISpeechRecognitionEngine _engine;
     private readonly IListeningController _listeningController;
-    private readonly ILogger _logger;
-    private readonly ConversationSettings _settings;
+    private readonly ILogger<SpeechRecognition> _logger;
 
-    private readonly Grammar _attentionGrammar;
-    private readonly Grammar _yesNoGrammar;
-    private readonly Grammar _commandsGrammar;
+    private readonly IReadOnlyDictionary<PhraseKinds, Grammar> _grammars;
 
-    private TaskCompletionSource _attentionTcs = new();
-    private TaskCompletionSource<bool> _yesNoTcs = new();
-    private Channel<IRecognitionResult> _commandChannel = Channel.CreateUnbounded<IRecognitionResult>();
-
-    private readonly CancellationTokenSource _stopCts = new();
-    private readonly object _lockObject = new();
-
-    public SpeechRecognition(IOptionsSnapshot<ConversationSettings> settings, ISpeechRecognitionEngine engine, IListeningController listeningController, IGrammarProvider grammarProvider, ILogger<SpeechRecognition> logger)
+    public SpeechRecognition(IOptions<ConversationSettings> settings, ISpeechRecognitionEngine engine, IListeningController listeningController, IGrammarProvider grammarProvider, ILogger<SpeechRecognition> logger)
     {
+        _settings = settings.Value;
         _engine = engine;
         _listeningController = listeningController;
         _logger = logger;
-        _settings = settings.Value;
 
-        _attentionGrammar = LoadGrammar(grammarProvider.LoadAttentionGrammar);
-        _commandsGrammar = LoadGrammar(grammarProvider.LoadCommandsGrammar);
-        _yesNoGrammar = LoadGrammar(grammarProvider.LoadYesNoGrammar);
+        _engine.UnloadAllGrammars();
 
-        _engine.SpeechRecognized += OnSpeechRecognized;
-        _engine.RecognitionError += OnRecognitionError;
+        _grammars = GrammarKinds.ToDictionary(x => x, x => LoadGrammarIntoEngine(grammarProvider.LoadGrammar(x)));
 
-        _attentionTcs.SetResult();
-        _yesNoTcs.SetResult(false);
-        _commandChannel.Writer.Complete();
-
-        _settings = settings.Value;
-    }
-
-    private void OnRecognitionError(object? sender, RecognitionErrorEventArgs e)
-    {
-        RecognitionErrorException exception = new RecognitionErrorException(e.Message);
-        _logger.LogError(Message.SpeechRecognition_RecognitionError, e.Message);
-
-        _attentionTcs.TrySetException(exception);
-        _yesNoTcs.TrySetException(exception);
-        _commandChannel.Writer.TryComplete(exception);
-    }
-
-    private void OnSpeechRecognized(object? sender, RecognitionResultEventArgs e)
-    {
-        if (e.Result.TryGetSemanticValue("system", out string? systemCommand))
+        Grammar LoadGrammarIntoEngine(Grammar grammar)
         {
-            switch (systemCommand)
-            {
-                case "YES":
-                    _yesNoTcs.TrySetResult(true);
-                    break;
-                case "NO":
-                    _yesNoTcs.TrySetResult(false);
-                    break;
-                case "STARTLISTENING":
-                    _attentionTcs.TrySetResult();
-                    break;
-                case "STOPLISTENING":
-                    _commandChannel.Writer.TryComplete();
-                    break;
-            }
-        }
-
-        if (e.Result.ContainsSemanticValue("command"))
-        {
-            _commandChannel.Writer.TryWrite(e.Result);
-        }
-    }
-
-    private Task ResetAttentionTask(CancellationToken cancellationToken)
-    {
-        lock (_lockObject)
-        {
-            EnsureCanReset(_attentionTcs.Task, nameof(ISpeechRecognition.ListenForAttentionAsync));
-
-            _attentionTcs = new();
-            cancellationToken.Register(() => _attentionTcs.TrySetCanceled());
-            return _attentionTcs.Task;
-        }
-    }
-
-    async Task ISpeechRecognition.ListenForAttentionAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
-
-        Task attentionTask = ResetAttentionTask(cancellationToken);
-
-        await StartAndStopListeningAsync(_attentionGrammar, attentionTask);
-    }
-
-    private Task<bool> ResetYesNoTask(CancellationToken cancellationToken)
-    {
-        lock (_lockObject)
-        {
-            EnsureCanReset(_yesNoTcs.Task, nameof(ISpeechRecognition.ListenForYesNoAsync));
-
-            _yesNoTcs = new();
-            cancellationToken.Register(() => _yesNoTcs.TrySetCanceled());
-            return _yesNoTcs.Task;
-        }
-    }
-
-    async Task<bool> ISpeechRecognition.ListenForYesNoAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
-
-        Task<bool> yesNoTask = ResetYesNoTask(cancellationToken);
-
-        await StartAndStopListeningAsync(_yesNoGrammar, yesNoTask);
-
-        return yesNoTask.Result;
-    }
-
-    private Channel<IRecognitionResult> ResetCommandChannel(CancellationToken cancellationToken)
-    {
-        lock (_lockObject)
-        {
-            EnsureCanReset(_commandChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommandsAsync));
-            _commandChannel = Channel.CreateBounded<IRecognitionResult>(new BoundedChannelOptions(_settings.CommandBufferSize)
-            {
-                SingleReader = true,
-                FullMode = BoundedChannelFullMode.DropOldest,
-                AllowSynchronousContinuations = true,
-            });
-            cancellationToken.Register(() => _commandChannel.Writer.TryComplete(new TaskCanceledException()));
-        }
-
-        return _commandChannel;
-    }
-
-    IAsyncEnumerable<IRecognitionResult> ISpeechRecognition.ListenForCommandsAsync(CancellationToken cancellationToken)
-    {
-        cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopCts.Token).Token;
-
-        Channel<IRecognitionResult> resultChannel = ResetCommandChannel(cancellationToken);
-
-        _ = StartAndStopListeningToChannelAsync(resultChannel);
-
-        return resultChannel.Reader.ReadAllAsync(cancellationToken);
-
-        async Task StartAndStopListeningToChannelAsync(Channel<IRecognitionResult> resultChannel)
-        {
-            try
-            {
-                await StartAndStopListeningAsync(_commandsGrammar, resultChannel.Reader.Completion, nameof(ISpeechRecognition.ListenForCommandsAsync));
-            }
-            catch (Exception ex)
-            {
-                resultChannel.Writer.TryComplete(ex);
-            }
-        }
-    }
-
-    private async Task StartAndStopListeningAsync(Grammar grammar, Task listenTask, [CallerMemberName] string methodName = "Undefined")
-    {
-        try
-        {
-            EnableGrammar(grammar, true);
-            using (_listeningController.Listen())
-            {
-                await listenTask;
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInformation(Message.SpeechRecognition_CancelledListeningMethod, methodName);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(Message.SpeechRecognition_ErrorInListeningMethod, methodName, ex);
-            throw;
-        }
-        finally
-        {
-            EnableGrammar(grammar, false);
-        }
-    }
-
-    private void EnsureCanReset(Task task, string methodName)
-    {
-        if (!task.IsCompleted)
-        {
-            _logger.LogAndThrowError(Message.SpeechRecognition_ListeningMethodAlreadyInProgress, methodName);
-        }
-    }
-
-    private Grammar LoadGrammar(Func<Grammar> loader)
-    {
-        string grammarName = "Name not loaded";
-        try
-        {
-            Grammar grammar = loader();
-            grammarName = grammar.Name;
             grammar.Enabled = false;
             _engine.LoadGrammar(grammar);
             return grammar;
         }
-        catch (Exception ex)
+    }
+
+    void ISpeechRecognition.SetFilter(PhraseKinds filter)
+    {
+        foreach (KeyValuePair<PhraseKinds, Grammar> grammar in _grammars)
         {
-            _logger.LogError(Message.SpeechRecognition_GrammarFailedToLoad, grammarName, ex);
-            throw;
+            grammar.Value.Enabled = filter.HasFlag(grammar.Key);
+        }
+
+        if (filter != PhraseKinds.None)
+        {
+            bool isWakeWord = filter == PhraseKinds.WakeWord;
+
+            ConfigureConfidenceThreshold(isWakeWord
+                ? _settings.WakeWordConfidenceThreshold
+                : _settings.ListeningConfidenceThreshold);
         }
     }
 
-    private void UnloadGrammar(Grammar grammar)
+    private void ConfigureConfidenceThreshold(int threshold)
     {
         try
         {
-            grammar.Enabled = false;
-            _engine.UnloadGrammar(grammar);
+            _engine.SetConfidenceThreshold(threshold);
         }
-        catch (Exception ex)
+        catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning(Message.SpeechRecognition_GrammarFailedToUnload, grammar.Name, ex);
-        }
-    }
-
-    private void EnableGrammar(Grammar grammar, bool enable)
-    {
-        try
-        {
-            grammar.Enabled = enable;
-        }
-        finally
-        {
-            _logger.LogInformation(Message.SpeechRecognition_GrammarEnabled, grammar.Name, grammar.Enabled);
+            _logger.LogWarning(Message.SpeechRecognition_CouldNotConfigureSetting, "ConfidenceThreshold", ex.Message);
         }
     }
 
-    public void Dispose()
+    IAsyncEnumerable<IRecognizedSpeech> ISpeechRecognition.RecognizeAsync(CancellationToken stopToken)
     {
-        _stopCts.Cancel();
+        Channel<IRecognizedSpeech> channel = Channel.CreateBounded<IRecognizedSpeech>(_settings.CommandBufferSize);
 
-        UnloadGrammar(_attentionGrammar);
-        UnloadGrammar(_yesNoGrammar);
-        UnloadGrammar(_commandsGrammar);
-    }
+        _ = StartlisteningAsync();
 
-    public void ToggleListening()
-    {
-        if (!_attentionTcs.TrySetResult())
+        return channel.Reader.ReadAllAsync(stopToken);
+
+        async Task StartlisteningAsync()
         {
-            _commandChannel.Writer.TryComplete();
+            try
+            {
+                if (!stopToken.IsCancellationRequested)
+                {
+                    EventHandler<RecognizedSpeechEventArgs> handler = (sender, args) => channel.Writer.TryWrite(args.Result);
+                    using (_listeningController.Listen())
+                    {
+                        _engine.SpeechRecognized += handler;
+
+                        await stopToken.WaitForCancelled();
+
+                        _engine.SpeechRecognized -= handler;
+                    }
+                }
+                channel.Writer.TryComplete();
+            }
+            catch (Exception error)
+            {
+                channel.Writer.TryComplete(error);
+            }
         }
     }
 }
