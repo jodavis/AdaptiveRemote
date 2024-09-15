@@ -8,8 +8,10 @@ internal class IRCommand : Command
         string? placement = null,
         string? label = null,
         string? cssid = null,
-        string? glyph = null)
-        : base(name, placement, label, cssid, glyph)
+        string? glyph = null,
+        string? reverse = null,
+        string? speakName = null)
+        : base(name, placement, label, cssid, glyph, reverse, Phrases.Conversation_Sent(speakName ?? name))
     {
         Data = data;
     }

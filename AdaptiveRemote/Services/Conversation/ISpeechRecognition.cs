@@ -1,12 +1,19 @@
 ﻿namespace AdaptiveRemote.Services.Conversation;
 
+/// <summary>
+/// A system for recognizing speech
+/// </summary>
 internal interface ISpeechRecognition
 {
-    Task ListenForAttentionAsync(CancellationToken cancellationToken);
+    /// <summary>
+    /// Sets a filter for which kinds of phrases should be accepted by the recognizer.
+    /// </summary>
+    void SetFilter(PhraseKinds filter);
 
-    Task<bool> ListenForYesNoAsync(CancellationToken cancellationToken);
-
-    IAsyncEnumerable<IRecognitionResult> ListenForCommandsAsync(CancellationToken cancellationToken);
-
-    void ToggleListening();
+    /// <summary>
+    /// Returns a stream of successfully recognized speech. The enumeration will continue
+    /// asynchronously until the stopToken is cancelled, at which point it will return
+    /// gracefully.
+    /// </summary>
+    IAsyncEnumerable<IRecognizedSpeech> RecognizeAsync(CancellationToken stopToken);
 }

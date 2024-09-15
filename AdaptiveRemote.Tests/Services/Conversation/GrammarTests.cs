@@ -109,18 +109,20 @@ public class GrammarTests
 
         audioConfiguration.SetAudioInputToWaveStream(waveFileName);
 
+        speechRecognition.SetFilter(PhraseKinds.All);
+
         Task timeoutTask = Task.Delay(2000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
             TaskContinuationOptions.ExecuteSynchronously);
 
         // Act
-        Task<IRecognitionResult> resultTask = GetFirstResult(speechRecognition, _cts.Token);
+        Task<IRecognizedSpeech> resultTask = GetFirstResult(speechRecognition, _cts.Token);
         Log("Waiting for a command");
         await Task.WhenAny(resultTask, timeoutTask);
         Log("Done waiting");
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask) + " timed out");
-        IRecognitionResult result = resultTask.Result;
+        IRecognizedSpeech result = resultTask.Result;
 
         Assert.AreEqual(expectedText, result.Text, nameof(result) + "." + nameof(result.Text));
 
@@ -137,10 +139,10 @@ public class GrammarTests
         }
     }
 
-    private async Task<IRecognitionResult> GetFirstResult(ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
+    private async Task<IRecognizedSpeech> GetFirstResult(ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
     {
         Log("ListenForCommandsAsync");
-        await foreach (IRecognitionResult result in speechRecognition.ListenForCommandsAsync(cancellationToken))
+        await foreach (IRecognizedSpeech result in speechRecognition.RecognizeAsync(cancellationToken))
         {
             Log("Received a command");
             return result;

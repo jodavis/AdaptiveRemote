@@ -7,20 +7,12 @@ namespace AdaptiveRemote.Services.Conversation;
 
 internal class StaticGrammarProvider : IGrammarProvider
 {
-    private const string AttentionRuleName = "Attention";
-    private const string CommandsRuleName = "Commands";
-    private const string YesNoRuleName = "YesNo";
-
     private static readonly Lazy<SrgsDocument> _grammarFile = new(LoadGrammarFile);
 
-    Grammar IGrammarProvider.LoadAttentionGrammar() => LoadStaticGrammar(AttentionRuleName);
-    Grammar IGrammarProvider.LoadCommandsGrammar() => LoadStaticGrammar(CommandsRuleName);
-    Grammar IGrammarProvider.LoadYesNoGrammar() => LoadStaticGrammar(YesNoRuleName);
-
-    private static Grammar LoadStaticGrammar(string ruleName)
-        => new(_grammarFile.Value, ruleName)
+    Grammar IGrammarProvider.LoadGrammar(PhraseKinds phraseKind)
+        => new(_grammarFile.Value, phraseKind.ToString())
         {
-            Name = ruleName
+            Name = phraseKind.ToString()
         };
 
     private static SrgsDocument LoadGrammarFile()
@@ -31,4 +23,5 @@ internal class StaticGrammarProvider : IGrammarProvider
 
         return new SrgsDocument(XmlReader.Create(resourceStream));
     }
+
 }

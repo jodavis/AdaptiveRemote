@@ -201,12 +201,6 @@
     <value>Executing command '{0}'</value>
     <comment>0=Command name</comment>
   </data>
-  <data name="ConversationController_ListenForAttention" xml:space="preserve">
-    <value>Waiting for attention</value>
-  </data>
-  <data name="ConversationController_ListenForCommands" xml:space="preserve">
-    <value>Listening for commands</value>
-  </data>
   <data name="ConversationController_Recognized" xml:space="preserve">
     <value>Recognized '{0}' as '{1}'</value>
     <comment>0=Result text,1=Semantic meaning</comment>
@@ -223,6 +217,26 @@ Last error: {1}</value>
   <data name="ConversationController_UnknownCommand" xml:space="preserve">
     <value>Recognized an unknown command: {0}</value>
     <comment>0=Speech that was recognized but did not map to a command</comment>
+  </data>
+  <data name="ConversationState_CouldNotFindReverseCommand" xml:space="preserve">
+    <value>Could not reverse {command_to_reverse}. Could not find a command named '{reverse_command}'.</value>
+    <comment>command_to_reverse=the ToString of the command that has a reverse value,reverse_command=command_to_reverse.Reverse</comment>
+  </data>
+  <data name="ConversationState_InvalidSemanticValue" xml:space="preserve">
+    <value>Received an invalid semantic value for '{semantic_key}': {semantic_value}</value>
+    <comment>semantic_key=key name,semantic_value=an invalid value</comment>
+  </data>
+  <data name="ConversationState_UnexpectedSpeechDetected" xml:space="preserve">
+    <value>Did not expect {phrase_kind} but received "{recognized_speech}"</value>
+    <comment>phrase_kind=A member of the PhraseKind enum, recognized_speech=speech text and semantic information</comment>
+  </data>
+  <data name="ConversationState_Updated" xml:space="preserve">
+    <value>{new_state}</value>
+    <comment>0=ConversationState.ToString()</comment>
+  </data>
+  <data name="ConversationState_UserReportedRecognitionError" xml:space="preserve">
+    <value>User reported recognition error: {speech}</value>
+    <comment>speech=The recognized speech</comment>
   </data>
   <data name="ListeningController_RecognizeAsyncCancelError" xml:space="preserve">
     <value>Error calling RecognizeAsyncCancel
@@ -300,6 +314,24 @@ Last error: {1}</value>
     <value>Recognized {0}</value>
     <comment>0=Recognition result</comment>
   </data>
+  <data name="SpeechRecognitionEngine_RecognizerInfo" xml:space="preserve">
+    <value>{name}: {description}
+   Selected: {selected}
+   ID: {id}
+   Culture: {culture}
+   Supported Formats:{supported}
+   Additional Information:{additional} </value>
+  </data>
+  <data name="SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat" xml:space="preserve">
+    <value>
+      {0}: {1}</value>
+    <comment>Format for {additional} in SpeechRecognitionEngine_RecognizerInfo</comment>
+  </data>
+  <data name="SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat" xml:space="preserve">
+    <value>
+      {0} ({1}k bits/s)</value>
+    <comment>Format for {supported} in SpeechRecognitionEngine_RecognizerInfo</comment>
+  </data>
   <data name="SpeechRecognitionEngine_UpdateReached" xml:space="preserve">
     <value>Recognizer update reached at {0} ({1})</value>
     <comment>0=Position in the audio stream,1=UserToken</comment>
@@ -307,6 +339,10 @@ Last error: {1}</value>
   <data name="SpeechRecognition_CancelledListeningMethod" xml:space="preserve">
     <value>{0} was cancelled.</value>
     <comment>0=Cancelled method</comment>
+  </data>
+  <data name="SpeechRecognition_CouldNotConfigureSetting" xml:space="preserve">
+    <value>Could not set '{recognizer_setting}': {error_message}</value>
+    <comment>recognizer_setting=Name of a setting,error_messae=exception message</comment>
   </data>
   <data name="SpeechRecognition_ErrorInListeningMethod" xml:space="preserve">
     <value>An error occurred in {0}
