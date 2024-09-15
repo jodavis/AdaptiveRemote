@@ -337,6 +337,25 @@ public class SpeechRecognitionTests
         TaskAssert.IsCanceled(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
     }
 
+    [TestMethod]
+    public void SpeechRecognition_RecognizeAsync_ReturnsExceptionFromListen()
+    {
+        // Arrange
+        Exception expectedException = new ArgumentOutOfRangeException("swizzleCount");
+        Expect_ListenAsync_Throws(expectedException);
+
+        ISpeechRecognition sut = CreateSut();
+
+        IAsyncEnumerable<IRecognizedSpeech> enumerable = sut.RecognizeAsync(default);
+        IAsyncEnumerator<IRecognizedSpeech> enumerator = enumerable.GetAsyncEnumerator();
+
+        // Act
+        ValueTask<bool> resultTask = enumerator.MoveNextAsync();
+
+        // Assert
+        TaskAssert.IsFaulted(resultTask, expectedException, TimeSpan.FromSeconds(1), nameof(resultTask));
+    }
+
     private void Expect_SetConfidenceThreshold(int threshold)
         => MockEngine
             .Setup(x => x.SetConfidenceThreshold(It.IsAny<int>()))
@@ -351,6 +370,11 @@ public class SpeechRecognitionTests
         => MockListening
             .Setup(x => x.Listen())
             .Returns(MockListenDisposable.Object)
+            .Verifiable(Times.Once);
+    private void Expect_ListenAsync_Throws(Exception exception)
+        => MockListening
+            .Setup(x => x.Listen())
+            .Throws(exception)
             .Verifiable(Times.Once);
     private void Expect_ListenDisposed()
         => MockListenDisposable
