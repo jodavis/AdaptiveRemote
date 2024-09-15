@@ -12,7 +12,7 @@ public class ConversationStateExtensionsTests
 
     private static readonly IReadOnlyDictionary<string, Command> MockCommands = new List<Command>
     {
-        new TiVoCommand("Play", speakName: "Playing...") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
+        new TiVoCommand("Play", speakName: "Play It!") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },
         new TiVoCommand("Disabled") { ExecuteAsync = cancel => Task.CompletedTask },
         new TiVoCommand("MissingExecAsyncCmd") { IsEnabled = true },
         new TiVoCommand("VolumeUp", reverse: "VolumeDown") { IsEnabled = true, ExecuteAsync = cancel => Task.CompletedTask },

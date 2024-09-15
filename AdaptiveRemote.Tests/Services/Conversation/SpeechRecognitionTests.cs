@@ -145,11 +145,9 @@ public class SpeechRecognitionTests
         // Arrange
         PhraseKinds input = PhraseKinds.All;
 
-        MockOptions.Value.ListeningCPU = 87;
         MockOptions.Value.ListeningConfidenceThreshold = 12;
 
-        Expect_UpdateRecognizerSetting_CPUUsage(MockOptions.Value.ListeningCPU);
-        Expect_UpdateRecognizerSetting_ConfidenceThreshold(MockOptions.Value.ListeningConfidenceThreshold);
+        Expect_SetConfidenceThreshold(MockOptions.Value.ListeningConfidenceThreshold);
 
         ISpeechRecognition sut = CreateSut();
 
@@ -172,7 +170,7 @@ public class SpeechRecognitionTests
         ISpeechRecognition sut = CreateSut();
         sut.SetFilter(PhraseKinds.All);
 
-        Expect_UpdateRecognizerSetting_IsNotCalled();
+        Expect_SetConfidenceThreshold_IsNotCalled();
 
         // Act
         sut.SetFilter(input);
@@ -190,11 +188,9 @@ public class SpeechRecognitionTests
         // Arrange
         PhraseKinds input = PhraseKinds.Commands | PhraseKinds.Confirmation;
 
-        MockOptions.Value.ListeningCPU = 87;
         MockOptions.Value.ListeningConfidenceThreshold = 12;
 
-        Expect_UpdateRecognizerSetting_CPUUsage(MockOptions.Value.ListeningCPU);
-        Expect_UpdateRecognizerSetting_ConfidenceThreshold(MockOptions.Value.ListeningConfidenceThreshold);
+        Expect_SetConfidenceThreshold(MockOptions.Value.ListeningConfidenceThreshold);
 
         ISpeechRecognition sut = CreateSut();
 
@@ -214,14 +210,12 @@ public class SpeechRecognitionTests
         // Arrange
         PhraseKinds input = PhraseKinds.Commands | PhraseKinds.Confirmation;
 
-        MockOptions.Value.ListeningCPU = 87;
         MockOptions.Value.ListeningConfidenceThreshold = 12;
 
         ISpeechRecognition sut = CreateSut();
         sut.SetFilter(PhraseKinds.All);
 
-        Expect_UpdateRecognizerSetting_CPUUsage(MockOptions.Value.ListeningCPU);
-        Expect_UpdateRecognizerSetting_ConfidenceThreshold(MockOptions.Value.ListeningConfidenceThreshold);
+        Expect_SetConfidenceThreshold(MockOptions.Value.ListeningConfidenceThreshold);
 
         // Act
         sut.SetFilter(input);
@@ -239,11 +233,9 @@ public class SpeechRecognitionTests
         // Arrange
         PhraseKinds input = PhraseKinds.WakeWord;
 
-        MockOptions.Value.WakeWordCPU = 26;
         MockOptions.Value.WakeWordConfidenceThreshold = 90;
 
-        Expect_UpdateRecognizerSetting_CPUUsage(MockOptions.Value.WakeWordCPU);
-        Expect_UpdateRecognizerSetting_ConfidenceThreshold(MockOptions.Value.WakeWordConfidenceThreshold);
+        Expect_SetConfidenceThreshold(MockOptions.Value.WakeWordConfidenceThreshold);
 
         ISpeechRecognition sut = CreateSut();
 
@@ -345,19 +337,14 @@ public class SpeechRecognitionTests
         TaskAssert.IsCanceled(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
     }
 
-    private void Expect_UpdateRecognizerSetting_CPUUsage(int value)
+    private void Expect_SetConfidenceThreshold(int threshold)
         => MockEngine
-            .Setup(x => x.UpdateRecognizerSetting(RecognizerConstants.CPUUsage, It.IsAny<int>()))
-            .WithArgumentValidation(nameof(value), value)
+            .Setup(x => x.SetConfidenceThreshold(It.IsAny<int>()))
+            .WithArgumentValidation(nameof(threshold), threshold)
             .Verifiable(Times.Once);
-    private void Expect_UpdateRecognizerSetting_ConfidenceThreshold(int value)
+    private void Expect_SetConfidenceThreshold_IsNotCalled()
         => MockEngine
-            .Setup(x => x.UpdateRecognizerSetting(RecognizerConstants.ConfidenceThreshold, It.IsAny<int>()))
-            .WithArgumentValidation(nameof(value), value)
-            .Verifiable(Times.Once);
-    private void Expect_UpdateRecognizerSetting_IsNotCalled()
-        => MockEngine
-            .Setup(x => x.UpdateRecognizerSetting(It.IsAny<string>(), It.IsAny<int>()))
+            .Setup(x => x.SetConfidenceThreshold(It.IsAny<int>()))
             .Verifiable(Times.Never);
 
     private void Expect_ListenAsync()
