@@ -133,7 +133,7 @@ internal class ConversationController : ScopedBackgroundProcess
     private async Task ExecuteResponseAsync(ConversationResponse response, CancellationToken cancellationToken)
     {
         Task commandTask = ExecuteCommandsAsync(response.Commands, cancellationToken);
-        Task speakingTask = SayAsync(response.Phrases, cancellationToken);
+        Task speakingTask = SayAsync(response.Phrases);
 
         await speakingTask;
         await commandTask;
@@ -144,14 +144,7 @@ internal class ConversationController : ScopedBackgroundProcess
         foreach (Command command in commands)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            await ExecuteCommandAsync(command, 1, cancellationToken);
-        }
-    }
 
-    private async Task ExecuteCommandAsync(Command command, int repeat, CancellationToken cancellationToken)
-    {
-        for (int i = 0; i < repeat; i++)
-        {
             Logger.LogInformation(Message.ConversationController_Executing, command.Name);
 
             await command.ExecuteAsync!(cancellationToken);
@@ -160,7 +153,7 @@ internal class ConversationController : ScopedBackgroundProcess
         }
     }
 
-    private async Task SayAsync(IEnumerable<string> phrases, CancellationToken cancellationToken)
+    private async Task SayAsync(IEnumerable<string> phrases)
     {
         bool wasListening = _viewModel.IsListening;
         try
@@ -171,7 +164,6 @@ internal class ConversationController : ScopedBackgroundProcess
                 _viewModel.SpeakingMessage = phrase;
                 await _speechSynthesis.SayAsync(phrase, default);
             }
-            cancellationToken.ThrowIfCancellationRequested();
         }
         finally
         {
