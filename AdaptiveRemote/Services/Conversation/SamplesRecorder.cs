@@ -92,7 +92,8 @@ internal class SamplesRecorder : IHostedService
 
         public LoggerProvider(IServiceProvider serviceProvider)
         {
-            _samplesRecorder = new(() => serviceProvider.GetRequiredService<IEnumerable<IHostedService>>().OfType<SamplesRecorder>().First());
+            _samplesRecorder = new(() => serviceProvider.GetService<IEnumerable<IHostedService>>()?.OfType<SamplesRecorder>().FirstOrDefault()
+            ?? throw new Exception("Could not find SamplesRecorder in the service provider"));
         }
 
         ILogger ILoggerProvider.CreateLogger(string categoryName)
