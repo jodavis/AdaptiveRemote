@@ -52,7 +52,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     public void SetInputToDefaultAudioDevice() => _engine.SetInputToDefaultAudioDevice();
     public void RecognizeAsync() => _engine.RecognizeAsync(RecognizeMode.Multiple);
     public void RecognizeAsyncCancel() => _engine.RecognizeAsyncCancel();
-    public void UpdateRecognizerSetting(string name, int value) => _engine.UpdateRecognizerSetting(name, value);
+    public void SetConfidenceThreshold(int threshold) => _engine.UpdateRecognizerSetting("CFGConfidenceRejectionThreshold", threshold);
 
     public event EventHandler<RecognizedSpeechEventArgs> SpeechRecognized
     {
@@ -64,12 +64,6 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     {
         add => _speechRejected += value;
         remove => _speechRejected -= value;
-    }
-
-    public event EventHandler<RecognitionErrorEventArgs> RecognitionError
-    {
-        add { }
-        remove { }
     }
 
     private static ResultWrapper? Wrap(RecognitionResult? result)

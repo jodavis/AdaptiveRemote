@@ -12,8 +12,6 @@ internal class ConversationSettings
     public string? RecordingOutputPath { get; set; } = default;
     public string? RecordingUserName { get; set; } = default;
 
-    public int ListeningCPU { get; set; } = 80;
     public int ListeningConfidenceThreshold { get; set; } = 30;
-    public int WakeWordCPU { get; set; } = 30;
     public int WakeWordConfidenceThreshold { get; set; } = 70;
 }

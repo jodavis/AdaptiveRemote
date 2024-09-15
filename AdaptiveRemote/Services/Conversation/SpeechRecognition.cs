@@ -54,22 +54,21 @@ internal class SpeechRecognition : ISpeechRecognition
         {
             bool isWakeWord = filter == PhraseKinds.WakeWord;
 
-            ConfigureSetting(RecognizerConstants.CPUUsage,
-                isWakeWord ? _settings.WakeWordCPU : _settings.ListeningCPU);
-            ConfigureSetting(RecognizerConstants.ConfidenceThreshold,
-                isWakeWord ? _settings.WakeWordConfidenceThreshold : _settings.ListeningConfidenceThreshold);
+            ConfigureConfidenceThreshold(isWakeWord
+                ? _settings.WakeWordConfidenceThreshold
+                : _settings.ListeningConfidenceThreshold);
         }
     }
 
-    private void ConfigureSetting(string setting, int value)
+    private void ConfigureConfidenceThreshold(int threshold)
     {
         try
         {
-            _engine.UpdateRecognizerSetting(setting, value);
+            _engine.SetConfidenceThreshold(threshold);
         }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning(Message.SpeechRecognition_CouldNotConfigureSetting, setting, ex.Message);
+            _logger.LogWarning(Message.SpeechRecognition_CouldNotConfigureSetting, "ConfidenceThreshold", ex.Message);
         }
     }
 

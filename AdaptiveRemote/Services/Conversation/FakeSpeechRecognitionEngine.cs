@@ -28,18 +28,12 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         remove { }
     }
 
-    event EventHandler<RecognitionErrorEventArgs> ISpeechRecognitionEngine.RecognitionError
-    {
-        add { }
-        remove { }
-    }
-
     void ISpeechRecognitionEngine.LoadGrammar(Grammar grammar) => _grammars.Add(grammar.Name, grammar);
     void ISpeechRecognitionEngine.UnloadGrammar(Grammar grammar) => _grammars.Remove(grammar.Name);
     void ISpeechRecognitionEngine.UnloadAllGrammars() => _grammars.Clear();
     void ISpeechRecognitionEngine.RecognizeAsync() => _pause.TrySetResult();
     void ISpeechRecognitionEngine.RecognizeAsyncCancel() => _pause = new();
-    void ISpeechRecognitionEngine.UpdateRecognizerSetting(string name, int value) { }
+    void ISpeechRecognitionEngine.SetConfidenceThreshold(int threshold) { }
 
     private async Task RecognitionLoop()
     {
