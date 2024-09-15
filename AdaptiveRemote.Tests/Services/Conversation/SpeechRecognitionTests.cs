@@ -188,7 +188,7 @@ public class SpeechRecognitionTests
     public void SpeechRecognition_SetFilter_Some_EnablesSomeGrammars()
     {
         // Arrange
-        PhraseKinds input = PhraseKinds.CommandsAndConfirmation;
+        PhraseKinds input = PhraseKinds.Commands | PhraseKinds.Confirmation;
 
         MockOptions.Value.ListeningCPU = 87;
         MockOptions.Value.ListeningConfidenceThreshold = 12;
@@ -212,7 +212,7 @@ public class SpeechRecognitionTests
     public void SpeechRecognition_SetFilter_Some_DisabledsSomeGrammars()
     {
         // Arrange
-        PhraseKinds input = PhraseKinds.CommandsAndConfirmation;
+        PhraseKinds input = PhraseKinds.Commands | PhraseKinds.Confirmation;
 
         MockOptions.Value.ListeningCPU = 87;
         MockOptions.Value.ListeningConfidenceThreshold = 12;

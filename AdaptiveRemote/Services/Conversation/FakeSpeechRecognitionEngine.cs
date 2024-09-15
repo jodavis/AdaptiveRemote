@@ -52,7 +52,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
             await Task.Delay(1000);
             ticks++;
 
-            if (IsEnabled("Attention"))
+            if (IsEnabled("WakeWord"))
             {
                 if (ticks >= 5)
                 {
