@@ -14,7 +14,8 @@ public static class AppHostBuilderExtensions
             .AddRemoteServices()
             .AddBroadlinkSupport()
             .AddTiVoSupport()
-            .AddConversationSystem();
+            .AddConversationSystem()
+            .AddSystemWrapperServices();
 
     public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)
         => hostBuilder

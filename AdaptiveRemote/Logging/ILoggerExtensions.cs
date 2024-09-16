@@ -5,6 +5,8 @@ internal static class ILoggerExtensions
 {
     private static readonly IReadOnlyDictionary<Message, string> LoggingMessages = InitializeLoggingMessages();
 
+    public static void LogDebug(this ILogger logger, Message message, params object?[] args)
+        => logger.LogDebug(message.ToEventId(), FindExceptionIn(args), message.ToMessageText(), args);
     public static void LogInformation(this ILogger logger, Message message, params object?[] args)
         => logger.LogInformation(message.ToEventId(), FindExceptionIn(args), message.ToMessageText(), args);
     public static void LogWarning(this ILogger logger, Message message, params object?[] args)

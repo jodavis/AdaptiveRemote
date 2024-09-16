@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.NetworkInformation;
 
-namespace AdaptiveRemote.Services.Networking;
+namespace AdaptiveRemote.Services.SystemWrappers;
 
 internal class SystemNetWrapper : INetworking
 {
