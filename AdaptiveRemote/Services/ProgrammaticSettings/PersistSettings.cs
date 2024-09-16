@@ -7,7 +7,7 @@ using AdaptiveRemote.Services.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace AdaptiveRemote.Services.Lifecycle;
+namespace AdaptiveRemote.Services.ProgrammaticSettings;
 
 internal class PersistSettings : IPersistSettings
 {
@@ -148,7 +148,7 @@ internal class PersistSettings : IPersistSettings
         {
             _logger.LogInformation(Message.ProgrammaticSettings_SavingSettings, values.Count, _filePath);
 
-            EnsurePathFor(_filePath);
+            _fileSystem.CreateDirectory(Path.GetDirectoryName(_filePath)!, recursive: true);
 
             using Stream writeStream = _fileSystem.OpenWrite(_filePath);
             using StreamWriter writer = new(writeStream);
@@ -158,17 +158,6 @@ internal class PersistSettings : IPersistSettings
                 await writer.WriteLineAsync($"{pair.Key}{Separator}{pair.Value}");
             }
             await writer.FlushAsync();
-        }
-
-        void EnsurePathFor(string filePath)
-        {
-            string? directory = Path.GetDirectoryName(filePath);
-            if (directory is not null &&
-                !_fileSystem.DirectoryExists(directory))
-            {
-                EnsurePathFor(directory);
-                _fileSystem.CreateDirectory(directory);
-            }
         }
     }
 }

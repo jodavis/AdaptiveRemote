@@ -1,8 +1,8 @@
 ﻿namespace AdaptiveRemote.Models;
 
-public class ApplicationCommand : Command
+public class LifecycleCommand : Command
 {
-    public ApplicationCommand(
+    public LifecycleCommand(
         string name,
         string? placement = null,
         string? label = null,

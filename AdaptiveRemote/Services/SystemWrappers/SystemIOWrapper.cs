@@ -1,8 +1,8 @@
 ﻿using System.IO;
 
-namespace AdaptiveRemote.Services.Lifecycle;
+namespace AdaptiveRemote.Services.SystemWrappers;
 
-internal class FileSystem : IFileSystem
+internal class SystemIOWrapper : IFileSystem
 {
     public Stream OpenRead(string path) => File.OpenRead(path);
 

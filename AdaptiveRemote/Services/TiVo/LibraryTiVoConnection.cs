@@ -1,11 +1,10 @@
-﻿using System.Net;
+﻿using System.IO;
+using System.Net;
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
 using I8Beef.TiVo;
 using I8Beef.TiVo.Commands;
 using I8Beef.TiVo.Events;
 using Microsoft.Extensions.Logging;
-using I8BeefCommand = I8Beef.TiVo.Commands.Command;
 
 namespace AdaptiveRemote.Services.TiVo;
 
@@ -67,7 +66,7 @@ internal class LibraryTiVoConnection : ITiVoConnection
         => _logger.LogInformation(Message.TiVoConnection_MessageReceived, e.Message);
     private void OnEventReceived(object? sender, ResponseEventArgs e)
         => _logger.LogInformation(Message.TiVoConnection_EventReceived, e.Response.Code, e.Response.InResponseToCode, e.Response.Value);
-    private void OnError(object? sender, System.IO.ErrorEventArgs e)
+    private void OnError(object? sender, ErrorEventArgs e)
         => _logger.LogInformation(Message.TiVoConnection_Error, e.GetException());
 
     internal class Factory : ITiVoConnection.Factory
