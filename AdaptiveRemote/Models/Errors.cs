@@ -52,6 +52,11 @@ internal static class Errors
     internal static Exception CommandService_WasShutDown(Command command)
         => new InvalidOperationException($"Cannot execute {command} because the service has been shut down.");
 
+    internal static Exception PersistSettings_InvalidName(string paramName, string settingName)
+        => new ArgumentException($"The setting name '{settingName}' was in an invalid format.", paramName);
+    internal static Exception PersistSettings_InvalidValue(string paramName, string settingValue)
+        => new ArgumentException($"The setting value '{settingValue}' was in an invalid format.", paramName);
+
     private static ConfigurationErrorsException SettingRequired(string settingKey, string settingName, string requiredTo)
         => new($"The '{settingKey}:{settingName}' setting is required to {requiredTo}");
 }

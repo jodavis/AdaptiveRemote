@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text.RegularExpressions;
 using AdaptiveRemote.Logging;
+using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,12 +12,12 @@ internal class PersistSettings : IPersistSettings
 {
     private const string Separator = "=";
     private const string NameKey = "name";
-    private const string NamePattern = @"[\w:]+";
+    private const string NamePattern = @"\w+(:\w+)*";
     private const string ValueKey = "value";
-    private const string ValuePattern = @".*";
+    private const string ValuePattern = @"[^\\r\\n]*";
 
-    private static Regex KeyRegex = new($"^{NamePattern}$");
-    private static Regex ValueRegex = new($"^{ValuePattern}$");
+    private static Regex KeyRegex = new($"^{NamePattern}$", RegexOptions.Singleline);
+    private static Regex ValueRegex = new($"^{ValuePattern}$", RegexOptions.Singleline);
     private static Regex LineRegex = new($"^(?<{NameKey}>{NamePattern}){Separator}(?<{ValueKey}>{ValuePattern})$");
 
     private readonly IFileSystem _fileSystem;
@@ -32,10 +33,30 @@ internal class PersistSettings : IPersistSettings
 
     void IPersistSettings.Set(string name, string value)
     {
-        // TODO: Input validation
+        ValidateInputs(name, value);
         // TODO: Error handling/logging
 
         _ = SetAsync(name, value);
+    }
+
+    private void ValidateInputs(string name, string value)
+    {
+        try
+        {
+            if (!KeyRegex.IsMatch(name) || name.Contains('\n'))
+            {
+                throw Errors.PersistSettings_InvalidName(nameof(name), name);
+            }
+            if (!ValueRegex.IsMatch(value))
+            {
+                throw Errors.PersistSettings_InvalidValue(nameof(value), value);
+            }
+        }
+        catch (ArgumentException error)
+        {
+            _logger.LogError(Message.ProgrammaticSettings_Rejected, name, value, error.Message);
+            throw;
+        }
     }
 
     private async Task SetAsync(string name, string value)
