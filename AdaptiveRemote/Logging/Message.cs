@@ -75,6 +75,7 @@ internal enum Message
     ProgrammaticSettings_SavedSettings = 1104,
     ProgrammaticSettings_AddSetting = 1105,
     ProgrammaticSettings_ReplaceSetting = 1106,
+    ProgrammaticSettings_Rejected = 1107,
     ScopedBackgroundProcess_Starting = 1201,
     ScopedBackgroundProcess_Started = 1202,
     ScopedBackgroundProcess_Stopping = 1203,

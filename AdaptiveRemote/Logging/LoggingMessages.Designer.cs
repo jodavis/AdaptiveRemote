@@ -401,6 +401,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Setting {name}={value} was rejected: {reason}.
+        /// </summary>
+        internal static string ProgrammaticSettings_Rejected {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_Rejected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Replacing {0}={1} with {0}={2}.
         /// </summary>
         internal static string ProgrammaticSettings_ReplaceSetting {

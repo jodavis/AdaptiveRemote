@@ -467,4 +467,7 @@ Last error: {1}</value>
     <value>{0}: Unexpected {1}</value>
     <comment>0=MessageCount,1=Exception and callstack</comment>
   </data>
+  <data name="ProgrammaticSettings_Rejected" xml:space="preserve">
+    <value>Setting {name}={value} was rejected: {reason}</value>
+  </data>
 </root>
