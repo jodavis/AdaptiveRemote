@@ -87,81 +87,105 @@ internal class MockFileSystem : Mock<IFileSystem>
             .Verifiable(Times.Never);
     private Stream Returns_OpenRead(string path)
     {
-        Assert.IsTrue(_files.TryGetValue(path, out Stream? fileStream), "Attempted to open file for reading that does not exist: {0}", path);
+        Stream fileStream = GetReadableFileStreamFor(path);
 
         fileStream.Seek(0, SeekOrigin.Begin);
         return new DoNotDisposeStream(fileStream, canRead: true);
     }
 
-    public void Expect_OpenWrite_ForPath(string path)
+    public void Expect_OpenWrite_ForPath(string path, Times? times = default)
         => Setup(x => x.OpenWrite(path))
             .Returns(Returns_OpenWrite)
-            .Verifiable(Times.Once);
+            .Verifiable(times ?? Times.Once());
     public void Expect_OpenWrite_IsNotCalled()
         => Setup(x => x.OpenWrite(It.IsAny<string>()))
-            .Returns(Returns_OpenWrite);
+            .Returns(Returns_OpenWrite)
+            .Verifiable(Times.Never);
     private Stream Returns_OpenWrite(string path)
     {
         string? parentDirectory = Path.GetDirectoryName(path);
         Assert.IsNotNull(parentDirectory, "Could not compute the parent path for '{0}'", path);
         Assert.IsTrue(_directories.Contains(parentDirectory), "Attempted to open a file for writing in directory that does not exist: {0}", path);
 
+        if (_files.TryGetValue(path, out Stream? existingStream) &&
+            existingStream is DoNotDisposeStream writeStream)
+        {
+            Assert.IsFalse(writeStream.IsOpenForWrite, "Attempted to open file for reading while it is open for writing: {0}", path);
+        }
+
         // OpenWrite defaults to Create behavior, so always create a new stream
-        MemoryStream fileStream = new MemoryStream();
+        DoNotDisposeStream fileStream = new(new MemoryStream(), canWrite: true);
         _files[path] = fileStream;
 
-        return new DoNotDisposeStream(fileStream, canWrite: true);
+        return fileStream;
     }
 
     internal void VerifyFileContents(string path, string expectedContent)
     {
-        Assert.IsTrue(_files.TryGetValue(path, out Stream? fileStream), "Expected file was not found: {0}", path);
+        Assert.AreEqual(expectedContent, GetFileContents(path), "File content for {0}", path);
+    }
+
+    internal string GetFileContents(string path)
+    {
+        Stream fileStream = GetReadableFileStreamFor(path);
 
         long restorePosition = fileStream.Position;
-        string actualContent;
         try
         {
             fileStream.Position = 0;
-            actualContent = new StreamReader(fileStream).ReadToEnd();
+            return new StreamReader(fileStream).ReadToEnd();
         }
         finally
         {
             fileStream.Position = restorePosition;
         }
+    }
 
-        Assert.AreEqual(expectedContent, actualContent, "File content for {0}", path);
+    private Stream GetReadableFileStreamFor(string path)
+    {
+        Assert.IsTrue(_files.TryGetValue(path, out Stream? fileStream), "Attempted to open file for reading that does not exist: {0}", path);
+        if (fileStream is DoNotDisposeStream writeStream)
+        {
+            Assert.IsFalse(writeStream.IsOpenForWrite, "Attempted to open file for reading while it is open for writing: {0}", path);
+            fileStream = writeStream.Inner;
+        }
+
+        return fileStream;
     }
 
     private class DoNotDisposeStream : Stream
     {
-        private readonly Stream _inner;
-
         public DoNotDisposeStream(Stream inner, bool canRead = false, bool canWrite = false, bool canSeek = true)
         {
-            _inner = inner;
+            Inner = inner;
             CanRead = canRead;
             CanWrite = canWrite;
             CanSeek = canSeek;
         }
 
+        public Stream Inner { get; }
+        public bool IsOpenForWrite { get; private set; } = true;
+
         public override bool CanRead { get; }
-
         public override bool CanSeek { get; }
-
         public override bool CanWrite { get; }
-
-        public override long Length => _inner.Length;
-
+        public override long Length => Inner.Length;
         public override long Position
         {
-            get => _inner.Position;
-            set => _inner.Position = value;
+            get => Inner.Position;
+            set => Inner.Position = value;
         }
 
-        public override void Flush() => _inner.Flush();
-        public override int Read(byte[] buffer, int offset, int count) => _inner.Read(buffer, offset, count);
-        public override long Seek(long offset, SeekOrigin origin) => _inner.Seek(offset, origin);
-        public override void SetLength(long value) => _inner.SetLength(value);
-        public override void Write(byte[] buffer, int offset, int count) => _inner.Write(buffer, offset, count);
+        protected override void Dispose(bool disposing)
+        {
+            IsOpenForWrite = false;
+            base.Dispose(disposing);
+        }
+
+        public override void Flush() => Inner.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => Inner.Read(buffer, offset, count);
+        public override long Seek(long offset, SeekOrigin origin) => Inner.Seek(offset, origin);
+        public override void SetLength(long value) => Inner.SetLength(value);
+        public override void Write(byte[] buffer, int offset, int count) => Inner.Write(buffer, offset, count);
     }
 }

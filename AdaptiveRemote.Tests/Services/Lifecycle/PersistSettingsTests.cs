@@ -60,6 +60,44 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
+    public async Task PersistSettings_Set_CalledMultipleTimes_SavesSettingsToFile()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=123");
+
+        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath, Times.Between(1, 3, Moq.Range.Inclusive));
+
+        // Act
+        sut.Set("NewSetting1", "abc");
+        sut.Set("NewSetting2", "def");
+        sut.Set("NewSetting3", "ghi");
+
+        await MockLogger.WaitForMessage(ExpectMessage_SavingSettings(4));
+
+        // Assert
+        DateTime startTime = DateTime.Now;
+        const int timeout = 1; // second
+        while (true)
+        {
+            if (MockLogger.Messages.LastOrDefault() == ExpectMessage_SavedSettings())
+            {
+                break;
+            }
+            Assert.IsTrue(DateTime.Now - startTime < TimeSpan.FromSeconds(timeout), "Timed out waiting for final message: " + ExpectMessage_SavedSettings());
+            await Task.Delay(100);
+        }
+
+        string[] expectedSettings = ["ExistingSetting=123", "NewSetting3=ghi", "NewSetting2=def", "NewSetting1=abc"];
+        string[] actualSettings = MockFileSystem.GetFileContents(InputSettingsPath).Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.IsFalse(expectedSettings.Except(actualSettings).Any(), "Did not find expected settings in {0}: {1}", InputSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
+        Assert.IsFalse(actualSettings.Except(expectedSettings).Any(), "Did not find expected settings in {0}: {1}", InputSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
+    }
+
+    [TestMethod]
     public async Task PersistSettings_Set_ChangesExistingSettingInFile()
     {
         // Arrange

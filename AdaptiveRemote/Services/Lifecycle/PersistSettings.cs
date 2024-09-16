@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Concurrent;
+using System.IO;
 using System.Text.RegularExpressions;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
@@ -24,11 +25,19 @@ internal class PersistSettings : IPersistSettings
     private readonly string _filePath;
     private readonly ILogger<PersistSettings> _logger;
 
+    private readonly Lazy<Task<ConcurrentDictionary<string, string>>> _lazyValues;
+
+    private bool _needsSave = false;
+    private bool _isSaving = false;
+    private object _lockObject = new();
+
     public PersistSettings(IFileSystem fileSystem, IOptions<HostSettings> settings, ILogger<PersistSettings> logger)
     {
         _fileSystem = fileSystem;
         _filePath = settings.Value.ProgrammaticSettingsPath;
         _logger = logger;
+
+        _lazyValues = new(LoadExistingSettingsAsync);
     }
 
     void IPersistSettings.Set(string name, string value)
@@ -60,10 +69,9 @@ internal class PersistSettings : IPersistSettings
 
     private async Task SetAsync(string name, string value)
     {
-        Dictionary<string, string> values;
         try
         {
-            values = await LoadExistingSettingsAsync();
+            ConcurrentDictionary<string, string> values = await _lazyValues.Value;
 
             if (values.TryGetValue(name, out string? oldValue))
             {
@@ -83,9 +91,9 @@ internal class PersistSettings : IPersistSettings
         }
     }
 
-    private async Task<Dictionary<string, string>> LoadExistingSettingsAsync()
+    private async Task<ConcurrentDictionary<string, string>> LoadExistingSettingsAsync()
     {
-        Dictionary<string, string> values = new();
+        ConcurrentDictionary<string, string> values = new();
 
         if (_fileSystem.FileExists(_filePath))
         {
@@ -98,7 +106,7 @@ internal class PersistSettings : IPersistSettings
             while ((line = await reader.ReadLineAsync()) is not null)
             {
                 Match match = LineRegex.Match(line);
-                values.Add(match.Groups[NameKey].Value, match.Groups[ValueKey].Value);
+                values.TryAdd(match.Groups[NameKey].Value, match.Groups[ValueKey].Value);
             }
 
             _logger.LogInformation(Message.ProgrammaticSettings_LoadedExistingSettings, values.Count, _filePath);
@@ -107,23 +115,50 @@ internal class PersistSettings : IPersistSettings
         return values;
     }
 
-    private async Task SaveSettingsAsync(Dictionary<string, string> values)
+    private async Task SaveSettingsAsync(ConcurrentDictionary<string, string> values)
     {
-        // TODO: Wait while already saving
-        _logger.LogInformation(Message.ProgrammaticSettings_SavingSettings, values.Count, _filePath);
-
-        EnsurePathFor(_filePath);
-
-        using Stream writeStream = _fileSystem.OpenWrite(_filePath);
-        using StreamWriter writer = new(writeStream);
-
-        foreach (KeyValuePair<string, string> pair in values)
+        lock (_lockObject)
         {
-            await writer.WriteLineAsync($"{pair.Key}{Separator}{pair.Value}");
+            _needsSave = true;
+            if (_isSaving)
+            {
+                return;
+            }
+            _isSaving = true;
         }
-        await writer.FlushAsync();
 
-        _logger.LogInformation(Message.ProgrammaticSettings_SavedSettings, _filePath);
+        while (true)
+        {
+            lock (_lockObject)
+            {
+                if (!_needsSave)
+                {
+                    _logger.LogInformation(Message.ProgrammaticSettings_SavedSettings, _filePath);
+
+                    _isSaving = false;
+                    return;
+                }
+                _needsSave = false;
+            }
+
+            await DoSaveAsync(values);
+        }
+
+        async Task DoSaveAsync(ConcurrentDictionary<string, string> values)
+        {
+            _logger.LogInformation(Message.ProgrammaticSettings_SavingSettings, values.Count, _filePath);
+
+            EnsurePathFor(_filePath);
+
+            using Stream writeStream = _fileSystem.OpenWrite(_filePath);
+            using StreamWriter writer = new(writeStream);
+
+            foreach (KeyValuePair<string, string> pair in values)
+            {
+                await writer.WriteLineAsync($"{pair.Key}{Separator}{pair.Value}");
+            }
+            await writer.FlushAsync();
+        }
 
         void EnsurePathFor(string filePath)
         {
