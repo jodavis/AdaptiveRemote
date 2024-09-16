@@ -4,17 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
-internal class ApplicationCommandService : CommandServiceBase<ApplicationCommand>
+internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
 {
     private readonly IHostApplicationLifetime _applicationLifetime;
 
-    public ApplicationCommandService(IHostApplicationLifetime applicationLifetime, IRemoteDefinitionService remoteDefinition, ILogger<ApplicationCommandService> logger)
+    public LifecycleCommandService(IHostApplicationLifetime applicationLifetime, IRemoteDefinitionService remoteDefinition, ILogger<LifecycleCommandService> logger)
         : base("Application Commands", remoteDefinition, logger)
     {
         _applicationLifetime = applicationLifetime;
     }
 
-    protected override Command.ExecuteDelegate CreateHandler(ApplicationCommand command)
+    protected override Command.ExecuteDelegate CreateHandler(LifecycleCommand command)
         => command.Name switch
         {
             "Exit" => delegate (CancellationToken _)

@@ -374,6 +374,78 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Setting {name}={value}.
+        /// </summary>
+        internal static string ProgrammaticSettings_AddSetting {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_AddSetting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to set {name}={value}: {exception}.
+        /// </summary>
+        internal static string ProgrammaticSettings_Error {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loaded {count} settings from {path}.
+        /// </summary>
+        internal static string ProgrammaticSettings_LoadedExistingSettings {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_LoadedExistingSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loading existing settings from {path}.
+        /// </summary>
+        internal static string ProgrammaticSettings_LoadingExistingSettings {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_LoadingExistingSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Setting {name}={value} was rejected: {reason}.
+        /// </summary>
+        internal static string ProgrammaticSettings_Rejected {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_Rejected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Replacing {name}={old_value} with {name}={new_value}.
+        /// </summary>
+        internal static string ProgrammaticSettings_ReplaceSetting {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_ReplaceSetting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saved settings to {path}.
+        /// </summary>
+        internal static string ProgrammaticSettings_SavedSettings {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_SavedSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Saving {count} settings to {path}.
+        /// </summary>
+        internal static string ProgrammaticSettings_SavingSettings {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_SavingSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Startup canceled.
         /// </summary>
         internal static string ScopedBackgroundProcess_CanceledBeforeStarted {
@@ -434,6 +506,24 @@ namespace AdaptiveRemote.Logging {
         internal static string ScopedBackgroundProcess_Stopping {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_Stopping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Switched to worker thread {thread_id}.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_SwitchedToWorkerThread {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_SwitchedToWorkerThread", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Switching to worker thread.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_SwitchingToWorkerThread {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_SwitchingToWorkerThread", resourceCulture);
             }
         }
         

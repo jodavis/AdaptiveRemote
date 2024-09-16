@@ -1,6 +1,6 @@
 ﻿using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Lifecycle;
-using Microsoft.Extensions.Configuration;
+using AdaptiveRemote.Services.ProgrammaticSettings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -15,7 +15,7 @@ internal static class HostBuilderExtensions
         => services
             .AddSingleton<IApplicationScopeFactory, BlazorWindowScopeFactory>()
             .AddHostedService<ApplicationLifecycle>()
-            .AddScopedLifecycleService<ApplicationCommandService>()
+            .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
             .AddSingleton<IPersistSettings, PersistSettings>();
 

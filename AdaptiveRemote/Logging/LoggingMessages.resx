@@ -257,6 +257,30 @@ Last error: {1}</value>
 {0}</value>
     <comment>0=Exception</comment>
   </data>
+  <data name="ProgrammaticSettings_AddSetting" xml:space="preserve">
+    <value>Setting {name}={value}</value>
+    <comment>name=Setting name,value=Setting value</comment>
+  </data>
+  <data name="ProgrammaticSettings_LoadedExistingSettings" xml:space="preserve">
+    <value>Loaded {count} settings from {path}</value>
+    <comment>path=Settings file path,count=Number of settings</comment>
+  </data>
+  <data name="ProgrammaticSettings_LoadingExistingSettings" xml:space="preserve">
+    <value>Loading existing settings from {path}</value>
+    <comment>path=Settings file path</comment>
+  </data>
+  <data name="ProgrammaticSettings_ReplaceSetting" xml:space="preserve">
+    <value>Replacing {name}={old_value} with {name}={new_value}</value>
+    <comment>name=Setting name,old_value=Old setting value,new_value=New setting value</comment>
+  </data>
+  <data name="ProgrammaticSettings_SavedSettings" xml:space="preserve">
+    <value>Saved settings to {path}</value>
+    <comment>path=Settings file path</comment>
+  </data>
+  <data name="ProgrammaticSettings_SavingSettings" xml:space="preserve">
+    <value>Saving {count} settings to {path}</value>
+    <comment>path=Settings file path,count=Number of settings</comment>
+  </data>
   <data name="ScopedBackgroundProcess_CanceledBeforeStarted" xml:space="preserve">
     <value>Startup canceled</value>
   </data>
@@ -442,5 +466,19 @@ Last error: {1}</value>
   <data name="UdpService_UnexpectedError" xml:space="preserve">
     <value>{0}: Unexpected {1}</value>
     <comment>0=MessageCount,1=Exception and callstack</comment>
+  </data>
+  <data name="ProgrammaticSettings_Rejected" xml:space="preserve">
+    <value>Setting {name}={value} was rejected: {reason}</value>
+    <comment>name=Setting name,value=Setting value,reason=Exception message</comment>
+  </data>
+  <data name="ProgrammaticSettings_Error" xml:space="preserve">
+    <value>Failed to set {name}={value}: {exception}</value>
+  </data>
+  <data name="ScopedBackgroundProcess_SwitchedToWorkerThread" xml:space="preserve">
+    <value>Switched to worker thread {thread_id}</value>
+    <comment>thread_id=ManagedThreadId of the worker thread</comment>
+  </data>
+  <data name="ScopedBackgroundProcess_SwitchingToWorkerThread" xml:space="preserve">
+    <value>Switching to worker thread</value>
   </data>
 </root>

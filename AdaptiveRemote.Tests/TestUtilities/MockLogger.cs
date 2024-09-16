@@ -10,6 +10,7 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
 {
     private readonly List<string> _messages = new();
     private Exception? _assertException = null;
+    private object _lock = new();
 
     public IEnumerable<string> Messages => _messages;
     public TestContext? OutputWriter { get; set; }
@@ -27,7 +28,10 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         }
 
         string message = $"{logLevel}[{eventId.Id}]: {formatter(state, exception)}";
-        _messages.Add(message);
+        lock (_lock)
+        {
+            _messages.Add(message);
+        }
         OutputWriter?.WriteLine(message);
     }
 
@@ -92,6 +96,40 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         } while (iter.MoveNext());
 
         return remaining;
+    }
+
+    internal Task WaitForMessage(string expectedMessage)
+        => WaitForMessage(expectedMessage, TimeSpan.FromSeconds(5));
+    internal async Task WaitForMessage(string expectedMessage, TimeSpan timeout)
+    {
+        DateTime startTime = DateTime.Now;
+
+        bool found = false;
+        while (!found)
+        {
+            if (_assertException is not null)
+            {
+                throw _assertException;
+            }
+
+            List<string> messages;
+            lock (_lock)
+            {
+                messages = _messages.ToList(); // Make a copy
+            }
+            foreach (string message in messages)
+            {
+                if (message.StartsWith(expectedMessage))
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            await Task.Delay(100);
+
+            Assert.IsTrue(DateTime.Now - startTime < timeout, "Timed out waiting for log message '{0}'", expectedMessage);
+        }
     }
 
     internal void ClearMessages()
