@@ -84,6 +84,8 @@ internal enum Message
     ScopedBackgroundProcess_StoppedEarly = 1205,
     ScopedBackgroundProcess_Error = 1206,
     ScopedBackgroundProcess_CanceledBeforeStarted = 1207,
+    ScopedBackgroundProcess_SwitchedToWorkerThread = 1208,
+    ScopedBackgroundProcess_SwitchingToWorkerThread = 1209,
     ConversationState_Updated = 1301,
     ConversationState_UnexpectedSpeechDetected = 1302,
     ConversationState_InvalidSemanticValue = 1303,

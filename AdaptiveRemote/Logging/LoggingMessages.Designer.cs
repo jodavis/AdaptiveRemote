@@ -510,6 +510,24 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Switched to worker thread {thread_id}.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_SwitchedToWorkerThread {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_SwitchedToWorkerThread", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Switching to worker thread.
+        /// </summary>
+        internal static string ScopedBackgroundProcess_SwitchingToWorkerThread {
+            get {
+                return ResourceManager.GetString("ScopedBackgroundProcess_SwitchingToWorkerThread", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} was cancelled..
         /// </summary>
         internal static string SpeechRecognition_CancelledListeningMethod {

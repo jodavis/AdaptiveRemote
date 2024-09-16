@@ -21,7 +21,14 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
     protected abstract Task ExecuteAsync(CancellationToken stopToken);
 
     protected virtual Task MoveToWorkerThreadAsync(Func<Task> task, CancellationToken cancellationToken)
-        => Task.Run(() => task(), cancellationToken);
+    {
+        Logger.LogDebug(Message.ScopedBackgroundProcess_SwitchingToWorkerThread);
+        return Task.Run(() =>
+        {
+            Logger.LogDebug(Message.ScopedBackgroundProcess_SwitchedToWorkerThread, Environment.CurrentManagedThreadId);
+            return task();
+        }, cancellationToken);
+    }
 
     public virtual Task InitializeAsync(CancellationToken cancellationToken)
     {

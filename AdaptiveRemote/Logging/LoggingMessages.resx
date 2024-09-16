@@ -474,4 +474,11 @@ Last error: {1}</value>
   <data name="ProgrammaticSettings_Error" xml:space="preserve">
     <value>Failed to set {name}={value}: {exception}</value>
   </data>
+  <data name="ScopedBackgroundProcess_SwitchedToWorkerThread" xml:space="preserve">
+    <value>Switched to worker thread {thread_id}</value>
+    <comment>thread_id=ManagedThreadId of the worker thread</comment>
+  </data>
+  <data name="ScopedBackgroundProcess_SwitchingToWorkerThread" xml:space="preserve">
+    <value>Switching to worker thread</value>
+  </data>
 </root>

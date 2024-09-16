@@ -50,8 +50,10 @@ public class ConversationControllerTests
         => $"Information[1203]: {LoggingMessages.ScopedBackgroundProcess_Stopping}";
     private static string Expected_Stopped
         => $"Information[1204]: {LoggingMessages.ScopedBackgroundProcess_Stopped}";
-    private static string Expected_StoppedEarly
-        => $"Warning[1205]: {LoggingMessages.ScopedBackgroundProcess_StoppedEarly}";
+    private static string Expected_SwitchedToWorkerThread
+        => $"Debug[1208]: {LoggingMessages.ScopedBackgroundProcess_SwitchedToWorkerThread.AsMessageTemplate("")}";
+    private static string Expected_SwitchingToWorkerThread
+        => $"Debug[1209]: {LoggingMessages.ScopedBackgroundProcess_SwitchingToWorkerThread}";
 
     private void Expect_GetRemoteDefinition(Times times)
         => MockDefinition
@@ -134,10 +136,6 @@ public class ConversationControllerTests
             .Setup(x => x.ExecuteAsync(It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(returnTask)
             .Verifiable(times ?? Times.Once());
-    private void Expect_Command1_ExecuteAsync_IsNotCalled()
-        => Command1Execute
-            .Setup(x => x.ExecuteAsync(It.IsAny<CancellationToken>()))
-            .Verifiable(Times.Never);
     private void Expect_Command2_ExecuteAsync(Task? returnTask = default, Times? times = default)
         => Command2Execute
             .Setup(x => x.ExecuteAsync(It.IsAny<CancellationToken>()))
@@ -271,6 +269,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -294,6 +294,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         // Act
@@ -302,6 +304,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -326,6 +330,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         // Act
@@ -336,6 +342,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started,
             Expected_Stopping);
 
@@ -344,6 +352,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
@@ -369,6 +379,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         // Act
@@ -377,6 +389,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -408,6 +422,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Started);
 
@@ -440,6 +456,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         // Act
@@ -448,6 +466,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name));
@@ -483,6 +503,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Started);
@@ -521,6 +543,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Executing(Command2.Name),
@@ -556,10 +580,12 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
-           Expected_Starting,
-           Expected_Executing(Command1.Name),
-           Expected_Executed(Command1.Name),
-           Expected_Started);
+            Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
+            Expected_Executing(Command1.Name),
+            Expected_Executed(Command1.Name),
+            Expected_Started);
 
         // Act
         Task resultTask = sut.CleanUpAsync(default);
@@ -567,6 +593,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Started,
@@ -580,6 +608,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Started,
@@ -616,6 +646,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name),
             Expected_Executing(Command1.Name),
@@ -648,6 +680,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -674,6 +708,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         // Act
@@ -682,6 +718,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started,
             Expected_Stopping);
 
@@ -693,6 +731,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
@@ -724,6 +764,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started);
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
@@ -758,6 +800,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Retrying(1, exception),
             Expected_Started);
@@ -805,6 +849,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Retrying(1, exception),
             Expected_Executing(Command1.Name),
@@ -844,8 +890,10 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
-           Expected_Starting,
-           Expected_Started);
+            Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
+            Expected_Started);
 
         // Act
         Task resultTask = sut.CleanUpAsync(default);
@@ -853,6 +901,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started,
             Expected_Stopping);
 
@@ -876,8 +926,10 @@ public class ConversationControllerTests
         sut.InitializeAsync(default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
-           Expected_Starting,
-           Expected_Started);
+            Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
+            Expected_Started);
 
         // Act
         Task resultTask = sut.CleanUpAsync(default);
@@ -885,6 +937,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Started,
             Expected_Stopping,
             Expected_Stopped);
@@ -922,6 +976,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Started);
 
@@ -931,6 +987,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Started,
             Expected_Stopping);
@@ -968,6 +1026,8 @@ public class ConversationControllerTests
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Started);
 
@@ -977,6 +1037,8 @@ public class ConversationControllerTests
         // Assert
         MockLogger.VerifyMessages(
             Expected_Starting,
+            Expected_SwitchingToWorkerThread,
+            Expected_SwitchedToWorkerThread,
             Expected_Executing(Command1.Name),
             Expected_Started,
             Expected_Stopping,
