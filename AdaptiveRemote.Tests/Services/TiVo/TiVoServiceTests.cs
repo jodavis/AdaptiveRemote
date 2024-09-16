@@ -16,10 +16,10 @@ public class TiVoServiceTests
 
     private readonly LayoutGroup Commands = new("ROOT",
         [
-            new ApplicationCommand("UNUSED1"),
+            new LifecycleCommand("UNUSED1"),
             new TiVoCommand("Play"),
             new TiVoCommand("Stop"),
-            new ApplicationCommand("UNUSED2"),
+            new LifecycleCommand("UNUSED2"),
         ]);
     private TiVoCommand PlayCommand => Commands.Elements.OfType<TiVoCommand>().First();
 

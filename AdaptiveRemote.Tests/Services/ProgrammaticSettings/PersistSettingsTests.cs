@@ -4,7 +4,7 @@ using AdaptiveRemote.Services.Configuration;
 using AdaptiveRemote.TestUtilities;
 using Moq;
 
-namespace AdaptiveRemote.Services.Lifecycle;
+namespace AdaptiveRemote.Services.ProgrammaticSettings;
 
 [TestClass]
 public class PersistSettingsTests
