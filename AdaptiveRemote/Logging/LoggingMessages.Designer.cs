@@ -383,6 +383,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to set {name}={value}: {exception}.
+        /// </summary>
+        internal static string ProgrammaticSettings_Error {
+            get {
+                return ResourceManager.GetString("ProgrammaticSettings_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Loaded {0} settings from {1}.
         /// </summary>
         internal static string ProgrammaticSettings_LoadedExistingSettings {

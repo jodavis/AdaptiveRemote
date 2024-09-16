@@ -107,6 +107,11 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         bool found = false;
         while (!found)
         {
+            if (_assertException is not null)
+            {
+                throw _assertException;
+            }
+
             List<string> messages;
             lock (_lock)
             {
