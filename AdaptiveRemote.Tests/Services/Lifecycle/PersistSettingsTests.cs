@@ -327,15 +327,15 @@ public class PersistSettingsTests
     }
 
     private static string ExpectMessage_LoadingExistingSettings()
-        => $"Information[1101]: {string.Format(LoggingMessages.ProgrammaticSettings_LoadingExistingSettings, InputSettingsPath)}";
+        => $"Information[1101]: {LoggingMessages.ProgrammaticSettings_LoadingExistingSettings.AsMessageTemplate(InputSettingsPath)}";
     private static string ExpectMessage_LoadedExistingSettings(int expectedCount)
-        => $"Information[1102]: {string.Format(LoggingMessages.ProgrammaticSettings_LoadedExistingSettings, expectedCount, InputSettingsPath)}";
+        => $"Information[1102]: {LoggingMessages.ProgrammaticSettings_LoadedExistingSettings.AsMessageTemplate(expectedCount, InputSettingsPath)}";
     private static string ExpectMessage_SavingSettings(int expectedCount)
-        => $"Information[1103]: {string.Format(LoggingMessages.ProgrammaticSettings_SavingSettings, expectedCount, InputSettingsPath)}";
+        => $"Information[1103]: {LoggingMessages.ProgrammaticSettings_SavingSettings.AsMessageTemplate(expectedCount, InputSettingsPath)}";
     private static string ExpectMessage_SavedSettings()
-        => $"Information[1104]: {string.Format(LoggingMessages.ProgrammaticSettings_SavedSettings, InputSettingsPath)}";
+        => $"Information[1104]: {LoggingMessages.ProgrammaticSettings_SavedSettings.AsMessageTemplate(InputSettingsPath)}";
     private static string ExpectMessage_AddSetting(string expectedKey, string expectedValue)
-        => $"Information[1105]: {string.Format(LoggingMessages.ProgrammaticSettings_AddSetting, expectedKey, expectedValue)}";
+        => $"Information[1105]: {LoggingMessages.ProgrammaticSettings_AddSetting.AsMessageTemplate(expectedKey, expectedValue)}";
     private static string ExpectMessage_ReplaceSetting(string expectedKey, string oldValue, string newValue)
         => $"Information[1106]: {LoggingMessages.ProgrammaticSettings_ReplaceSetting.AsMessageTemplate(expectedKey, oldValue, newValue)}";
     private static string ExpectMessage_Rejected(string key, string value, string reason)

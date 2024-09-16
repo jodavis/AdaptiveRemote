@@ -374,7 +374,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Setting {0}={1}.
+        ///   Looks up a localized string similar to Setting {name}={value}.
         /// </summary>
         internal static string ProgrammaticSettings_AddSetting {
             get {
@@ -392,7 +392,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Loaded {0} settings from {1}.
+        ///   Looks up a localized string similar to Loaded {count} settings from {path}.
         /// </summary>
         internal static string ProgrammaticSettings_LoadedExistingSettings {
             get {
@@ -401,7 +401,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Loading existing settings from {0}.
+        ///   Looks up a localized string similar to Loading existing settings from {path}.
         /// </summary>
         internal static string ProgrammaticSettings_LoadingExistingSettings {
             get {
@@ -428,7 +428,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Saved settings to {0}.
+        ///   Looks up a localized string similar to Saved settings to {path}.
         /// </summary>
         internal static string ProgrammaticSettings_SavedSettings {
             get {
@@ -437,7 +437,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Saving {0} settings to {1}.
+        ///   Looks up a localized string similar to Saving {count} settings to {path}.
         /// </summary>
         internal static string ProgrammaticSettings_SavingSettings {
             get {
