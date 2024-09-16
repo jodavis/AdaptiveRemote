@@ -65,8 +65,14 @@ internal class PersistSettings : IPersistSettings
         {
             values = await LoadExistingSettingsAsync();
 
-            // TODO: Different message when replacing
-            _logger.LogInformation(Message.ProgrammaticSettings_AddSetting, name, value);
+            if (values.TryGetValue(name, out string? oldValue))
+            {
+                _logger.LogInformation(Message.ProgrammaticSettings_ReplaceSetting, name, oldValue, name, value);
+            }
+            else
+            {
+                _logger.LogInformation(Message.ProgrammaticSettings_AddSetting, name, value);
+            }
             values[name] = value;
 
             await SaveSettingsAsync(values);

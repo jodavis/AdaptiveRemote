@@ -419,7 +419,7 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Replacing {0}={1} with {0}={2}.
+        ///   Looks up a localized string similar to Replacing {name}={old_value} with {name}={new_value}.
         /// </summary>
         internal static string ProgrammaticSettings_ReplaceSetting {
             get {
