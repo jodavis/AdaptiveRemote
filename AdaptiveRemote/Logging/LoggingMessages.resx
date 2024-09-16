@@ -270,8 +270,8 @@ Last error: {1}</value>
     <comment>0=Settings file path</comment>
   </data>
   <data name="ProgrammaticSettings_ReplaceSetting" xml:space="preserve">
-    <value>Replacing {0}={1} with {0}={2}</value>
-    <comment>0=Setting name,1=Old value,2=New value</comment>
+    <value>Replacing {name}={old_value} with {name}={new_value}</value>
+    <comment>name=Setting name,old_value=Old setting value,new_value=New setting value</comment>
   </data>
   <data name="ProgrammaticSettings_SavedSettings" xml:space="preserve">
     <value>Saved settings to {0}</value>

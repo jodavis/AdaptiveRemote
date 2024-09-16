@@ -60,6 +60,33 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
+    public async Task PersistSettings_Set_ChangesExistingSettingInFile()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=123");
+
+        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+
+        // Act
+        sut.Set("ExistingSetting", "ghi");
+
+        await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+
+        // Assert
+        MockFileSystem.VerifyFileContents(InputSettingsPath, "ExistingSetting=ghi\r\n");
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_LoadingExistingSettings(),
+            ExpectMessage_LoadedExistingSettings(1),
+            ExpectMessage_ReplaceSetting("ExistingSetting", "123", "ghi"),
+            ExpectMessage_SavingSettings(1),
+            ExpectMessage_SavedSettings());
+    }
+
+    [TestMethod]
     public async Task PersistSettings_Set_OnFailureToLoadExistingFile_LogsError()
     {
         // Arrange
@@ -271,6 +298,8 @@ public class PersistSettingsTests
         => $"Information[1104]: {string.Format(LoggingMessages.ProgrammaticSettings_SavedSettings, InputSettingsPath)}";
     private static string ExpectMessage_AddSetting(string expectedKey, string expectedValue)
         => $"Information[1105]: {string.Format(LoggingMessages.ProgrammaticSettings_AddSetting, expectedKey, expectedValue)}";
+    private static string ExpectMessage_ReplaceSetting(string expectedKey, string oldValue, string newValue)
+        => $"Information[1106]: {LoggingMessages.ProgrammaticSettings_ReplaceSetting.AsMessageTemplate(expectedKey, oldValue, newValue)}";
     private static string ExpectMessage_Rejected(string key, string value, string reason)
         => $"Error[1107]: {LoggingMessages.ProgrammaticSettings_Rejected.AsMessageTemplate(key, value, reason)}";
     private static string ExpectMessage_Error(string key, string value, Exception expected)
