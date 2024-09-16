@@ -34,7 +34,6 @@ internal class PersistSettings : IPersistSettings
     void IPersistSettings.Set(string name, string value)
     {
         ValidateInputs(name, value);
-        // TODO: Error handling/logging
 
         _ = SetAsync(name, value);
     }
@@ -61,31 +60,44 @@ internal class PersistSettings : IPersistSettings
 
     private async Task SetAsync(string name, string value)
     {
-        Dictionary<string, string> values = await LoadExistingSettingsAsync();
+        Dictionary<string, string> values;
+        try
+        {
+            values = await LoadExistingSettingsAsync();
 
-        // TODO: Different message when replacing
-        _logger.LogInformation(Message.ProgrammaticSettings_AddSetting, name, value);
-        values[name] = value;
+            // TODO: Different message when replacing
+            _logger.LogInformation(Message.ProgrammaticSettings_AddSetting, name, value);
+            values[name] = value;
 
-        await SaveSettingsAsync(values);
+            await SaveSettingsAsync(values);
+        }
+        catch (Exception error)
+        {
+            _logger.LogError(Message.ProgrammaticSettings_Error, name, value, error);
+        }
     }
 
     private async Task<Dictionary<string, string>> LoadExistingSettingsAsync()
     {
-        _logger.LogInformation(Message.ProgrammaticSettings_LoadingExistingSettings, _filePath);
         Dictionary<string, string> values = new();
 
-        using Stream readStream = _fileSystem.OpenRead(_filePath);
-        using StreamReader reader = new(readStream);
-
-        string? line;
-        while ((line = await reader.ReadLineAsync()) is not null)
+        if (_fileSystem.FileExists(_filePath))
         {
-            Match match = LineRegex.Match(line);
-            values.Add(match.Groups[NameKey].Value, match.Groups[ValueKey].Value);
+            _logger.LogInformation(Message.ProgrammaticSettings_LoadingExistingSettings, _filePath);
+
+            using Stream readStream = _fileSystem.OpenRead(_filePath);
+            using StreamReader reader = new(readStream);
+
+            string? line;
+            while ((line = await reader.ReadLineAsync()) is not null)
+            {
+                Match match = LineRegex.Match(line);
+                values.Add(match.Groups[NameKey].Value, match.Groups[ValueKey].Value);
+            }
+
+            _logger.LogInformation(Message.ProgrammaticSettings_LoadedExistingSettings, values.Count, _filePath);
         }
 
-        _logger.LogInformation(Message.ProgrammaticSettings_LoadedExistingSettings, values.Count, _filePath);
         return values;
     }
 
@@ -93,6 +105,9 @@ internal class PersistSettings : IPersistSettings
     {
         // TODO: Wait while already saving
         _logger.LogInformation(Message.ProgrammaticSettings_SavingSettings, values.Count, _filePath);
+
+        EnsurePathFor(_filePath);
+
         using Stream writeStream = _fileSystem.OpenWrite(_filePath);
         using StreamWriter writer = new(writeStream);
 
@@ -103,5 +118,16 @@ internal class PersistSettings : IPersistSettings
         await writer.FlushAsync();
 
         _logger.LogInformation(Message.ProgrammaticSettings_SavedSettings, _filePath);
+
+        void EnsurePathFor(string filePath)
+        {
+            string? directory = Path.GetDirectoryName(filePath);
+            if (directory is not null &&
+                !_fileSystem.DirectoryExists(directory))
+            {
+                EnsurePathFor(directory);
+                _fileSystem.CreateDirectory(directory);
+            }
+        }
     }
 }

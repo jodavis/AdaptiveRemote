@@ -2,6 +2,7 @@
 using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Configuration;
 using AdaptiveRemote.TestUtilities;
+using Moq;
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
@@ -23,6 +24,12 @@ public class PersistSettingsTests
     {
         get => MockLogger.OutputWriter;
         set => MockLogger.OutputWriter = value;
+    }
+
+    [TestCleanup]
+    public void VerifyMocks()
+    {
+        MockFileSystem.Verify();
     }
 
     [TestMethod]
@@ -49,6 +56,115 @@ public class PersistSettingsTests
             ExpectMessage_LoadedExistingSettings(1),
             ExpectMessage_AddSetting("NewSetting", "abc"),
             ExpectMessage_SavingSettings(2),
+            ExpectMessage_SavedSettings());
+    }
+
+    [TestMethod]
+    public async Task PersistSettings_Set_OnFailureToLoadExistingFile_LogsError()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        Exception expectedException = new ArgumentOutOfRangeException();
+
+        MockFileSystem.AddFile(InputSettingsPath);
+        MockFileSystem
+            .Setup(x => x.OpenRead(InputSettingsPath))
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+
+        // Act
+        sut.Set("NewSetting", "abc");
+
+        await MockLogger.WaitForMessage(ExpectMessage_Error("NewSetting", "abc", expectedException));
+
+        // Assert
+        MockLogger.VerifyMessages(
+            ExpectMessage_LoadingExistingSettings(),
+            ExpectMessage_Error("NewSetting", "abc", expectedException));
+    }
+
+    [TestMethod]
+    public async Task PersistSettings_Set_OnFailureToSaveFile_LogsError()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        Exception expectedException = new ArgumentOutOfRangeException();
+
+        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=123");
+
+        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
+        MockFileSystem
+            .Setup(x => x.OpenWrite(InputSettingsPath))
+            .Throws(expectedException)
+            .Verifiable(Times.Once);
+
+        // Act
+        sut.Set("NewSetting", "abc");
+
+        await MockLogger.WaitForMessage(ExpectMessage_Error("NewSetting", "abc", expectedException));
+
+        // Assert
+        MockLogger.VerifyMessages(
+            ExpectMessage_LoadingExistingSettings(),
+            ExpectMessage_LoadedExistingSettings(1),
+            ExpectMessage_AddSetting("NewSetting", "abc"),
+            ExpectMessage_SavingSettings(2),
+            ExpectMessage_Error("NewSetting", "abc", expectedException));
+    }
+
+    [TestMethod]
+    public async Task PersistSettings_Set_WhenFileNotFound_CreatesFile()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.AddDirectory(Path.GetDirectoryName(InputSettingsPath));
+
+        MockFileSystem.Expect_OpenRead_IsNotCalled();
+        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+
+        // Act
+        sut.Set("NewSetting", "abc");
+
+        await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+
+        // Assert
+        MockFileSystem.VerifyFileContents(InputSettingsPath, "NewSetting=abc\r\n");
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_AddSetting("NewSetting", "abc"),
+            ExpectMessage_SavingSettings(1),
+            ExpectMessage_SavedSettings());
+    }
+
+    [TestMethod]
+    public async Task PersistSettings_Set_WhenFileNotFound_CreatesDirectory()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.AddDirectory(Path.GetPathRoot(InputSettingsPath));
+
+        MockFileSystem.Expect_OpenRead_IsNotCalled();
+
+        MockFileSystem.Expect_CreateDirectory_ForPath(@"C:\path");
+        MockFileSystem.Expect_CreateDirectory_ForPath(@"C:\path\to");
+
+        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+
+        // Act
+        sut.Set("NewSetting", "abc");
+
+        await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+
+        // Assert
+        MockFileSystem.VerifyFileContents(InputSettingsPath, "NewSetting=abc\r\n");
+
+        MockLogger.VerifyMessages(
+            ExpectMessage_AddSetting("NewSetting", "abc"),
+            ExpectMessage_SavingSettings(1),
             ExpectMessage_SavedSettings());
     }
 
@@ -157,4 +273,6 @@ public class PersistSettingsTests
         => $"Information[1105]: {string.Format(LoggingMessages.ProgrammaticSettings_AddSetting, expectedKey, expectedValue)}";
     private static string ExpectMessage_Rejected(string key, string value, string reason)
         => $"Error[1107]: {LoggingMessages.ProgrammaticSettings_Rejected.AsMessageTemplate(key, value, reason)}";
+    private static string ExpectMessage_Error(string key, string value, Exception expected)
+        => $"Error[1108]: {LoggingMessages.ProgrammaticSettings_Error.AsMessageTemplate(key, value, $"{expected.GetType().FullName}: {expected.Message}")}";
 }

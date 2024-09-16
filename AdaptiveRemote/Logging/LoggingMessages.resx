@@ -470,4 +470,7 @@ Last error: {1}</value>
   <data name="ProgrammaticSettings_Rejected" xml:space="preserve">
     <value>Setting {name}={value} was rejected: {reason}</value>
   </data>
+  <data name="ProgrammaticSettings_Error" xml:space="preserve">
+    <value>Failed to set {name}={value}: {exception}</value>
+  </data>
 </root>
