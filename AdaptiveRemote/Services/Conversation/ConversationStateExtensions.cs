@@ -2,6 +2,7 @@
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Identity.Client;
 
 namespace AdaptiveRemote.Services.Conversation;
 
@@ -12,95 +13,177 @@ internal static class ConversationStateExtensions
             ? state with
             {
                 WantsPhrases = PhraseKinds.Commands,
-                LastResponse = new([], []),
-                LastCommand = default
+                CurrentResponse = null,
+                SpeechToConfirm = default
             }
             : state with
             {
                 WantsPhrases = PhraseKinds.WakeWord,
-                LastResponse = new([], []),
-                LastCommand = default
+                CurrentResponse = null,
+                SpeechToConfirm = default
             }).LogUpdateTo(logger);
 
     public static ConversationState RespondTo(this ConversationState state, IRecognizedSpeech speech, ILogger? logger = default)
     {
         RespondContext context = new(state, speech, logger);
 
-        context = context.RespondTo(speech);
+        context = context.RespondTo();
+
+        ConversationResponse response = new(speech, context.ResponsePhrases, context.ResponseCommands);
 
         state = context.State with
         {
-            LastResponse = new(context.ResponsePhrases, context.ResponseCommands)
+            ResponseToCorrect = response.Commands.Any() ? response : context.State.ResponseToCorrect,
+            CurrentResponse = response,
+            WantsPhrases = ComputePhraseKinds(context)
         };
 
         return state.LogUpdateTo(logger);
+
+        static PhraseKinds ComputePhraseKinds(RespondContext context)
+        {
+            PhraseKinds computed = context.State.WantsPhrases;
+
+            if (computed.HasFlag(PhraseKinds.Commands))
+            {
+                if (context.ResponseCommands.IsEmpty)
+                {
+                    computed &= ~PhraseKinds.Correction;
+                }
+                else
+                {
+                    computed |= PhraseKinds.Correction;
+                }
+
+                if (context.State.SpeechToConfirm is not null)
+                {
+                    computed |= PhraseKinds.Confirmation;
+                }
+                else
+                {
+                    computed &= ~PhraseKinds.Confirmation;
+                }
+            }
+
+            return computed;
+        }
     }
 
-    private static RespondContext RespondTo(this RespondContext context, IRecognizedSpeech speech)
+    private static RespondContext RespondTo(this RespondContext context)
     {
-        if (speech.TryGetSemanticValue("system", out string? systemCommand))
+        if (context.Speech.TryGetSemanticValue("confirmation", out string? confirmationValue))
+        {
+            context = context
+                .StopUnless(PhraseKindIsAccepted(PhraseKinds.Confirmation))
+                .StopUnless(ConfirmationIsAffirmative(confirmationValue), ifStopped: RejectLastSpeech)
+                .Apply(ConfirmLastCommand);
+        }
+
+        if (context.Speech.TryGetSemanticValue("system", out string? systemCommand))
         {
             switch (systemCommand)
             {
                 case "STARTLISTENING":
                     context = context
-                        .StopUnless(AcceptPhraseKind(PhraseKinds.WakeWord))
+                        .StopUnless(PhraseKindIsAccepted(PhraseKinds.WakeWord))
                         .Apply(EnterListeningState);
                     break;
 
                 case "STOPLISTENING":
                     context = context
-                        .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
+                        .StopUnless(PhraseKindIsAccepted(PhraseKinds.Commands))
+                        .StopUnless(SpeechIsHighConfidence, ifStopped: AskForConfirmation)
                         .Apply(ExitListeningState);
                     break;
             }
         }
 
-        if (speech.TryGetSemanticValue("command", out string? commandName))
+        if (context.Speech.TryGetSemanticValue("command", out string? commandName))
         {
             context = context
-                .StopUnless(AcceptPhraseKind(PhraseKinds.Commands))
+                .StopUnless(PhraseKindIsAccepted(PhraseKinds.Commands))
                 .Apply(DecodeCommandFor(commandName))
                 .StopUnless(CommandExists)
+                .StopUnless(SpeechIsHighConfidence, ifStopped: AskForConfirmation)
                 .StopUnless(CommandEnabled, ifStopped: RespondCommandDisabled)
                 .StopUnless(CommandHasExecuteAsync, ifStopped: RespondCommandDisabled)
-                .Apply(AddCommands);
+                .Apply(AddCommands)
+                .Apply(SpeakDescriptionOfCommands);
         }
 
-        if (speech.TryGetSemanticValue("correction", out _))
+        if (context.Speech.TryGetSemanticValue("correction", out _))
         {
             context = context
-                .StopUnless(AcceptPhraseKind(PhraseKinds.Correction))
-                .Apply(Apologize)
-                .Apply(ReverseLastCommands);
+                .StopUnless(PhraseKindIsAccepted(PhraseKinds.Correction))
+                .StopUnless(SpeechIsHighConfidence, ifStopped: AskForConfirmation)
+                .Apply(ApologizeFor(context.State.ResponseToCorrect?.InResponseTo!))
+                .Apply(ReverseLastCommands)
+                .Apply(SpeakDescriptionOfCommands);
         }
 
         return context;
     }
 
-    private static RespondContext Apologize(RespondContext context)
-    {
-        context.Logger?.LogError(Message.ConversationState_UserReportedRecognitionError, context.State.LastCommand);
-        return context with
+    private static bool SpeechIsHighConfidence(RespondContext context)
+        => context.SpeechConfirmed || context.Speech.Confidence >= context.State.HighConfidenceThreshold;
+
+    private static RespondContext AskForConfirmation(RespondContext context)
+        => context with
         {
-            ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_ImSorry),
+            ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_DidYouSay(context.Speech.Text)),
             State = context.State with
             {
-                LastCommand = context.Speech
+                SpeechToConfirm = context.Speech
             }
         };
-    }
+
+    private static Func<RespondContext, bool> ConfirmationIsAffirmative(string confirmationValue)
+        => context => confirmationValue.Equals("YES", StringComparison.OrdinalIgnoreCase);
+
+    private static RespondContext ConfirmLastCommand(RespondContext context)
+        => context with
+        {
+            Speech = context.State.SpeechToConfirm!,
+            SpeechConfirmed = true,
+            State = context.State with
+            {
+                SpeechToConfirm = null
+            }
+        };
+
+    private static RespondContext RejectLastSpeech(RespondContext context)
+        => ApologizeFor(context.State.SpeechToConfirm!)(context) with
+        {
+            State = context.State with
+            {
+                SpeechToConfirm = null
+            }
+        };
+
+    private static Func<RespondContext, RespondContext> ApologizeFor(IRecognizedSpeech speech)
+        => context =>
+        {
+            if (context.ResponsePhrases.Contains(Phrases.Conversation_ImSorry))
+            {
+                // Already apologized, don't do it again
+                return context;
+            }
+
+            context.Logger?.LogError(Message.ConversationState_UserReportedRecognitionError, speech);
+            return context with
+            {
+                ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_ImSorry)
+            };
+        };
 
     private static RespondContext ReverseLastCommands(RespondContext context)
     {
-        if (context.State.LastResponse is not null)
-        {
-            List<Command> reverseCommands = new();
-            List<string> reversePhrases = new();
-            Command? lastReverseCommand = null;
-            int lastReverseCommandCount = 0;
+        ImmutableList<Command> reverseCommands = context.ResponseCommands;
 
-            foreach (Command commandToReverse in context.State.LastResponse.Commands.Reverse())
+        if (context.State.ResponseToCorrect is not null)
+        {
+
+            foreach (Command commandToReverse in context.State.ResponseToCorrect.Commands.Reverse())
             {
                 if (commandToReverse.Reverse is null)
                 {
@@ -113,37 +196,53 @@ internal static class ConversationStateExtensions
                     continue;
                 }
 
-                reverseCommands.Add(reverseCommand);
-
-                if (reverseCommand == lastReverseCommand)
-                {
-                    lastReverseCommandCount++;
-                }
-                else
-                {
-                    if (lastReverseCommand is not null)
-                    {
-                        reversePhrases.Add(Phrases.RepeatAction(lastReverseCommand.SpeakPhrase, lastReverseCommandCount));
-                    }
-
-                    lastReverseCommand = reverseCommand;
-                    lastReverseCommandCount = 1;
-                }
+                reverseCommands = reverseCommands.Add(reverseCommand);
             }
 
-            if (lastReverseCommand is not null)
+            return context with
             {
-                reversePhrases.Add(Phrases.RepeatAction(lastReverseCommand.SpeakPhrase, lastReverseCommandCount));
-
-                return context with
+                ResponseCommands = reverseCommands,
+                State = context.State with
                 {
-                    ResponseCommands = context.ResponseCommands.AddRange(reverseCommands),
-                    ResponsePhrases = context.ResponsePhrases.AddRange(reversePhrases),
-                };
-            }
+                    ResponseToCorrect = null
+                }
+            };
         }
 
         return context;
+    }
+
+    private static RespondContext SpeakDescriptionOfCommands(RespondContext context)
+    {
+        ImmutableList<string> phrases = context.ResponsePhrases;
+        Command? lastCommand = null;
+        int lastCommandCount = 0;
+
+        foreach (Command command in context.ResponseCommands)
+        {
+            if (lastCommand == command)
+            {
+                lastCommandCount++;
+            }
+            else
+            {
+                phrases = AddDescriptionOfCommand(phrases, lastCommand, lastCommandCount);
+
+                lastCommand = command;
+                lastCommandCount = 1;
+            }
+        }
+
+        phrases = AddDescriptionOfCommand(phrases, lastCommand, lastCommandCount);
+
+        return context.ResponsePhrases == phrases
+            ? context
+            : context with { ResponsePhrases = phrases };
+
+        static ImmutableList<string> AddDescriptionOfCommand(ImmutableList<string> phrases, Command? command, int repeat)
+            => command is null
+            ? phrases
+            : phrases.Add(Phrases.RepeatAction(command.SpeakPhrase, repeat));
     }
 
     private static RespondContext EnterListeningState(RespondContext context)
@@ -153,7 +252,8 @@ internal static class ConversationStateExtensions
             State = context.State with
             {
                 WantsPhrases = PhraseKinds.Commands,
-                LastCommand = default
+                SpeechToConfirm = default,
+                ResponseToCorrect = default,
             }
         };
 
@@ -164,11 +264,12 @@ internal static class ConversationStateExtensions
             State = context.State with
             {
                 WantsPhrases = PhraseKinds.WakeWord,
-                LastCommand = default
+                SpeechToConfirm = default,
+                ResponseToCorrect = default,
             }
         };
 
-    private static Func<RespondContext, bool> AcceptPhraseKind(PhraseKinds received)
+    private static Func<RespondContext, bool> PhraseKindIsAccepted(PhraseKinds received)
         => context => context.State.WantsPhrases.HasFlag(received)
             .LogErrorIf(false, context.Logger, Message.ConversationState_UnexpectedSpeechDetected, received, context.Speech);
 
@@ -176,12 +277,6 @@ internal static class ConversationStateExtensions
         => context => context.State.Commands.TryGetValue(commandName, out Command? command)
             ? context with { DecodedCommand = command }
             : context;
-
-    private static RespondContext RespondCommandNotFound(this RespondContext context, string commandName)
-    {
-        context.Logger?.LogError(Message.ConversationController_UnknownCommand, commandName);
-        return context with { Continue = false };
-    }
 
     private static ConversationState LogUpdateTo(this ConversationState state, ILogger? logger)
     {
@@ -219,7 +314,7 @@ internal static class ConversationStateExtensions
             State = context.State with
             {
                 WantsPhrases = PhraseKinds.Commands,
-                LastCommand = default
+                SpeechToConfirm = default
             }
         };
 
@@ -241,12 +336,10 @@ internal static class ConversationStateExtensions
 
         return context with
         {
-            ResponsePhrases = context.ResponsePhrases.Add(Phrases.RepeatAction(command.SpeakPhrase, repeat)),
             ResponseCommands = context.ResponseCommands.AddRange(Enumerable.Repeat(command, repeat)),
             State = context.State with
             {
-                WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
-                LastCommand = context.Speech
+                SpeechToConfirm = default
             }
         };
     }
@@ -258,7 +351,8 @@ internal static class ConversationStateExtensions
         ImmutableList<Command> ResponseCommands,
         bool Continue,
         ILogger? Logger,
-        Command? DecodedCommand = default)
+        Command? DecodedCommand = default,
+        bool SpeechConfirmed = false)
     {
         internal RespondContext(ConversationState state, IRecognizedSpeech speech, ILogger? logger)
             : this(state, speech, ImmutableList<string>.Empty, ImmutableList<Command>.Empty, true, logger)
