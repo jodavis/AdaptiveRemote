@@ -8,9 +8,7 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  majorVersion: '1'
-  minorVersion: '0'
-  patchVersion: '0'
+  applicationVersion: '1.0.0.$(Build.BuildId)'
 
 steps:
 - task: NuGetToolInstaller@1
@@ -34,15 +32,10 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
-- script: |
-    newVersion=$(majorVersion).$(minorVersion).$(patchVersion).$(Build.BuildId)
-    echo "##vso[task.setvariable variable=ApplicationVersion]$newVersion"
-  displayName: 'Set Application Version'
-
 - task: VSBuild@1
   inputs:
     solution: '**\AdaptiveRemote.csproj'
-    msbuildArgs: '/t:Restore,Publish /p:PublishProfile=ClickOnceProfile /p:ApplicationVersion=$(ApplicationVersion) /p:PublishDir="$(Build.ArtifactStagingDirectory)\installer" /p:PublishReadyToRun=True'
+    msbuildArgs: '/t:Restore,Publish /p:PublishProfile=ClickOnceProfile /p:ApplicationVersion=$(applicationVersion) /p:PublishDir="$(Build.ArtifactStagingDirectory)\installer" /p:PublishReadyToRun=True'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
