@@ -46,17 +46,17 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
             await Task.Delay(1000);
             ticks++;
 
-            if (IsEnabled("WakeWord"))
+            if (IsEnabled(PhraseKinds.WakeWord))
             {
                 if (ticks >= 5)
                 {
                     ticks = 0;
-                    SendResult(new("Hey TiVo", ("system", "STARTLISTENING")));
+                    SendResult(new("Hey Remote", 80, ("system", "STARTLISTENING")));
                 }
             }
-            else if (IsEnabled("Commands"))
+            else if (IsEnabled(PhraseKinds.Commands))
             {
-                if (ticks >= 2)
+                if (ticks >= 3)
                 {
                     ticks = 0;
                     commands.MoveNext();
@@ -75,27 +75,29 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         while (true)
         {
             yield return Command("Go up", "Up");
-            yield return Command("Down three", "Down", 3);
-            yield return new FakeRecognitionResult("That's wrong", ("correction", "true"));
+            yield return Command("Down three", "Down", repeat: 3);
+            yield return new FakeRecognitionResult("That's wrong", 80, ("correction", "true"));
             yield return Command("TiVo", "TiVo");
-            yield return Command("Louder 5 times", "VolumeUp", 5);
-            yield return Command("Mute", "Mute");
-            yield return Command("Volume Down 5", "VolumeDown", 5);
-            yield return Command("Guide", "Guide");
+            yield return Command("Louder 5 times", "VolumeUp", repeat: 5);
+            yield return Command("Mute", "Mute", confidence: 40);
+            yield return new FakeRecognitionResult("Yes, I did", 80, ("confirmation", "YES"));
+            yield return Command("Volume Down 5", "VolumeDown", repeat: 5);
+            yield return Command("Guide", "Guide", confidence: 40);
+            yield return new FakeRecognitionResult("No", 80, ("confirmation", "NO"));
             yield return Command("Go up", "Up");
-            yield return new FakeRecognitionResult("That's wrong", ("correction", "true"));
+            yield return new FakeRecognitionResult("That's wrong", 80, ("correction", "true"));
             yield return Command("Back", "Back");
-            yield return new FakeRecognitionResult("Thank you", ("system", "STOPLISTENING"), ("thankyou", "true"));
+            yield return new FakeRecognitionResult("Thank you", 80, ("system", "STOPLISTENING"), ("thankyou", "true"));
         }
 
-        static FakeRecognitionResult Command(string text, string command, int? repeat = default)
+        static FakeRecognitionResult Command(string text, string command, int confidence = 80, int? repeat = default)
             => repeat is null
-                ? new FakeRecognitionResult(text, (nameof(command), command))
-                : new FakeRecognitionResult(text, (nameof(command), command), (nameof(repeat), repeat.ToString()!));
+                ? new FakeRecognitionResult(text, confidence, (nameof(command), command))
+                : new FakeRecognitionResult(text, confidence, (nameof(command), command), (nameof(repeat), repeat.ToString()!));
     }
 
-    private bool IsEnabled(string grammarName)
-        => _grammars.TryGetValue(grammarName, out Grammar? grammar) && grammar.Enabled;
+    private bool IsEnabled(PhraseKinds phraseKind)
+        => _grammars.TryGetValue(phraseKind.ToString(), out Grammar? grammar) && grammar.Enabled;
 
     private void SendResult(FakeRecognitionResult result)
     {
@@ -104,13 +106,16 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 
     private class FakeRecognitionResult : IRecognizedSpeech
     {
-        internal FakeRecognitionResult(string text, params (string, string)[] semantics)
+        internal FakeRecognitionResult(string text, int confidence, params (string, string)[] semantics)
         {
             Text = text;
+            Confidence = confidence;
+
             _semantics = semantics;
         }
 
         public string Text { get; }
+        public int Confidence { get; }
 
         private readonly (string, string)[] _semantics;
 

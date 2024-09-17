@@ -3,10 +3,15 @@ using AdaptiveRemote.Models;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-internal record ConversationResponse(IEnumerable<string> Phrases, IEnumerable<Command> Commands)
+internal record ConversationResponse(IRecognizedSpeech InResponseTo, IEnumerable<string> Phrases, IEnumerable<Command> Commands)
 {
     protected virtual bool PrintMembers(StringBuilder builder)
     {
+        builder.Append(nameof(InResponseTo));
+        builder.Append("={ ");
+        builder.Append(InResponseTo);
+        builder.Append("}, ");
+
         builder.Append(nameof(Phrases));
         builder.Append("=[");
         bool wroteOneItem = false;
@@ -41,6 +46,11 @@ internal record ConversationResponse(IEnumerable<string> Phrases, IEnumerable<Co
     public virtual bool Equals(ConversationResponse? other)
     {
         if (other is null)
+        {
+            return false;
+        }
+
+        if (InResponseTo != other.InResponseTo)
         {
             return false;
         }

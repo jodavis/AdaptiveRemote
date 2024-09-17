@@ -115,6 +115,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
         }
 
         string IRecognizedSpeech.Text => _result.Text;
+        int IRecognizedSpeech.Confidence => (int)(_result.Confidence * 100);
 
         bool IRecognizedSpeech.ContainsSemanticValue(string key) => _result.Semantics.ContainsKey(key);
         void IRecognizedSpeech.WriteToWaveStream(Stream waveStream) => _result.Audio.WriteToWaveStream(waveStream);

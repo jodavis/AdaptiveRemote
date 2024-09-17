@@ -16,6 +16,7 @@ internal static class Phrases
     public static string Conversation_ShuttingDown => "Shutting down...";
     public static string Conversation_Goodbye => "Goodbye";
     public static string Conversation_ImSorry => "I'm sorry.";
+    public static string Conversation_DidYouSay(string speech) => $"Did you say '{speech}'?";
 
     internal static string RepeatAction(string action, int repeat)
         => repeat switch

@@ -151,7 +151,7 @@ public class ConversationControllerTests
         MockRecognition.Object,
         MockSynthesis.Object,
         MockLogger,
-        new ConversationStateMachine(MockDefinition.Object, new MockLogger<ConversationStateMachine>()),
+        new ConversationStateMachine(MockDefinition.Object, MockOptions.Object, new MockLogger<ConversationStateMachine>()),
         ViewModel);
 
     private static Mock<IRecognizedSpeech> CreateMockSpeech(string text, params string[] semanticValues)
@@ -169,6 +169,9 @@ public class ConversationControllerTests
         mockSpeech
             .SetupGet(x => x.Text)
             .Returns(text);
+        mockSpeech
+            .SetupGet(x => x.Confidence)
+            .Returns(99);
 
         foreach (string semanticValue in semanticValues)
         {
@@ -219,7 +222,7 @@ public class ConversationControllerTests
         MockOptions
             .SetupGet(x => x.Value)
             .Returns(ConversationSettings)
-            .Verifiable(Times.Once);
+            .Verifiable(Times.Exactly(2));
 
         MockLogger.OutputWriter = TestContext;
     }
