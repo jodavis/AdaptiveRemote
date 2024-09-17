@@ -135,7 +135,7 @@ internal class ConversationController : ScopedBackgroundProcess
         bool isAsking = _stateMachine.WantPhrases.HasFlag(PhraseKinds.Confirmation);
 
         Task commandTask = ExecuteCommandsAsync(response.Commands, cancellationToken);
-        Task speakingTask = SayAsync(response.Phrases, isAsking, cancellationToken);
+        Task speakingTask = SayAsync(response.Phrases, isAsking);
 
         await speakingTask;
         await commandTask;
@@ -155,7 +155,7 @@ internal class ConversationController : ScopedBackgroundProcess
         }
     }
 
-    private async Task SayAsync(IEnumerable<string> phrases, bool isAsking, CancellationToken cancellationToken)
+    private async Task SayAsync(IEnumerable<string> phrases, bool isAsking)
     {
         bool wasListening = _viewModel.IsListening;
         try

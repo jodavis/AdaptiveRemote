@@ -5,8 +5,7 @@ namespace AdaptiveRemote.Services.Conversation;
 internal record ConversationState(
     IReadOnlyDictionary<string, Command> Commands,
     int HighConfidenceThreshold,
-    IRecognizedSpeech? LastSpeech = default,
-    IRecognizedSpeech? LastCommand = default,
+    IRecognizedSpeech? SpeechToConfirm = default,
     ConversationResponse? CurrentResponse = default,
-    ConversationResponse? LastResponseWithCommands = default,
+    ConversationResponse? ResponseToCorrect = default,
     PhraseKinds WantsPhrases = PhraseKinds.None);

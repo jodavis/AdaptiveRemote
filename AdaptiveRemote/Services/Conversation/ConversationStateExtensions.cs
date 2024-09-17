@@ -2,6 +2,7 @@
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Identity.Client;
 
 namespace AdaptiveRemote.Services.Conversation;
 
@@ -12,14 +13,14 @@ internal static class ConversationStateExtensions
             ? state with
             {
                 WantsPhrases = PhraseKinds.Commands,
-                CurrentResponse = new([], []),
-                LastSpeech = default
+                CurrentResponse = null,
+                SpeechToConfirm = default
             }
             : state with
             {
                 WantsPhrases = PhraseKinds.WakeWord,
-                CurrentResponse = new([], []),
-                LastSpeech = default
+                CurrentResponse = null,
+                SpeechToConfirm = default
             }).LogUpdateTo(logger);
 
     public static ConversationState RespondTo(this ConversationState state, IRecognizedSpeech speech, ILogger? logger = default)
@@ -28,22 +29,44 @@ internal static class ConversationStateExtensions
 
         context = context.RespondTo();
 
-        ConversationResponse response = new(context.ResponsePhrases, context.ResponseCommands);
+        ConversationResponse response = new(speech, context.ResponsePhrases, context.ResponseCommands);
 
-        // Put more common logic here, e.g. WantsPhrases determined by other values
         state = context.State with
         {
-            LastSpeech = speech,
-            LastResponseWithCommands = response.Commands.Any() ? response : state.LastResponseWithCommands,
+            ResponseToCorrect = response.Commands.Any() ? response : context.State.ResponseToCorrect,
             CurrentResponse = response,
-            WantsPhrases = context.State.WantsPhrases.HasFlag(PhraseKinds.Commands)
-                ? PhraseKinds.Commands
-                    | (response.Commands.Any() || context.State.LastResponseWithCommands is not null ? PhraseKinds.Correction : PhraseKinds.None)
-                    | (SpeechIsHighConfidence(context) ? PhraseKinds.None : PhraseKinds.Confirmation)
-                : context.State.WantsPhrases
+            WantsPhrases = ComputePhraseKinds(context)
         };
 
         return state.LogUpdateTo(logger);
+
+        static PhraseKinds ComputePhraseKinds(RespondContext context)
+        {
+            PhraseKinds computed = context.State.WantsPhrases;
+
+            if (computed.HasFlag(PhraseKinds.Commands))
+            {
+                if (context.ResponseCommands.IsEmpty)
+                {
+                    computed &= ~PhraseKinds.Correction;
+                }
+                else
+                {
+                    computed |= PhraseKinds.Correction;
+                }
+
+                if (context.State.SpeechToConfirm is not null)
+                {
+                    computed |= PhraseKinds.Confirmation;
+                }
+                else
+                {
+                    computed &= ~PhraseKinds.Confirmation;
+                }
+            }
+
+            return computed;
+        }
     }
 
     private static RespondContext RespondTo(this RespondContext context)
@@ -84,7 +107,8 @@ internal static class ConversationStateExtensions
                 .StopUnless(SpeechIsHighConfidence, ifStopped: AskForConfirmation)
                 .StopUnless(CommandEnabled, ifStopped: RespondCommandDisabled)
                 .StopUnless(CommandHasExecuteAsync, ifStopped: RespondCommandDisabled)
-                .Apply(AddCommands);
+                .Apply(AddCommands)
+                .Apply(SpeakDescriptionOfCommands);
         }
 
         if (context.Speech.TryGetSemanticValue("correction", out _))
@@ -92,8 +116,9 @@ internal static class ConversationStateExtensions
             context = context
                 .StopUnless(PhraseKindIsAccepted(PhraseKinds.Correction))
                 .StopUnless(SpeechIsHighConfidence, ifStopped: AskForConfirmation)
-                .Apply(ApologizeFor(context.State.LastCommand!))
-                .Apply(ReverseLastCommands);
+                .Apply(ApologizeFor(context.State.ResponseToCorrect?.InResponseTo!))
+                .Apply(ReverseLastCommands)
+                .Apply(SpeakDescriptionOfCommands);
         }
 
         return context;
@@ -108,7 +133,7 @@ internal static class ConversationStateExtensions
             ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_DidYouSay(context.Speech.Text)),
             State = context.State with
             {
-                WantsPhrases = PhraseKinds.Commands | PhraseKinds.Confirmation,
+                SpeechToConfirm = context.Speech
             }
         };
 
@@ -118,12 +143,22 @@ internal static class ConversationStateExtensions
     private static RespondContext ConfirmLastCommand(RespondContext context)
         => context with
         {
-            Speech = context.State.LastSpeech!,
+            Speech = context.State.SpeechToConfirm!,
             SpeechConfirmed = true,
+            State = context.State with
+            {
+                SpeechToConfirm = null
+            }
         };
 
     private static RespondContext RejectLastSpeech(RespondContext context)
-        => ApologizeFor(context.State.LastSpeech!)(context);
+        => ApologizeFor(context.State.SpeechToConfirm!)(context) with
+        {
+            State = context.State with
+            {
+                SpeechToConfirm = null
+            }
+        };
 
     private static Func<RespondContext, RespondContext> ApologizeFor(IRecognizedSpeech speech)
         => context =>
@@ -143,15 +178,12 @@ internal static class ConversationStateExtensions
 
     private static RespondContext ReverseLastCommands(RespondContext context)
     {
-        if (context.State.LastResponseWithCommands is not null)
-        {
-            List<Command> reverseCommands = new();
-            ;
-            List<string> reversePhrases = new();
-            Command? lastReverseCommand = null;
-            int lastReverseCommandCount = 0;
+        ImmutableList<Command> reverseCommands = context.ResponseCommands;
 
-            foreach (Command commandToReverse in context.State.LastResponseWithCommands.Commands.Reverse())
+        if (context.State.ResponseToCorrect is not null)
+        {
+
+            foreach (Command commandToReverse in context.State.ResponseToCorrect.Commands.Reverse())
             {
                 if (commandToReverse.Reverse is null)
                 {
@@ -164,41 +196,53 @@ internal static class ConversationStateExtensions
                     continue;
                 }
 
-                reverseCommands.Add(reverseCommand);
-
-                if (reverseCommand == lastReverseCommand)
-                {
-                    lastReverseCommandCount++;
-                }
-                else
-                {
-                    if (lastReverseCommand is not null)
-                    {
-                        reversePhrases.Add(Phrases.RepeatAction(lastReverseCommand.SpeakPhrase, lastReverseCommandCount));
-                    }
-
-                    lastReverseCommand = reverseCommand;
-                    lastReverseCommandCount = 1;
-                }
+                reverseCommands = reverseCommands.Add(reverseCommand);
             }
 
-            if (lastReverseCommand is not null)
+            return context with
             {
-                reversePhrases.Add(Phrases.RepeatAction(lastReverseCommand.SpeakPhrase, lastReverseCommandCount));
-
-                return context with
+                ResponseCommands = reverseCommands,
+                State = context.State with
                 {
-                    ResponseCommands = context.ResponseCommands.AddRange(reverseCommands),
-                    ResponsePhrases = context.ResponsePhrases.AddRange(reversePhrases),
-                    State = context.State with
-                    {
-                        LastCommand = context.Speech,
-                    }
-                };
-            }
+                    ResponseToCorrect = null
+                }
+            };
         }
 
         return context;
+    }
+
+    private static RespondContext SpeakDescriptionOfCommands(RespondContext context)
+    {
+        ImmutableList<string> phrases = context.ResponsePhrases;
+        Command? lastCommand = null;
+        int lastCommandCount = 0;
+
+        foreach (Command command in context.ResponseCommands)
+        {
+            if (lastCommand == command)
+            {
+                lastCommandCount++;
+            }
+            else
+            {
+                phrases = AddDescriptionOfCommand(phrases, lastCommand, lastCommandCount);
+
+                lastCommand = command;
+                lastCommandCount = 1;
+            }
+        }
+
+        phrases = AddDescriptionOfCommand(phrases, lastCommand, lastCommandCount);
+
+        return context.ResponsePhrases == phrases
+            ? context
+            : context with { ResponsePhrases = phrases };
+
+        static ImmutableList<string> AddDescriptionOfCommand(ImmutableList<string> phrases, Command? command, int repeat)
+            => command is null
+            ? phrases
+            : phrases.Add(Phrases.RepeatAction(command.SpeakPhrase, repeat));
     }
 
     private static RespondContext EnterListeningState(RespondContext context)
@@ -208,8 +252,8 @@ internal static class ConversationStateExtensions
             State = context.State with
             {
                 WantsPhrases = PhraseKinds.Commands,
-                // TODO: LastResponseWithCommands = null wherever LastCommand = null
-                LastCommand = default,
+                SpeechToConfirm = default,
+                ResponseToCorrect = default,
             }
         };
 
@@ -220,7 +264,8 @@ internal static class ConversationStateExtensions
             State = context.State with
             {
                 WantsPhrases = PhraseKinds.WakeWord,
-                LastCommand = default,
+                SpeechToConfirm = default,
+                ResponseToCorrect = default,
             }
         };
 
@@ -269,7 +314,7 @@ internal static class ConversationStateExtensions
             State = context.State with
             {
                 WantsPhrases = PhraseKinds.Commands,
-                LastSpeech = default
+                SpeechToConfirm = default
             }
         };
 
@@ -291,12 +336,10 @@ internal static class ConversationStateExtensions
 
         return context with
         {
-            ResponsePhrases = context.ResponsePhrases.Add(Phrases.RepeatAction(command.SpeakPhrase, repeat)),
             ResponseCommands = context.ResponseCommands.AddRange(Enumerable.Repeat(command, repeat)),
             State = context.State with
             {
-                WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
-                LastCommand = context.Speech
+                SpeechToConfirm = default
             }
         };
     }
