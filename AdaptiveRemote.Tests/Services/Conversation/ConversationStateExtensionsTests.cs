@@ -89,15 +89,14 @@ public class ConversationStateExtensionsTests
             ["system"] = "STARTLISTENING"
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.WakeWord, LastSpeech: lastCommand);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.WakeWord, SpeechToConfirm: lastCommand, ResponseToCorrect: new(lastCommand, [], []));
 
         ConversationState expected = sut with
         {
             WantsPhrases = PhraseKinds.Commands,
-            LastSpeech = input,
-            LastCommand = null,
-            CurrentResponse = new([Phrases.Conversation_ImListening], []),
-            LastResponseWithCommands = null,
+            SpeechToConfirm = null,
+            ResponseToCorrect = null,
+            CurrentResponse = new(input, [Phrases.Conversation_ImListening], []),
         };
 
         // Act
@@ -121,15 +120,14 @@ public class ConversationStateExtensionsTests
             ["system"] = "STOPLISTENING"
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands, LastCommand: lastCommand);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
 
         ConversationState expected = sut with
         {
             WantsPhrases = PhraseKinds.WakeWord,
-            LastSpeech = input,
-            LastCommand = default,
-            CurrentResponse = new([Phrases.Conversation_StoppedListening], []),
-            LastResponseWithCommands = null,
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_StoppedListening], []),
+            ResponseToCorrect = null,
         };
 
         // Act
@@ -153,13 +151,13 @@ public class ConversationStateExtensionsTests
             ["system"] = "STOPLISTENING"
         }, confidence: TestConfidenceThreshold - 1);
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands, LastCommand: lastCommand);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
 
         ConversationState expected = sut with
         {
             WantsPhrases = PhraseKinds.Commands | PhraseKinds.Confirmation,
-            LastSpeech = input,
-            CurrentResponse = new([Phrases.Conversation_DidYouSay(input.Text)], []),
+            SpeechToConfirm = input,
+            CurrentResponse = new(input, [Phrases.Conversation_DidYouSay(input.Text)], []),
         };
 
         // Act
@@ -184,15 +182,14 @@ public class ConversationStateExtensionsTests
             ["thankyou"] = "true"
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands, LastSpeech: lastCommand);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands, SpeechToConfirm: lastCommand, ResponseToCorrect: new(lastCommand, [], []));
 
         ConversationState expected = sut with
         {
             WantsPhrases = PhraseKinds.WakeWord,
-            LastSpeech = input,
-            LastCommand = null,
-            CurrentResponse = new([Phrases.Conversation_YoureWelcome], []),
-            LastResponseWithCommands = null,
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_YoureWelcome], []),
+            ResponseToCorrect = null,
         };
 
         // Act
@@ -215,15 +212,14 @@ public class ConversationStateExtensionsTests
             ["command"] = expectedCommand.Name
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands, SpeechToConfirm: input);
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            LastCommand = input,
+            SpeechToConfirm = null,
             WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
-            CurrentResponse = new([expectedCommand.SpeakPhrase], [expectedCommand]),
-            LastResponseWithCommands = new([expectedCommand.SpeakPhrase], [expectedCommand]),
+            CurrentResponse = new(input, [expectedCommand.SpeakPhrase], [expectedCommand]),
+            ResponseToCorrect = new(input, [expectedCommand.SpeakPhrase], [expectedCommand]),
         };
 
         // Act
@@ -250,14 +246,13 @@ public class ConversationStateExtensionsTests
 
         ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands);
 
-        ConversationResponse expectedResponse = new([Phrases.RepeatAction(expectedCommand.SpeakPhrase, 3)], [expectedCommand, expectedCommand, expectedCommand]);
+        ConversationResponse expectedResponse = new(input, [Phrases.RepeatAction(expectedCommand.SpeakPhrase, 3)], [expectedCommand, expectedCommand, expectedCommand]);
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            LastCommand = input,
+            SpeechToConfirm = null,
             WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
             CurrentResponse = expectedResponse,
-            LastResponseWithCommands = expectedResponse,
+            ResponseToCorrect = expectedResponse,
         };
 
         // Act
@@ -286,11 +281,10 @@ public class ConversationStateExtensionsTests
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            LastCommand = input,
+            SpeechToConfirm = null,
             WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction,
-            CurrentResponse = new([expectedCommand.SpeakPhrase], [expectedCommand]),
-            LastResponseWithCommands = new([expectedCommand.SpeakPhrase], [expectedCommand])
+            CurrentResponse = new(input, [expectedCommand.SpeakPhrase], [expectedCommand]),
+            ResponseToCorrect = new(input, [expectedCommand.SpeakPhrase], [expectedCommand])
         };
 
         // Act
@@ -317,15 +311,14 @@ public class ConversationStateExtensionsTests
             ["command"] = expectedCommand.Name
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastSpeech: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, SpeechToConfirm: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
             WantsPhrases = PhraseKinds.Commands,
-            LastSpeech = input,
-            LastCommand = null,
-            CurrentResponse = new([Phrases.Conversation_CommandDisabled(expectedCommand.Name)], []),
-            LastResponseWithCommands = null,
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_CommandDisabled(expectedCommand.Name)], []),
+            ResponseToCorrect = null,
         };
 
         // Act
@@ -351,15 +344,14 @@ public class ConversationStateExtensionsTests
             ["command"] = expectedCommand.Name
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastSpeech: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, SpeechToConfirm: lastCommand, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
             WantsPhrases = PhraseKinds.Commands,
-            LastSpeech = input,
-            LastCommand = null,
-            CurrentResponse = new([Phrases.Conversation_CommandDisabled(expectedCommand.Name)], []),
-            LastResponseWithCommands = null,
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_CommandDisabled(expectedCommand.Name)], []),
+            ResponseToCorrect = null,
         };
 
         // Act
@@ -386,8 +378,8 @@ public class ConversationStateExtensionsTests
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([], [])
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [], [])
         };
 
         // Act
@@ -412,13 +404,15 @@ public class ConversationStateExtensionsTests
         });
 
         Command nonReversableCommand = MockCommands.Values.First(x => x.Reverse is null);
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
-            LastResponseWithCommands: new([], [nonReversableCommand]));
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction,
+            ResponseToCorrect: new(previous, [], [nonReversableCommand]));
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([Phrases.Conversation_ImSorry], [])
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_ImSorry], []),
+            ResponseToCorrect = null,
+            WantsPhrases = PhraseKinds.Commands,
         };
 
         // Act
@@ -445,8 +439,8 @@ public class ConversationStateExtensionsTests
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([], [])
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [], [])
         };
 
         // Act
@@ -471,13 +465,15 @@ public class ConversationStateExtensionsTests
         });
 
         Command commandWithInvalidReverse = MockCommands["CommandWithInvalidReverse"];
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
-            LastResponseWithCommands: new([], [commandWithInvalidReverse]));
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction,
+            ResponseToCorrect: new(previous, [], [commandWithInvalidReverse]));
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([Phrases.Conversation_ImSorry], [])
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_ImSorry], []),
+            ResponseToCorrect = null,
+            WantsPhrases = PhraseKinds.Commands
         };
 
         // Act
@@ -510,18 +506,18 @@ public class ConversationStateExtensionsTests
         Command commandToReverse = MockCommands.Values.First(x => x.Reverse is not null);
         Command reverseCommand = MockCommands[commandToReverse.Reverse!];
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
-            LastResponseWithCommands: new([], [commandToReverse, commandToReverse, commandToReverse]));
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction,
+            ResponseToCorrect: new(previous, [], [commandToReverse, commandToReverse, commandToReverse]));
 
         ConversationResponse expectedResponse = new(
+            input,
             [Phrases.Conversation_ImSorry, Phrases.RepeatAction(reverseCommand.SpeakPhrase, 3)],
             [reverseCommand, reverseCommand, reverseCommand]);
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            LastCommand = input,
+            SpeechToConfirm = null,
             CurrentResponse = expectedResponse,
-            LastResponseWithCommands = expectedResponse,
+            ResponseToCorrect = expectedResponse,
         };
 
         // Act
@@ -553,18 +549,18 @@ public class ConversationStateExtensionsTests
         Command commandToReverse = MockCommands.Values.First(x => x.Reverse is not null);
         Command reverseCommand = MockCommands[commandToReverse.Reverse!];
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous,
-            LastResponseWithCommands: new([], [commandToReverse, commandToReverse, reverseCommand]));
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction,
+            ResponseToCorrect: new(previous, [], [commandToReverse, commandToReverse, reverseCommand]));
 
         ConversationResponse expectedResponse = new(
+            input,
             [Phrases.Conversation_ImSorry, commandToReverse.SpeakPhrase, Phrases.RepeatAction(reverseCommand.SpeakPhrase, 2)],
             [commandToReverse, reverseCommand, reverseCommand]);
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            LastCommand = input,
+            SpeechToConfirm = null,
             CurrentResponse = expectedResponse,
-            LastResponseWithCommands = expectedResponse,
+            ResponseToCorrect = expectedResponse,
         };
 
         // Act
@@ -593,12 +589,12 @@ public class ConversationStateExtensionsTests
             ["correction"] = "true",
         }, confidence: TestConfidenceThreshold - 1);
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction, LastCommand: previous);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction);
 
-        ConversationResponse expectedResponse = new([Phrases.Conversation_DidYouSay(input.Text)], []);
+        ConversationResponse expectedResponse = new(input, [Phrases.Conversation_DidYouSay(input.Text)], []);
         ConversationState expected = sut with
         {
-            LastSpeech = input,
+            SpeechToConfirm = input,
             CurrentResponse = expectedResponse,
             WantsPhrases = PhraseKinds.Commands | PhraseKinds.Confirmation
         };
@@ -626,8 +622,8 @@ public class ConversationStateExtensionsTests
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([Phrases.Conversation_DidYouSay(input.Text)], []),
+            SpeechToConfirm = input,
+            CurrentResponse = new(input, [Phrases.Conversation_DidYouSay(input.Text)], []),
             WantsPhrases = PhraseKinds.Commands | PhraseKinds.Confirmation
         };
 
@@ -655,12 +651,13 @@ public class ConversationStateExtensionsTests
             ["confirmation"] = "YES"
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastSpeech: command, LastCommand: command, CurrentResponse: new([MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]]), WantsPhrases: PhraseKinds.Commands);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, SpeechToConfirm: command, CurrentResponse: new(input, [MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]]), WantsPhrases: PhraseKinds.Commands);
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([], [])
+            SpeechToConfirm = command,
+            CurrentResponse = new(input, [], []),
+            WantsPhrases = PhraseKinds.Commands | PhraseKinds.Confirmation,
         };
 
         // Act
@@ -688,14 +685,13 @@ public class ConversationStateExtensionsTests
             ["confirmation"] = "YES"
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastSpeech: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, SpeechToConfirm: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            LastCommand = command,
-            CurrentResponse = new([MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]]),
-            LastResponseWithCommands = new([MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]]),
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]]),
+            ResponseToCorrect = new(input, [MockCommands["Play"].SpeakPhrase], [MockCommands["Play"]]),
             WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction
         };
 
@@ -724,12 +720,12 @@ public class ConversationStateExtensionsTests
             ["confirmation"] = "NO"
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastSpeech: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, SpeechToConfirm: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([Phrases.Conversation_ImSorry], []),
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_ImSorry], []),
             WantsPhrases = PhraseKinds.Commands
         };
 
@@ -766,18 +762,16 @@ public class ConversationStateExtensionsTests
         });
 
         ConversationState sut = new(MockCommands, TestConfidenceThreshold,
-            LastSpeech: thatsWrong,
-            LastCommand: command,
+            SpeechToConfirm: thatsWrong,
             WantsPhrases: PhraseKinds.Commands | PhraseKinds.Correction | PhraseKinds.Confirmation,
-            LastResponseWithCommands: new([reversableCommand.SpeakPhrase], [reversableCommand]));
+            ResponseToCorrect: new(command, [reversableCommand.SpeakPhrase], [reversableCommand]));
 
-        ConversationResponse expectedResponse = new([Phrases.Conversation_ImSorry, reverseCommand.SpeakPhrase], [reverseCommand]);
+        ConversationResponse expectedResponse = new(input, [Phrases.Conversation_ImSorry, reverseCommand.SpeakPhrase], [reverseCommand]);
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            LastCommand = thatsWrong,
+            SpeechToConfirm = null,
             CurrentResponse = expectedResponse,
-            LastResponseWithCommands = expectedResponse,
+            ResponseToCorrect = expectedResponse,
             WantsPhrases = PhraseKinds.Commands | PhraseKinds.Correction
         };
 
@@ -806,12 +800,12 @@ public class ConversationStateExtensionsTests
             ["confirmation"] = "NO"
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastSpeech: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, SpeechToConfirm: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([Phrases.Conversation_ImSorry], []),
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_ImSorry], []),
             WantsPhrases = PhraseKinds.Commands
         };
 
@@ -841,15 +835,14 @@ public class ConversationStateExtensionsTests
         });
 
         ConversationState sut = new(MockCommands, TestConfidenceThreshold,
-            LastSpeech: thatsWrong,
+            SpeechToConfirm: thatsWrong,
             WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            LastCommand = default,
-            CurrentResponse = new([Phrases.Conversation_StoppedListening], []),
-            LastResponseWithCommands = default,
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_StoppedListening], []),
+            ResponseToCorrect = default,
             WantsPhrases = PhraseKinds.WakeWord
         };
 
@@ -877,12 +870,12 @@ public class ConversationStateExtensionsTests
             ["confirmation"] = "NO"
         });
 
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, LastSpeech: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, SpeechToConfirm: command, WantsPhrases: PhraseKinds.Commands | PhraseKinds.Confirmation);
 
         ConversationState expected = sut with
         {
-            LastSpeech = input,
-            CurrentResponse = new([Phrases.Conversation_ImSorry], []),
+            SpeechToConfirm = null,
+            CurrentResponse = new(input, [Phrases.Conversation_ImSorry], []),
             WantsPhrases = PhraseKinds.Commands
         };
 
@@ -904,13 +897,13 @@ public class ConversationStateExtensionsTests
     public void ConversationStateExtensions_ToggleListening_WhenWaitingForWakeWord_EntersListening()
     {
         // Arrange
-        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.WakeWord, LastSpeech: CreateMockSpeech("What?!?"));
+        ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: PhraseKinds.WakeWord, SpeechToConfirm: CreateMockSpeech("What?!?"));
 
         ConversationState expected = sut with
         {
             WantsPhrases = PhraseKinds.Commands,
-            CurrentResponse = new([], []),
-            LastSpeech = null
+            CurrentResponse = null,
+            SpeechToConfirm = null
         };
 
         // Act
@@ -934,13 +927,13 @@ public class ConversationStateExtensionsTests
             }
 
             // Arrange
-            ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: (PhraseKinds)i, LastSpeech: CreateMockSpeech("What?!?"));
+            ConversationState sut = new(MockCommands, TestConfidenceThreshold, WantsPhrases: (PhraseKinds)i, SpeechToConfirm: CreateMockSpeech("What?!?"));
 
             ConversationState expected = sut with
             {
                 WantsPhrases = PhraseKinds.WakeWord,
-                LastSpeech = null,
-                CurrentResponse = new([], [])
+                SpeechToConfirm = null,
+                CurrentResponse = null,
             };
 
             // Act
