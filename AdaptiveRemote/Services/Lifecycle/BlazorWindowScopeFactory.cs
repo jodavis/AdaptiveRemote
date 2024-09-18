@@ -1,24 +1,27 @@
-﻿namespace AdaptiveRemote.Services.Lifecycle;
+﻿using System.Windows;
+using Microsoft.AspNetCore.Components.WebView.Wpf;
+
+namespace AdaptiveRemote.Services.Lifecycle;
 
 internal class BlazorWindowScopeFactory : IApplicationScopeFactory, IApplicationScope
 {
-    private readonly MainWindow _mainWindow;
+    private readonly BlazorWebView _browser;
 
     public BlazorWindowScopeFactory(MainWindow mainWindow, IServiceProvider serviceProvider)
     {
-        _mainWindow = mainWindow;
-        _mainWindow.Browser.Services = serviceProvider;
+        _browser = mainWindow.Browser;
+        _browser.Services = serviceProvider;
     }
 
     Task<IApplicationScope> IApplicationScopeFactory.CreateNewScopeAsync(CancellationToken cancellationToken)
     {
-        if (!_mainWindow.IsVisible)
+        if (!_browser.IsVisible)
         {
-            _mainWindow.Show();
+            _browser.Visibility = Visibility.Visible;
         }
         else
         {
-            _mainWindow.Browser.WebView.Reload();
+            _browser.WebView.Reload();
         }
 
         return Task.FromResult<IApplicationScope>(this);
@@ -29,7 +32,7 @@ internal class BlazorWindowScopeFactory : IApplicationScopeFactory, IApplication
         TaskCompletionSource tcs = new();
         while (true)
         {
-            bool success = await _mainWindow.Browser.TryDispatchAsync(async scopedServices =>
+            bool success = await _browser.TryDispatchAsync(async scopedServices =>
             {
                 try
                 {

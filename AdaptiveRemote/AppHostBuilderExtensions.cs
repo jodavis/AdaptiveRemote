@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.Configuration;
+using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -7,6 +8,8 @@ namespace AdaptiveRemote;
 
 public static class AppHostBuilderExtensions
 {
+    private const string KeyVaultName = "adaptiveremote";
+
     public static IHostBuilder ConfigureApp(this IHostBuilder hostBuilder)
         => hostBuilder
             .AddBlazorUI()
@@ -25,12 +28,18 @@ public static class AppHostBuilderExtensions
                 {
                     ["telemetry:Publish"] = "True"
                 });
+                config.AddAzureKeyVault(new Uri($"https://{KeyVaultName}.vault.azure.net/"), new DefaultAzureCredential());
                 config.AddUserSecrets<App>();
                 config.AddCommandLine(args);
             });
 
     private static IHostBuilder AddBlazorUI(this IHostBuilder hostBuilder)
-        => hostBuilder.ConfigureServices(services => services
-            .AddSingleton<MainWindow>()
-            .AddWpfBlazorWebView());
+    {
+        MainWindow window = new();
+        window.Show();
+
+        return hostBuilder.ConfigureServices(services => services
+                .AddSingleton(window)
+                .AddWpfBlazorWebView());
+    }
 }
