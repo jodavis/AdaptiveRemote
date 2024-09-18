@@ -7,12 +7,12 @@
     },
     "FakeConversation": {
       "commandName": "Project",
-      "commandLineArgs": "--conversation:Fake=true --telemetry:Publish=false --tivo:Fake=True --broadlink:Fake=True",
+      "commandLineArgs": "--conversation:Fake=true --telemetry:Publish=False --tivo:Fake=True --broadlink:Fake=True",
       "workingDirectory": "."
     },
     "FakeConversation with TelemtryLogging": {
       "commandName": "Project",
-      "commandLineArgs": "--conversation:UseFakes=true --telemetry:Publish=false --telemetry:LogToConsole=true",
+      "commandLineArgs": "--conversation:Fake=true --telemetry:Publish=True --telemetry:LogToConsole=true --tivo:Fake=True --broadlink:Fake=True",
       "workingDirectory": "."
     },
     "NormalRun": {

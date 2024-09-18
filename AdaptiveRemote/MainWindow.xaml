@@ -13,7 +13,7 @@
             <RowDefinition Height="1*" />
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
-        <blazor:BlazorWebView Name="Browser" HostPage="wwwroot\index.html" Services="{DynamicResource services}" Grid.RowSpan="2">
+        <blazor:BlazorWebView Name="Browser" HostPage="wwwroot\index.html" Visibility="Hidden" Services="{DynamicResource services}" Grid.RowSpan="2">
             <blazor:BlazorWebView.RootComponents>
                 <blazor:RootComponent Selector="#app" ComponentType="{x:Type components:Remote}" />
             </blazor:BlazorWebView.RootComponents>
