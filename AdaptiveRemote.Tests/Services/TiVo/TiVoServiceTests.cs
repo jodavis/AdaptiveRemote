@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using AdaptiveRemote.Models;
 using AdaptiveRemote.TestUtilities;
+using AdaptiveRemote.Utilities;
 using Moq;
 
 namespace AdaptiveRemote.Services.TiVo;
