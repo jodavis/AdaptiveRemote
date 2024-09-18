@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace AdaptiveRemote.Services.Broadlink;
+﻿namespace AdaptiveRemote.Services.Broadlink;
 
 /// <summary>
 /// Wrap UDP behavior, including retries and error handling

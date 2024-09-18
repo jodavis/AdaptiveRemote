@@ -1,6 +1,4 @@
-﻿using AdaptiveRemote.TestUtilities;
-
-namespace AdaptiveRemote.Services;
+﻿namespace AdaptiveRemote.Services;
 
 [TestClass]
 public class FileSystemExtensionsTests

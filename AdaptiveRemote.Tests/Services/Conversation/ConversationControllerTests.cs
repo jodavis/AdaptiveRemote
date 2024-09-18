@@ -1,8 +1,6 @@
 using System.Runtime.CompilerServices;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.TestUtilities;
-using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Options;
 using Moq;
 

@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.Models;
+using AdaptiveRemote.Utilities;
 using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.Extensions.Configuration;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Logs;
 
-namespace AdaptiveRemote.Services.Configuration;
+namespace AdaptiveRemote.Configuration;
 
 internal static class TelemetryHostBuilderExtensions
 {

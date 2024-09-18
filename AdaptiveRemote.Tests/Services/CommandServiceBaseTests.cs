@@ -1,6 +1,5 @@
 ﻿using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 using Moq;
 

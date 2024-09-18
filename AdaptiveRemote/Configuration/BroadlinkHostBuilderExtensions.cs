@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace AdaptiveRemote.Services.Configuration;
+namespace AdaptiveRemote.Configuration;
 
 internal static class BroadlinkHostBuilderExtensions
 {

@@ -1,18 +1,6 @@
-﻿using System;
-using System.Configuration;
-using System.Data;
-using System.Net.NetworkInformation;
-using System.Runtime.CompilerServices;
-using System.Transactions;
+﻿using System.Configuration;
 using System.Windows;
-using System.Windows.Automation.Peers;
-using System.Windows.Input;
-using System.Windows.Shell;
-using AdaptiveRemote.Services.Configuration;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Windows.Themes;
 
 namespace AdaptiveRemote;
 /// <summary>

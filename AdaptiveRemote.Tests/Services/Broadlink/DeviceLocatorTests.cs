@@ -1,6 +1,4 @@
 ﻿using System.Net;
-using AdaptiveRemote.Models;
-using AdaptiveRemote.TestUtilities;
 using Moq;
 
 namespace AdaptiveRemote.Services.Broadlink;

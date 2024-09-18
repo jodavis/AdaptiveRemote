@@ -2,7 +2,7 @@
 
 namespace AdaptiveRemote.Services;
 
-internal static class FileSystemExtensions
+internal static class IFileSystemExtensions
 {
     public static void CreateDirectory(this IFileSystem fileSystem, string path, bool recursive)
     {

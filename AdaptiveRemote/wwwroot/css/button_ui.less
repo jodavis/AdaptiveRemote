@@ -1,0 +1,33 @@
+@import "theme.less";
+
+.btn-behavior(@base-color) {
+    background-color: @base-color;
+    border-color: darken(@base-color, 20%);
+
+    &:hover {
+        background-color: lighten(@base-color, 5%)
+    }
+
+    &:active {
+        background-color: lighten(@base-color, 15%)
+    }
+
+    &.btn-active {
+        background-color: lighten(@base-color, 15%)
+    }
+
+    &.btn-disabled {
+        background-color: @disabled-color;
+        color: darken(@disabled-color, 30%);
+        border-color: darken(@disabled-color, 20%);
+    }
+}
+
+.btn-primary {
+    color: @btn-text-color;
+    border-radius: @button-radius;
+    font-size: 36pt;
+    font-weight: bold;
+    cursor: pointer;
+    .btn-behavior(@btn-color);
+}
