@@ -1,5 +1,4 @@
-﻿
-namespace AdaptiveRemote.Services;
+﻿namespace AdaptiveRemote.Services;
 
 internal static class PersistSettingsExtensions
 {
