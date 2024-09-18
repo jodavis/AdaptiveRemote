@@ -1,6 +1,5 @@
 ﻿using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.Services.Configuration;
 using AdaptiveRemote.TestUtilities;
 using Moq;
 
@@ -13,7 +12,7 @@ public class PersistSettingsTests
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
     private readonly MockFileSystem MockFileSystem = new();
-    private readonly MockOptions<HostSettings> MockOptions = new(new()
+    private readonly MockOptions<ProgrammaticSettings> MockOptions = new(new()
     {
         ProgrammaticSettingsPath = InputSettingsPath
     });

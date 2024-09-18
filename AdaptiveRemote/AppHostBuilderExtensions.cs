@@ -1,4 +1,4 @@
-﻿using AdaptiveRemote.Services.Configuration;
+﻿using AdaptiveRemote.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
