@@ -1,5 +1,4 @@
 ﻿using AdaptiveRemote.Logging;
-using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

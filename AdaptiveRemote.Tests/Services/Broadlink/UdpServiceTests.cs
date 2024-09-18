@@ -2,7 +2,6 @@
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Options;
 using Moq;
 

@@ -1,7 +1,7 @@
 ﻿
 namespace AdaptiveRemote.Services;
 
-internal static class PersistSettingsExtensions
+internal static class IPersistSettingsExtensions
 {
     public static void Set(this IPersistSettings persistSettings, string[] nameComponents, object? typedValue)
         => persistSettings.Set(Name(nameComponents), Value(typedValue));

@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.NetworkInformation;
-using AdaptiveRemote.Models;
 
 namespace AdaptiveRemote.Services.Broadlink;
 

@@ -1,5 +1,4 @@
 ﻿using AdaptiveRemote.Logging;
-using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services;

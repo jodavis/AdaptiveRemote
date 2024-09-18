@@ -1,7 +1,4 @@
-﻿
-using System.Windows.Documents;
-
-namespace AdaptiveRemote.TestUtilities;
+﻿namespace AdaptiveRemote.TestUtilities;
 
 internal static class MemoryAssert
 {

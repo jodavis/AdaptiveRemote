@@ -1,15 +1,16 @@
-﻿using AdaptiveRemote.Services.Commands;
+﻿using AdaptiveRemote.Services;
+using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.ProgrammaticSettings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace AdaptiveRemote.Services.Configuration;
+namespace AdaptiveRemote.Configuration;
 
 internal static class HostBuilderExtensions
 {
     internal static IHostBuilder AddRemoteServices(this IHostBuilder builder)
-        => builder.ConfigureServices((context, services) => AddRemoteServices(services));
+        => builder.ConfigureServices((context, services) => services.AddRemoteServices());
 
     internal static IServiceCollection AddRemoteServices(this IServiceCollection services)
         => services

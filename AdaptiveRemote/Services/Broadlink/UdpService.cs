@@ -3,7 +3,6 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading.Channels;
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
