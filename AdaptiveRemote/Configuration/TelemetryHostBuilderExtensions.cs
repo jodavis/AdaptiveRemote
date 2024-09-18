@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace AdaptiveRemote.Configuration;
 
@@ -14,16 +16,34 @@ internal static class TelemetryHostBuilderExtensions
 {
     public static IHostBuilder ConfigureTelemetry(this IHostBuilder builder)
         => builder
-            .ConfigureServices(services => services.ConfigureTelemetry())
+            .ConfigureServices((context, services) => services.ConfigureTelemetry(context.GetTelemetrySettings()))
             .ConfigureLogging((context, logging) => logging.ConfigureTelemetry(context.GetTelemetrySettings()));
 
-    private static IServiceCollection ConfigureTelemetry(this IServiceCollection services)
-        => services.AddOpenTelemetry().Services;
+    private static IServiceCollection ConfigureTelemetry(this IServiceCollection services, TelemetrySettings settings)
+        => services
+            .AddOpenTelemetry()
+            .WithTracing(tracing =>
+            {
+                if (settings.Publish)
+                {
+                    tracing.AddAzureMonitorTraceExporter(config =>
+                    {
+                        config.ConnectionString = settings.ConnectionString
+                            ?? throw Errors.Telemetry_SettingRequiredToPublish(nameof(TelemetrySettings.ConnectionString));
+                        config.Credential = new DefaultAzureCredential();
+                    });
+                }
+            })
+            .Services;
 
     private static ILoggingBuilder ConfigureTelemetry(this ILoggingBuilder logging, TelemetrySettings settings)
         => logging.AddOpenTelemetry(tracing =>
         {
             tracing.IncludeFormattedMessage = true;
+
+            tracing.SetResourceBuilder(ResourceBuilder.CreateDefault()
+                .AddService(Environment.UserName + "'s AdaptiveRemote")
+                .AddEnvironmentVariableDetector());
 
             if (settings.LogToConsole)
             {
@@ -36,13 +56,13 @@ internal static class TelemetryHostBuilderExtensions
                 {
                     configure.ConnectionString = settings.ConnectionString
                         ?? throw Errors.Telemetry_SettingRequiredToPublish(nameof(TelemetrySettings.ConnectionString));
-                    configure.Credential = new VisualStudioCredential();
+                    configure.Credential = new DefaultAzureCredential();
                 });
             }
         });
 
     private static TelemetrySettings GetTelemetrySettings(this HostBuilderContext context)
-        => context.Configuration.GetSection(SettingsKeys.Conversation)?.Get<TelemetrySettings>() ?? new();
+        => context.Configuration.GetSection(SettingsKeys.Telemetry)?.Get<TelemetrySettings>() ?? new();
 
     private class TelemetrySettings
     {

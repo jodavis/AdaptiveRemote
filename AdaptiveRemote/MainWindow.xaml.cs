@@ -6,7 +6,7 @@ namespace AdaptiveRemote;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow(IServiceProvider serviceProvider)
+    public MainWindow()
     {
         InitializeComponent();
     }
