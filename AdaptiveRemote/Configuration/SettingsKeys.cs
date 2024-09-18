@@ -1,4 +1,4 @@
-﻿namespace AdaptiveRemote.Services.Configuration;
+﻿namespace AdaptiveRemote.Configuration;
 
 internal class SettingsKeys
 {

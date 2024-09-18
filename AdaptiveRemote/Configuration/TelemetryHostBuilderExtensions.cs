@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Logs;
 
-namespace AdaptiveRemote.Services.Configuration;
+namespace AdaptiveRemote.Configuration;
 
 internal static class TelemetryHostBuilderExtensions
 {

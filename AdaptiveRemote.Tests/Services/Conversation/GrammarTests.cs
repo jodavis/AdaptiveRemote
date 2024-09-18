@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Speech.Recognition;
 using System.Speech.Synthesis;
-using AdaptiveRemote.Services.Configuration;
+using AdaptiveRemote.Configuration;
 using AdaptiveRemote.TestUtilities;
 using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.DependencyInjection;

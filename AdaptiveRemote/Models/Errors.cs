@@ -1,6 +1,6 @@
 ﻿using System.Configuration;
+using AdaptiveRemote.Configuration;
 using AdaptiveRemote.Services.Broadlink;
-using AdaptiveRemote.Services.Configuration;
 
 namespace AdaptiveRemote.Models;
 

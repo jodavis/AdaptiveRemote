@@ -3,15 +3,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace AdaptiveRemote.Services.Configuration;
+namespace AdaptiveRemote.Configuration;
 
 internal static class DebugLoggingHostBuilderExtensions
 {
     internal static IHostBuilder AddDebugLogging(this IHostBuilder builder)
-        => builder.ConfigureServices(services => AddDebugLogging(services));
+        => builder.ConfigureServices(services => services.AddDebugLogging());
 
     internal static IHostBuilder AddTraceLogging(this IHostBuilder builder)
-        => builder.ConfigureServices(services => AddTraceLogging(services));
+        => builder.ConfigureServices(services => services.AddTraceLogging());
 
     internal static IServiceCollection AddDebugLogging(this IServiceCollection services)
 #if DEBUG

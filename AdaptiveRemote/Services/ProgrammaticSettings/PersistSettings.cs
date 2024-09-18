@@ -3,7 +3,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.Services.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -31,7 +30,7 @@ internal class PersistSettings : IPersistSettings
     private bool _isSaving = false;
     private object _lockObject = new();
 
-    public PersistSettings(IFileSystem fileSystem, IOptions<HostSettings> settings, ILogger<PersistSettings> logger)
+    public PersistSettings(IFileSystem fileSystem, IOptions<ProgrammaticSettings> settings, ILogger<PersistSettings> logger)
     {
         _fileSystem = fileSystem;
         _filePath = settings.Value.ProgrammaticSettingsPath;
