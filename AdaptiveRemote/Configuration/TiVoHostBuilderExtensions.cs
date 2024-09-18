@@ -1,5 +1,4 @@
 ﻿using AdaptiveRemote.Services.TiVo;
-using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

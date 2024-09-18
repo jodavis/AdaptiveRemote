@@ -3,8 +3,6 @@ using System.Reflection;
 using System.Speech.Recognition;
 using System.Speech.Synthesis;
 using AdaptiveRemote.Configuration;
-using AdaptiveRemote.TestUtilities;
-using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
