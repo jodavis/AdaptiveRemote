@@ -1,6 +1,6 @@
 ﻿using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
 using AdaptiveRemote.TestUtilities;
+using AdaptiveRemote.Utilities;
 using Moq;
 
 namespace AdaptiveRemote.Services.ProgrammaticSettings;

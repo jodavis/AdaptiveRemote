@@ -1,8 +1,9 @@
 ﻿using System.Configuration;
 using AdaptiveRemote.Configuration;
+using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Broadlink;
 
-namespace AdaptiveRemote.Models;
+namespace AdaptiveRemote.Utilities;
 
 internal static class Errors
 {

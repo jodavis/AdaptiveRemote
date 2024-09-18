@@ -1,4 +1,4 @@
-﻿using AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Utilities;
 
 namespace AdaptiveRemote.Services.Broadlink;
 

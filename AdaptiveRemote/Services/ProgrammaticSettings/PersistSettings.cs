@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text.RegularExpressions;
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
+using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

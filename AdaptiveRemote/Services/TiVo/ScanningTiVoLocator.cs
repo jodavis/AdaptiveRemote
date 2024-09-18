@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using AdaptiveRemote.Models;
+using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.TiVo;
