@@ -36,8 +36,8 @@ public class ConversationControllerTests
         => $"Information[210]: {string.Format(LoggingMessages.ConversationController_Executing, command)}";
     private static string Expected_Executed(string command)
         => $"Information[211]: {string.Format(LoggingMessages.ConversationController_Executed, command)}";
-    private static string Expected_Retrying(int times, Exception latestError)
-        => $"Warning[206]: {string.Format(LoggingMessages.ConversationController_Retrying, times, latestError)}";
+    private static string Expected_Retrying(int times, Exception error)
+        => $"Warning[206]: {string.Format(LoggingMessages.ConversationController_Retrying, times, $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expected_RetryLimitReached(int times)
         => $"Warning[205]: {string.Format(LoggingMessages.ConversationController_RetryLimitReached, times)}";
     private static string Expected_Starting
@@ -846,6 +846,8 @@ public class ConversationControllerTests
 
         // Act
         Task initializeTask = sut.InitializeAsync(default);
+
+        MockLogger.WaitForMessage(Expected_SwitchedToWorkerThread, TimeSpan.FromSeconds(10)).Wait();
 
         // Assert
         MockLogger.VerifyMessages(
