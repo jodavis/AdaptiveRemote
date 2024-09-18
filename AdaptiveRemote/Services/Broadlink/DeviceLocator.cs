@@ -1,6 +1,4 @@
-﻿using AdaptiveRemote.Utilities;
-
-namespace AdaptiveRemote.Services.Broadlink;
+﻿namespace AdaptiveRemote.Services.Broadlink;
 
 internal class DeviceLocator : IDeviceLocator
 {

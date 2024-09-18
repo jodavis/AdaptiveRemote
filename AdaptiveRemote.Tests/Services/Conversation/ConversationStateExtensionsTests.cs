@@ -1,6 +1,5 @@
 ﻿using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.TestUtilities;
 using Moq;
 
 namespace AdaptiveRemote.Services.Conversation;

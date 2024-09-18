@@ -1,8 +1,5 @@
-﻿using System.Globalization;
-using System.Net;
+﻿using System.Net;
 using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using AdaptiveRemote.TestUtilities;
 
 namespace AdaptiveRemote.Services.Broadlink;
 
