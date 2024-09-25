@@ -8,11 +8,13 @@ namespace AdaptiveRemote.Services.Lifecycle;
 internal class ApplicationLifecycle : BackgroundService
 {
     private readonly IApplicationScopeFactory _scopeFactory;
+    private readonly ILifecycleViewController _controller;
     private readonly ILogger<ApplicationLifecycle> _logger;
 
-    public ApplicationLifecycle(IApplicationScopeFactory scopeFactory, ILogger<ApplicationLifecycle> logger)
+    public ApplicationLifecycle(IApplicationScopeFactory scopeFactory, ILifecycleViewController controller, ILogger<ApplicationLifecycle> logger)
     {
         _scopeFactory = scopeFactory;
+        _controller = controller;
         _logger = logger;
     }
 
@@ -29,14 +31,20 @@ internal class ApplicationLifecycle : BackgroundService
         await scope.TryInvokeAsync(CleanUpLifecycle, default);
     }
 
-    private Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
+    private async Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
     {
+        List<Task> tasks = new();
+
+        _controller.SetPhase(LifecyclePhase.SettingUp);
+
         foreach (IScopedLifecycle scopedService in provider.GetServices<IScopedLifecycle>())
         {
-            _ = InitializeServiceAsync(scopedService, cancellationToken);
+            tasks.Add(InitializeServiceAsync(scopedService, cancellationToken));
         }
 
-        return Task.CompletedTask;
+        await Task.WhenAll(tasks);
+
+        _controller.SetPhase(LifecyclePhase.Ready);
     }
 
     private async Task InitializeServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
@@ -57,6 +65,8 @@ internal class ApplicationLifecycle : BackgroundService
 
     private async Task CleanUpLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
     {
+        _controller.SetPhase(LifecyclePhase.CleaningUp);
+
         List<Task> cleanUpTasks = new();
 
         foreach (IScopedLifecycle scopedService in provider.GetServices<IScopedLifecycle>())

@@ -10,21 +10,24 @@ internal class BlazorWindowScopeFactory : IApplicationScopeFactory, IApplication
     public BlazorWindowScopeFactory(MainWindow mainWindow, IServiceProvider serviceProvider)
     {
         _browser = mainWindow.Browser;
-        _browser.Services = serviceProvider;
+        mainWindow.Dispatcher.Invoke(() => _browser.Services = serviceProvider);
     }
 
-    Task<IApplicationScope> IApplicationScopeFactory.CreateNewScopeAsync(CancellationToken cancellationToken)
+    async Task<IApplicationScope> IApplicationScopeFactory.CreateNewScopeAsync(CancellationToken cancellationToken)
     {
-        if (!_browser.IsVisible)
+        await _browser.Dispatcher.InvokeAsync(() =>
         {
-            _browser.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            _browser.WebView.Reload();
-        }
+            if (!_browser.IsVisible)
+            {
+                _browser.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                _browser.WebView.Reload();
+            }
+        });
 
-        return Task.FromResult<IApplicationScope>(this);
+        return this;
     }
 
     public async Task TryInvokeAsync(Func<IServiceProvider, CancellationToken, Task> workItem, CancellationToken cancellationToken)

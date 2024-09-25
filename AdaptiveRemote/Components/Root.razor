@@ -1,0 +1,21 @@
+@inject Models.LifecycleView ViewModel;
+
+@if (ViewModel.CurrentPhase == LifecyclePhase.Ready)
+{
+    <Remote />
+}
+else
+{
+    <LoadingScreen />
+}
+
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
+
+        base.OnInitialized();
+    }
+}

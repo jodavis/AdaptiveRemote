@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.Logging;
+using AdaptiveRemote.Services;
 using Moq;
 
 namespace AdaptiveRemote.Services.Lifecycle;
@@ -14,10 +15,11 @@ public class ApplicationLifecycleTests
 
     private readonly Mock<IApplicationScopeFactory> MockScopeFactory = new();
     private readonly Mock<IApplicationScope> MockScope = new();
+    private readonly Mock<ILifecycleViewController> MockLifecycleViewController = new();
     private readonly Mock<IServiceProvider> MockServiceProvider = new();
     private readonly MockLogger<ApplicationLifecycle> MockLogger = new();
 
-    private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeFactory.Object, MockLogger);
+    private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeFactory.Object, MockLifecycleViewController.Object, MockLogger);
 
     [TestInitialize]
     public void SetupMocks()

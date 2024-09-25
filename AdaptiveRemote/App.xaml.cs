@@ -1,5 +1,6 @@
 ﻿using System.Configuration;
 using System.Windows;
+using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote;
@@ -19,13 +20,9 @@ public partial class App : Application
     {
         try
         {
-            IHost host =
-            Host.CreateDefaultBuilder()
-                .ConfigureAppSettings(args)
-                .ConfigureApp()
-                .Build();
+            AcceleratedServices accelerator = new(args);
 
-            await host.RunAsync();
+            await accelerator.StartApplicationLoopAsync();
         }
         catch (ConfigurationErrorsException configErrors)
         {

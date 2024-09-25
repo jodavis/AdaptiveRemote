@@ -1,0 +1,14 @@
+@inject Models.LifecycleView ViewModel;
+
+<div id="loading"><div>Adaptive Remote</div></div>
+<div id="TaskName">@ViewModel.TaskName</div>
+
+@code
+{
+    protected override void OnInitialized()
+    {
+        ViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
+
+        base.OnInitialized();
+    }
+}
