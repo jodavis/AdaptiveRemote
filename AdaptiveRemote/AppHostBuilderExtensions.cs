@@ -35,11 +35,7 @@ public static class AppHostBuilderExtensions
 
     private static IHostBuilder AddBlazorUI(this IHostBuilder hostBuilder)
     {
-        MainWindow window = new();
-        window.Show();
-
         return hostBuilder.ConfigureServices(services => services
-                .AddSingleton(window)
                 .AddWpfBlazorWebView());
     }
 }

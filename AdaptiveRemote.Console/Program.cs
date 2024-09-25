@@ -1,19 +1,15 @@
-﻿using System.Configuration;
-using System.Windows;
-using Microsoft.Extensions.Hosting;
+﻿using System.Windows;
+using AdaptiveRemote.Services.Lifecycle;
 
 namespace AdaptiveRemote;
 
 internal class Program : Application
 {
-    private readonly IHost _host;
+    private readonly AcceleratedServices _accelerator;
 
     public Program(string[] args)
     {
-        _host = Host.CreateDefaultBuilder()
-            .ConfigureAppSettings(args)
-            .ConfigureApp()
-            .Build();
+        _accelerator = new(args);
     }
 
     [STAThread]
@@ -33,15 +29,11 @@ internal class Program : Application
     {
         try
         {
-            await _host.RunAsync();
-        }
-        catch (ConfigurationErrorsException configErrors)
-        {
-            Console.WriteLine(configErrors.Message);
+            await _accelerator.StartApplicationLoopAsync();
         }
         finally
         {
-            Shutdown();
+            Dispatcher.Invoke(Shutdown);
         }
     }
 }

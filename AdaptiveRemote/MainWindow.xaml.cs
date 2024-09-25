@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 
 namespace AdaptiveRemote;
 /// <summary>
@@ -6,8 +7,52 @@ namespace AdaptiveRemote;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public MainWindow()
+    public MainWindow(Models.LifecycleView viewModel)
     {
+        DataContext = viewModel;
+
         InitializeComponent();
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+
+        if (DataContext is INotifyPropertyChanged propertyChanged)
+        {
+            propertyChanged.PropertyChanged += OnPropertyChanged;
+        }
+    }
+
+    private void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Models.LifecycleView.FatalError))
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (DataContext is Models.LifecycleView viewModel &&
+                    viewModel.FatalError is not null)
+                {
+                    ButtonPanel.Visibility = Visibility.Visible;
+                }
+            });
+        }
+    }
+
+    private void Exit_Click(object sender, RoutedEventArgs e)
+    {
+        Application.Current.Shutdown();
+    }
+
+    private void ShowError_Click(object sender, RoutedEventArgs e)
+    {
+        if (ErrorDisplay.Visibility != Visibility.Visible)
+        {
+            ErrorDisplay.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            ErrorDisplay.Visibility = Visibility.Hidden;
+        }
     }
 }
