@@ -34,6 +34,7 @@ public partial class MainWindow : Window
                     viewModel.FatalError is not null)
                 {
                     ButtonPanel.Visibility = Visibility.Visible;
+                    Browser.Visibility = Visibility.Hidden;
                 }
             });
         }
