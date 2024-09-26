@@ -50,15 +50,18 @@ internal class ApplicationLifecycle : BackgroundService
     private async Task InitializeServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
     {
         _logger.LogInformation(Message.ApplicationLifecycle_Initializing, scopedService.Name);
+        using ILifecycleActivity activity = _controller.StartTask($"Starting {scopedService.Name}");
         try
         {
-            await scopedService.InitializeAsync(cancellationToken);
+
+            await scopedService.InitializeAsync(activity, cancellationToken);
             _logger.LogInformation(Message.ApplicationLifecycle_Initialized, scopedService.Name);
         }
         catch (OperationCanceledException)
         { }
         catch (Exception error)
         {
+            activity.SetFatalError(error);
             _logger.LogError(Message.ApplicationLifecycle_InitializingFailed, scopedService.Name, error);
         }
     }
@@ -80,13 +83,15 @@ internal class ApplicationLifecycle : BackgroundService
     private async Task CleanUpServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
     {
         _logger.LogInformation(Message.ApplicationLifecycle_CleaningUp, scopedService.Name);
+        using ILifecycleActivity activity = _controller.StartTask($"Cleaning up {scopedService.Name}");
         try
         {
-            await scopedService.CleanUpAsync(cancellationToken);
+            await scopedService.CleanUpAsync(activity, cancellationToken);
             _logger.LogInformation(Message.ApplicationLifecycle_CleanedUp, scopedService.Name);
         }
         catch (Exception error)
         {
+            activity.SetFatalError(error);
             _logger.LogError(Message.ApplicationLifecycle_CleaningUpFailed, scopedService.Name, error);
         }
     }

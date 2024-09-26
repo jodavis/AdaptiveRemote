@@ -6,6 +6,12 @@ namespace AdaptiveRemote.Services;
 [TestClass]
 public class ScopedBackgroundProcessTests
 {
+    private readonly Mock<ILifecycleActivity> MockInitializeActivity = new() { Name = nameof(MockInitializeActivity) };
+    private readonly Mock<ILifecycleActivity> MockCleanupActivity = new() { Name = nameof(MockCleanupActivity) };
+
+    private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
+    private ILifecycleActivity CleanupActivity => MockCleanupActivity.Object;
+
     private static TestBackgroundProcess CreateSut() => new();
 
     private static string Expect_Starting
@@ -34,7 +40,7 @@ public class ScopedBackgroundProcessTests
             );
 
         // Act
-        Task resultTask = sut.InitializeAsync(default);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         TaskAssert.IsComplete(resultTask, nameof(resultTask));
@@ -59,7 +65,7 @@ public class ScopedBackgroundProcessTests
         cancelled.Cancel();
 
         // Act
-        Task resultTask = sut.InitializeAsync(cancelled.Token);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, cancelled.Token);
 
         // Assert
         TaskAssert.IsCanceled(resultTask, nameof(resultTask));
@@ -83,7 +89,7 @@ public class ScopedBackgroundProcessTests
         sut.BeforeMoveToWorkerThreadAsyncCallback = cts.Cancel;
 
         // Act
-        Task resultTask = sut.InitializeAsync(cts.Token);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, cts.Token);
 
         // Assert
         TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
@@ -107,7 +113,7 @@ public class ScopedBackgroundProcessTests
         sut.AfterMoveToWorkerThreadAsyncCallback = cts.Cancel;
 
         // Act
-        Task resultTask = sut.InitializeAsync(cts.Token);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, cts.Token);
 
         // Assert
         TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
@@ -130,7 +136,7 @@ public class ScopedBackgroundProcessTests
         sut.ExecuteAsyncCallback = cts.Cancel;
 
         // Act
-        Task resultTask = sut.InitializeAsync(cts.Token);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, cts.Token);
 
         // Assert
         TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
@@ -151,7 +157,7 @@ public class ScopedBackgroundProcessTests
 
         CancellationTokenSource cts = new();
 
-        Task initializeTask = sut.InitializeAsync(cts.Token);
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, cts.Token);
 
         // Act
         cts.Cancel();
@@ -179,7 +185,7 @@ public class ScopedBackgroundProcessTests
         sut.ExecuteCompletionSource.SetException(expectedException);
 
         // Act
-        Task resultTask = sut.InitializeAsync(default);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
@@ -202,7 +208,7 @@ public class ScopedBackgroundProcessTests
                 Expect_Error(expectedException)
             );
 
-        Task initializeTask = sut.InitializeAsync(default);
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Act
         sut.ExecuteCompletionSource.SetException(expectedException);
@@ -228,7 +234,7 @@ public class ScopedBackgroundProcessTests
                 Expect_StoppedEarly
             );
 
-        Task initializeTask = sut.InitializeAsync(default);
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Act
         sut.ExecuteCompletionSource.SetException(expectedException);
@@ -252,7 +258,7 @@ public class ScopedBackgroundProcessTests
                 Expect_StoppedEarly
             );
 
-        Task initializeTask = sut.InitializeAsync(default);
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Act
         sut.ExecuteCompletionSource.SetResult();
@@ -278,7 +284,7 @@ public class ScopedBackgroundProcessTests
                 Expect_StoppedEarly
             );
 
-        Task initializeTask = sut.InitializeAsync(default);
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Act
         sut.ExecuteCompletionSource.SetException(expectedException);
@@ -303,10 +309,10 @@ public class ScopedBackgroundProcessTests
                 Expect_Stopped
             );
 
-        TaskAssert.IsComplete(sut.InitializeAsync(default), nameof(sut.InitializeAsync));
+        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
@@ -328,10 +334,10 @@ public class ScopedBackgroundProcessTests
             )
             .Expect_ExecuteAsync_DoesNotComplete();
 
-        TaskAssert.IsComplete(sut.InitializeAsync(default), nameof(sut.InitializeAsync));
+        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         TaskAssert.IsNotComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
@@ -357,9 +363,9 @@ public class ScopedBackgroundProcessTests
             )
             .Expect_ExecuteAsync_IgnoresCancellationToken();
 
-        TaskAssert.IsComplete(sut.InitializeAsync(default), nameof(sut.InitializeAsync));
+        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
 
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Act
         sut.ExecuteCompletionSource.SetException(expectedError);
@@ -381,7 +387,7 @@ public class ScopedBackgroundProcessTests
             .Expect_ExecuteAsync_IgnoresCancellationToken();
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
@@ -402,13 +408,13 @@ public class ScopedBackgroundProcessTests
                 Expect_StoppedEarly
             );
 
-        TaskAssert.IsComplete(sut.InitializeAsync(default), nameof(sut.InitializeAsync));
+        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
         sut.ExecuteCompletionSource.SetResult();
 
         TaskAssert.IsComplete(sut.ExecuteTask!, TimeSpan.FromSeconds(1), nameof(sut.ExecuteTask));
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
@@ -429,7 +435,7 @@ public class ScopedBackgroundProcessTests
                 Expect_StoppedEarly
             );
 
-        TaskAssert.IsComplete(sut.InitializeAsync(default), nameof(sut.InitializeAsync));
+        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
         CancellationTokenSource cts = new();
         cts.Cancel();
         sut.ExecuteCompletionSource.SetCanceled(cts.Token);
@@ -437,7 +443,7 @@ public class ScopedBackgroundProcessTests
         TaskAssert.IsCanceled(sut.ExecuteTask!, TimeSpan.FromSeconds(1), nameof(sut.ExecuteTask));
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
@@ -460,13 +466,13 @@ public class ScopedBackgroundProcessTests
                 Expect_Error(expectedException)
             );
 
-        TaskAssert.IsComplete(sut.InitializeAsync(default), nameof(sut.InitializeAsync));
+        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
         sut.ExecuteCompletionSource.SetException(expectedException);
 
         TaskAssert.IsFaulted(sut.ExecuteTask!, expectedException, TimeSpan.FromSeconds(1), nameof(sut.ExecuteTask));
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
@@ -518,9 +524,9 @@ public class ScopedBackgroundProcessTests
                 .Verifiable(Times.Once);
         }
 
-        public override Task InitializeAsync(CancellationToken cancellationToken)
+        public override Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
         {
-            _initializeTask = base.InitializeAsync(cancellationToken);
+            _initializeTask = base.InitializeAsync(activity, cancellationToken);
             _moveToWorkerThreadTcs.TrySetResult();
             return _initializeTask;
         }

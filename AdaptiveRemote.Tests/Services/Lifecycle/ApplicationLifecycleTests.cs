@@ -52,24 +52,28 @@ public class ApplicationLifecycleTests
             .Returns(nameof(MockService3));
 
         MockService1
-            .Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>()))
+            .Setup(x => x.InitializeAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
         MockService2
-            .Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>()))
+            .Setup(x => x.InitializeAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
         MockService3
-            .Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>()))
+            .Setup(x => x.InitializeAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
 
         MockService1
-            .Setup(x => x.CleanUpAsync(It.IsAny<CancellationToken>()))
+            .Setup(x => x.CleanUpAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
         MockService2
-            .Setup(x => x.CleanUpAsync(It.IsAny<CancellationToken>()))
+            .Setup(x => x.CleanUpAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
         MockService3
-            .Setup(x => x.CleanUpAsync(It.IsAny<CancellationToken>()))
+            .Setup(x => x.CleanUpAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .Verifiable(Times.Never);
+
+        MockLifecycleViewController
+            .Setup(x => x.StartTask(It.IsAny<string>()))
+            .Returns(new Mock<ILifecycleActivity>().Object);
     }
 
     [TestCleanup]
@@ -338,13 +342,13 @@ public class ApplicationLifecycleTests
 
     private static void Expect_InitializeAsyncOn(Mock<IScopedLifecycle> service, Task? result = default)
         => service
-            .Setup(x => x.InitializeAsync(It.IsAny<CancellationToken>()))
+            .Setup(x => x.InitializeAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(result)
             .Verifiable(Times.Once);
 
     private static void Expect_CleanupAsyncOn(Mock<IScopedLifecycle> service, Task? result = default)
         => service
-            .Setup(x => x.CleanUpAsync(It.IsAny<CancellationToken>()))
+            .Setup(x => x.CleanUpAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(result)
             .Verifiable(Times.Once);
 

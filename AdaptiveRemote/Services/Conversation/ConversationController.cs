@@ -33,13 +33,13 @@ internal class ConversationController : ScopedBackgroundProcess
         _viewModel.StatusMessage = Phrases.Conversation_WaitingForActivation;
     }
 
-    public override async Task CleanUpAsync(CancellationToken cancellationToken)
+    public override async Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
         try
         {
             _viewModel.StatusMessage = "Shutting down...";
 
-            await base.CleanUpAsync(cancellationToken);
+            await base.CleanUpAsync(activity, cancellationToken);
         }
         finally
         {
