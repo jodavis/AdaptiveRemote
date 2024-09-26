@@ -22,8 +22,10 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         _connectionFactory = connectionFactory;
     }
 
-    public async override Task InitializeAsync(CancellationToken cancellationToken)
+    public async override Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
+        activity.Description = "Connecting to Broadlink device";
+
         Logger.LogInformation(Message.BroadlinkCommandService_SearchingForDevice);
         ScanResponsePacket found = await _deviceLocator.FindDeviceAsync(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
@@ -35,7 +37,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         cancellationToken.ThrowIfCancellationRequested();
         Logger.LogInformation(Message.BroadlinkCommandService_Authenticated, found.HostEndPoint);
 
-        await base.InitializeAsync(cancellationToken);
+        await base.InitializeAsync(activity, cancellationToken);
 
         Logger.LogInformation(Message.BroadlinkCommandService_Ready);
     }

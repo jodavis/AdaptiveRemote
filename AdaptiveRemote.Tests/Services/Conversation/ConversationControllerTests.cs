@@ -22,9 +22,14 @@ public class ConversationControllerTests
     private readonly ConversationSettings ConversationSettings = new();
     private readonly Mock<CommandExecute> Command1Execute = new();
     private readonly Mock<CommandExecute> Command2Execute = new();
+    private readonly Mock<ILifecycleActivity> MockInitializeActivity = new() { Name = nameof(MockInitializeActivity) };
+    private readonly Mock<ILifecycleActivity> MockCleanupActivity = new() { Name = nameof(MockCleanupActivity) };
 
     private readonly TiVoCommand Command1 = new("Hey you!");
     private readonly TiVoCommand Command2 = new("Test Two");
+
+    private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
+    private ILifecycleActivity CleanUpActivity => MockCleanupActivity.Object;
 
     private readonly ConversationView ViewModel = new("MOCKGROUP");
 
@@ -265,7 +270,7 @@ public class ConversationControllerTests
         Expect_Recognition_SetFilter(PhraseKinds.WakeWord);
 
         // Act
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -291,7 +296,7 @@ public class ConversationControllerTests
 
         Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening, completeTask: IncompleteTask);
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
@@ -327,7 +332,7 @@ public class ConversationControllerTests
         TaskCompletionSource tcs = new();
         Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening, tcs.Task);
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
@@ -336,7 +341,7 @@ public class ConversationControllerTests
             Expected_Started);
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
         TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
@@ -376,7 +381,7 @@ public class ConversationControllerTests
         Expect_Recognition_SetFilter(PhraseKinds.Commands, Times.Exactly(2));
         Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
@@ -418,7 +423,7 @@ public class ConversationControllerTests
         Expect_Command1_ExecuteAsync(IncompleteTask);
 
         // Act
-        Task initializeTask = sut.InitializeAsync(default);
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -453,7 +458,7 @@ public class ConversationControllerTests
 
         Expect_Command1_ExecuteAsync();
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
@@ -499,7 +504,7 @@ public class ConversationControllerTests
         Expect_Command2_ExecuteAsync_IsNotCalled();
 
         // Act
-        Task resultTask = sut.InitializeAsync(default);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -539,7 +544,7 @@ public class ConversationControllerTests
         Expect_Command2_ExecuteAsync();
 
         // Act
-        Task resultTask = sut.InitializeAsync(default);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -578,7 +583,7 @@ public class ConversationControllerTests
 
         Expect_Command1_ExecuteAsync();
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -589,7 +594,7 @@ public class ConversationControllerTests
             Expected_Started);
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -642,7 +647,7 @@ public class ConversationControllerTests
         Expect_Command1_ExecuteAsync(times: Times.Exactly(3));
 
         // Act
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -676,7 +681,7 @@ public class ConversationControllerTests
         Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening, IncompleteTask);
 
         // Act
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -705,7 +710,7 @@ public class ConversationControllerTests
         Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
         Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening, tcs.Task);
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -714,7 +719,7 @@ public class ConversationControllerTests
             Expected_Started);
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -760,7 +765,7 @@ public class ConversationControllerTests
         Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening);
 
         // Act
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -796,7 +801,7 @@ public class ConversationControllerTests
             .Throws(exception);
 
         // Act
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -845,7 +850,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Exactly(ConversationSettings.ErrorRetryLimit));
 
         // Act
-        Task initializeTask = sut.InitializeAsync(default);
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.WaitForMessage(Expected_SwitchedToWorkerThread, TimeSpan.FromSeconds(10)).Wait();
 
@@ -890,7 +895,7 @@ public class ConversationControllerTests
 
         CancellationToken cancelled = Expect_Recognition_RecognizeAsync_IsCancelled(returnWhenCancelled: false);
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -899,7 +904,7 @@ public class ConversationControllerTests
             Expected_Started);
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -926,7 +931,7 @@ public class ConversationControllerTests
 
         CancellationToken cancelled = Expect_Recognition_RecognizeAsync_IsCancelled(returnWhenCancelled: true);
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -935,7 +940,7 @@ public class ConversationControllerTests
             Expected_Started);
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -975,7 +980,7 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -985,7 +990,7 @@ public class ConversationControllerTests
             Expected_Started);
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(
@@ -1025,7 +1030,7 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -1035,7 +1040,7 @@ public class ConversationControllerTests
             Expected_Started);
 
         // Act
-        Task resultTask = sut.CleanUpAsync(default);
+        Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
         MockLogger.VerifyMessages(

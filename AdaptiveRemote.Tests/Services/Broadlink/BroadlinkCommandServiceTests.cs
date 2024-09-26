@@ -9,7 +9,10 @@ public class BroadlinkCommandServiceTests
     private readonly Mock<IDeviceConnection.Factory> MockConnectionFactory = new();
     private readonly Mock<IDeviceConnection> MockConnection = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinitionService = new();
+    private readonly Mock<ILifecycleActivity> MockInitializeActivity = new();
     private readonly MockLogger<BroadlinkCommandService> MockLogger = new();
+
+    private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
 
     private BroadlinkCommandService CreateSut() => new(MockLocator.Object, MockConnectionFactory.Object, MockDefinitionService.Object, MockLogger);
 
@@ -50,7 +53,7 @@ public class BroadlinkCommandServiceTests
         Expect_IDeviceLocator_FindDevice("10.20.30.40:1234", 0x78AB, "AA:BB:CC:DD:EE:FF");
 
         // Act
-        Task resultTask = sut.InitializeAsync(default);
+        Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
 
