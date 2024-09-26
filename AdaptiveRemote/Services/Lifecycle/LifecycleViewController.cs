@@ -24,7 +24,7 @@ internal class LifecycleViewController : ILifecycleViewController
         Activity activity = new(this, description);
         lock (_lock)
         {
-            _activities.Add(activity);
+            _activities.Insert(1, activity);
         }
         UpdateTaskName();
         return activity;
@@ -69,6 +69,11 @@ internal class LifecycleViewController : ILifecycleViewController
             {
                 ViewModel.TaskName = topActivity.Description;
                 ViewModel.FatalError = topActivity.FatalError;
+            }
+
+            if (ViewModel.FatalError is not null)
+            {
+                ViewModel.CurrentPhase = LifecyclePhase.FatalError;
             }
         }
     }
