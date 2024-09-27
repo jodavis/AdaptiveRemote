@@ -18,6 +18,8 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
 
+        Browser.WebView.DefaultBackgroundColor = System.Drawing.Color.FromArgb(0x00, 0x22, 0x22, 0x22);
+
         if (DataContext is INotifyPropertyChanged propertyChanged)
         {
             propertyChanged.PropertyChanged += OnPropertyChanged;

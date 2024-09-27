@@ -1,7 +1,7 @@
 ﻿html,
 body {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 36pt;
+  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 48px;
   font-weight: bold;
   background-color: #222;
 }
@@ -248,7 +248,7 @@ div.conversation-speaking-message {
   height: 50vh;
   width: 100%;
   color: white;
-  font-size: 36pt;
+  font-size: 48px;
   font-weight: bold;
   position: relative;
 }
@@ -262,7 +262,7 @@ div.conversation-speaking-message {
   text-align: center;
   color: white;
   font-weight: bold;
-  font-size: 27pt;
+  font-size: 36px;
 }
 #blazor-error-ui {
   background: lightyellow;
