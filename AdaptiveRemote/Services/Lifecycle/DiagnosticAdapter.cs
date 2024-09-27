@@ -4,6 +4,7 @@ namespace AdaptiveRemote.Services.Lifecycle;
 
 internal class DiagnosticAdapter : IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object?>>
 {
+    private readonly DateTime _startTime = DateTime.Now;
     private readonly ILifecycleViewController _controller;
     private ILifecycleActivity? _keyVaultActivity = default;
 
@@ -21,13 +22,25 @@ internal class DiagnosticAdapter : IObserver<DiagnosticListener>, IObserver<KeyV
 
     public void OnNext(DiagnosticListener value)
     {
-        value.Subscribe(this);
-        Console.WriteLine("Listening to {0}", value.Name);
+        if (value.Name != "HttpHandlerDiagnosticListener")
+        {
+            value.Subscribe(this);
+            Console.WriteLine("Listening to {0}", value.Name);
+        }
     }
 
     public void OnNext(KeyValuePair<string, object?> value)
     {
-        Console.WriteLine($"{value.Key}: {value.Value?.GetType().FullName}");
+        Console.WriteLine($"{(DateTime.Now - _startTime).TotalMilliseconds:000000} {value.Key}: {value.Value switch
+        {
+            null => "(null)",
+            Exception exception => exception.ToString(),
+            Azure.Core.HttpMessage message => message.HasResponse
+                ? $"{message.Response.ReasonPhrase} {message.Request.Uri}"
+                : message.Request.Uri,
+            Activity activity => activity.DisplayName,
+            _ => value.Value.GetType().FullName
+        }}");
 
         switch (value.Key)
         {

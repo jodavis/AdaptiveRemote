@@ -19,7 +19,7 @@
           <item>Yep</item>
           <item>Yeah</item>
         </one-of>
-        <tag>out.system="YES"</tag>
+        <tag>out.confirmation="YES"</tag>
       </item>
       <item>
         <one-of>
@@ -27,7 +27,7 @@
           <item>Nah</item>
           <item>No, thank you</item>
         </one-of>
-        <tag>out.system="NO"</tag>
+        <tag>out.confirmation="NO"</tag>
       </item>
     </one-of>
   </rule>

@@ -28,7 +28,7 @@ public static class AppHostBuilderExtensions
                 {
                     ["telemetry:Publish"] = "True"
                 });
-                config.AddAzureKeyVault(new Uri($"https://{KeyVaultName}.vault.azure.net/"), new DefaultAzureCredential());
+                config.AddAzureKeyVault(new Uri($"https://{KeyVaultName}.vault.azure.net/"), new ChainedTokenCredential(new EnvironmentCredential(), new VisualStudioCredential()));
                 config.AddUserSecrets<App>();
                 config.AddCommandLine(args);
             });
