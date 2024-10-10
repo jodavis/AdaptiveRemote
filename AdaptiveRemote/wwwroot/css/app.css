@@ -244,24 +244,21 @@ div.conversation-speaking-message {
   grid-row: 1;
   grid-column: 1;
 }
-#loading {
+#LifecycleTitle {
   height: 50vh;
   width: 100%;
   color: white;
-  font-size: 48px;
-  font-weight: bold;
   position: relative;
 }
-#loading > div {
+#LifecycleTitle > div {
   text-align: center;
   position: absolute;
   width: 100%;
   bottom: 0;
 }
-#TaskName {
+#LifecycleTaskDescription {
   text-align: center;
   color: white;
-  font-weight: bold;
   font-size: 36px;
 }
 #blazor-error-ui {

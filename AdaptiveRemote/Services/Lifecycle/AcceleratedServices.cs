@@ -49,6 +49,7 @@ public class AcceleratedServices
             catch (Exception configErrors)
             {
                 Controller.SetFatalError(configErrors);
+                throw;
             }
             finally
             {

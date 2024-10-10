@@ -1,22 +1,21 @@
-#loading {
-    height:50vh;
-    width:100%;
-    color:white;
-    font-size: 48px;
-    font-weight: bold;
+@import "theme.less";
+
+#LifecycleTitle {
+    height: 50vh;
+    width: 100%;
+    color: @loading-text-color;
     position: relative;
 
-    >div {
+    > div {
         text-align: center;
         position: absolute;
-        width:100%;
+        width: 100%;
         bottom: 0;
     }
 }
 
-#TaskName {
+#LifecycleTaskDescription {
     text-align: center;
-    color: white;
-    font-weight: bold;
-    font-size: 36px;
+    color: @loading-text-color;
+    font-size: @app-font-size * .75;
 }
