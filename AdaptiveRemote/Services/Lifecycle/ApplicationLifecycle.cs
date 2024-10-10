@@ -61,8 +61,8 @@ internal class ApplicationLifecycle : BackgroundService
         { }
         catch (Exception error)
         {
-            activity.SetFatalError(error);
             _logger.LogError(Message.ApplicationLifecycle_InitializingFailed, scopedService.Name, error);
+            activity.SetFatalError(error);
         }
     }
 

@@ -1,5 +1,4 @@
-﻿using System.Security.RightsManagement;
-using AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Models;
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
@@ -78,17 +77,18 @@ internal class LifecycleViewController : ILifecycleViewController
         }
     }
 
-    private class Activity : LifecycleActivity
+    private class Activity : ILifecycleActivity
     {
         private readonly LifecycleViewController _owner;
+        private string _description;
 
         internal Activity(LifecycleViewController owner, string initialDescription)
-            : base(initialDescription)
         {
             _owner = owner;
+            _description = initialDescription;
         }
 
-        public override void SetFatalError(Exception error)
+        public void SetFatalError(Exception error)
         {
             if (FatalError is null)
             {
@@ -98,14 +98,14 @@ internal class LifecycleViewController : ILifecycleViewController
             }
         }
 
-        public override string Description
+        public string Description
         {
-            get => base.Description;
+            get => _description;
             set
             {
                 if (FatalError is null)
                 {
-                    base.Description = value;
+                    _description = value;
                     _owner?.UpdateTaskName();
                 }
             }
@@ -113,14 +113,13 @@ internal class LifecycleViewController : ILifecycleViewController
 
         public Exception? FatalError { get; private set; }
 
-        public override void Dispose()
+        public void Dispose()
         {
             if (FatalError is null)
             {
                 _owner._activities.Remove(this);
             }
             _owner.UpdateTaskName();
-            base.Dispose();
         }
     }
 }

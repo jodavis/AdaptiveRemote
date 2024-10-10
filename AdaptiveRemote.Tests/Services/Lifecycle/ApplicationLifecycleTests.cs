@@ -16,8 +16,11 @@ public class ApplicationLifecycleTests
     private readonly Mock<IApplicationScopeFactory> MockScopeFactory = new();
     private readonly Mock<IApplicationScope> MockScope = new();
     private readonly Mock<ILifecycleViewController> MockLifecycleViewController = new();
+    private readonly Mock<ILifecycleActivity> MockActivity = new();
     private readonly Mock<IServiceProvider> MockServiceProvider = new();
     private readonly MockLogger<ApplicationLifecycle> MockLogger = new();
+
+    public TestContext? TestContext { get; set; }
 
     private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeFactory.Object, MockLifecycleViewController.Object, MockLogger);
 
@@ -73,7 +76,13 @@ public class ApplicationLifecycleTests
 
         MockLifecycleViewController
             .Setup(x => x.StartTask(It.IsAny<string>()))
-            .Returns(new Mock<ILifecycleActivity>().Object);
+            .Callback(delegate (string description) { MockActivity.Name = description; })
+            .Returns(MockActivity.Object);
+        MockActivity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+
+        MockLogger.OutputWriter = TestContext;
     }
 
     [TestCleanup]
@@ -86,6 +95,8 @@ public class ApplicationLifecycleTests
         Verify(MockService1, nameof(MockService1));
         Verify(MockService2, nameof(MockService2));
         Verify(MockService3, nameof(MockService3));
+
+        Verify(MockLifecycleViewController, nameof(MockLifecycleViewController));
 
         static void Verify(Mock mock, string name)
         {
@@ -161,6 +172,8 @@ public class ApplicationLifecycleTests
         Expect_InitializeAsyncOn(MockService1, Task.FromException(expectedError1));
         Expect_InitializeAsyncOn(MockService2, Task.FromException(expectedError2));
         Expect_InitializeAsyncOn(MockService3, IncompleteTask);
+
+        Expect_LifecycleActivity_SetFatalError(expectedError1, expectedError2);
 
         // Act
         Task startTask = sut.StartAsync(default);
@@ -269,6 +282,7 @@ public class ApplicationLifecycleTests
         Expect_CleanupAsyncOn(MockService1, result: Task.FromException(expectedError1));
         Expect_CleanupAsyncOn(MockService2, result: Task.FromException(expectedError2));
         Expect_CleanupAsyncOn(MockService3);
+        Expect_LifecycleActivity_SetFatalError(expectedError1, expectedError2);
 
         Task startTask = sut.StartAsync(default);
 
@@ -351,6 +365,16 @@ public class ApplicationLifecycleTests
             .Setup(x => x.CleanUpAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(result)
             .Verifiable(Times.Once);
+
+    private void Expect_LifecycleActivity_SetFatalError(params Exception[] expectedExceptions)
+        => MockActivity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex)
+            {
+                Assert.IsTrue(expectedExceptions.Any(x => $"{x.GetType().FullName};{x.Message}" == $"{ex.GetType().FullName};{ex.Message}"),
+                    "Unexpected exception for SetFatalError: {0}", ex);
+            })
+            .Verifiable(Times.Exactly(expectedExceptions.Length));
 
     private static string Expect_InitializingMessage(Mock<IScopedLifecycle> service)
         => $"Information[701]: {string.Format(LoggingMessages.ApplicationLifecycle_Initializing, service.Object.Name)}";

@@ -228,6 +228,26 @@ public class ConversationControllerTests
             .Verifiable(Times.Exactly(2));
 
         MockLogger.OutputWriter = TestContext;
+
+        MockInitializeActivity
+            .SetupSet(x => x.Description = It.IsAny<string>())
+            .Verifiable(Times.Never);
+        MockInitializeActivity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+        MockInitializeActivity
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Never);
+
+        MockCleanupActivity
+            .SetupSet(x => x.Description = It.IsAny<string>())
+            .Verifiable(Times.Never);
+        MockCleanupActivity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+        MockCleanupActivity
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Never);
     }
 
     [TestCleanup]

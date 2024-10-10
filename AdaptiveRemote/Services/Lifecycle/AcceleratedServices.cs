@@ -26,11 +26,14 @@ public class AcceleratedServices
         _hostBuilder = Host.CreateDefaultBuilder()
             .ConfigureAppSettings(args)
             .ConfigureApp()
-            .ConfigureServices(services => services
-                .AddSingleton(MainWindow)
-                .AddSingleton(Controller)
-                .AddSingleton(ViewModel));
+            .ConfigureServices(AddPrecreatedServices);
     }
+
+    private void AddPrecreatedServices(IServiceCollection services)
+        => services
+            .AddSingleton(MainWindow)
+            .AddSingleton(Controller)
+            .AddSingleton(ViewModel);
 
     public async Task StartApplicationLoopAsync()
     {

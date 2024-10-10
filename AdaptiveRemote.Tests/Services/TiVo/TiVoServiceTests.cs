@@ -72,6 +72,29 @@ public class TiVoServiceTests
             .SetupGet(x => x.RemoteRoot)
             .Returns(Commands)
             .Verifiable(Times.Once);
+
+        MockInitializeActivity
+            .SetupSet(x => x.Description = It.IsAny<string>())
+            .Verifiable(Times.Never);
+        MockInitializeActivity
+            .SetupSet(x => x.Description = "Connecting to TiVo")
+            .Verifiable(Times.Once);
+        MockInitializeActivity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+        MockInitializeActivity
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Never);
+
+        MockCleanupActivity
+            .SetupSet(x => x.Description = It.IsAny<string>())
+            .Verifiable(Times.Never);
+        MockCleanupActivity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+        MockCleanupActivity
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Never);
     }
 
     [TestCleanup]
@@ -81,6 +104,8 @@ public class TiVoServiceTests
         MockConnectionFactory.Verify();
         MockConnection.Verify();
         MockDefinition.Verify();
+        MockInitializeActivity.Verify();
+        MockCleanupActivity.Verify();
     }
 
     [TestMethod]
@@ -89,6 +114,7 @@ public class TiVoServiceTests
         // Arrange
         Expect_Locator_IsNotCalled();
         Expect_MockConnectionFactory_IsNotCalled();
+        Expect_InitializationActivity_Description_IsNotCalled();
 
         // Act
         _ = CreateUninitializedSut();
@@ -103,6 +129,7 @@ public class TiVoServiceTests
         // Arrange
         Expect_Locator_IsNotCalled();
         Expect_MockConnectionFactory_IsNotCalled();
+        Expect_InitializationActivity_Description_IsNotCalled();
 
         IScopedLifecycle sut = CreateUninitializedSut();
 
@@ -384,6 +411,7 @@ public class TiVoServiceTests
 
         Expect_Locator_IsNotCalled();
         Expect_MockConnectionFactory_IsNotCalled();
+        Expect_InitializationActivity_Description_IsNotCalled();
 
         // Act
         Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
@@ -523,6 +551,7 @@ public class TiVoServiceTests
         // Arrange
         Expect_Locator_IsNotCalled();
         Expect_MockConnectionFactory_IsNotCalled();
+        Expect_InitializationActivity_Description_IsNotCalled();
 
         CreateUninitializedSut();
 
@@ -611,4 +640,9 @@ public class TiVoServiceTests
         => MockLocator
             .Setup(x => x.FindTiVoAsync(It.IsAny<CancellationToken>()))
             .WithExpectedCancellation(throwWhenCancelled);
+
+    private void Expect_InitializationActivity_Description_IsNotCalled()
+        => MockInitializeActivity
+            .SetupSet(x => x.Description = "Connecting to TiVo")
+            .Verifiable(Times.Never);
 }
