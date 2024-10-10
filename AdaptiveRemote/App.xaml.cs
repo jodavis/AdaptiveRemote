@@ -4,9 +4,7 @@ using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote;
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
+
 public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
@@ -23,14 +21,12 @@ public partial class App : Application
             AcceleratedServices accelerator = new(args);
 
             await accelerator.StartApplicationLoopAsync();
+
+            Shutdown();
         }
         catch (ConfigurationErrorsException configErrors)
         {
             MessageBox.Show(configErrors.Message, "Configuration errors", MessageBoxButton.OK, MessageBoxImage.Stop);
-        }
-        finally
-        {
-            Shutdown();
         }
     }
 
