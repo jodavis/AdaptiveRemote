@@ -18,7 +18,7 @@ internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
 
     public override async Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
-        activity.Description = "Connecting to TiVo";
+        activity.Description = Phrases.Startup_ConnectingToTiVo;
 
         cancellationToken.ThrowIfCancellationRequested();
         System.Net.EndPoint endpoint = await _locator.FindTiVoAsync(cancellationToken);

@@ -939,7 +939,7 @@ public class ConversationControllerTests
         Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled.IsCancellationRequested));
 
         Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Cleanup_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 
@@ -1026,7 +1026,7 @@ public class ConversationControllerTests
         Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
 
         Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
+        Assert.AreEqual(Phrases.Cleanup_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
         Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
     }
 

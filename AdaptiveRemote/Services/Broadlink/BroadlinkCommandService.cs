@@ -24,7 +24,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
 
     public async override Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
-        activity.Description = "Connecting to Broadlink device";
+        activity.Description = Phrases.Startup_ConnectingToBroadlink;
 
         Logger.LogInformation(Message.BroadlinkCommandService_SearchingForDevice);
         ScanResponsePacket found = await _deviceLocator.FindDeviceAsync(cancellationToken);
