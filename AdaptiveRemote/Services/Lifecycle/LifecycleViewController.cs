@@ -44,10 +44,10 @@ internal class LifecycleViewController : ILifecycleViewController
     private static string DescriptionFor(LifecyclePhase phase)
         => phase switch
         {
-            LifecyclePhase.Starting => "Starting application",
-            LifecyclePhase.Building => "Building service graph",
-            LifecyclePhase.SettingUp => "Starting services",
-            LifecyclePhase.CleaningUp => "Cleaning up",
+            LifecyclePhase.Starting => Phrases.Startup_StartingApplication,
+            LifecyclePhase.Building => Phrases.Startup_BuildingServiceGraph,
+            LifecyclePhase.SettingUp => Phrases.Startup_StartingServices,
+            LifecyclePhase.CleaningUp => Phrases.Cleanup_CleaningUpApplication,
             _ => string.Empty,
         };
 
@@ -62,7 +62,7 @@ internal class LifecycleViewController : ILifecycleViewController
             if (topActivity.FatalError is null &&
                 !string.IsNullOrWhiteSpace(topActivity.Description))
             {
-                ViewModel.TaskName = $"{topActivity.Description}...";
+                ViewModel.TaskName = Phrases.Ellipsis(topActivity.Description);
             }
             else
             {
@@ -92,7 +92,7 @@ internal class LifecycleViewController : ILifecycleViewController
         {
             if (FatalError is null)
             {
-                Description = $"Error while {Description}";
+                Description = Phrases.ErrorWhile(Description);
                 FatalError = error;
                 _owner?.UpdateTaskName();
             }

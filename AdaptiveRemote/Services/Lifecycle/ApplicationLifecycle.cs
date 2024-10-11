@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.Logging;
+using AdaptiveRemote.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,7 @@ internal class ApplicationLifecycle : BackgroundService
     private async Task InitializeServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
     {
         _logger.LogInformation(Message.ApplicationLifecycle_Initializing, scopedService.Name);
-        using ILifecycleActivity activity = _controller.StartTask($"Starting {scopedService.Name}");
+        using ILifecycleActivity activity = _controller.StartTask(Phrases.Startup_Starting(scopedService.Name));
         try
         {
 
@@ -83,7 +84,7 @@ internal class ApplicationLifecycle : BackgroundService
     private async Task CleanUpServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
     {
         _logger.LogInformation(Message.ApplicationLifecycle_CleaningUp, scopedService.Name);
-        using ILifecycleActivity activity = _controller.StartTask($"Cleaning up {scopedService.Name}");
+        using ILifecycleActivity activity = _controller.StartTask(Phrases.Cleanup_CleaningUp(scopedService.Name));
         try
         {
             await scopedService.CleanUpAsync(activity, cancellationToken);

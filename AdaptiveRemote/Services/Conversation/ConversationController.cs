@@ -37,7 +37,7 @@ internal class ConversationController : ScopedBackgroundProcess
     {
         try
         {
-            _viewModel.StatusMessage = "Shutting down...";
+            _viewModel.StatusMessage = Phrases.Cleanup_ShuttingDown;
 
             await base.CleanUpAsync(activity, cancellationToken);
         }
