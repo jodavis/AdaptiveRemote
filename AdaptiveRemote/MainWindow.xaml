@@ -8,29 +8,189 @@
         mc:Ignorable="d"
         Title="MainWindow" WindowStyle="None" WindowState="Maximized"
         Background="#222">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="VisibleIfTrue" />
+
+        <Style x:Key="TextBlockStyle"
+               TargetType="TextBlock">
+            <Setter Property="HorizontalAlignment"
+                    Value="Center" />
+            <Setter Property="Foreground"
+                    Value="White" />
+            <Setter Property="FontWeight"
+                    Value="Bold" />
+        </Style>
+
+        <Style x:Key="TitleBlockStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource TextBlockStyle}">
+            <Setter Property="VerticalAlignment"
+                    Value="Bottom" />
+            <Setter Property="FontSize"
+                    Value="48" />
+            <Setter Property="Text"
+                    Value="Adaptive Remote" />
+        </Style>
+
+        <Style x:Key="StatusBlockStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource TextBlockStyle}">
+            <Setter Property="FontSize"
+                    Value="36" />
+            <Setter Property="Text"
+                    Value="{Binding TaskName}" />
+        </Style>
+
+        <Style x:Key="ButtonPanelStyle"
+               TargetType="StackPanel">
+            <Setter Property="Orientation"
+                    Value="Horizontal" />
+            <Setter Property="HorizontalAlignment"
+                    Value="Center" />
+            <Setter Property="Visibility">
+                <Setter.Value>
+                    <Binding Path="ShowButtonPanel">
+                        <Binding.Converter>
+                            <BooleanToVisibilityConverter />
+                        </Binding.Converter>
+                    </Binding>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ButtonStyle"
+               TargetType="Button">
+            <Setter Property="Width"
+                    Value="300" />
+            <Setter Property="Height"
+                    Value="72" />
+            <Setter Property="Margin"
+                    Value="10" />
+            <Setter Property="FontSize"
+                    Value="36" />
+        </Style>
+
+        <Style x:Key="ShowErrorButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource ButtonStyle}">
+            <Setter Property="Content"
+                    Value="Show Error" />
+            <Setter Property="Command"
+                    Value="{Binding ShowErrorCommand}" />
+        </Style>
+
+        <Style x:Key="ExitButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource ButtonStyle}">
+            <Setter Property="Content"
+                    Value="Exit" />
+            <Setter Property="Command"
+                    Value="{Binding ShutdownCommand}" />
+        </Style>
+
+        <Style x:Key="ErrorDisplayBlockStyle"
+               TargetType="Border">
+            <Setter Property="BorderBrush"
+                    Value="Red" />
+            <Setter Property="Background"
+                    Value="#222" />
+            <Setter Property="BorderThickness"
+                    Value="3" />
+            <Setter Property="Margin"
+                    Value="36" />
+            <Setter Property="Visibility">
+                <Setter.Value>
+                    <Binding Path="ShowError">
+                        <Binding.Converter>
+                            <BooleanToVisibilityConverter />
+                        </Binding.Converter>
+                    </Binding>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ErrorCloseButtonStyle"
+               TargetType="Button">
+            <Setter Property="Content"
+                    Value="🗙" />
+            <Setter Property="HorizontalAlignment"
+                    Value="Right" />
+            <Setter Property="Background"
+                    Value="Transparent" />
+            <Setter Property="Foreground"
+                    Value="Red" />
+            <Setter Property="BorderThickness"
+                    Value="0" />
+            <Setter Property="FontSize"
+                    Value="16" />
+            <Setter Property="FontWeight"
+                    Value="Bold" />
+            <Setter Property="Margin"
+                    Value="6" />
+            <Setter Property="Command"
+                    Value="{Binding CloseErrorCommand}" />
+        </Style>
+
+        <Style x:Key="ErrorTextStyle"
+               TargetType="TextBlock">
+            <Setter Property="Foreground"
+                    Value="White" />
+            <Setter Property="TextWrapping"
+                    Value="Wrap" />
+            <Setter Property="FontSize"
+                    Value="16" />
+        </Style>
+
+        <Style x:Key="ErrorTitleStyle"
+               TargetType="TextBlock"
+               BasedOn="{StaticResource ErrorTextStyle}">
+            <Setter Property="FontWeight"
+                    Value="Bold" />
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
-        <blazor:BlazorWebView Name="Browser" HostPage="wwwroot\index.html" Visibility="Hidden" Services="{DynamicResource services}" Grid.RowSpan="2">
+    
+        <blazor:BlazorWebView Name="Browser"
+                              HostPage="wwwroot\index.html" 
+                              Visibility="{Binding ShowBrowser, Converter={StaticResource VisibleIfTrue}}" 
+                              Services="{DynamicResource services}" 
+                              Grid.RowSpan="2">
             <blazor:BlazorWebView.RootComponents>
-                <blazor:RootComponent Selector="#app" ComponentType="{x:Type components:Root}" />
+                <blazor:RootComponent Selector="#app" 
+                                      ComponentType="{x:Type components:Root}" />
             </blazor:BlazorWebView.RootComponents>
         </blazor:BlazorWebView>
-        <TextBlock VerticalAlignment="Bottom" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold" FontSize="48" Grid.Row="0">Adaptive Remote</TextBlock>
+    
+        <TextBlock Style="{StaticResource TitleBlockStyle}" 
+                   Grid.Row="0" />
+    
         <DockPanel Grid.Row="1">
-            <TextBlock DockPanel.Dock="Top" VerticalAlignment="Top" HorizontalAlignment="Center" Foreground="White" FontWeight="Bold" FontSize="36"  Text="{Binding TaskName}"></TextBlock>
-            <StackPanel Name="ButtonPanel" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed">
-                <Button Content="Show Error" Width="300" Height="72" Margin="10" FontSize="36" Click="ShowError_Click" />
-                <Button Content="Exit" Width="300" Height="72" Margin="10" FontSize="36" Click="Exit_Click" />
+            <TextBlock Style="{StaticResource StatusBlockStyle}" 
+                       DockPanel.Dock="Top" />
+            <StackPanel Style="{StaticResource ButtonPanelStyle}">
+                <Button Style="{StaticResource ShowErrorButtonStyle}" />
+                <Button Style="{StaticResource ExitButtonStyle}" />
             </StackPanel>
         </DockPanel>
-        <Border Name="ErrorDisplay" Grid.RowSpan="2" BorderBrush="Red" Background="#222" BorderThickness="3" Margin="36" Visibility="Hidden">
+    
+        <Border Style="{StaticResource ErrorDisplayBlockStyle}"
+                Grid.RowSpan="2">
             <DockPanel>
-                <Button DockPanel.Dock="Top" Content="🗙" HorizontalAlignment="right" Background="#222" Foreground="Red" BorderThickness="0" FontSize="18" FontWeight="Bold" Margin="6" Click="ShowError_Click" />
+                <Button Style="{StaticResource ErrorCloseButtonStyle}" 
+                        DockPanel.Dock="Top" />
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <TextBlock Foreground="Red" TextWrapping="Wrap" FontSize="16" Text="{Binding FatalError}" Margin="36" />
+                    <StackPanel Margin="36">
+                        <TextBlock Style="{StaticResource ErrorTitleStyle}"
+                                   Text="{Binding FatalError}" />
+                        <TextBlock Style="{StaticResource ErrorTextStyle}"
+                                   Text="{Binding FatalErrorDetail}" />
+                    </StackPanel>
                 </ScrollViewer>
             </DockPanel>
         </Border>
