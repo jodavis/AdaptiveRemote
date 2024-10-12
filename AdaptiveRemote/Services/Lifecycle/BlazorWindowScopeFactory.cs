@@ -13,13 +13,15 @@ internal class BlazorWindowScopeFactory : IApplicationScopeFactory, IApplication
         mainWindow.Dispatcher.Invoke(() => _browser.Services = serviceProvider);
     }
 
+    private bool _firstScope = true;
+
     async Task<IApplicationScope> IApplicationScopeFactory.CreateNewScopeAsync(CancellationToken cancellationToken)
     {
         await _browser.Dispatcher.InvokeAsync(() =>
         {
-            if (!_browser.IsVisible)
+            if (_firstScope)
             {
-                _browser.Visibility = Visibility.Visible;
+                _firstScope = false;
             }
             else
             {

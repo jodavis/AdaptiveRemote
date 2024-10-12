@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Hosting;
 
@@ -28,6 +29,8 @@ public partial class App : Application
     private async Task StartApplicationLoopAsync(string[] args)
     {
         AcceleratedServices accelerator = new(args);
+
+        accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
 
         await accelerator.StartApplicationLoopAsync();
 

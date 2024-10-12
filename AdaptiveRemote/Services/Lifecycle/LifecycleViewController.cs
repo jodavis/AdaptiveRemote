@@ -14,6 +14,8 @@ internal class LifecycleViewController : ILifecycleViewController
         ];
 
         ViewModel = viewModel;
+        ViewModel.ShowErrorCommand = new ActionCommand(() => ViewModel.ShowError = true);
+        ViewModel.CloseErrorCommand = new ActionCommand(() => ViewModel.ShowError = false);
     }
 
     public LifecycleView ViewModel { get; }
@@ -59,20 +61,35 @@ internal class LifecycleViewController : ILifecycleViewController
             Activity topActivity = _activities.Where(x => x.FatalError is not null).LastOrDefault()
                 ?? _activities[_activities.Count - 1];
 
-            if (topActivity.FatalError is null &&
-                !string.IsNullOrWhiteSpace(topActivity.Description))
+            if (topActivity.FatalError is not null)
+            {
+                string exceptionText = topActivity.FatalError.ToString();
+                int newLineIndex = exceptionText.IndexOf('\n');
+                if (newLineIndex != -1)
+                {
+                    ViewModel.FatalError = exceptionText.Substring(0, newLineIndex);
+                    ViewModel.FatalErrorDetail = exceptionText.Substring(newLineIndex + 1);
+                }
+                else
+                {
+                    ViewModel.FatalError = exceptionText;
+                    ViewModel.FatalErrorDetail = null;
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(topActivity.Description))
             {
                 ViewModel.TaskName = Phrases.Ellipsis(topActivity.Description);
             }
             else
             {
-                ViewModel.TaskName = topActivity.Description;
-                ViewModel.FatalError = topActivity.FatalError;
+                ViewModel.TaskName = string.Empty;
             }
 
             if (ViewModel.FatalError is not null)
             {
                 ViewModel.CurrentPhase = LifecyclePhase.FatalError;
+                ViewModel.ShowBrowser = false;
+                ViewModel.ShowButtonPanel = true;
             }
         }
     }
