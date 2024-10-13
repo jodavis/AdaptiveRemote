@@ -7,32 +7,35 @@ namespace AdaptiveRemote;
 
 public partial class App : Application
 {
-    private string[]? _args;
-
-    public App()
-    {
-        _args = null;
-    }
-
-    public App(string[] args)
-    {
-        _args = args;
-    }
-
     protected override void OnStartup(StartupEventArgs e)
     {
-        _ = StartApplicationLoopAsync(_args ?? e.Args);
+        try
+        {
+            AcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
 
-        base.OnStartup(e);
+            accelerator.MainWindow.Show();
+            accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
+
+            base.OnStartup(e);
+
+            _ = RunApplicationLoopAndShutdownAsync(accelerator);
+        }
+        catch (Exception startupFailure)
+        {
+            MessageBox.Show(
+                startupFailure.ToString(),
+                "WPF window failure",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            throw;
+        }
     }
 
-    private async Task StartApplicationLoopAsync(string[] args)
+    protected virtual AcceleratedServices CreateAcceleratedServices(string[] args) => new(args);
+
+    private async Task RunApplicationLoopAndShutdownAsync(AcceleratedServices accelerator)
     {
-        AcceleratedServices accelerator = new(args);
-
-        accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
-
-        await accelerator.StartApplicationLoopAsync();
+        await accelerator.RunApplicationLoopAsync();
 
         // If the application loop completes without error, it means
         // the app is shutting down normally. If it ends with an exception

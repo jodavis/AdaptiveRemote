@@ -1,10 +1,14 @@
-﻿namespace AdaptiveRemote;
+﻿using AdaptiveRemote.Services.Lifecycle;
+
+namespace AdaptiveRemote;
 
 internal class Program : App
 {
+    private readonly string[] _args;
+
     public Program(string[] args)
-        : base(args)
     {
+        _args = args;
     }
 
     [STAThread]
@@ -12,4 +16,7 @@ internal class Program : App
     {
         new Program(args).Run();
     }
+
+    protected override AcceleratedServices CreateAcceleratedServices(string[] args)
+        => base.CreateAcceleratedServices(_args);
 }
