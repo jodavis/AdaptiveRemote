@@ -35,10 +35,8 @@ public class AcceleratedServices
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);
 
-    public async Task StartApplicationLoopAsync()
+    public async Task RunApplicationLoopAsync()
     {
-        MainWindow.Show();
-
         await Task.Run(async () =>
         {
             try
