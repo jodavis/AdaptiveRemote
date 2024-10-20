@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿// Uncomment the line below to see what diagnostics the listener is getting.
+//#define WRITE_TO_CONSOLE
+
+using System.Diagnostics;
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
@@ -25,13 +28,13 @@ internal class DiagnosticAdapter : IObserver<DiagnosticListener>, IObserver<KeyV
         if (value.Name != "HttpHandlerDiagnosticListener")
         {
             value.Subscribe(this);
-            Console.WriteLine("Listening to {0}", value.Name);
+            WriteToConsole("Listening to {0}", value.Name);
         }
     }
 
     public void OnNext(KeyValuePair<string, object?> value)
     {
-        Console.WriteLine($"{(DateTime.Now - _startTime).TotalMilliseconds:000000} {value.Key}: {value.Value switch
+        WriteToConsole($"{(DateTime.Now - _startTime).TotalMilliseconds:000000} {value.Key}: {value.Value switch
         {
             null => "(null)",
             Exception exception => exception.ToString(),
@@ -62,5 +65,11 @@ internal class DiagnosticAdapter : IObserver<DiagnosticListener>, IObserver<KeyV
                 break;
 
         }
+    }
+
+    [Conditional("WRITE_TO_CONSOLE")]
+    private static void WriteToConsole(string format, params object[]? args)
+    {
+        Console.WriteLine(format, args);
     }
 }
