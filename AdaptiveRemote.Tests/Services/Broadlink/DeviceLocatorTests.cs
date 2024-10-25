@@ -43,7 +43,7 @@ public class DeviceLocatorTests
         Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "FindDeviceAsync should receive the ScanResponsePacket");
 
         ScanResponsePacket result = resultTask.Result;
         Assert.IsNotNull(result, nameof(result));
@@ -66,7 +66,8 @@ public class DeviceLocatorTests
         Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(default);
 
         // Assert
-        TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
+        resultTask.Should().BeFaultedWith(expectedException,
+            because: "no devices were found during the scan");
     }
 
     [TestMethod]
@@ -84,7 +85,7 @@ public class DeviceLocatorTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
+        resultTask.Should().BeCanceled(because: "InitializeAsync's cancellation token was triggered");
         Assert.IsTrue(result.IsCancellationRequested, nameof(result) + ".IsCancellationRequested");
     }
 
@@ -103,7 +104,7 @@ public class DeviceLocatorTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
+        resultTask.Should().BeCanceled(because: "InitializeAsync's cancellation token was triggered");
         Assert.IsTrue(result.IsCancellationRequested, nameof(result) + ".IsCancellationRequested");
     }
 
@@ -123,7 +124,7 @@ public class DeviceLocatorTests
         Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(cts.Token);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "FindDeviceAsync should have found the ScanResponsePacket");
         Assert.IsTrue(result.IsCancellationRequested, nameof(result) + ".IsCancellationRequested");
     }
 

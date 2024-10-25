@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.NetworkInformation;
+using FluentAssertions;
 using Moq;
 
 namespace AdaptiveRemote.Services.Broadlink;
@@ -70,7 +71,7 @@ public class BroadlinkCommandServiceTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "InitializeAsync should complete after command service is initialized");
     }
 
     private void Expect_IDeviceLocator_FindDevice(string ip, short deviceType, string mac, bool isLocked = false)
@@ -91,5 +92,5 @@ public class BroadlinkCommandServiceTests
     private void Expect_InitializeActivity_Description(string expectedDescription)
         => MockInitializeActivity
             .SetupSet(x => x.Description = It.IsAny<string>())
-            .Callback(delegate (string description) { Assert.AreEqual(expectedDescription, description, nameof(MockInitializeActivity) + ".Description"); });
+            .Callback(delegate (string description) { description.Should().Be(expectedDescription); });
 }
