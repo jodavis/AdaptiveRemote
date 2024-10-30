@@ -1,19 +1,14 @@
-﻿using System.Configuration;
-using System.Windows;
-using Microsoft.Extensions.Hosting;
+﻿using AdaptiveRemote.Services.Lifecycle;
 
 namespace AdaptiveRemote;
 
-internal class Program : Application
+internal class Program : App
 {
-    private readonly IHost _host;
+    private readonly string[] _args;
 
     public Program(string[] args)
     {
-        _host = Host.CreateDefaultBuilder()
-            .ConfigureAppSettings(args)
-            .ConfigureApp()
-            .Build();
+        _args = args;
     }
 
     [STAThread]
@@ -22,26 +17,6 @@ internal class Program : Application
         new Program(args).Run();
     }
 
-    protected override void OnStartup(StartupEventArgs e)
-    {
-        base.OnStartup(e);
-
-        _ = StartApplicationLoopAsync();
-    }
-
-    private async Task StartApplicationLoopAsync()
-    {
-        try
-        {
-            await _host.RunAsync();
-        }
-        catch (ConfigurationErrorsException configErrors)
-        {
-            Console.WriteLine(configErrors.Message);
-        }
-        finally
-        {
-            Shutdown();
-        }
-    }
+    protected override AcceleratedServices CreateAcceleratedServices(string[] args)
+        => base.CreateAcceleratedServices(_args);
 }

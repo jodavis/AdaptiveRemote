@@ -22,6 +22,8 @@ public class PersistSettingsTests
         get => MockLogger.OutputWriter;
         set => MockLogger.OutputWriter = value;
     }
+    
+    private static readonly char[] LineSeparators = ['\r', '\n'];
 
     [TestCleanup]
     public void VerifyMocks()
@@ -88,7 +90,7 @@ public class PersistSettingsTests
         }
 
         string[] expectedSettings = ["ExistingSetting=123", "NewSetting3=ghi", "NewSetting2=def", "NewSetting1=abc"];
-        string[] actualSettings = MockFileSystem.GetFileContents(InputSettingsPath).Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        string[] actualSettings = MockFileSystem.GetFileContents(InputSettingsPath).Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries);
 
         Assert.IsFalse(expectedSettings.Except(actualSettings).Any(), "Did not find expected settings in {0}: {1}", InputSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
         Assert.IsFalse(actualSettings.Except(expectedSettings).Any(), "Did not find expected settings in {0}: {1}", InputSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));

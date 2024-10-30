@@ -9,7 +9,12 @@ namespace AdaptiveRemote.Services;
 public class CommandServiceBaseTests
 {
     private readonly Mock<IRemoteDefinitionService> MockRemoteDefinition = new();
+    private readonly Mock<ILifecycleActivity> MockInitializeActivity = new() { Name = nameof(MockInitializeActivity) };
+    private readonly Mock<ILifecycleActivity> MockCleanupActivity = new() { Name = nameof(MockCleanupActivity) };
     private readonly MockLogger<MockCommandService> MockLogger = new();
+
+    private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
+    private ILifecycleActivity CleanupActivity => MockCleanupActivity.Object;
 
     private LayoutGroup RemoteDefinition = new LayoutGroup("ROOT",
         [
@@ -31,6 +36,26 @@ public class CommandServiceBaseTests
             .SetupGet(x => x.RemoteRoot)
             .Returns(RemoteDefinition)
             .Verifiable(Times.Once);
+
+        MockInitializeActivity
+            .SetupSet(x => x.Description = It.IsAny<string>())
+            .Verifiable(Times.Never);
+        MockInitializeActivity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+        MockInitializeActivity
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Never);
+
+        MockCleanupActivity
+            .SetupSet(x => x.Description = It.IsAny<string>())
+            .Verifiable(Times.Never);
+        MockCleanupActivity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+        MockCleanupActivity
+            .Setup(x => x.Dispose())
+            .Verifiable(Times.Never);
     }
 
     [TestCleanup]
@@ -105,7 +130,7 @@ public class CommandServiceBaseTests
         IScopedLifecycle sut = CreateSut();
 
         // Act
-        Task initializeTask = sut.InitializeAsync(default);
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
         TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
@@ -135,7 +160,7 @@ public class CommandServiceBaseTests
         // Arrange
         List<string> expectedMessages = new();
         MockCommandService sut = CreateSut();
-        sut.InitializeAsync(default);
+        sut.InitializeAsync(InitializeActivity, default);
 
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
@@ -165,7 +190,7 @@ public class CommandServiceBaseTests
         // Arrange
         List<string> expectedMessages = new();
         MockCommandService sut = CreateSut(returns: new TaskCompletionSource().Task);
-        _ = sut.InitializeAsync(default);
+        _ = sut.InitializeAsync(InitializeActivity, default);
 
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
@@ -196,7 +221,7 @@ public class CommandServiceBaseTests
 
         List<string> expectedMessages = new();
         MockCommandService sut = CreateSut(returns: Task.FromException(expectedException));
-        _ = sut.InitializeAsync(default);
+        _ = sut.InitializeAsync(InitializeActivity, default);
 
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
@@ -229,7 +254,7 @@ public class CommandServiceBaseTests
 
         List<string> expectedMessages = new();
         MockCommandService sut = CreateSut(returns: Task.FromCanceled(cts.Token));
-        _ = sut.InitializeAsync(default);
+        _ = sut.InitializeAsync(InitializeActivity, default);
 
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
@@ -261,7 +286,7 @@ public class CommandServiceBaseTests
 
         List<string> expectedMessages = new();
         MockCommandService sut = CreateSut(returns: new TaskCompletionSource().Task);
-        _ = sut.InitializeAsync(default);
+        _ = sut.InitializeAsync(InitializeActivity, default);
 
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
         {
@@ -288,10 +313,10 @@ public class CommandServiceBaseTests
         // Arrange
         List<string> expectedMessages = new();
         IScopedLifecycle sut = CreateSut();
-        _ = sut.InitializeAsync(default);
+        _ = sut.InitializeAsync(InitializeActivity, default);
 
         // Act
-        Task cleanUpTask = sut.CleanUpAsync(default);
+        Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         TaskAssert.IsComplete(cleanUpTask, nameof(cleanUpTask));
@@ -326,7 +351,7 @@ public class CommandServiceBaseTests
 
         List<string> expectedMessages = new();
         MockCommandService sut = CreateSut(returns: new TaskCompletionSource().Task);
-        _ = sut.InitializeAsync(default);
+        _ = sut.InitializeAsync(InitializeActivity, default);
 
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
         {
@@ -336,7 +361,7 @@ public class CommandServiceBaseTests
         }
 
         // Act
-        sut.CleanUpAsync(default);
+        sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         Assert.AreEqual(3, sut.CancelTokens.Count(x => x.IsCancellationRequested), "All CancelTokens should be cancelled");

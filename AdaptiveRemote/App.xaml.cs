@@ -1,45 +1,47 @@
-﻿using System.Configuration;
-using System.Windows;
+﻿using System.Windows;
+using AdaptiveRemote.Models;
+using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote;
-/// <summary>
-/// Interaction logic for App.xaml
-/// </summary>
+
 public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
-        _ = StartApplicationLoopAsync(e.Args);
-
-        base.OnStartup(e);
-    }
-
-    private async Task StartApplicationLoopAsync(string[] args)
-    {
         try
         {
-            IHost host =
-            Host.CreateDefaultBuilder()
-                .ConfigureAppSettings(args)
-                .ConfigureApp()
-                .Build();
+            AcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
 
-            await host.RunAsync();
+            accelerator.MainWindow.Show();
+            accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
+
+            base.OnStartup(e);
+
+            _ = RunApplicationLoopAndShutdownAsync(accelerator);
         }
-        catch (ConfigurationErrorsException configErrors)
+        catch (Exception startupFailure)
         {
-            MessageBox.Show(configErrors.Message, "Configuration errors", MessageBoxButton.OK, MessageBoxImage.Stop);
-        }
-        finally
-        {
-            Shutdown();
+            MessageBox.Show(
+                startupFailure.ToString(),
+                "WPF window failure",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            throw;
         }
     }
 
-    protected override void OnExit(ExitEventArgs e)
+    protected virtual AcceleratedServices CreateAcceleratedServices(string[] args) => new(args);
+
+    private async Task RunApplicationLoopAndShutdownAsync(AcceleratedServices accelerator)
     {
-        base.OnExit(e);
+        await accelerator.RunApplicationLoopAsync();
+
+        // If the application loop completes without error, it means
+        // the app is shutting down normally. If it ends with an exception
+        // there is an error which should be displayed in the UI, so the
+        // UI is responsible for shutting down.
+        Shutdown();
     }
 }
 
