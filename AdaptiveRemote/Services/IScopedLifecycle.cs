@@ -23,7 +23,7 @@ internal interface IScopedLifecycle
     ///    Cancelled: Initialization was aborted and cleanly rolled back
     ///    Faulted: Something went wrong and the system is in an unknown state
     /// </returns>
-    Task InitializeAsync(CancellationToken cancellationToken);
+    Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken);
 
     /// <summary>
     /// Clean up the service. This should reset the system so it can be
@@ -41,5 +41,5 @@ internal interface IScopedLifecycle
     ///    Cancelled: Clean-up was aborted, and any long-running tasks have been cleanly aborted
     ///    Faulted: Something went wrong and the system is in an unknown state.
     /// </returns>
-    Task CleanUpAsync(CancellationToken cancellationToken);
+    Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken);
 }

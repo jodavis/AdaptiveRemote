@@ -16,8 +16,10 @@ internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
         _connectionFactory = connectionFactory;
     }
 
-    public override async Task InitializeAsync(CancellationToken cancellationToken)
+    public override async Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
+        activity.Description = Phrases.Startup_ConnectingToTiVo;
+
         cancellationToken.ThrowIfCancellationRequested();
         System.Net.EndPoint endpoint = await _locator.FindTiVoAsync(cancellationToken);
 
@@ -26,16 +28,16 @@ internal sealed class TiVoService : CommandServiceBase<TiVoCommand>
 
         if (cancellationToken.IsCancellationRequested)
         {
-            await ((IScopedLifecycle)this).CleanUpAsync(default);
+            await ((IScopedLifecycle)this).CleanUpAsync(activity, default);
             throw new TaskCanceledException();
         }
 
-        await base.InitializeAsync(cancellationToken);
+        await base.InitializeAsync(activity, cancellationToken);
     }
 
-    public override async Task CleanUpAsync(CancellationToken cancellationToken)
+    public override async Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
-        await base.CleanUpAsync(cancellationToken);
+        await base.CleanUpAsync(activity, cancellationToken);
 
         ITiVoConnection? connectionToDispose = Interlocked.Exchange(ref _connection, null);
         if (connectionToDispose is not null)

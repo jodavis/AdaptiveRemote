@@ -30,7 +30,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
 
     protected abstract Command.ExecuteDelegate CreateHandler(CommandType command);
 
-    public virtual Task InitializeAsync(CancellationToken cancellationToken)
+    public virtual Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
         foreach (CommandType command in _commands)
         {
@@ -40,7 +40,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
         return Task.CompletedTask;
     }
 
-    public virtual Task CleanUpAsync(CancellationToken cancellationToken)
+    public virtual Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
         _stop.Cancel();
 

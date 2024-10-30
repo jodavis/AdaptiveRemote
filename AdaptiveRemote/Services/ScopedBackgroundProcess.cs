@@ -29,7 +29,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
         }, cancellationToken);
     }
 
-    public virtual Task InitializeAsync(CancellationToken cancellationToken)
+    public virtual Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
         TaskCompletionSource startTcs = new();
 
@@ -104,7 +104,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
         }
     }
 
-    public virtual async Task CleanUpAsync(CancellationToken cancellationToken)
+    public virtual async Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
         if (ExecuteTask?.IsCompleted == false)
         {

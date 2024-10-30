@@ -30,7 +30,7 @@ internal static class TelemetryHostBuilderExtensions
                     {
                         config.ConnectionString = settings.ConnectionString
                             ?? throw Errors.Telemetry_SettingRequiredToPublish(nameof(TelemetrySettings.ConnectionString));
-                        config.Credential = new DefaultAzureCredential();
+                        config.Credential = new ChainedTokenCredential(new EnvironmentCredential(), new VisualStudioCredential());
                     });
                 }
             })
@@ -56,7 +56,7 @@ internal static class TelemetryHostBuilderExtensions
                 {
                     configure.ConnectionString = settings.ConnectionString
                         ?? throw Errors.Telemetry_SettingRequiredToPublish(nameof(TelemetrySettings.ConnectionString));
-                    configure.Credential = new DefaultAzureCredential();
+                    configure.Credential = new ChainedTokenCredential(new EnvironmentCredential(), new VisualStudioCredential());
                 });
             }
         });

@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.Logging;
+using AdaptiveRemote.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -8,11 +9,14 @@ namespace AdaptiveRemote.Services.Lifecycle;
 internal class ApplicationLifecycle : BackgroundService
 {
     private readonly IApplicationScopeFactory _scopeFactory;
+    private readonly ILifecycleViewController _controller;
     private readonly ILogger<ApplicationLifecycle> _logger;
+    private readonly List<IScopedLifecycle> _scopedServices = new();
 
-    public ApplicationLifecycle(IApplicationScopeFactory scopeFactory, ILogger<ApplicationLifecycle> logger)
+    public ApplicationLifecycle(IApplicationScopeFactory scopeFactory, ILifecycleViewController controller, ILogger<ApplicationLifecycle> logger)
     {
         _scopeFactory = scopeFactory;
+        _controller = controller;
         _logger = logger;
     }
 
@@ -29,22 +33,49 @@ internal class ApplicationLifecycle : BackgroundService
         await scope.TryInvokeAsync(CleanUpLifecycle, default);
     }
 
-    private Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
+    private async Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
     {
+        List<Task> tasks = new();
+        CancellationTokenSource abortTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cancellationToken = abortTokenSource.Token;
+
+        _controller.SetPhase(LifecyclePhase.SettingUp);
+
         foreach (IScopedLifecycle scopedService in provider.GetServices<IScopedLifecycle>())
         {
-            _ = InitializeServiceAsync(scopedService, cancellationToken);
+            _scopedServices.Add(scopedService);
+
+            tasks.Add(InitializeServiceAsync(scopedService, cancellationToken));
+
+            if (tasks.Any(x => x.IsFaulted))
+            {
+                abortTokenSource.Cancel();
+                break;
+            }
         }
 
-        return Task.CompletedTask;
+        try
+        {
+            await Task.WhenAll(tasks);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _controller.SetPhase(LifecyclePhase.Ready);
+        }
+        catch
+        {
+            _ = CleanUpLifecycle(provider, default);
+        }
     }
 
     private async Task InitializeServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
     {
         _logger.LogInformation(Message.ApplicationLifecycle_Initializing, scopedService.Name);
+        using ILifecycleActivity activity = _controller.StartTask(Phrases.Startup_Starting(scopedService.Name));
         try
         {
-            await scopedService.InitializeAsync(cancellationToken);
+
+            await scopedService.InitializeAsync(activity, cancellationToken);
             _logger.LogInformation(Message.ApplicationLifecycle_Initialized, scopedService.Name);
         }
         catch (OperationCanceledException)
@@ -52,14 +83,20 @@ internal class ApplicationLifecycle : BackgroundService
         catch (Exception error)
         {
             _logger.LogError(Message.ApplicationLifecycle_InitializingFailed, scopedService.Name, error);
+            activity.SetFatalError(error);
+            throw;
         }
     }
 
     private async Task CleanUpLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
     {
-        List<Task> cleanUpTasks = new();
+        _controller.SetPhase(LifecyclePhase.CleaningUp);
 
-        foreach (IScopedLifecycle scopedService in provider.GetServices<IScopedLifecycle>())
+        List<Task> cleanUpTasks = new();
+        List<IScopedLifecycle> scopedServices = _scopedServices.ToList();
+        _scopedServices.Clear();
+
+        foreach (IScopedLifecycle scopedService in scopedServices)
         {
             cleanUpTasks.Add(CleanUpServiceAsync(scopedService, cancellationToken));
         }
@@ -70,13 +107,15 @@ internal class ApplicationLifecycle : BackgroundService
     private async Task CleanUpServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
     {
         _logger.LogInformation(Message.ApplicationLifecycle_CleaningUp, scopedService.Name);
+        using ILifecycleActivity activity = _controller.StartTask(Phrases.Cleanup_CleaningUp(scopedService.Name));
         try
         {
-            await scopedService.CleanUpAsync(cancellationToken);
+            await scopedService.CleanUpAsync(activity, cancellationToken);
             _logger.LogInformation(Message.ApplicationLifecycle_CleanedUp, scopedService.Name);
         }
         catch (Exception error)
         {
+            activity.SetFatalError(error);
             _logger.LogError(Message.ApplicationLifecycle_CleaningUpFailed, scopedService.Name, error);
         }
     }
