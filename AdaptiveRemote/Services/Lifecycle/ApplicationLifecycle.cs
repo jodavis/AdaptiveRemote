@@ -11,6 +11,7 @@ internal class ApplicationLifecycle : BackgroundService
     private readonly IApplicationScopeFactory _scopeFactory;
     private readonly ILifecycleViewController _controller;
     private readonly ILogger<ApplicationLifecycle> _logger;
+    private readonly List<IScopedLifecycle> _scopedServices = new();
 
     public ApplicationLifecycle(IApplicationScopeFactory scopeFactory, ILifecycleViewController controller, ILogger<ApplicationLifecycle> logger)
     {
@@ -35,17 +36,36 @@ internal class ApplicationLifecycle : BackgroundService
     private async Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
     {
         List<Task> tasks = new();
+        CancellationTokenSource abortTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cancellationToken = abortTokenSource.Token;
 
         _controller.SetPhase(LifecyclePhase.SettingUp);
 
         foreach (IScopedLifecycle scopedService in provider.GetServices<IScopedLifecycle>())
         {
+            _scopedServices.Add(scopedService);
+
             tasks.Add(InitializeServiceAsync(scopedService, cancellationToken));
+
+            if (tasks.Any(x => x.IsFaulted))
+            {
+                abortTokenSource.Cancel();
+                break;
+            }
         }
 
-        await Task.WhenAll(tasks);
+        try
+        {
+            await Task.WhenAll(tasks);
 
-        _controller.SetPhase(LifecyclePhase.Ready);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _controller.SetPhase(LifecyclePhase.Ready);
+        }
+        catch
+        {
+            _ = CleanUpLifecycle(provider, default);
+        }
     }
 
     private async Task InitializeServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
@@ -64,6 +84,7 @@ internal class ApplicationLifecycle : BackgroundService
         {
             _logger.LogError(Message.ApplicationLifecycle_InitializingFailed, scopedService.Name, error);
             activity.SetFatalError(error);
+            throw;
         }
     }
 
@@ -72,8 +93,10 @@ internal class ApplicationLifecycle : BackgroundService
         _controller.SetPhase(LifecyclePhase.CleaningUp);
 
         List<Task> cleanUpTasks = new();
+        List<IScopedLifecycle> scopedServices = _scopedServices.ToList();
+        _scopedServices.Clear();
 
-        foreach (IScopedLifecycle scopedService in provider.GetServices<IScopedLifecycle>())
+        foreach (IScopedLifecycle scopedService in scopedServices)
         {
             cleanUpTasks.Add(CleanUpServiceAsync(scopedService, cancellationToken));
         }

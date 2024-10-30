@@ -22,6 +22,8 @@ public class ApplicationLifecycleTests
 
     public TestContext? TestContext { get; set; }
 
+    public LifecyclePhase LatestLifecyclePhase { get; private set; }
+
     private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeFactory.Object, MockLifecycleViewController.Object, MockLogger);
 
     [TestInitialize]
@@ -78,6 +80,9 @@ public class ApplicationLifecycleTests
             .Setup(x => x.StartTask(It.IsAny<string>()))
             .Callback(delegate (string description) { MockActivity.Name = description; })
             .Returns(MockActivity.Object);
+        MockLifecycleViewController
+            .Setup(x => x.SetPhase(It.IsAny<LifecyclePhase>()))
+            .Callback(delegate (LifecyclePhase phase) { LatestLifecyclePhase = phase; });
         MockActivity
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
             .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
@@ -97,6 +102,7 @@ public class ApplicationLifecycleTests
         Verify(MockService3, nameof(MockService3));
 
         Verify(MockLifecycleViewController, nameof(MockLifecycleViewController));
+        Verify(MockActivity, nameof(MockActivity));
 
         static void Verify(Mock mock, string name)
         {
@@ -125,9 +131,6 @@ public class ApplicationLifecycleTests
         Task startTask = sut.StartAsync(default);
 
         // Assert
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
             Expect_InitializedMessage(MockService1),
@@ -135,6 +138,10 @@ public class ApplicationLifecycleTests
             Expect_InitializedMessage(MockService2),
             Expect_InitializingMessage(MockService3),
             Expect_InitializedMessage(MockService3));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.Ready, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
     }
 
     [TestMethod]
@@ -151,43 +158,127 @@ public class ApplicationLifecycleTests
         Task startTask = sut.StartAsync(default);
 
         // Assert
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
             Expect_InitializingMessage(MockService2),
             Expect_InitializingMessage(MockService3));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.SettingUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
     }
 
     [TestMethod]
-    public void ApplicationLifecycle_StartAsync_LogsErrorButStartsOtherServices()
+    public void ApplicationLifecycle_StartAsync_ImmediateFailure_LogsErrorAndDoesNotStartOtherServicesAndCleansUpServices()
     {
         // Arrange
         ApplicationLifecycle sut = CreateSut();
 
         Exception expectedError1 = new InvalidOperationException("Error 1");
-        Exception expectedError2 = new FormatException("Error 2");
 
-        Expect_InitializeAsyncOn(MockService1, Task.FromException(expectedError1));
-        Expect_InitializeAsyncOn(MockService2, Task.FromException(expectedError2));
-        Expect_InitializeAsyncOn(MockService3, IncompleteTask);
+        Expect_InitializeAsyncOn(MockService1, Task.CompletedTask);
+        Expect_InitializeAsyncOn(MockService2, Task.FromException(expectedError1));
 
-        Expect_LifecycleActivity_SetFatalError(expectedError1, expectedError2);
+        Expect_LifecycleActivity_SetFatalError(expectedError1);
+
+        Expect_CleanupAsyncOn(MockService1);
+        Expect_CleanupAsyncOn(MockService2);
 
         // Act
         Task startTask = sut.StartAsync(default);
 
         // Assert
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
-            Expect_InitializingFailedMessage(MockService1, expectedError1),
+            Expect_InitializedMessage(MockService1),
             Expect_InitializingMessage(MockService2),
-            Expect_InitializingFailedMessage(MockService2, expectedError2),
-            Expect_InitializingMessage(MockService3));
+            Expect_InitializingFailedMessage(MockService2, expectedError1),
+            Expect_CleaningUpMessage(MockService1),
+            Expect_CleanedUpMessage(MockService1),
+            Expect_CleaningUpMessage(MockService2),
+            Expect_CleanedUpMessage(MockService2));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StartAsync_DelayedFailure_LogsErrorAndDoesNotStartOtherServicesAndCleansUpServices()
+    {
+        // Arrange
+        ApplicationLifecycle sut = CreateSut();
+
+        Exception expectedError1 = new InvalidOperationException("Error 1");
+        TaskCompletionSource tcs = new();
+
+        Expect_InitializeAsyncOn(MockService1);
+        Expect_InitializeAsyncOn(MockService2, tcs.Task);
+        Expect_InitializeAsyncOn(MockService3);
+
+        Expect_LifecycleActivity_SetFatalError(expectedError1);
+
+        Expect_CleanupAsyncOn(MockService1);
+        Expect_CleanupAsyncOn(MockService2);
+        Expect_CleanupAsyncOn(MockService3);
+
+        Task startTask = sut.StartAsync(default);
+
+        // Act
+        tcs.SetException(expectedError1);
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expect_InitializingMessage(MockService1),
+            Expect_InitializedMessage(MockService1),
+            Expect_InitializingMessage(MockService2),
+            Expect_InitializingMessage(MockService3),
+            Expect_InitializedMessage(MockService3),
+            Expect_InitializingFailedMessage(MockService2, expectedError1),
+            Expect_CleaningUpMessage(MockService1),
+            Expect_CleanedUpMessage(MockService1),
+            Expect_CleaningUpMessage(MockService2),
+            Expect_CleanedUpMessage(MockService2),
+            Expect_CleaningUpMessage(MockService3),
+            Expect_CleanedUpMessage(MockService3));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StartAsync_ImmediateFailure_CancelsStartupThatIsInProgress()
+    {
+        // Arrange
+        ApplicationLifecycle sut = CreateSut();
+
+        Exception expectedError1 = new InvalidOperationException("Error 1");
+
+        Expect_InitializeAsyncOn(MockService1, IncompleteTask);
+        Expect_InitializeAsyncOn(MockService2, Task.FromException(expectedError1));
+
+        Expect_LifecycleActivity_SetFatalError(expectedError1);
+
+        Expect_CleanupAsyncOn(MockService1);
+        Expect_CleanupAsyncOn(MockService2);
+
+        // Act
+        Task startTask = sut.StartAsync(default);
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expect_InitializingMessage(MockService1),
+            Expect_InitializingMessage(MockService2),
+            Expect_InitializingFailedMessage(MockService2, expectedError1),
+            Expect_CleaningUpMessage(MockService1),
+            Expect_CleanedUpMessage(MockService1),
+            Expect_CleaningUpMessage(MockService2),
+            Expect_CleanedUpMessage(MockService2));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
     }
 
     [TestMethod]
@@ -210,10 +301,6 @@ public class ApplicationLifecycleTests
         Task stopTask = sut.StopAsync(default);
 
         // Assert
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
             Expect_InitializedMessage(MockService1),
@@ -228,6 +315,11 @@ public class ApplicationLifecycleTests
             Expect_CleanedUpMessage(MockService2),
             Expect_CleaningUpMessage(MockService3),
             Expect_CleanedUpMessage(MockService3));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsComplete(stopTask, nameof(stopTask));
+        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
     }
 
     [TestMethod]
@@ -249,10 +341,6 @@ public class ApplicationLifecycleTests
         Task stopTask = sut.StopAsync(default);
 
         // Assert
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
             Expect_InitializedMessage(MockService1),
@@ -264,6 +352,11 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpMessage(MockService1),
             Expect_CleaningUpMessage(MockService2),
             Expect_CleaningUpMessage(MockService3));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsNotComplete(stopTask, nameof(stopTask));
+        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
     }
 
     [TestMethod]
@@ -290,10 +383,6 @@ public class ApplicationLifecycleTests
         Task stopTask = sut.StopAsync(default);
 
         // Assert
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
             Expect_InitializedMessage(MockService1),
@@ -308,6 +397,11 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpFailedMessage(MockService2, expectedError2),
             Expect_CleaningUpMessage(MockService3),
             Expect_CleanedUpMessage(MockService3));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsComplete(stopTask, nameof(stopTask));
+        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
     }
 
     [TestMethod]
@@ -330,10 +424,6 @@ public class ApplicationLifecycleTests
         Task stopTask = sut.StopAsync(default);
 
         // Assert
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
             Expect_InitializedMessage(MockService1),
@@ -347,6 +437,50 @@ public class ApplicationLifecycleTests
             Expect_CleanedUpMessage(MockService2),
             Expect_CleaningUpMessage(MockService3),
             Expect_CleanedUpMessage(MockService3));
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsComplete(stopTask, nameof(stopTask));
+        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StopAsync_AfterInitializeFailure_DoesNothing()
+    {
+        // Arrange
+        ApplicationLifecycle sut = CreateSut();
+
+        Exception expectedError1 = new InvalidOperationException("Error 1");
+
+        Expect_InitializeAsyncOn(MockService1, Task.CompletedTask);
+        Expect_InitializeAsyncOn(MockService2, Task.FromException(expectedError1));
+
+        Expect_LifecycleActivity_SetFatalError(expectedError1);
+
+        Expect_CleanupAsyncOn(MockService1);
+        Expect_CleanupAsyncOn(MockService2);
+
+        Task startTask = sut.StartAsync(default);
+
+        // Act
+        Task stopTask = sut.StopAsync(default);
+
+        // Assert
+        MockLogger.VerifyMessages(
+            Expect_InitializingMessage(MockService1),
+            Expect_InitializedMessage(MockService1),
+            Expect_InitializingMessage(MockService2),
+            Expect_InitializingFailedMessage(MockService2, expectedError1),
+            Expect_CleaningUpMessage(MockService1),
+            Expect_CleanedUpMessage(MockService1),
+            Expect_CleaningUpMessage(MockService2),
+            Expect_CleanedUpMessage(MockService2),
+            Expect_ShuttingDownMessage);
+
+        TaskAssert.IsComplete(startTask, nameof(startTask));
+        TaskAssert.IsComplete(stopTask, nameof(stopTask));
+        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
     }
 
     private void Expect_DisposeScope()
