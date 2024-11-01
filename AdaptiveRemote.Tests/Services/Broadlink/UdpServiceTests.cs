@@ -87,7 +87,7 @@ public class UdpServiceTests
         Task<ResponsePacket> resultTask = sut.SendAsync(inputPacket, default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "SendAsync should complete and return the response packet");
 
         ResponsePacket result = resultTask.Result;
         Assert.IsNotNull(result, nameof(result));

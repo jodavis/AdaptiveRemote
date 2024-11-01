@@ -206,7 +206,7 @@ public class SpeechSynthesisTests
         MockSynthesizer.Raise(x => x.SpeakCompleted -= null, EventArgs.Empty);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "SayAsync should complete after SpeakCompleted is raised");
 
         MockLogger.VerifyMessages(
             Expected_SelectedVoice(InstalledVoices[0]),
@@ -234,7 +234,7 @@ public class SpeechSynthesisTests
         Task resultTask = sut.SayAsync(input, default);
 
         // Assert
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        resultTask.Should().NotBeComplete(because: "SayAsync is waiting for SpeakCompleted to be raised");
 
         MockLogger.VerifyMessages(
             Expected_SelectedVoice(InstalledVoices[0]),
@@ -267,7 +267,7 @@ public class SpeechSynthesisTests
         Task resultTask = sut.SayAsync(input, default);
 
         // Assert
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        resultTask.Should().NotBeComplete(because: "SayAsync is waiting for SpeakCompleted to be raised");
 
         MockLogger.VerifyMessages(
             Expected_SelectedVoice(InstalledVoices[0]),
@@ -305,7 +305,7 @@ public class SpeechSynthesisTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
+        resultTask.Should().BeCanceled(because: "SayAsync's cancellation token was triggered");
 
         MockLogger.VerifyMessages(
             Expected_SelectedVoice(InstalledVoices[0]),
@@ -344,7 +344,7 @@ public class SpeechSynthesisTests
         MockSynthesizer.Raise(x => x.SpeakCompleted -= null, EventArgs.Empty);
 
         // Assert
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
+        resultTask.Should().BeCanceled(because: "SayAsync's cancellation token was triggered");
 
         MockLogger.VerifyMessages(
             Expected_SelectedVoice(InstalledVoices[0]),
@@ -380,7 +380,7 @@ public class SpeechSynthesisTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "SayAsync should complete after SpeakCompleted is raised");
 
         MockLogger.VerifyMessages(
             Expected_SelectedVoice(InstalledVoices[0]),
@@ -417,7 +417,8 @@ public class SpeechSynthesisTests
         Task resultTask = sut.SayAsync(input2, default);
 
         // Assert
-        TaskAssert.IsFaulted(resultTask, expectedError, nameof(resultTask));
+        resultTask.Should().BeFaultedWith(expectedError,
+            because: "SayAsync should throw if speaking is already in progress");
 
         MockLogger.VerifyMessages(
             Expected_SelectedVoice(InstalledVoices[0]),
