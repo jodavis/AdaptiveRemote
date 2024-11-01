@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -87,7 +88,7 @@ public class CommandServiceBaseTests
         string result = sut.Name;
 
         // Assert
-        Assert.AreEqual(nameof(MockCommandService), result, nameof(result));
+        result.Should().BeEquivalentTo(nameof(MockCommandService));
     }
 
     [TestMethod]
@@ -104,20 +105,22 @@ public class CommandServiceBaseTests
         {
             if (command is MockCommand)
             {
-                Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " for {0}", command.Name);
-                Assert.IsFalse(command.IsEnabled, nameof(command.IsEnabled) + " for {0}", command.Name);
-                Assert.IsFalse(command.IsActive, nameof(command.IsActive) + " for {0}", command.Name);
+                command.ExecuteAsync.Should().NotBeNull(because: "a handler should have been added to {0} throw a not-initialized exception", command);
+                command.IsEnabled.Should().BeFalse(because: "the service has not initialized {0} yet", command);
+                command.IsActive.Should().BeFalse(because: "the service has not initialized {0} yet", command);
 
-                Task resultTask = command.ExecuteAsync(default);
-                TaskAssert.IsFaulted(resultTask, Errors.CommandService_NotStarted(command), nameof(resultTask) + " for {0}", command.Name);
+                Task executeTask = command.ExecuteAsync!(default);
+                executeTask.Should().BeFaultedWith(Errors.CommandService_NotStarted(command),
+                    because: "the service has not initialized {0} yet", command);
 
                 expectedMessages.Add(ExpectMessage_NotStarted(command.ToString()));
                 MockLogger.VerifyMessages(expectedMessages.ToArray());
             }
             else
             {
-                Assert.IsNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " for {0}", command.Name);
-                Assert.IsTrue(command.IsEnabled, nameof(command.IsEnabled) + " for {0}", command.Name);
+                command.ExecuteAsync.Should().BeNull(because: "{0} is not handled by " + nameof(MockCommandService), command);
+                command.IsEnabled.Should().BeTrue(because: "the properties of {0} are not changed by " + nameof(MockCommandService), command);
+                command.IsActive.Should().BeTrue(because: "the properties of {0} are not changed by " + nameof(MockCommandService));
             }
         }
     }
@@ -133,21 +136,21 @@ public class CommandServiceBaseTests
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
+        initializeTask.Should().BeComplete(because: "the service was initialized");
 
         foreach (Command command in RemoteDefinition.Elements)
         {
             if (command is MockCommand)
             {
-                Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " for {0}", command.Name);
-                Assert.IsTrue(command.IsEnabled, nameof(command.IsEnabled) + " for {0}", command.Name);
-                Assert.IsFalse(command.IsActive, nameof(command.IsActive) + " for {0}", command.Name);
+                command.ExecuteAsync.Should().NotBeNull(because: "a handler should have been added to execute {0}", command);
+                command.IsEnabled.Should().BeTrue(because: "the service has initialized {0}", command);
+                command.IsActive.Should().BeFalse(because: "the service is not executing {0}", command);
             }
             else
             {
-                Assert.IsNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " for {0}", command.Name);
-                Assert.IsTrue(command.IsEnabled, nameof(command.IsEnabled) + " for {0}", command.Name);
-                Assert.IsTrue(command.IsActive, nameof(command.IsActive) + " for {0}", command.Name);
+                command.ExecuteAsync.Should().BeNull(because: "{0} is not handled by " + nameof(MockCommandService), command);
+                command.IsEnabled.Should().BeTrue(because: "the properties of {0} are not changed by " + nameof(MockCommandService), command);
+                command.IsActive.Should().BeTrue(because: "the properties of {0} are not changed by " + nameof(MockCommandService));
             }
         }
 
@@ -165,17 +168,17 @@ public class CommandServiceBaseTests
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
         {
-            Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " was not set for {0}", command.Name);
+            command.ExecuteAsync.Should().NotBeNull(because: "{0} was initialized", command);
 
             // Act
-            Task executeTask = command.ExecuteAsync(default);
+            Task executeTask = command.ExecuteAsync!(default);
 
             // Assert
-            TaskAssert.IsComplete(executeTask, nameof(executeTask) + " for {0}", command.Name);
-            Assert.IsFalse(command.IsActive, nameof(command.IsActive) + " for {0}", command.Name);
+            executeTask.Should().BeComplete(because: "{0} executes synchronously", command);
+            command.IsActive.Should().BeFalse(because: "{0} executes has already completed", command);
 
-            Assert.AreEqual(commandCount + 1, sut.ExecutedCommands.Count, nameof(MockCommandService.ExecutedCommands));
-            Assert.AreSame(command, sut.ExecutedCommands[commandCount], nameof(MockCommandService.ExecutedCommands) + "[{0}]", commandCount);
+            sut.ExecutedCommands.Count.Should().Be(commandCount + 1, because: "that's how many times a command has been executed so far");
+            sut.ExecutedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was executed");
             commandCount++;
 
             expectedMessages.Add(ExpectMessage_Executing(command.ToString()));
@@ -195,17 +198,17 @@ public class CommandServiceBaseTests
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
         {
-            Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " was not set for {0}", command.Name);
+            command.ExecuteAsync.Should().NotBeNull(because: "{0} was initialized", command);
 
             // Act
-            Task executeTask = command.ExecuteAsync(default);
+            Task executeTask = command.ExecuteAsync!(default);
 
             // Assert
-            TaskAssert.IsNotComplete(executeTask, nameof(executeTask) + " for {0}", command.Name);
-            Assert.IsTrue(command.IsActive, nameof(command.IsActive));
+            executeTask.Should().NotBeComplete(because: "{0} returns an incomplete Task", command);
+            command.IsActive.Should().Be(true, because: "{0} is still executing", command);
 
-            Assert.AreEqual(commandCount + 1, sut.ExecutedCommands.Count, nameof(MockCommandService.ExecutedCommands));
-            Assert.AreSame(command, sut.ExecutedCommands[commandCount], nameof(MockCommandService.ExecutedCommands) + "[{0}]", commandCount);
+            sut.ExecutedCommands.Count.Should().Be(commandCount + 1, because: "that's how many times a command has been executed so far");
+            sut.ExecutedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was executed");
             commandCount++;
 
             expectedMessages.Add(ExpectMessage_Executing(command.ToString()));
@@ -226,17 +229,17 @@ public class CommandServiceBaseTests
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
         {
-            Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " was not set for {0}", command.Name);
+            command.ExecuteAsync.Should().NotBeNull(because: "{0} was initialized", command);
 
             // Act
-            Task executeTask = command.ExecuteAsync(default);
+            Task executeTask = command.ExecuteAsync!(default);
 
             // Assert
-            TaskAssert.IsFaulted(executeTask, expectedException, nameof(executeTask) + " for {0}", command.Name);
-            Assert.IsFalse(command.IsActive, nameof(command.IsActive) + " for {0}", command.Name);
+            executeTask.Should().BeFaultedWith(expectedException, because: "{0} throws an exception", command);
+            command.IsActive.Should().Be(false, because: "{0} threw an exception and is no longer executing", command);
 
-            Assert.AreEqual(commandCount + 1, sut.ExecutedCommands.Count, nameof(MockCommandService.ExecutedCommands));
-            Assert.AreSame(command, sut.ExecutedCommands[commandCount], nameof(MockCommandService.ExecutedCommands) + "[{0}]", commandCount);
+            sut.ExecutedCommands.Count.Should().Be(commandCount + 1, because: "that's how many times a command has been executed so far");
+            sut.ExecutedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was executed");
             commandCount++;
 
             expectedMessages.Add(ExpectMessage_Executing(command.ToString()));
@@ -259,17 +262,17 @@ public class CommandServiceBaseTests
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
         {
-            Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " was not set for {0}", command.Name);
+            command.ExecuteAsync.Should().NotBeNull(because: "{0} was initialized", command);
 
             // Act
-            Task executeTask = command.ExecuteAsync(default);
+            Task executeTask = command.ExecuteAsync!(default);
 
             // Assert
-            TaskAssert.IsCanceled(executeTask, nameof(executeTask) + " for {0}", command.Name);
-            Assert.IsFalse(command.IsActive, nameof(command.IsActive) + " for {0}", command.Name);
+            executeTask.Should().BeCanceled(because: "{0} returns a cancelled Task", command);
+            command.IsActive.Should().Be(false, because: "{0} was cancelled and is no longer executing", command);
 
-            Assert.AreEqual(commandCount + 1, sut.ExecutedCommands.Count, nameof(MockCommandService.ExecutedCommands));
-            Assert.AreSame(command, sut.ExecutedCommands[commandCount], nameof(MockCommandService.ExecutedCommands) + "[{0}]", commandCount);
+            sut.ExecutedCommands.Count.Should().Be(commandCount + 1, because: "that's how many times a command has been executed so far");
+            sut.ExecutedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was executed");
             commandCount++;
 
             expectedMessages.Add(ExpectMessage_Executing(command.ToString()));
@@ -290,16 +293,16 @@ public class CommandServiceBaseTests
 
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
         {
-            Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " was not set for {0}", command.Name);
+            command.ExecuteAsync.Should().NotBeNull(because: "{0} was initialized", command);
 
-            Task executeTask = command.ExecuteAsync(cts.Token);
+            Task executeTask = command.ExecuteAsync!(cts.Token);
         }
 
         // Act
         cts.Cancel();
 
         // Assert
-        Assert.IsTrue(sut.CancelTokens.All(x => x.IsCancellationRequested), "All CancelTokens should be cancelled");
+        sut.CancelTokens.ForEach(x => x.IsCancellationRequested.Should().Be(true, because: "all executing commands were cancelled"));
 
         MockLogger.VerifyMessages(
             ExpectMessage_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(0).ToString()),
@@ -319,26 +322,28 @@ public class CommandServiceBaseTests
         Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(cleanUpTask, nameof(cleanUpTask));
+        cleanUpTask.Should().BeComplete(because: "no tasks were executing, so cleanup can happen immediately.");
 
         foreach (Command command in RemoteDefinition.Elements)
         {
             if (command is MockCommand)
             {
-                Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " for {0}", command.Name);
-                Assert.IsFalse(command.IsEnabled, nameof(command.IsEnabled) + " for {0}", command.Name);
-                Assert.IsFalse(command.IsActive, nameof(command.IsActive) + " for {0}", command.Name);
+                command.ExecuteAsync.Should().NotBeNull(because: "a handler should have been added to {0} throw an already-cleaned-up exception", command);
+                command.IsEnabled.Should().BeFalse(because: "the service has uninitialized {0}", command);
+                command.IsActive.Should().BeFalse(because: "the service has uninitialized {0}", command);
 
-                Task resultTask = command.ExecuteAsync(default);
-                TaskAssert.IsFaulted(resultTask, Errors.CommandService_WasShutDown(command), nameof(resultTask) + " for {0}", command.Name);
+                Task resultTask = command.ExecuteAsync!(default);
+                resultTask.Should().BeFaultedWith(Errors.CommandService_WasShutDown(command),
+                    because: "the service has uninitialized {0}", command);
 
                 expectedMessages.Add(ExpectMessage_WasShutDown(command.ToString()));
                 MockLogger.VerifyMessages(expectedMessages.ToArray());
             }
             else
             {
-                Assert.IsNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " for {0}", command.Name);
-                Assert.IsTrue(command.IsEnabled, nameof(command.IsEnabled) + " for {0}", command.Name);
+                command.ExecuteAsync.Should().BeNull(because: "{0} is not handled by " + nameof(MockCommandService), command);
+                command.IsEnabled.Should().BeTrue(because: "the properties of {0} are not changed by " + nameof(MockCommandService), command);
+                command.IsActive.Should().BeTrue(because: "the properties of {0} are not changed by " + nameof(MockCommandService));
             }
         }
     }
@@ -355,16 +360,16 @@ public class CommandServiceBaseTests
 
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
         {
-            Assert.IsNotNull(command.ExecuteAsync, nameof(command.ExecuteAsync) + " was not set for {0}", command.Name);
+            command.ExecuteAsync.Should().NotBeNull(because: "{0} was initialized", command);
 
-            Task executeTask = command.ExecuteAsync(cts.Token);
+            Task executeTask = command.ExecuteAsync!(cts.Token);
         }
 
         // Act
         sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        Assert.AreEqual(3, sut.CancelTokens.Count(x => x.IsCancellationRequested), "All CancelTokens should be cancelled");
+        sut.CancelTokens.ForEach(x => x.IsCancellationRequested.Should().Be(true, because: "all executing commands were cancelled"));
 
         MockLogger.VerifyMessages(
             ExpectMessage_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(0).ToString()),

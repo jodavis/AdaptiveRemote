@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using AdaptiveRemote.Models;
+using FluentAssertions;
 using Moq;
 
 namespace AdaptiveRemote.Services.TiVo;
@@ -32,7 +33,11 @@ public class TiVoServiceTests
     {
         const int InitializeTimeoutInMilliseconds = 1000;
         TiVoService sut = CreateUninitializedSut();
-        Assert.IsTrue(((IScopedLifecycle)sut).InitializeAsync(InitializeActivity, default).Wait(InitializeTimeoutInMilliseconds), nameof(TiVoService) + " did not initialize within {0}ms", InitializeTimeoutInMilliseconds);
+
+        ((IScopedLifecycle)sut).InitializeAsync(InitializeActivity, default)
+            .Should().BeCompleteWithin(TimeSpan.FromMicroseconds(InitializeTimeoutInMilliseconds),
+                because: nameof(TiVoService) + " should initialize within that time");
+
         return sut;
     }
 
@@ -50,7 +55,7 @@ public class TiVoServiceTests
             .Setup(x => x.ConnectAsync(It.IsAny<EndPoint>(), It.IsAny<CancellationToken>()))
             .Callback(delegate (EndPoint ep, CancellationToken cancel)
             {
-                Assert.AreSame(mockEndPoint, ep, "Wrong endpoint was passed to " + nameof(ITiVoConnection.Factory.ConnectAsync));
+                ep.Should().BeSameAs(mockEndPoint, "the endpoint from " + nameof(MockLocator) + " should be passed to " + nameof(MockConnectionFactory));
             })
             .Returns(Task.FromResult(MockConnection.Object))
             .Verifiable(Times.Once);
@@ -137,7 +142,7 @@ public class TiVoServiceTests
         string result = sut.Name;
 
         // Assert
-        Assert.IsFalse(string.IsNullOrEmpty(result), nameof(result) + ".IsNullOrEmpty");
+        result.Should().NotBeNullOrEmpty(because: "the Name property should return something");
     }
 
     [TestMethod]
@@ -150,16 +155,14 @@ public class TiVoServiceTests
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
+        initializeTask.Should().BeComplete(because: "InitializeAsync should complete after TiVo service is initialized");
 
         foreach (TiVoCommand command in Commands.Elements.OfType<TiVoCommand>())
         {
-            Assert.IsNotNull(command.ExecuteAsync, "Service did not set {0} on {1} command",
-                nameof(command.ExecuteAsync),
-                command.Name);
-            Assert.IsTrue(command.IsEnabled, "Service did not set {0} on {1} command",
-                nameof(command.IsEnabled),
-                command.Name);
+            command.ExecuteAsync.Should().NotBeNull(
+                because: "the service should have set it on the {0} command", command.Name);
+            command.IsEnabled.Should().BeTrue(
+                because: "the service should have enabled the {0} command", command.Name);
         }
     }
 
@@ -180,7 +183,7 @@ public class TiVoServiceTests
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        TaskAssert.IsNotComplete(initializeTask, nameof(initializeTask));
+        initializeTask.Should().NotBeComplete(because: "InitializeAsync should wait for locator to complete");
     }
 
     [TestMethod]
@@ -203,7 +206,7 @@ public class TiVoServiceTests
         tcs.SetResult(expectedEndPoint);
 
         // Assert
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
+        initializeTask.Should().BeComplete(because: "InitializeAsync should complete after locator returns an endpoint");
     }
 
     [TestMethod]
@@ -221,7 +224,7 @@ public class TiVoServiceTests
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        TaskAssert.IsNotComplete(initializeTask, nameof(initializeTask));
+        initializeTask.Should().NotBeComplete(because: "InitializeAsync should wait for connection factory to complete");
     }
 
     [TestMethod]
@@ -242,8 +245,8 @@ public class TiVoServiceTests
         tcs.SetResult(MockConnection.Object);
 
         // Assert
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
-        Assert.IsNotNull(PlayCommand.ExecuteAsync, "Service did not set ExecuteAsync on PlayCommand");
+        initializeTask.Should().BeComplete(because: "InitializeAsync should complete after connection factory returns a connection");
+        PlayCommand.ExecuteAsync.Should().NotBeNull(because: "the service should have set it");
     }
 
     [TestMethod]
@@ -262,7 +265,7 @@ public class TiVoServiceTests
         Task initializeTask = sut.InitializeAsync(InitializeActivity, cts.Token);
 
         // Assert
-        TaskAssert.IsCanceled(initializeTask, nameof(initializeTask));
+        initializeTask.Should().BeCanceled(because: "the cancellation token was triggred before the locator was called");
     }
 
     [TestMethod]
@@ -282,8 +285,8 @@ public class TiVoServiceTests
         cts.Cancel();
 
         // Assert
-        Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled));
-        TaskAssert.IsCanceled(initializeTask, nameof(initializeTask));
+        cancelled.IsCancellationRequested.Should().BeTrue(because: "the cancellation token should have been passed through to the Locator");
+        initializeTask.Should().BeCanceled(because: "the cancellation token was triggered during the locator call");
     }
 
     [TestMethod]
@@ -311,7 +314,7 @@ public class TiVoServiceTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsCanceled(initializeTask, nameof(initializeTask));
+        initializeTask.Should().BeCanceled(because: "the cancellation token was triggered after the locator completed");
     }
 
     [TestMethod]
@@ -330,8 +333,8 @@ public class TiVoServiceTests
         cts.Cancel();
 
         // Assert
-        Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled));
-        TaskAssert.IsCanceled(initializeTask, nameof(initializeTask));
+        cancelled.IsCancellationRequested.Should().BeTrue(because: "the cancellation token should have been passed through to the Connection Factory");
+        initializeTask.Should().BeCanceled(because: "the cancellation token was triggered during the connection factory call");
     }
 
     [TestMethod]
@@ -359,7 +362,7 @@ public class TiVoServiceTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsCanceled(initializeTask, nameof(initializeTask));
+        initializeTask.Should().BeCanceled(because: "the cancellation token was triggered after the connection factory completed");
     }
 
     [TestMethod]
@@ -377,9 +380,9 @@ public class TiVoServiceTests
         Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsNotComplete(cleanUpTask, nameof(cleanUpTask));
+        cleanUpTask.Should().NotBeComplete(because: "the DisposeAsync call returns an incomplete task");
 
-        Assert.IsFalse(PlayCommand.IsEnabled, nameof(PlayCommand.IsEnabled));
+        PlayCommand.IsEnabled.Should().BeFalse(because: "commands should be disabled during cleanup");
     }
 
     [TestMethod]
@@ -400,7 +403,7 @@ public class TiVoServiceTests
         tcs.SetResult();
 
         // Assert
-        TaskAssert.IsComplete(cleanUpTask, nameof(cleanUpTask));
+        cleanUpTask.Should().BeComplete(because: "CleanUpAsync should complete after connection DisposeAsync completes");
     }
 
     [TestMethod]
@@ -417,7 +420,7 @@ public class TiVoServiceTests
         Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(cleanUpTask, nameof(cleanUpTask));
+        cleanUpTask.Should().BeComplete(because: "CleanUpAsync should complete immediately if service was not initialized");
     }
 
     [TestMethod]
@@ -434,7 +437,7 @@ public class TiVoServiceTests
         Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(cleanUpTask, nameof(cleanUpTask));
+        cleanUpTask.Should().BeComplete(because: "CleanUpAsync should complete immediately if service was already disposed");
     }
 
     [TestMethod]
@@ -449,7 +452,7 @@ public class TiVoServiceTests
         Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(cleanUpTask, nameof(cleanUpTask));
+        cleanUpTask.Should().BeComplete(because: "CleanUpAsync should complete after connection DisposeAsync completes");
     }
 
     [TestMethod]
@@ -468,8 +471,8 @@ public class TiVoServiceTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsNotComplete(cleanUpTask, nameof(cleanUpTask));
-        Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled.IsCancellationRequested));
+        cleanUpTask.Should().NotBeComplete(because: "DisposeAsync did not respond to the cancellation token and is still running");
+        cancelled.IsCancellationRequested.Should().BeTrue(because: "the cancellation token should have been passed through to DisposeAsync");
     }
 
     [TestMethod]
@@ -484,7 +487,7 @@ public class TiVoServiceTests
         Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsComplete(executeTask, nameof(executeTask));
+        executeTask.Should().BeComplete(because: "PlayCommand.ExecuteAsync should return after MockConnection.SendAsync completes");
     }
 
     [TestMethod]
@@ -502,8 +505,8 @@ public class TiVoServiceTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsNotComplete(executeTask, nameof(executeTask));
-        Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled));
+        executeTask.Should().NotBeComplete(because: "MockConnection.SendAsync did not respond to the cancellation token and is still running");
+        cancelled.IsCancellationRequested.Should().BeTrue(because: "the cancellation token should have been passed through to SendAsync");
     }
 
     [TestMethod]
@@ -521,7 +524,7 @@ public class TiVoServiceTests
         Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsNotComplete(executeTask, nameof(executeTask));
+        executeTask.Should().NotBeComplete(because: "PlayCommand.ExecuteAsync should wait for MockConnection.SendAsync to complete");
     }
 
     [TestMethod]
@@ -542,7 +545,7 @@ public class TiVoServiceTests
         tcs.SetResult();
 
         // Assert
-        TaskAssert.IsComplete(executeTask, nameof(executeTask));
+        executeTask.Should().BeComplete(because: "MockConnection.SendAsync completed");
     }
 
     [TestMethod]
@@ -561,7 +564,8 @@ public class TiVoServiceTests
         Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsFaulted(executeTask, expectedException, nameof(executeTask));
+        executeTask.Should().BeFaultedWith(expectedException,
+            because: "the service was not initialized");
     }
 
     [TestMethod]
@@ -579,7 +583,8 @@ public class TiVoServiceTests
         Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsFaulted(executeTask, expectedError, nameof(executeTask));
+        executeTask.Should().BeFaultedWith(expectedError,
+            because: "the service was disposed");
     }
 
     [TestMethod]
@@ -601,7 +606,8 @@ public class TiVoServiceTests
         Task executeTask = PlayCommand.ExecuteAsync!(default);
 
         // Assert
-        TaskAssert.IsFaulted(executeTask, expectedError, nameof(executeTask));
+        executeTask.Should().BeFaultedWith(expectedError,
+            because: "the service is being disposed");
     }
 
     private void Expect_MockConnection_SendAsync(string expectedCommand, Task? result = default)

@@ -263,7 +263,7 @@ public class SpeechRecognitionTests
         ValueTask<bool> resultTask = enumerator.MoveNextAsync();
 
         // Assert
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        resultTask.Should().NotBeComplete(because: "recognition is waiting for speech to recognize");
     }
 
     [TestMethod]
@@ -286,7 +286,10 @@ public class SpeechRecognitionTests
         MockEngine.Raise(x => x.SpeechRecognized -= null, expectedEventArgs);
 
         // Assert
-        TaskAssert.ResultEquals(resultTask, true, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should()
+            .BeCompleteWithin(TimeSpan.FromSeconds(1))
+            .And
+            .HaveResult(true, because: "input speech was recognized");
         Assert.AreSame(expectedSpeech, enumerator.Current, nameof(enumerator) + ".Current");
     }
 
@@ -311,7 +314,7 @@ public class SpeechRecognitionTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsCanceled(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should().BeCanceled(because: "recognition was stopped via the cancellation token");
     }
 
     [TestMethod]
@@ -333,7 +336,7 @@ public class SpeechRecognitionTests
         ValueTask<bool> resultTask = enumerator.MoveNextAsync();
 
         // Assert
-        TaskAssert.IsCanceled(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should().BeCanceled(because: "recognition the recognition loop was already canceled");
     }
 
     [TestMethod]
@@ -352,7 +355,8 @@ public class SpeechRecognitionTests
         ValueTask<bool> resultTask = enumerator.MoveNextAsync();
 
         // Assert
-        TaskAssert.IsFaulted(resultTask, expectedException, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should().BeFaultedWith(expectedException, within: TimeSpan.FromSeconds(1),
+            because: "Listen threw an exception");
     }
 
     private void Expect_SetConfidenceThreshold(int threshold)

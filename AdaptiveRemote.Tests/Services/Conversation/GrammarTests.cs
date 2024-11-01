@@ -119,7 +119,7 @@ public class GrammarTests
         Log("Done waiting");
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask) + " timed out");
+        resultTask.Should().BeComplete(because: nameof(GetFirstResult) + " should return within 2000ms");
         IRecognizedSpeech result = resultTask.Result;
 
         Assert.AreEqual(expectedText, result.Text, nameof(result) + "." + nameof(result.Text));

@@ -43,8 +43,8 @@ public class ScopedBackgroundProcessTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        resultTask.Should().BeComplete(because: "InitializeAsync should complete after ExecuteAsync is started");
+        sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteAsync should be running after InitializeAsync completes");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -68,8 +68,8 @@ public class ScopedBackgroundProcessTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, cancelled.Token);
 
         // Assert
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
-        TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        resultTask.Should().BeCanceled(because: "InitializeAsync was cancelled by the CancellationToken");
+        sut.ExecuteTask.Should().BeCanceled(because: "CancellationToken from InitializeAsync was passed to ExecuteAsync");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -92,8 +92,8 @@ public class ScopedBackgroundProcessTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, cts.Token);
 
         // Assert
-        TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
+        sut.ExecuteTask.Should().BeCanceled(because: "the CancellationToken was set after ExecuteAsync started but before moving to the worker thread.");
+        resultTask.Should().BeCanceled(because: "InitializeAsync's cancellation token was triggered");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -116,8 +116,8 @@ public class ScopedBackgroundProcessTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, cts.Token);
 
         // Assert
-        TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
+        sut.ExecuteTask.Should().BeCanceled(because: "the CancellationToken was set after moving to the worker thread but before ExecuteAsync started.");
+        resultTask.Should().BeCanceled(because: "InitializeAsync's cancellation token was triggered");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -139,8 +139,8 @@ public class ScopedBackgroundProcessTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, cts.Token);
 
         // Assert
-        TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        TaskAssert.IsCanceled(resultTask, nameof(resultTask));
+        sut.ExecuteTask.Should().BeCanceled(because: "InitializeAsync's cancellation token was triggered");
+        resultTask.Should().BeCanceled(because: "InitializeAsync's cancellation token was triggered");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -163,8 +163,8 @@ public class ScopedBackgroundProcessTests
         cts.Cancel();
 
         // Assert
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
+        sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteAsync should still be running after InitializeAsync completes");
+        initializeTask.Should().BeComplete(because: "the service initialized successfully");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -188,8 +188,10 @@ public class ScopedBackgroundProcessTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        TaskAssert.IsFaulted(resultTask, expectedException, nameof(resultTask));
-        TaskAssert.IsFaulted(sut.ExecuteTask, expectedException, nameof(sut.ExecuteTask));
+        resultTask.Should().BeFaultedWith(expectedException,
+            because: "InitializeAsync should fail if ExecuteAsync fails during initialization");
+        sut.ExecuteTask.Should().BeFaultedWith(expectedException,
+            because: "ExecuteAsync should fail with the same exception");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -214,8 +216,9 @@ public class ScopedBackgroundProcessTests
         sut.ExecuteCompletionSource.SetException(expectedException);
 
         // Assert
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
-        TaskAssert.IsFaulted(sut.ExecuteTask, expectedException, nameof(sut.ExecuteTask));
+        initializeTask.Should().BeComplete(because: "the exception happened after initialization completed");
+        sut.ExecuteTask.Should().BeFaultedWith(expectedException,
+            because: "ExecuteAsync threw an exception");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -240,8 +243,8 @@ public class ScopedBackgroundProcessTests
         sut.ExecuteCompletionSource.SetException(expectedException);
 
         // Assert
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
-        TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        initializeTask.Should().BeComplete(because: "the cancellation happened after initialization completed");
+        sut.ExecuteTask.Should().BeCanceled(because: "ExecuteAsync threw a TaskCancelledException");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -264,8 +267,8 @@ public class ScopedBackgroundProcessTests
         sut.ExecuteCompletionSource.SetResult();
 
         // Assert
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        initializeTask.Should().BeComplete(because: "initialization completed successfully");
+        sut.ExecuteTask.Should().BeComplete(because: "ExecuteAsync ran to completion");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -290,8 +293,8 @@ public class ScopedBackgroundProcessTests
         sut.ExecuteCompletionSource.SetException(expectedException);
 
         // Assert
-        TaskAssert.IsComplete(initializeTask, nameof(initializeTask));
-        TaskAssert.IsCanceled(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        initializeTask.Should().BeComplete(because: "initialization completed successfully");
+        sut.ExecuteTask.Should().BeCanceled(because: "ExecuteAsync threw a TaskCanceledException");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -309,14 +312,17 @@ public class ScopedBackgroundProcessTests
                 Expect_Stopped
             );
 
-        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
+        sut.InitializeAsync(InitializeActivity, default)
+            .Should().BeComplete(because: "the service should initialize synchronously");
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, TimeSpan.FromSeconds(1), nameof(sut.ExecuteTask));
+        resultTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "CleanUpAsync should complete after ExecuteAsync ends");
+        sut.ExecuteTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "ExecuteAsync should run to completion after the stop token is set");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -334,14 +340,17 @@ public class ScopedBackgroundProcessTests
             )
             .Expect_ExecuteAsync_DoesNotComplete();
 
-        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
+        sut.InitializeAsync(InitializeActivity, default)
+            .Should().BeComplete(because: "InitializeAsync should complete synchronously");
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsNotComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, TimeSpan.FromSeconds(1), nameof(sut.ExecuteTask));
+        resultTask.Should().NotBeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "this ExecuteAsync does not respond to the stop token");
+        sut.ExecuteTask.Should().NotBeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "this ExecuteAsync does not respond to the stop token");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -363,7 +372,8 @@ public class ScopedBackgroundProcessTests
             )
             .Expect_ExecuteAsync_IgnoresCancellationToken();
 
-        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
+        sut.InitializeAsync(InitializeActivity, default)
+            .Should().BeComplete(because: "InitializeAsync should complete synchronously");
 
         Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
@@ -371,7 +381,8 @@ public class ScopedBackgroundProcessTests
         sut.ExecuteCompletionSource.SetException(expectedError);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "CleanUpAsync should complete even if ExecuteAsync faults");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -390,7 +401,8 @@ public class ScopedBackgroundProcessTests
         Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "CleanUpAsync should be a no-op if the service was never started");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -408,16 +420,19 @@ public class ScopedBackgroundProcessTests
                 Expect_StoppedEarly
             );
 
-        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
-        sut.ExecuteCompletionSource.SetResult();
+        sut.InitializeAsync(InitializeActivity, default)
+            .Should().BeComplete(because: "InitializeAsync should complete synchronously");
 
-        TaskAssert.IsComplete(sut.ExecuteTask!, TimeSpan.FromSeconds(1), nameof(sut.ExecuteTask));
+        sut.ExecuteCompletionSource.SetResult();
+        sut.ExecuteTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "result was set on ExecuteCompletionSource");
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "CleanUpAsync should be a no-op if ExecuteAsync has already run to completion");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -435,18 +450,20 @@ public class ScopedBackgroundProcessTests
                 Expect_StoppedEarly
             );
 
-        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
+        sut.InitializeAsync(InitializeActivity, default)
+            .Should().BeComplete(because: "InitializeAsync should complete synchronously");
         CancellationTokenSource cts = new();
         cts.Cancel();
         sut.ExecuteCompletionSource.SetCanceled(cts.Token);
 
-        TaskAssert.IsCanceled(sut.ExecuteTask!, TimeSpan.FromSeconds(1), nameof(sut.ExecuteTask));
+        sut.ExecuteTask.Should().BeCanceled(because: "ExecuteCompletionSource was cancelled");
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "CleanUpAsync should be a no-op if ExecuteAsync was already cancelled");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -466,16 +483,18 @@ public class ScopedBackgroundProcessTests
                 Expect_Error(expectedException)
             );
 
-        TaskAssert.IsComplete(sut.InitializeAsync(InitializeActivity, default), nameof(sut.InitializeAsync));
+        sut.InitializeAsync(InitializeActivity, default)
+            .Should().BeComplete(because: "InitializeAsync should complete sychronously");
         sut.ExecuteCompletionSource.SetException(expectedException);
 
-        TaskAssert.IsFaulted(sut.ExecuteTask!, expectedException, TimeSpan.FromSeconds(1), nameof(sut.ExecuteTask));
+        sut.ExecuteTask.Should().BeFaultedWith(expectedException,
+            because: "ExecuteCompletionSource.SetException was called");
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        TaskAssert.IsComplete(resultTask, TimeSpan.FromSeconds(1), nameof(resultTask));
+        resultTask.Should().BeComplete(because: "CleanUpAsync should be a no-op if ExecuteAsync has already faulted");
 
         sut.VerifyMethodCalls();
         sut.VerifyLogMessages();
@@ -502,8 +521,8 @@ public class ScopedBackgroundProcessTests
                 .WithStandardTaskBehavior(ExecuteCompletionSource.Task)
                 .Callback(() =>
                 {
-                    Assert.IsNotNull(_initializeTask, nameof(_initializeTask) + " during " + nameof(ExecuteAsync));
-                    TaskAssert.IsNotComplete(_initializeTask, nameof(_initializeTask) + " during " + nameof(ExecuteAsync));
+                    _initializeTask.Should().NotBeNull(because: "ExecuteAsync should not be called until InitializeAsync has started");
+                    _initializeTask.Should().NotBeComplete(because: "The InitializeAsync should not complete until ExecuteAsync completes or awaits something");
                     ExecuteAsyncCallback?.Invoke();
                 })
                 .Verifiable(Times.Once);
@@ -512,7 +531,7 @@ public class ScopedBackgroundProcessTests
                 .Setup(x => x.MoveToWorkerThreadAsync(It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(async (Func<Task> task, CancellationToken cancellationToken) =>
                 {
-                    Assert.IsNull(_initializeTask, nameof(_initializeTask) + " during " + nameof(MoveToWorkerThreadAsync));
+                    _initializeTask.Should().BeNull(because: "it can't be set until it awaits the call to " + nameof(MoveToWorkerThreadAsync));
                     BeforeMoveToWorkerThreadAsyncCallback?.Invoke();
                     await _moveToWorkerThreadTcs.Task;
 

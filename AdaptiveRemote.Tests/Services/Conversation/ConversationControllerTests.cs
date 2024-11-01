@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
+using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -257,7 +258,7 @@ public class ConversationControllerTests
         MockSynthesis.Verify();
         Command1Execute.Verify();
         MockDefinition.Verify();
-        Assert.IsTrue(_allSpeechWasRead, "The test did not finish reading all speech from ISpeechRecognition.RecognizeAsync()");
+        _allSpeechWasRead.Should().BeTrue(because: "the test should have finished reading all the speech from ISpeechRecognition.RecognizeAsync()");
     }
 
     [TestMethod]
@@ -274,9 +275,9 @@ public class ConversationControllerTests
         ConversationController sut = CreateSut();
 
         // Assert
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_WaitingForActivation, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_WaitingForActivation);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -290,7 +291,9 @@ public class ConversationControllerTests
         Expect_Recognition_SetFilter(PhraseKinds.WakeWord);
 
         // Act
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
         MockLogger.VerifyMessages(
@@ -299,9 +302,9 @@ public class ConversationControllerTests
             Expected_SwitchedToWorkerThread,
             Expected_Started);
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -316,7 +319,9 @@ public class ConversationControllerTests
 
         Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening, completeTask: IncompleteTask);
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
@@ -334,9 +339,9 @@ public class ConversationControllerTests
             Expected_SwitchedToWorkerThread,
             Expected_Started);
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
+        ViewModel.SpeakingMessage.Should().Be(Phrases.Conversation_ImListening);
     }
 
     [TestMethod]
@@ -352,7 +357,9 @@ public class ConversationControllerTests
         TaskCompletionSource tcs = new();
         Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening, tcs.Task);
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
@@ -364,7 +371,7 @@ public class ConversationControllerTests
         Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        resultTask.Should().NotBeComplete(because: "Synthesis.SayAsync is still running");
 
         MockLogger.VerifyMessages(
             Expected_Starting,
@@ -384,9 +391,9 @@ public class ConversationControllerTests
             Expected_Stopping,
             Expected_Stopped);
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse(because: "ConversationController does not listen while cleaning up");
+        ViewModel.StatusMessage.Should().BeEmpty(because: "ConversationController has no status while cleaning up");
+        ViewModel.SpeakingMessage.Should().BeNull(because: "ConversationController should not speak while cleaning up");
     }
 
     [TestMethod]
@@ -401,7 +408,9 @@ public class ConversationControllerTests
         Expect_Recognition_SetFilter(PhraseKinds.Commands, Times.Exactly(2));
         Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
@@ -419,9 +428,9 @@ public class ConversationControllerTests
             Expected_SwitchedToWorkerThread,
             Expected_Started);
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeTrue(because: "ConversationController should be listening for commands after attention word is recognized");
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
+        ViewModel.SpeakingMessage.Should().BeNull(because: "ConversationController should not be speaking while listening");
     }
 
     [TestMethod]
@@ -453,11 +462,11 @@ public class ConversationControllerTests
             Expected_Executing(Command1.Name),
             Expected_Started);
 
-        TaskAssert.IsComplete(initializeTask, TimeSpan.FromSeconds(1), nameof(initializeTask));
+        initializeTask.Should().BeComplete(because: "InitializeAsync should complete after the service is initialized");
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.AreEqual(Phrases.Conversation_Sent(Command1.Name), ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse(because: "ConversationController should not be listening while speaking");
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImSending);
+        ViewModel.SpeakingMessage.Should().Be(Phrases.Conversation_Sent(Command1.Name));
     }
 
     [TestMethod]
@@ -478,7 +487,9 @@ public class ConversationControllerTests
 
         Expect_Command1_ExecuteAsync();
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for expected start-up
             Expected_Starting,
@@ -498,9 +509,9 @@ public class ConversationControllerTests
             Expected_Executing(Command1.Name),
             Expected_Executed(Command1.Name));
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeTrue();
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -535,11 +546,11 @@ public class ConversationControllerTests
             Expected_Executed(Command1.Name),
             Expected_Started);
 
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "InitializeAsync should complete after the service is initialized");
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImSending, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.AreEqual(Phrases.Conversation_Sent(Command1.Name), ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse(because: "ConversationController should not be listening while speaking");
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImSending);
+        ViewModel.SpeakingMessage.Should().Be(Phrases.Conversation_Sent(Command1.Name));
     }
 
     [TestMethod]
@@ -577,11 +588,11 @@ public class ConversationControllerTests
             Expected_Executed(Command2.Name),
             Expected_Started);
 
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "InitializeAsync should complete after the service is initialized");
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.AreEqual(null, ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().Be(true);
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
+        ViewModel.SpeakingMessage.Should().Be(null);
     }
 
     [TestMethod]
@@ -603,7 +614,9 @@ public class ConversationControllerTests
 
         Expect_Command1_ExecuteAsync();
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -626,7 +639,7 @@ public class ConversationControllerTests
             Expected_Started,
             Expected_Stopping);
 
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        resultTask.Should().NotBeComplete(because: "Synthesis.SayAsync is still running");
 
         // Act
         tcs.SetResult();
@@ -642,11 +655,11 @@ public class ConversationControllerTests
             Expected_Stopping,
             Expected_Stopped);
 
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "CleanupAsync should complete after the service is cleaned up");
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().BeEmpty();
+        ViewModel.SpeakingMessage.Should().BeNull(because: "ConversationController should not be speaking while cleaning up");
     }
 
     [TestMethod]
@@ -667,7 +680,9 @@ public class ConversationControllerTests
         Expect_Command1_ExecuteAsync(times: Times.Exactly(3));
 
         // Act
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
         MockLogger.VerifyMessages(
@@ -682,9 +697,9 @@ public class ConversationControllerTests
             Expected_Executed(Command1.Name),
             Expected_Started);
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().Be(true);
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -701,7 +716,9 @@ public class ConversationControllerTests
         Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening, IncompleteTask);
 
         // Act
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
         MockLogger.VerifyMessages(
@@ -710,9 +727,9 @@ public class ConversationControllerTests
             Expected_SwitchedToWorkerThread,
             Expected_Started);
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.AreEqual(Phrases.Conversation_StoppedListening, ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
+        ViewModel.SpeakingMessage.Should().Be(Phrases.Conversation_StoppedListening);
     }
 
     [TestMethod]
@@ -730,7 +747,9 @@ public class ConversationControllerTests
         Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
         Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening, tcs.Task);
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -749,7 +768,7 @@ public class ConversationControllerTests
             Expected_Started,
             Expected_Stopping);
 
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        resultTask.Should().NotBeComplete(because: "Synthesis.SayAsync is still running");
 
         // Act
         tcs.SetResult();
@@ -763,11 +782,11 @@ public class ConversationControllerTests
             Expected_Stopping,
             Expected_Stopped);
 
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "CleanupAsync should complete after the service is cleaned up");
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().BeEmpty();
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -785,7 +804,9 @@ public class ConversationControllerTests
         Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening);
 
         // Act
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
         MockLogger.VerifyMessages(
@@ -794,9 +815,9 @@ public class ConversationControllerTests
             Expected_SwitchedToWorkerThread,
             Expected_Started);
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ImListening, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().Be(true);
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -821,7 +842,9 @@ public class ConversationControllerTests
             .Throws(exception);
 
         // Act
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
         MockLogger.VerifyMessages(
@@ -832,9 +855,9 @@ public class ConversationControllerTests
             Expected_Retrying(1, exception),
             Expected_Started);
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_ListeningForAttention, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -900,11 +923,12 @@ public class ConversationControllerTests
             Expected_Executing(Command1.Name),
             Expected_RetryLimitReached(10));
 
-        TaskAssert.IsFaulted(initializeTask, exception, nameof(initializeTask));
+        initializeTask.Should().BeFaultedWith(exception,
+            because: "the exception occurred during too many retries");
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Conversation_SystemFailed, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().Be(Phrases.Conversation_SystemFailed);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -915,7 +939,9 @@ public class ConversationControllerTests
 
         CancellationToken cancelled = Expect_Recognition_RecognizeAsync_IsCancelled(returnWhenCancelled: false);
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -934,13 +960,13 @@ public class ConversationControllerTests
             Expected_Started,
             Expected_Stopping);
 
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        resultTask.Should().NotBeComplete(because: "Recognition.RecognizeAsync is still running");
 
-        Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled.IsCancellationRequested));
+        cancelled.IsCancellationRequested.Should().BeTrue(because: "RecognizeAsync's CancellationToken should have been triggered");
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Cleanup_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().Be(Phrases.Cleanup_ShuttingDown);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -951,7 +977,9 @@ public class ConversationControllerTests
 
         CancellationToken cancelled = Expect_Recognition_RecognizeAsync_IsCancelled(returnWhenCancelled: true);
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -971,13 +999,13 @@ public class ConversationControllerTests
             Expected_Stopping,
             Expected_Stopped);
 
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "CleanUpAsync should complete after cleanup is finished");
 
-        Assert.IsTrue(cancelled.IsCancellationRequested, nameof(cancelled.IsCancellationRequested));
+        cancelled.IsCancellationRequested.Should().BeTrue(because: "RecognizeAsync's CancellationToken should have been triggered");
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().BeEmpty();
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -1000,7 +1028,9 @@ public class ConversationControllerTests
             .Returns(IncompleteTask)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -1021,13 +1051,13 @@ public class ConversationControllerTests
             Expected_Started,
             Expected_Stopping);
 
-        TaskAssert.IsNotComplete(resultTask, nameof(resultTask));
+        resultTask.Should().NotBeComplete(because: "Command1Execute is still running");
 
-        Assert.IsTrue(token.IsCancellationRequested, nameof(token.IsCancellationRequested));
+        token.IsCancellationRequested.Should().BeTrue(because: "ExecuteAsync's CancellationToken should have been triggered");
 
-        Assert.AreEqual(true, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(Phrases.Cleanup_ShuttingDown, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().Be(true);
+        ViewModel.StatusMessage.Should().Be(Phrases.Cleanup_ShuttingDown);
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -1050,7 +1080,9 @@ public class ConversationControllerTests
             .Returns(tcs.Task)
             .Verifiable(Times.Once);
 
-        sut.InitializeAsync(InitializeActivity, default);
+        sut.InitializeAsync(InitializeActivity, default)
+            .Wait(1000)
+            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -1072,11 +1104,11 @@ public class ConversationControllerTests
             Expected_Stopping,
             Expected_Stopped);
 
-        TaskAssert.IsComplete(resultTask, nameof(resultTask));
+        resultTask.Should().BeComplete(because: "CleanupAsync should complete after the service is cleaned up");
 
-        Assert.AreEqual(false, ViewModel.IsListening, nameof(ViewModel.IsListening));
-        Assert.AreEqual(string.Empty, ViewModel.StatusMessage, nameof(ViewModel.StatusMessage));
-        Assert.IsNull(ViewModel.SpeakingMessage, nameof(ViewModel.SpeakingMessage));
+        ViewModel.IsListening.Should().BeFalse();
+        ViewModel.StatusMessage.Should().BeEmpty();
+        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     public abstract class CommandExecute

@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Logging;
 using AdaptiveRemote.Services;
+using FluentAssertions;
 using Moq;
 
 namespace AdaptiveRemote.Services.Lifecycle;
@@ -139,8 +140,8 @@ public class ApplicationLifecycleTests
             Expect_InitializingMessage(MockService3),
             Expect_InitializedMessage(MockService3));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
         Assert.AreEqual(LifecyclePhase.Ready, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
     }
 
@@ -163,9 +164,9 @@ public class ApplicationLifecycleTests
             Expect_InitializingMessage(MockService2),
             Expect_InitializingMessage(MockService3));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.SettingUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.SettingUp, because: "Services are still initializing");
     }
 
     [TestMethod]
@@ -198,9 +199,9 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpMessage(MockService2),
             Expect_CleanedUpMessage(MockService2));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "Services are being cleaned up after failure");
     }
 
     [TestMethod]
@@ -242,9 +243,9 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpMessage(MockService3),
             Expect_CleanedUpMessage(MockService3));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "Services are being cleaned up after failure");
     }
 
     [TestMethod]
@@ -276,9 +277,9 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpMessage(MockService2),
             Expect_CleanedUpMessage(MockService2));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "Services are being cleaned up after failure");
     }
 
     [TestMethod]
@@ -316,10 +317,10 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpMessage(MockService3),
             Expect_CleanedUpMessage(MockService3));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        stopTask.Should().BeComplete(because: "StopAsync should complete after all services are cleaned up");
+        sut.ExecuteTask.Should().BeComplete(because: "ExecuteTask should complete after all services have stopped");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "we stay in this state after services are stopped, until the application exits");
     }
 
     [TestMethod]
@@ -353,10 +354,10 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpMessage(MockService2),
             Expect_CleaningUpMessage(MockService3));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsNotComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsNotComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        stopTask.Should().NotBeComplete(because: "StopAsync should block until all services are cleaned up");
+        sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "Services are being cleaned up for StopAsync");
     }
 
     [TestMethod]
@@ -398,10 +399,10 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpMessage(MockService3),
             Expect_CleanedUpMessage(MockService3));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        stopTask.Should().BeComplete(because: "StopAsyc should complete after all services are cleaned up");
+        sut.ExecuteTask.Should().BeComplete(because: "ExecuteTask should complete after all services have stopped");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "services are being cleaned up for StopAsync, even though there was an error");
     }
 
     [TestMethod]
@@ -438,10 +439,10 @@ public class ApplicationLifecycleTests
             Expect_CleaningUpMessage(MockService3),
             Expect_CleanedUpMessage(MockService3));
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        stopTask.Should().BeComplete(because: "StopAsync should complete after all services are cleaned up");
+        sut.ExecuteTask.Should().BeComplete(because: "ExecuteTask should complete after all services have stoped");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "we stay in this state after StopAsync until the application exits, even after services have cleaned up");
     }
 
     [TestMethod]
@@ -477,10 +478,10 @@ public class ApplicationLifecycleTests
             Expect_CleanedUpMessage(MockService2),
             Expect_ShuttingDownMessage);
 
-        TaskAssert.IsComplete(startTask, nameof(startTask));
-        TaskAssert.IsComplete(stopTask, nameof(stopTask));
-        TaskAssert.IsComplete(sut.ExecuteTask, nameof(sut.ExecuteTask));
-        Assert.AreEqual(LifecyclePhase.CleaningUp, LatestLifecyclePhase, nameof(LatestLifecyclePhase));
+        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
+        stopTask.Should().BeComplete(because: "StopAsync should complete after all services are cleaned up, even if some have failed");
+        sut.ExecuteTask.Should().BeComplete(because: "ExecuteTask should complete after all services have stopped");
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "we stay in this state until the application exits");
     }
 
     private void Expect_DisposeScope()
