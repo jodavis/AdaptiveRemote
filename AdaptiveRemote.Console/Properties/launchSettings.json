@@ -17,6 +17,10 @@
     },
     "NormalRun": {
       "commandName": "Project"
+    },
+    "FakeDevices": {
+      "commandName": "Project",
+      "commandLineArgs": "--tivo:Fake=True --broadlink:Fake=True"
     }
   }
 }
