@@ -1,5 +1,4 @@
 ﻿using AdaptiveRemote.Configuration;
-using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -8,8 +7,6 @@ namespace AdaptiveRemote;
 
 public static class AppHostBuilderExtensions
 {
-    private const string KeyVaultName = "adaptiveremote";
-
     public static IHostBuilder ConfigureApp(this IHostBuilder hostBuilder)
         => hostBuilder
             .AddBlazorUI()
@@ -26,9 +23,13 @@ public static class AppHostBuilderExtensions
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["telemetry:Publish"] = "True"
+                    // This makes the default behavior to publish telemetry when the full application
+                    // is hosted. However, the setting is "false" by default so that test hosting won't
+                    // publish telemetry unless explicitly enabled.
+                    // TODO [ADR-12]: This behavior is currently disabled because we don't have anywhere
+                    // to publish telemetry to.
+                    // ["telemetry:Publish"] = "True"
                 });
-                config.AddAzureKeyVault(new Uri($"https://{KeyVaultName}.vault.azure.net/"), new ChainedTokenCredential(new EnvironmentCredential(), new VisualStudioCredential()));
                 config.AddUserSecrets<App>();
                 config.AddCommandLine(args);
             });
