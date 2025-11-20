@@ -206,6 +206,7 @@ public class ApplicationStartupShutdownTests
         Stopwatch stopwatch)
     {
         DateTime startTime = DateTime.UtcNow;
+        int delayMs = 100; // Start with shorter delay
         
         while (DateTime.UtcNow - startTime < timeout)
         {
@@ -224,7 +225,10 @@ public class ApplicationStartupShutdownTests
             TestContext?.WriteLine(
                 $"[{stopwatch.Elapsed:mm\\:ss\\.fff}] Waiting for Ready state... Current: {viewModel.CurrentPhase}, Task: {viewModel.TaskName}");
             
-            await Task.Delay(500);
+            await Task.Delay(delayMs).ConfigureAwait(false);
+            
+            // Use exponential backoff up to 500ms
+            delayMs = Math.Min(delayMs * 2, 500);
         }
 
         TestContext?.WriteLine(
@@ -240,11 +244,22 @@ public class ApplicationStartupShutdownTests
         TimeSpan timeout,
         Stopwatch stopwatch)
     {
-        Task completedTask = await Task.WhenAny(appLoopTask, Task.Delay(timeout));
+        using CancellationTokenSource cts = new();
+        cts.CancelAfter(timeout);
         
-        if (completedTask == appLoopTask)
+        try
         {
-            return true;
+            Task delayTask = Task.Delay(Timeout.Infinite, cts.Token);
+            Task completedTask = await Task.WhenAny(appLoopTask, delayTask).ConfigureAwait(false);
+            
+            if (completedTask == appLoopTask)
+            {
+                return true;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when timeout occurs
         }
 
         TestContext?.WriteLine(
