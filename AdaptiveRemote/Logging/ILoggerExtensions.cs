@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Logging;
+
 internal static class ILoggerExtensions
 {
     private static readonly IReadOnlyDictionary<Message, string> LoggingMessages = InitializeLoggingMessages();

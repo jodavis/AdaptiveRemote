@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Conversation;
+
 internal class SpeechSynthesis : ISpeechSynthesis
 {
     private readonly ISpeechSynthesizer _synthesizer;

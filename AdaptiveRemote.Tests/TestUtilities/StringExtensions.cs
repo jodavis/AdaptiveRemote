@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 
 namespace AdaptiveRemote.TestUtilities;
+
 internal static class StringExtensions
 {
     private static readonly Regex PlaceHolderRegex = new("{\\w+}");
