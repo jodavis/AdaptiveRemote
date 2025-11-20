@@ -13,6 +13,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
+      checks: write
+      pull-requests: write
     
     steps:
     - name: Checkout code
@@ -32,4 +34,11 @@ jobs:
       run: dotnet build --no-restore /warnaserror
     
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults"
+    
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      if: always()
+      with:
+        files: |
+          TestResults/**/*.trx
