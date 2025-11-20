@@ -9,6 +9,8 @@
     <PackageProjectUrl>https://github.com/jodavis/AdaptiveRemote</PackageProjectUrl>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <Deterministic>true</Deterministic>
+    <!-- Enable building Windows projects on non-Windows platforms for testing -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>
