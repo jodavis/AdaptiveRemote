@@ -5,5 +5,5 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance", 
+[assembly: SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance",
     Justification = "This is not a performance concern in tests, and often I am testing the specific type that's being cast.")]

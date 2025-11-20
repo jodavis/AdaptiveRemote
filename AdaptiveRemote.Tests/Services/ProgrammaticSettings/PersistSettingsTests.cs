@@ -22,7 +22,7 @@ public class PersistSettingsTests
         get => MockLogger.OutputWriter;
         set => MockLogger.OutputWriter = value;
     }
-    
+
     private static readonly char[] LineSeparators = ['\r', '\n'];
 
     [TestCleanup]
