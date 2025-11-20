@@ -39,7 +39,8 @@ public class ApplicationStartupShutdownTests
         {
             try
             {
-                RunApplicationTestAsync().GetAwaiter().GetResult();
+                // Use ConfigureAwait(false) to avoid capturing synchronization context
+                RunApplicationTestAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -103,8 +104,8 @@ public class ApplicationStartupShutdownTests
             viewModel.ShutdownCommand = new ActionCommand(() =>
             {
                 TestContext?.WriteLine($"[{stopwatch.Elapsed:mm\\:ss\\.fff}] Shutdown command invoked");
-                // Use GetAwaiter().GetResult() to avoid deadlocks in STA thread
-                host.StopAsync().GetAwaiter().GetResult();
+                // Use ConfigureAwait(false) to avoid capturing synchronization context in STA thread
+                host.StopAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             });
             
             // Act - Start the application host
@@ -180,9 +181,10 @@ public class ApplicationStartupShutdownTests
                 TestContext?.WriteLine($"[{stopwatch.Elapsed:mm\\:ss\\.fff}] Force stopping host (cleanup)");
                 try
                 {
+                    Task stopTask = host.StopAsync(TimeSpan.FromSeconds(5));
                     await Task.WhenAny(
-                        host.StopAsync(TimeSpan.FromSeconds(5)),
-                        Task.Delay(TimeSpan.FromSeconds(5)));
+                        stopTask,
+                        Task.Delay(TimeSpan.FromSeconds(5))).ConfigureAwait(false);
                 }
                 catch (Exception cleanupEx)
                 {
