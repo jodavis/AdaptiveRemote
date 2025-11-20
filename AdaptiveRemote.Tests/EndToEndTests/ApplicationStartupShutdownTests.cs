@@ -73,7 +73,7 @@ public class ApplicationStartupShutdownTests
 
             // Create the ViewModel and Controller without WPF window
             viewModel = new LifecycleView();
-            ILifecycleViewController controller = new LifecycleViewController(viewModel);
+            LifecycleViewController controller = new LifecycleViewController(viewModel);
             
             TestContext?.WriteLine($"[{stopwatch.Elapsed:mm\\:ss\\.fff}] Created ViewModel and Controller");
 
@@ -85,7 +85,7 @@ public class ApplicationStartupShutdownTests
                 .ConfigureServices(services =>
                 {
                     // Add the precreated services (without MainWindow for testing)
-                    services.AddSingleton(controller);
+                    services.AddSingleton<ILifecycleViewController>(controller);
                     services.AddSingleton(viewModel);
                     
                     // Add logging to capture output
