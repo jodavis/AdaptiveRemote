@@ -74,8 +74,9 @@ cd AdaptiveRemote.Tests && dotnet test
 ## Contribution Guidelines
 
 ### Branch Strategy
-- Submit PRs to the `dev/rename` branch
-- Feature branches should fork from `dev/rename`
+- Fork the repository and create a feature branch for your changes
+- Branch names should include the Jira work ID in the format `ADR-#` (e.g., `ADR-123-feature-name`)
+- Issue titles should include the Jira work ID (e.g., "ADR-123: Add new feature") to help track work in Jira
 
 ### Code Review
 - Code reviews are required before merging
