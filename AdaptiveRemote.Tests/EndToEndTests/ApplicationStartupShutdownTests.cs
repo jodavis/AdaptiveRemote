@@ -22,6 +22,9 @@ public class ApplicationStartupShutdownTests
 {
     private const int StartupTimeoutSeconds = 30;
     private const int ShutdownTimeoutSeconds = 30;
+    private const int TestTimeoutBufferSeconds = 10; // Buffer for test overhead
+    private const int InitialPollingDelayMs = 100; // Start with fast polling
+    private const int MaxPollingDelayMs = 500; // Cap polling delay for responsiveness
 
     public TestContext? TestContext { get; set; }
 
@@ -30,7 +33,7 @@ public class ApplicationStartupShutdownTests
     /// with fake device services (no real TV connections).
     /// </summary>
     [TestMethod]
-    [Timeout((StartupTimeoutSeconds + ShutdownTimeoutSeconds + 10) * 1000)] // Add buffer for test overhead
+    [Timeout((StartupTimeoutSeconds + ShutdownTimeoutSeconds + TestTimeoutBufferSeconds) * 1000)]
     public void ApplicationStartupAndShutdown_WithFakeServices_StartsAndShutsDownCleanly()
     {
         // This test must run on an STA thread for WPF
@@ -40,6 +43,7 @@ public class ApplicationStartupShutdownTests
             try
             {
                 // Use ConfigureAwait(false) to avoid capturing synchronization context
+                // GetAwaiter().GetResult() is acceptable here as we're in a dedicated STA thread
                 RunApplicationTestAsync().ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception ex)
@@ -101,6 +105,8 @@ public class ApplicationStartupShutdownTests
             TestContext?.WriteLine($"[{stopwatch.Elapsed:mm\\:ss\\.fff}] Built host");
 
             // Set up shutdown command that stops the host
+            // Note: ActionCommand requires a synchronous Action, so we must block here
+            // This is safe because we use ConfigureAwait(false) and we're in a dedicated STA thread
             viewModel.ShutdownCommand = new ActionCommand(() =>
             {
                 TestContext?.WriteLine($"[{stopwatch.Elapsed:mm\\:ss\\.fff}] Shutdown command invoked");
@@ -206,7 +212,7 @@ public class ApplicationStartupShutdownTests
         Stopwatch stopwatch)
     {
         DateTime startTime = DateTime.UtcNow;
-        int delayMs = 100; // Start with shorter delay
+        int delayMs = InitialPollingDelayMs;
         
         while (DateTime.UtcNow - startTime < timeout)
         {
@@ -227,8 +233,8 @@ public class ApplicationStartupShutdownTests
             
             await Task.Delay(delayMs).ConfigureAwait(false);
             
-            // Use exponential backoff up to 500ms
-            delayMs = Math.Min(delayMs * 2, 500);
+            // Use exponential backoff up to maximum
+            delayMs = Math.Min(delayMs * 2, MaxPollingDelayMs);
         }
 
         TestContext?.WriteLine(
