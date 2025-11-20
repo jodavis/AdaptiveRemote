@@ -103,8 +103,8 @@ public class ApplicationStartupShutdownTests
             viewModel.ShutdownCommand = new ActionCommand(() =>
             {
                 TestContext?.WriteLine($"[{stopwatch.Elapsed:mm\\:ss\\.fff}] Shutdown command invoked");
-                // Use Wait() instead of await since ActionCommand expects synchronous Action
-                host.StopAsync().Wait();
+                // Use GetAwaiter().GetResult() to avoid deadlocks in STA thread
+                host.StopAsync().GetAwaiter().GetResult();
             });
             
             // Act - Start the application host
@@ -261,8 +261,8 @@ public class ApplicationStartupShutdownTests
         }
 
         StringBuilder sb = new();
-        // Preserve order of log entries (they are already timestamped)
-        foreach (string log in logs)
+        // Get stable snapshot of logs to avoid issues with concurrent modifications
+        foreach (string log in logs.ToArray())
         {
             sb.AppendLine(log);
         }
