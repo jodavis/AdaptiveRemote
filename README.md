@@ -27,3 +27,8 @@ solution in Visual Studio 2022 or later and run either project.
 
 Unit tests are in the `AdaptiveRemote.Tests` project. You can run them using `dotnet test` 
 from that directory or through Visual Studio's Test Explorer.
+
+Design documentation
+--------------------
+Architecture and design notes are stored alongside implementations using `_doc_*.md` filenames so they surface at the top of each folder. See:
+- `AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Lifecycle subsystem notes

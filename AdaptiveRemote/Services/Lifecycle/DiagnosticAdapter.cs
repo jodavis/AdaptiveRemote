@@ -5,6 +5,14 @@ using System.Diagnostics;
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
+/// <summary>
+/// Produces diagnostics/state updates during startup so the UI (or logs) can show
+/// the current task (e.g., "connecting to Key Vault").
+/// </summary>
+/// <remarks>
+/// Added because some long-running startup steps (like KeyVault connection) were
+/// opaque and caused perceived hangs; this adapter surfaces progress.
+/// </remarks>
 internal class DiagnosticAdapter : IObserver<DiagnosticListener>, IObserver<KeyValuePair<string, object?>>
 {
     private readonly DateTime _startTime = DateTime.Now;

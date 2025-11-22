@@ -19,6 +19,11 @@ templates for [bug reports](../.github/ISSUE_TEMPLATE/bug_report.md) and
 - **Testing:**
   - Add or update unit tests as appropriate for your changes.
   - All tests must pass before your pull request will be considered.
+- **Documentation:**
+  - Architecture and design notes are stored alongside implementations using `_doc_*.md` filenames so they surface at the top of each folder
+  - When designs are updated, documents should be updated to match
+  - When new subsystems are added, they should include a documentation file.
+  - Documentation should be LLM-friendly, to assist coding agents in making changes that align with design principles.
 - **Accessibility:**
   - Prioritize vision accessibility, speech recognition, and eye-gaze input.
   - Keyboard/mouse accessibility is less critical, but do not introduce regressions.
