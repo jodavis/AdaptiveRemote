@@ -33,3 +33,4 @@ Design documentation
 Architecture and design notes are stored alongside implementations using `_doc_*.md` filenames so they surface at the top of each folder. See:
 - `AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Lifecycle subsystem
 - `AdaptiveRemote/Services/Commands/_doc_Commands.md`: Remote control command model subsystem
+- `AdaptiveRemote/Services/Broadlink/_doc_Broadlink.md`: Broadlink RM4 mini device driver for handling `IRCommand`
