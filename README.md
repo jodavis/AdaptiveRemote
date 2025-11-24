@@ -31,4 +31,5 @@ from that directory or through Visual Studio's Test Explorer.
 Design documentation
 --------------------
 Architecture and design notes are stored alongside implementations using `_doc_*.md` filenames so they surface at the top of each folder. See:
-- `AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Lifecycle subsystem notes
+- `AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Lifecycle subsystem
+- `AdaptiveRemote/Services/Commands/_doc_Commands.md`: Remote control command model subsystem
