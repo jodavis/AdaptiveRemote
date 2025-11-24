@@ -87,6 +87,7 @@ cd AdaptiveRemote.Tests && dotnet test
 - `CONTRIBUTING.md`: Detailed contribution guidelines (see this for full process)
 - `version.json`: Nerdbank.GitVersioning configuration
 - `AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Living design & architecture notes for the Lifecycle subsystem (linked so coding agents and contributors can find architecture context)
+- `AdaptiveRemote/Services/Commands/_doc_Commands.md`: Living design & architecture notes for the Commands subsystem (linked so coding agents and contributors can find architecture context)
 
 ## Special Considerations
 - **Windows-only:** Code cannot be built or tested on Linux/Mac environments
