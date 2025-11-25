@@ -36,3 +36,4 @@ Architecture and design notes are stored alongside implementations using `_doc_*
 - `AdaptiveRemote/Services/Commands/_doc_Commands.md`: Remote control command model subsystem
 - `AdaptiveRemote/Services/Broadlink/_doc_Broadlink.md`: Broadlink RM4 mini device driver for handling `IRCommand`
 - `AdaptiveRemote/Mvvm/_doc_Mvvm.md`: MVVM property change notification subsystem
+- `AdaptiveRemote/Components/_doc_UI.md`: Visual user interface subsystem
