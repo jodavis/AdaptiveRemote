@@ -7,27 +7,27 @@ using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote.Configuration;
 
-internal static class HostBuilderExtensions
+public static class HostBuilderExtensions
 {
-    internal static IHostBuilder AddRemoteServices(this IHostBuilder builder)
+    public static IHostBuilder AddRemoteServices(this IHostBuilder builder)
         => builder.ConfigureServices((context, services) => services.AddRemoteServices());
 
-    internal static IServiceCollection AddRemoteServices(this IServiceCollection services)
+    public static IServiceCollection AddRemoteServices(this IServiceCollection services)
         => services
             .AddHostedService<ApplicationLifecycle>()
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
             .AddSingleton<IPersistSettings, PersistSettings>();
 
-    internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
+    public static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle
         => services.AddScoped<IScopedLifecycle, ServiceType>();
 
-    internal static IHostBuilder AddNullCommandSupport<CommandType>(this IHostBuilder hostBuilder)
+    public static IHostBuilder AddNullCommandSupport<CommandType>(this IHostBuilder hostBuilder)
         where CommandType : Models.Command
         => hostBuilder.ConfigureServices(services => services.AddNullCommandService<CommandType>());
 
-    internal static IServiceCollection AddNullCommandService<CommandType>(this IServiceCollection services)
+    public static IServiceCollection AddNullCommandService<CommandType>(this IServiceCollection services)
         where CommandType : Models.Command
         => services.AddScopedLifecycleService<NullCommandService<CommandType>>();
 }

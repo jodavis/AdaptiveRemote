@@ -5,7 +5,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote.Configuration;
 
-internal static class SystemWrapperHostBuilderExtensions
+public static class SystemWrapperHostBuilderExtensions
 {
     public static IHostBuilder AddSystemWrapperServices(this IHostBuilder builder)
         => builder.ConfigureServices(services => services.AddSystemWrappers());

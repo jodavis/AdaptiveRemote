@@ -6,12 +6,12 @@ using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote.Configuration;
 
-internal static class ConversationHostBuilderExtensions
+public static class ConversationHostBuilderExtensions
 {
-    internal static IHostBuilder AddConversationSystem(this IHostBuilder hostBuilder)
+    public static IHostBuilder AddConversationSystem(this IHostBuilder hostBuilder)
         => hostBuilder.ConfigureServices((context, services) => services.AddConversationServices(context.Configuration.GetSection(SettingsKeys.Conversation)));
 
-    internal static IServiceCollection AddConversationServices(this IServiceCollection services)
+    public static IServiceCollection AddConversationServices(this IServiceCollection services)
         => services
             .AddScopedLifecycleService<ConversationController>()
             .AddScoped<ISpeechRecognition, SpeechRecognition>()
@@ -20,11 +20,20 @@ internal static class ConversationHostBuilderExtensions
             .AddSingleton<IListeningController, ListeningController>()
             .AddScoped(GetConversationViewModel);
 
-    internal static IServiceCollection AddConversationServices(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddConversationServices(this IServiceCollection services, IConfiguration config)
         => services
             .AddConversationServices()
             .OptionallyAddFakeSpeechRecognition(config)
             .Configure<ConversationSettings>(config);
+
+    /// <summary>
+    /// Adds fake speech services for cross-platform scenarios without System.Speech
+    /// </summary>
+    public static IServiceCollection AddFakeSpeechServices(this IServiceCollection services)
+        => services
+            .AddSingleton<ISpeechRecognitionEngine, FakeSpeechRecognitionEngine>()
+            .AddSingleton<ISpeechSynthesizer, FakeSpeechSynthesizer>()
+            .AddScoped<IGrammarProvider, FakeGrammarProvider>();
 
     private static Models.ConversationView GetConversationViewModel(IServiceProvider provider)
     {
@@ -34,8 +43,6 @@ internal static class ConversationHostBuilderExtensions
 
     private static IServiceCollection OptionallyAddFakeSpeechRecognition(this IServiceCollection services, IConfiguration config)
         => config.GetValue<bool>(nameof(ConversationSettings.Fake)) == true
-            ? services
-                .AddSingleton<ISpeechRecognitionEngine, FakeSpeechRecognitionEngine>()
-                .AddScoped<IGrammarProvider, FakeGrammarProvider>()
+            ? services.AddFakeSpeechServices()
             : services;
 }

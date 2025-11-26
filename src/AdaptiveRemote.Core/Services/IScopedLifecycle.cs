@@ -1,6 +1,6 @@
 ﻿namespace AdaptiveRemote.Services;
 
-internal interface IScopedLifecycle
+public interface IScopedLifecycle
 {
     /// <summary>
     /// A description of the service, used for logging status messages and

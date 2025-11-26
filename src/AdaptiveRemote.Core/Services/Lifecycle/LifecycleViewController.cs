@@ -2,7 +2,7 @@
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
-internal class LifecycleViewController : ILifecycleViewController
+public class LifecycleViewController : ILifecycleViewController
 {
     private readonly List<Activity> _activities;
 
