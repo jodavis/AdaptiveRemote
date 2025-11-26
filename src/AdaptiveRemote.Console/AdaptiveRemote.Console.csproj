@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\AdaptiveRemote\wwwroot\**\*.html;..\AdaptiveRemote\wwwroot\**\*.css;">
+    <Content Include="..\AdaptiveRemote.Core\wwwroot\**\*.html;..\AdaptiveRemote.Core\wwwroot\**\*.css;">
       <Link>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>true</Visible>

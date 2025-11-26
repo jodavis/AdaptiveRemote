@@ -6,14 +6,24 @@ namespace AdaptiveRemote.Services.ProgrammaticSettings;
 [TestClass]
 public class PersistSettingsTests
 {
-    private const string InputSettingsPath = @"C:\path\to\settings.ini";
+    // Use cross-platform paths
+    private static readonly string Root = OperatingSystem.IsWindows() ? @"C:\" : "/";
+    private static readonly string PathDir = Path.Combine(Root, "path");
+    private static readonly string ToDir = Path.Combine(PathDir, "to");
+    private static readonly string InputSettingsPath = Path.Combine(ToDir, "settings.ini");
+    private static readonly string NewLine = Environment.NewLine;
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
     private readonly MockFileSystem MockFileSystem = new();
-    private readonly MockOptions<ProgrammaticSettings> MockOptions = new(new()
+    private readonly MockOptions<ProgrammaticSettings> MockOptions;
+
+    public PersistSettingsTests()
     {
-        ProgrammaticSettingsPath = InputSettingsPath
-    });
+        MockOptions = new MockOptions<ProgrammaticSettings>(new()
+        {
+            ProgrammaticSettingsPath = InputSettingsPath
+        });
+    }
 
     private PersistSettings CreateSut() => new(MockFileSystem.Object, MockOptions, MockLogger);
 
@@ -48,7 +58,7 @@ public class PersistSettingsTests
         await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, "ExistingSetting=123\r\nNewSetting=abc\r\n");
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"ExistingSetting=123{NewLine}NewSetting=abc{NewLine}");
 
         MockLogger.VerifyMessages(
             ExpectMessage_LoadingExistingSettings(),
@@ -113,7 +123,7 @@ public class PersistSettingsTests
         await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, "ExistingSetting=ghi\r\n");
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"ExistingSetting=ghi{NewLine}");
 
         MockLogger.VerifyMessages(
             ExpectMessage_LoadingExistingSettings(),
@@ -195,7 +205,7 @@ public class PersistSettingsTests
         await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, "NewSetting=abc\r\n");
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"NewSetting=abc{NewLine}");
 
         MockLogger.VerifyMessages(
             ExpectMessage_AddSetting("NewSetting", "abc"),
@@ -209,12 +219,12 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddDirectory(Path.GetPathRoot(InputSettingsPath));
+        MockFileSystem.AddDirectory(Root);
 
         MockFileSystem.Expect_OpenRead_IsNotCalled();
 
-        MockFileSystem.Expect_CreateDirectory_ForPath(@"C:\path");
-        MockFileSystem.Expect_CreateDirectory_ForPath(@"C:\path\to");
+        MockFileSystem.Expect_CreateDirectory_ForPath(PathDir);
+        MockFileSystem.Expect_CreateDirectory_ForPath(ToDir);
 
         MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
 
@@ -224,7 +234,7 @@ public class PersistSettingsTests
         await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, "NewSetting=abc\r\n");
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"NewSetting=abc{NewLine}");
 
         MockLogger.VerifyMessages(
             ExpectMessage_AddSetting("NewSetting", "abc"),
@@ -325,13 +335,13 @@ public class PersistSettingsTests
         }
     }
 
-    private static string ExpectMessage_LoadingExistingSettings()
+    private string ExpectMessage_LoadingExistingSettings()
         => $"Information[1101]: {LoggingMessages.ProgrammaticSettings_LoadingExistingSettings.AsMessageTemplate(InputSettingsPath)}";
-    private static string ExpectMessage_LoadedExistingSettings(int expectedCount)
+    private string ExpectMessage_LoadedExistingSettings(int expectedCount)
         => $"Information[1102]: {LoggingMessages.ProgrammaticSettings_LoadedExistingSettings.AsMessageTemplate(expectedCount, InputSettingsPath)}";
-    private static string ExpectMessage_SavingSettings(int expectedCount)
+    private string ExpectMessage_SavingSettings(int expectedCount)
         => $"Information[1103]: {LoggingMessages.ProgrammaticSettings_SavingSettings.AsMessageTemplate(expectedCount, InputSettingsPath)}";
-    private static string ExpectMessage_SavedSettings()
+    private string ExpectMessage_SavedSettings()
         => $"Information[1104]: {LoggingMessages.ProgrammaticSettings_SavedSettings.AsMessageTemplate(InputSettingsPath)}";
     private static string ExpectMessage_AddSetting(string expectedKey, string expectedValue)
         => $"Information[1105]: {LoggingMessages.ProgrammaticSettings_AddSetting.AsMessageTemplate(expectedKey, expectedValue)}";
