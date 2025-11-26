@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AdaptiveRemote\AdaptiveRemote.csproj" />
+    <ProjectReference Include="..\..\src\AdaptiveRemote\AdaptiveRemote.csproj" />
   </ItemGroup>
 
   <ItemGroup>
