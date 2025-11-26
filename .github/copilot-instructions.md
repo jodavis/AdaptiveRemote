@@ -90,6 +90,7 @@ cd AdaptiveRemote.Tests && dotnet test
   - `AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Living design & architecture notes for the Lifecycle subsystem
   - `AdaptiveRemote/Services/Commands/_doc_Commands.md`: Living design & architecture notes for the Commands subsystem
   - `AdaptiveRemote/Services/Broadlink/_doc_Broadlink.md`: Living design & architecture notes for the subsystem that handles IRCommands
+  - `AdaptiveRemote/Services/Conversation/_doc_Conversation.md`: Living design & architecture notes for the speech recognition and conversation subsystem
   - `AdaptiveRemote/Mvvm/_doc_Mvvm.md`: Living design & architecture notes for the MVVM property change notification subsystem
   - `AdaptiveRemote/Components/_doc_UI.md`: Living design & architecture notes for the UI subsystem
 
