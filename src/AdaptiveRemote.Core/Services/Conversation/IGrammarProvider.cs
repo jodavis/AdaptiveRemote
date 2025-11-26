@@ -1,6 +1,4 @@
-﻿using System.Speech.Recognition;
-
-namespace AdaptiveRemote.Services.Conversation;
+﻿namespace AdaptiveRemote.Services.Conversation;
 
 /// <summary>
 /// Loader for Grammar objects
@@ -10,5 +8,5 @@ internal interface IGrammarProvider
     /// <summary>
     /// Load a grammar that supports the given kind of phrases
     /// </summary>
-    Grammar LoadGrammar(PhraseKinds phraseKind);
+    IGrammar LoadGrammar(PhraseKinds phraseKind);
 }

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\AdaptiveRemote\AdaptiveRemote.csproj" />
+    <ProjectReference Include="..\..\src\AdaptiveRemote.Core\AdaptiveRemote.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,7 +3,6 @@ using AdaptiveRemote.Services.Conversation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Configuration;
 
@@ -17,11 +16,7 @@ internal static class ConversationHostBuilderExtensions
             .AddScopedLifecycleService<ConversationController>()
             .AddScoped<ISpeechRecognition, SpeechRecognition>()
             .AddScoped<ISpeechSynthesis, SpeechSynthesis>()
-            .AddScoped<IGrammarProvider, StaticGrammarProvider>()
             .AddScoped<ConversationStateMachine>()
-            .AddSingleton<ISpeechSynthesizer, SpeechSynthesizerWrapper>()
-            .AddSingleton<ISpeechRecognitionEngine, SpeechRecognitionEngineWrapper>()
-            .AddSingleton<IAudioConfigurationService, DefaultDeviceAudioConfiguration>()
             .AddSingleton<IListeningController, ListeningController>()
             .AddScoped(GetConversationViewModel);
 
@@ -29,7 +24,6 @@ internal static class ConversationHostBuilderExtensions
         => services
             .AddConversationServices()
             .OptionallyAddFakeSpeechRecognition(config)
-            .OptionallyAddSamplesRecorder(config)
             .Configure<ConversationSettings>(config);
 
     private static Models.ConversationView GetConversationViewModel(IServiceProvider provider)
@@ -40,13 +34,8 @@ internal static class ConversationHostBuilderExtensions
 
     private static IServiceCollection OptionallyAddFakeSpeechRecognition(this IServiceCollection services, IConfiguration config)
         => config.GetValue<bool>(nameof(ConversationSettings.Fake)) == true
-            ? services.AddSingleton<ISpeechRecognitionEngine, FakeSpeechRecognitionEngine>()
-            : services;
-
-    private static IServiceCollection OptionallyAddSamplesRecorder(this IServiceCollection services, IConfiguration config)
-        => config.GetValue<bool>(nameof(ConversationSettings.RecordSamples)) == false
             ? services
-            : services
-                .AddHostedService<SamplesRecorder>()
-                .AddSingleton<ILoggerProvider, SamplesRecorder.LoggerProvider>();
+                .AddSingleton<ISpeechRecognitionEngine, FakeSpeechRecognitionEngine>()
+                .AddScoped<IGrammarProvider, FakeGrammarProvider>()
+            : services;
 }

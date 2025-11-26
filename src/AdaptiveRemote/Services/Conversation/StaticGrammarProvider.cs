@@ -9,11 +9,14 @@ internal class StaticGrammarProvider : IGrammarProvider
 {
     private static readonly Lazy<SrgsDocument> _grammarFile = new(LoadGrammarFile);
 
-    Grammar IGrammarProvider.LoadGrammar(PhraseKinds phraseKind)
-        => new(_grammarFile.Value, phraseKind.ToString())
+    IGrammar IGrammarProvider.LoadGrammar(PhraseKinds phraseKind)
+    {
+        var grammar = new Grammar(_grammarFile.Value, phraseKind.ToString())
         {
             Name = phraseKind.ToString()
         };
+        return new GrammarWrapper(grammar);
+    }
 
     private static SrgsDocument LoadGrammarFile()
     {
@@ -23,5 +26,4 @@ internal class StaticGrammarProvider : IGrammarProvider
 
         return new SrgsDocument(XmlReader.Create(resourceStream));
     }
-
 }

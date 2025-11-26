@@ -1,5 +1,4 @@
-﻿using System.Speech.Recognition;
-using Moq;
+﻿using Moq;
 
 namespace AdaptiveRemote.Services.Conversation;
 
@@ -15,10 +14,10 @@ public class SpeechRecognitionTests
     private readonly Mock<IDisposable> MockListenDisposable = new();
     private readonly MockOptions<ConversationSettings> MockOptions = new();
 
-    private readonly Grammar MockAttentionGrammar = new(new GrammarBuilder("Attention")) { Name = nameof(MockAttentionGrammar) };
-    private readonly Grammar MockCommandsGrammar = new(new GrammarBuilder("Commands")) { Name = nameof(MockCommandsGrammar) };
-    private readonly Grammar MockYesNoGrammar = new(new GrammarBuilder("YesNo")) { Name = nameof(MockYesNoGrammar) };
-    private readonly Grammar MockCorrectionGrammar = new(new GrammarBuilder("Correction")) { Name = nameof(MockCorrectionGrammar) };
+    private readonly FakeGrammar MockAttentionGrammar = new(nameof(MockAttentionGrammar)) { Enabled = true };
+    private readonly FakeGrammar MockCommandsGrammar = new(nameof(MockCommandsGrammar)) { Enabled = true };
+    private readonly FakeGrammar MockYesNoGrammar = new(nameof(MockYesNoGrammar)) { Enabled = true };
+    private readonly FakeGrammar MockCorrectionGrammar = new(nameof(MockCorrectionGrammar)) { Enabled = true };
 
     public TestContext? TestContext { get; set; }
 
@@ -98,7 +97,7 @@ public class SpeechRecognitionTests
 
         MockEngine
             .Setup(x => x.UnloadAllGrammars())
-            .Callback(() => MockEngine.Verify(x => x.LoadGrammar(It.IsAny<Grammar>()), Times.Never))
+            .Callback(() => MockEngine.Verify(x => x.LoadGrammar(It.IsAny<IGrammar>()), Times.Never))
             .Verifiable(Times.Once);
 
         MockEngine

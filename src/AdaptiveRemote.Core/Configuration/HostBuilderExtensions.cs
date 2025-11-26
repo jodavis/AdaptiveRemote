@@ -14,7 +14,6 @@ internal static class HostBuilderExtensions
 
     internal static IServiceCollection AddRemoteServices(this IServiceCollection services)
         => services
-            .AddSingleton<IApplicationScopeFactory, BlazorWindowScopeFactory>()
             .AddHostedService<ApplicationLifecycle>()
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()

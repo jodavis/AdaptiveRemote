@@ -12,6 +12,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 {
     private readonly SpeechRecognitionEngine _engine = new(new CultureInfo("en-US"));
     private readonly ILogger<SpeechRecognitionEngine> _logger;
+    private readonly Dictionary<IGrammar, Grammar> _grammarMap = new();
 
     private event EventHandler<RecognizedSpeechEventArgs>? _speechRecognized;
     private event EventHandler<RecognizedSpeechEventArgs>? _speechRejected;
@@ -46,9 +47,34 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     private void BroadcastSpeechRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
         => _speechRejected?.Invoke(this, new RecognizedSpeechEventArgs(WrapRequired(e.Result)));
 
-    public void LoadGrammar(Grammar grammar) => _engine.LoadGrammar(grammar);
-    public void UnloadGrammar(Grammar grammar) => _engine.UnloadGrammar(grammar);
-    public void UnloadAllGrammars() => _engine.UnloadAllGrammars();
+    public void LoadGrammar(IGrammar grammar)
+    {
+        if (grammar is GrammarWrapper wrapper)
+        {
+            _grammarMap[grammar] = wrapper.Grammar;
+            _engine.LoadGrammar(wrapper.Grammar);
+        }
+        else
+        {
+            throw new ArgumentException($"Expected GrammarWrapper but got {grammar.GetType().Name}", nameof(grammar));
+        }
+    }
+
+    public void UnloadGrammar(IGrammar grammar)
+    {
+        if (_grammarMap.TryGetValue(grammar, out var systemGrammar))
+        {
+            _engine.UnloadGrammar(systemGrammar);
+            _grammarMap.Remove(grammar);
+        }
+    }
+
+    public void UnloadAllGrammars()
+    {
+        _engine.UnloadAllGrammars();
+        _grammarMap.Clear();
+    }
+
     public void SetInputToDefaultAudioDevice() => _engine.SetInputToDefaultAudioDevice();
     public void RecognizeAsync() => _engine.RecognizeAsync(RecognizeMode.Multiple);
     public void RecognizeAsyncCancel() => _engine.RecognizeAsyncCancel();
