@@ -335,13 +335,13 @@ public class PersistSettingsTests
         }
     }
 
-    private string ExpectMessage_LoadingExistingSettings()
+    private static string ExpectMessage_LoadingExistingSettings()
         => $"Information[1101]: {LoggingMessages.ProgrammaticSettings_LoadingExistingSettings.AsMessageTemplate(InputSettingsPath)}";
-    private string ExpectMessage_LoadedExistingSettings(int expectedCount)
+    private static string ExpectMessage_LoadedExistingSettings(int expectedCount)
         => $"Information[1102]: {LoggingMessages.ProgrammaticSettings_LoadedExistingSettings.AsMessageTemplate(expectedCount, InputSettingsPath)}";
-    private string ExpectMessage_SavingSettings(int expectedCount)
+    private static string ExpectMessage_SavingSettings(int expectedCount)
         => $"Information[1103]: {LoggingMessages.ProgrammaticSettings_SavingSettings.AsMessageTemplate(expectedCount, InputSettingsPath)}";
-    private string ExpectMessage_SavedSettings()
+    private static string ExpectMessage_SavedSettings()
         => $"Information[1104]: {LoggingMessages.ProgrammaticSettings_SavedSettings.AsMessageTemplate(InputSettingsPath)}";
     private static string ExpectMessage_AddSetting(string expectedKey, string expectedValue)
         => $"Information[1105]: {LoggingMessages.ProgrammaticSettings_AddSetting.AsMessageTemplate(expectedKey, expectedValue)}";
