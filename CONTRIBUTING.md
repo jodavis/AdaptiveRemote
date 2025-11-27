@@ -19,6 +19,8 @@ templates for [bug reports](../.github/ISSUE_TEMPLATE/bug_report.md) and
 - **Testing:**
   - Add or update unit tests as appropriate for your changes.
   - All tests must pass before your pull request will be considered.
+  - **Use Moq for mocking:** When creating test doubles, prefer using Moq over creating fake classes.
+    This keeps test code consistent and reduces the number of custom test helper classes.
 - **Documentation:**
   - Architecture and design notes are stored alongside implementations using `_doc_*.md` filenames so they surface at the top of each folder.
   - Living documentation files should:

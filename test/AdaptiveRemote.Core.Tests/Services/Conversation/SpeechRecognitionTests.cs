@@ -14,14 +14,37 @@ public class SpeechRecognitionTests
     private readonly Mock<IDisposable> MockListenDisposable = new();
     private readonly MockOptions<ConversationSettings> MockOptions = new();
 
-    private readonly FakeGrammar MockAttentionGrammar = new(nameof(MockAttentionGrammar)) { Enabled = true };
-    private readonly FakeGrammar MockCommandsGrammar = new(nameof(MockCommandsGrammar)) { Enabled = true };
-    private readonly FakeGrammar MockYesNoGrammar = new(nameof(MockYesNoGrammar)) { Enabled = true };
-    private readonly FakeGrammar MockCorrectionGrammar = new(nameof(MockCorrectionGrammar)) { Enabled = true };
+    private readonly MockGrammar MockAttentionGrammar = new(nameof(MockAttentionGrammar));
+    private readonly MockGrammar MockCommandsGrammar = new(nameof(MockCommandsGrammar));
+    private readonly MockGrammar MockYesNoGrammar = new(nameof(MockYesNoGrammar));
+    private readonly MockGrammar MockCorrectionGrammar = new(nameof(MockCorrectionGrammar));
 
     public TestContext? TestContext { get; set; }
 
     private ISpeechRecognition CreateSut() => new SpeechRecognition(MockOptions, MockEngine.Object, MockListening.Object, MockGrammarProvider.Object, MockLogger);
+
+    /// <summary>
+    /// Helper class to create a mock IGrammar with trackable Enabled state.
+    /// Uses Moq to create the mock with SetupProperty to track Enabled state changes.
+    /// </summary>
+    private class MockGrammar
+    {
+        private readonly Mock<IGrammar> _mock;
+
+        public MockGrammar(string name)
+        {
+            _mock = new Mock<IGrammar>();
+            _mock.Setup(x => x.Name).Returns(name);
+            _mock.SetupProperty(x => x.Enabled, true);
+        }
+
+        public IGrammar Object => _mock.Object;
+        public bool Enabled
+        {
+            get => _mock.Object.Enabled;
+            set => _mock.Object.Enabled = value;
+        }
+    }
 
     private static IRecognizedSpeech CreateMockSpeech(params string[] semanticValues)
     {
@@ -58,40 +81,40 @@ public class SpeechRecognitionTests
         MockAttentionGrammar.Enabled = true;
         MockGrammarProvider
             .Setup(x => x.LoadGrammar(PhraseKinds.WakeWord))
-            .Returns(MockAttentionGrammar)
+            .Returns(MockAttentionGrammar.Object)
             .Verifiable(Times.Once);
         MockEngine
-            .Setup(x => x.LoadGrammar(MockAttentionGrammar))
+            .Setup(x => x.LoadGrammar(MockAttentionGrammar.Object))
             .Callback(() => Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled"))
             .Verifiable(Times.Once);
 
         MockCommandsGrammar.Enabled = true;
         MockGrammarProvider
             .Setup(x => x.LoadGrammar(PhraseKinds.Commands))
-            .Returns(MockCommandsGrammar)
+            .Returns(MockCommandsGrammar.Object)
             .Verifiable(Times.Once);
         MockEngine
-            .Setup(x => x.LoadGrammar(MockCommandsGrammar))
+            .Setup(x => x.LoadGrammar(MockCommandsGrammar.Object))
             .Callback(() => Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled"))
             .Verifiable(Times.Once);
 
         MockYesNoGrammar.Enabled = true;
         MockGrammarProvider
             .Setup(x => x.LoadGrammar(PhraseKinds.Confirmation))
-            .Returns(MockYesNoGrammar)
+            .Returns(MockYesNoGrammar.Object)
             .Verifiable(Times.Once);
         MockEngine
-            .Setup(x => x.LoadGrammar(MockYesNoGrammar))
+            .Setup(x => x.LoadGrammar(MockYesNoGrammar.Object))
             .Callback(() => Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled"))
             .Verifiable(Times.Once);
 
         MockCorrectionGrammar.Enabled = true;
         MockGrammarProvider
             .Setup(x => x.LoadGrammar(PhraseKinds.Correction))
-            .Returns(MockCorrectionGrammar)
+            .Returns(MockCorrectionGrammar.Object)
             .Verifiable(Times.Once);
         MockEngine
-            .Setup(x => x.LoadGrammar(MockCorrectionGrammar))
+            .Setup(x => x.LoadGrammar(MockCorrectionGrammar.Object))
             .Callback(() => Assert.IsFalse(MockCorrectionGrammar.Enabled, nameof(MockCorrectionGrammar) + ".Enabled"))
             .Verifiable(Times.Once);
 

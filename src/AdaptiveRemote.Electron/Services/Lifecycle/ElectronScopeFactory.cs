@@ -1,3 +1,4 @@
+using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AdaptiveRemote.Services.Lifecycle;

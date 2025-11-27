@@ -11,7 +11,7 @@ public partial class App : Application
     {
         try
         {
-            AcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
+            WindowsAcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
 
             accelerator.MainWindow.Show();
             accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
@@ -31,9 +31,9 @@ public partial class App : Application
         }
     }
 
-    protected virtual AcceleratedServices CreateAcceleratedServices(string[] args) => new(args);
+    protected virtual WindowsAcceleratedServices CreateAcceleratedServices(string[] args) => new(args);
 
-    private async Task RunApplicationLoopAndShutdownAsync(AcceleratedServices accelerator)
+    private async Task RunApplicationLoopAndShutdownAsync(WindowsAcceleratedServices accelerator)
     {
         await accelerator.RunApplicationLoopAsync();
 

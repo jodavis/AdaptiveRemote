@@ -1,9 +1,33 @@
 using AdaptiveRemote.Configuration;
+using AdaptiveRemote.Models;
+using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.Conversation;
+using AdaptiveRemote.Services.Lifecycle;
 using ElectronNET.API;
 using ElectronNET.API.Entities;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
+// Create accelerated services using the Core pattern
+var acceleratedServices = new AcceleratedServices(args);
+
+// Configure Electron-specific services
+acceleratedServices.ConfigureHostServices(services =>
+{
+    // Add Blazor Server services for Electron
+    services.AddRazorPages();
+    services.AddServerSideBlazor();
+
+    // Add Electron-specific scope factory
+    services.AddSingleton<IApplicationScopeFactory, ElectronScopeFactory>();
+
+    // Add fake speech services for Electron (cross-platform without System.Speech)
+    services.AddSingleton<ISpeechRecognitionEngine, FakeSpeechRecognitionEngine>();
+    services.AddSingleton<ISpeechSynthesizer, FakeSpeechSynthesizer>();
+    services.AddScoped<IGrammarProvider, FakeGrammarProvider>();
+});
+
+// For Electron, we need to use a different startup pattern
+// because it requires the ASP.NET Core web application builder
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseElectron(args);
 
@@ -11,14 +35,17 @@ builder.WebHost.UseElectron(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-// Configure the host using Core's configuration
-builder.Host.ConfigureElectronApp();
+// Configure using Core's configuration
+builder.Host.ConfigureCoreApp();
 
-// Add Electron-specific lifecycle and services
-builder.Services.AddElectronLifecycle();
-builder.Services.AddElectronScopeFactory();
+// Add lifecycle services
+var lifecycleView = acceleratedServices.ViewModel;
+var lifecycleController = acceleratedServices.Controller;
+builder.Services.AddSingleton(lifecycleView);
+builder.Services.AddSingleton<ILifecycleViewController>(lifecycleController);
 
-// Add fake speech services for Electron (cross-platform without System.Speech)
+// Add Electron-specific services
+builder.Services.AddSingleton<IApplicationScopeFactory, ElectronScopeFactory>();
 builder.Services.AddSingleton<ISpeechRecognitionEngine, FakeSpeechRecognitionEngine>();
 builder.Services.AddSingleton<ISpeechSynthesizer, FakeSpeechSynthesizer>();
 builder.Services.AddScoped<IGrammarProvider, FakeGrammarProvider>();
@@ -38,7 +65,7 @@ app.UseRouting();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
-// Start Electron window if running in Electron
+// Start Electron window - this makes it a desktop app, not just a web server
 if (HybridSupport.IsElectronActive)
 {
     _ = Task.Run(async () =>

@@ -7,9 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote", "src\Adapt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.Console", "src\AdaptiveRemote.Console\AdaptiveRemote.Console.csproj", "{345B73FC-07F9-490F-B566-2677D10B1834}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote.Tests", "test\AdaptiveRemote.Tests\AdaptiveRemote.Tests.csproj", "{99181C45-EACC-45CE-87B3-20A4AA28E793}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote.Core.Tests", "test\AdaptiveRemote.Core.Tests\AdaptiveRemote.Core.Tests.csproj", "{99181C45-EACC-45CE-87B3-20A4AA28E793}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote.Tests.Windows", "test\AdaptiveRemote.Tests.Windows\AdaptiveRemote.Tests.Windows.csproj", "{C3D4E5F6-7890-ABCD-EF12-345678901234}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote.Tests", "test\AdaptiveRemote.Tests\AdaptiveRemote.Tests.csproj", "{C3D4E5F6-7890-ABCD-EF12-345678901234}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote.Core", "src\AdaptiveRemote.Core\AdaptiveRemote.Core.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
