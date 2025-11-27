@@ -1,0 +1,34 @@
+{
+  "executable": "AdaptiveRemote.Electron",
+  "splashscreen": {
+    "imageFile": ""
+  },
+  "name": "Adaptive Remote",
+  "author": "",
+  "singleInstance": true,
+  "environment": "Production",
+  "build": {
+    "appId": "com.adaptiveremote.electron",
+    "productName": "Adaptive Remote",
+    "copyright": "",
+    "buildVersion": "1.0.0",
+    "compression": "maximum",
+    "directories": {
+      "output": "../../../artifacts"
+    },
+    "extraResources": [
+      {
+        "from": "./bin",
+        "to": "bin",
+        "filter": ["**/*"]
+      }
+    ],
+    "files": [
+      {
+        "from": "./bin",
+        "to": "bin",
+        "filter": ["**/*"]
+      }
+    ]
+  }
+}

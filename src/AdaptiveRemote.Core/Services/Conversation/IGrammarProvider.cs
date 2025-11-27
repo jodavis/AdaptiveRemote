@@ -3,7 +3,7 @@
 /// <summary>
 /// Loader for Grammar objects
 /// </summary>
-internal interface IGrammarProvider
+public interface IGrammarProvider
 {
     /// <summary>
     /// Load a grammar that supports the given kind of phrases

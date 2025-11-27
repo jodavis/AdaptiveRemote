@@ -1,6 +1,6 @@
 ﻿namespace AdaptiveRemote.Services.Lifecycle;
 
-public interface IApplicationScopeFactory
+internal interface IApplicationScopeFactory
 {
     Task<IApplicationScope> CreateNewScopeAsync(CancellationToken cancellationToken);
 }

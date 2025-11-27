@@ -3,7 +3,7 @@
 /// <summary>
 /// Thin wrapper around System.Speech.Recognition.SpeechRecognitionEngine.
 /// </summary>
-internal interface ISpeechRecognitionEngine
+public interface ISpeechRecognitionEngine
 {
     /// <summary>
     /// Raised when the SpeechRecognitionEngine receives input that matches any of its

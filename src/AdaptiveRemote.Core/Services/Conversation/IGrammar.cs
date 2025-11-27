@@ -3,7 +3,7 @@
 /// <summary>
 /// Platform-independent grammar interface that abstracts System.Speech.Recognition.Grammar
 /// </summary>
-internal interface IGrammar
+public interface IGrammar
 {
     /// <summary>
     /// Gets or sets the name of the grammar.
