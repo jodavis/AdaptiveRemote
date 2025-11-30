@@ -22,7 +22,7 @@ namespace AdaptiveRemote.Logging {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class LoggingMessages {
+    public class LoggingMessages {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -36,7 +36,7 @@ namespace AdaptiveRemote.Logging {
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("AdaptiveRemote.Logging.LoggingMessages", typeof(LoggingMessages).Assembly);
@@ -51,7 +51,7 @@ namespace AdaptiveRemote.Logging {
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -63,7 +63,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Cleaned up {0}.
         /// </summary>
-        internal static string ApplicationLifecycle_CleanedUp {
+        public static string ApplicationLifecycle_CleanedUp {
             get {
                 return ResourceManager.GetString("ApplicationLifecycle_CleanedUp", resourceCulture);
             }
@@ -72,7 +72,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Cleaning up {0}.
         /// </summary>
-        internal static string ApplicationLifecycle_CleaningUp {
+        public static string ApplicationLifecycle_CleaningUp {
             get {
                 return ResourceManager.GetString("ApplicationLifecycle_CleaningUp", resourceCulture);
             }
@@ -82,7 +82,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Error while cleaning up {0}
         ///{1}.
         /// </summary>
-        internal static string ApplicationLifecycle_CleaningUpFailed {
+        public static string ApplicationLifecycle_CleaningUpFailed {
             get {
                 return ResourceManager.GetString("ApplicationLifecycle_CleaningUpFailed", resourceCulture);
             }
@@ -91,7 +91,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Inititalized {0}.
         /// </summary>
-        internal static string ApplicationLifecycle_Initialized {
+        public static string ApplicationLifecycle_Initialized {
             get {
                 return ResourceManager.GetString("ApplicationLifecycle_Initialized", resourceCulture);
             }
@@ -100,7 +100,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Initializing {0}.
         /// </summary>
-        internal static string ApplicationLifecycle_Initializing {
+        public static string ApplicationLifecycle_Initializing {
             get {
                 return ResourceManager.GetString("ApplicationLifecycle_Initializing", resourceCulture);
             }
@@ -110,7 +110,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Error while initializing {0}
         ///{1}.
         /// </summary>
-        internal static string ApplicationLifecycle_InitializingFailed {
+        public static string ApplicationLifecycle_InitializingFailed {
             get {
                 return ResourceManager.GetString("ApplicationLifecycle_InitializingFailed", resourceCulture);
             }
@@ -119,7 +119,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Shutting down.
         /// </summary>
-        internal static string ApplicationLifecycle_ShuttingDown {
+        public static string ApplicationLifecycle_ShuttingDown {
             get {
                 return ResourceManager.GetString("ApplicationLifecycle_ShuttingDown", resourceCulture);
             }
@@ -128,7 +128,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Authenticated successfully with device at {0}.
         /// </summary>
-        internal static string BroadlinkCommandService_Authenticated {
+        public static string BroadlinkCommandService_Authenticated {
             get {
                 return ResourceManager.GetString("BroadlinkCommandService_Authenticated", resourceCulture);
             }
@@ -137,7 +137,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Authenticating with device at {0}.
         /// </summary>
-        internal static string BroadlinkCommandService_Authenticating {
+        public static string BroadlinkCommandService_Authenticating {
             get {
                 return ResourceManager.GetString("BroadlinkCommandService_Authenticating", resourceCulture);
             }
@@ -146,7 +146,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Ready to send commands.
         /// </summary>
-        internal static string BroadlinkCommandService_Ready {
+        public static string BroadlinkCommandService_Ready {
             get {
                 return ResourceManager.GetString("BroadlinkCommandService_Ready", resourceCulture);
             }
@@ -155,7 +155,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Searching for Broadlink devices....
         /// </summary>
-        internal static string BroadlinkCommandService_SearchingForDevice {
+        public static string BroadlinkCommandService_SearchingForDevice {
             get {
                 return ResourceManager.GetString("BroadlinkCommandService_SearchingForDevice", resourceCulture);
             }
@@ -164,7 +164,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Cancelled executing {0}.
         /// </summary>
-        internal static string CommandService_Cancelled {
+        public static string CommandService_Cancelled {
             get {
                 return ResourceManager.GetString("CommandService_Cancelled", resourceCulture);
             }
@@ -174,7 +174,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Error executing {0}
         ///{1}.
         /// </summary>
-        internal static string CommandService_Error {
+        public static string CommandService_Error {
             get {
                 return ResourceManager.GetString("CommandService_Error", resourceCulture);
             }
@@ -183,7 +183,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Executed {0}.
         /// </summary>
-        internal static string CommandService_Executed {
+        public static string CommandService_Executed {
             get {
                 return ResourceManager.GetString("CommandService_Executed", resourceCulture);
             }
@@ -192,7 +192,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Executing {0}.
         /// </summary>
-        internal static string CommandService_Executing {
+        public static string CommandService_Executing {
             get {
                 return ResourceManager.GetString("CommandService_Executing", resourceCulture);
             }
@@ -201,7 +201,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Could not execute {0} because the service has not been started.
         /// </summary>
-        internal static string CommandService_NotStarted {
+        public static string CommandService_NotStarted {
             get {
                 return ResourceManager.GetString("CommandService_NotStarted", resourceCulture);
             }
@@ -210,7 +210,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Could not execute {0} because the service has been shut down.
         /// </summary>
-        internal static string CommandService_WasShutDown {
+        public static string CommandService_WasShutDown {
             get {
                 return ResourceManager.GetString("CommandService_WasShutDown", resourceCulture);
             }
@@ -219,7 +219,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Could not execute {0} because it is not enabled.
         /// </summary>
-        internal static string ConversationController_CommandDisabled {
+        public static string ConversationController_CommandDisabled {
             get {
                 return ResourceManager.GetString("ConversationController_CommandDisabled", resourceCulture);
             }
@@ -228,7 +228,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Could not execute {0} because it is missing its execute action.
         /// </summary>
-        internal static string ConversationController_CommandMissingExecuteAction {
+        public static string ConversationController_CommandMissingExecuteAction {
             get {
                 return ResourceManager.GetString("ConversationController_CommandMissingExecuteAction", resourceCulture);
             }
@@ -237,7 +237,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Executed command &apos;{0}&apos;.
         /// </summary>
-        internal static string ConversationController_Executed {
+        public static string ConversationController_Executed {
             get {
                 return ResourceManager.GetString("ConversationController_Executed", resourceCulture);
             }
@@ -246,7 +246,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Executing command &apos;{0}&apos;.
         /// </summary>
-        internal static string ConversationController_Executing {
+        public static string ConversationController_Executing {
             get {
                 return ResourceManager.GetString("ConversationController_Executing", resourceCulture);
             }
@@ -255,7 +255,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Recognized &apos;{0}&apos; as &apos;{1}&apos;.
         /// </summary>
-        internal static string ConversationController_Recognized {
+        public static string ConversationController_Recognized {
             get {
                 return ResourceManager.GetString("ConversationController_Recognized", resourceCulture);
             }
@@ -265,7 +265,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Restarting after {0} error(s) in speech recognition loop
         ///Last error: {1}.
         /// </summary>
-        internal static string ConversationController_Retrying {
+        public static string ConversationController_Retrying {
             get {
                 return ResourceManager.GetString("ConversationController_Retrying", resourceCulture);
             }
@@ -274,7 +274,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Not restarting after {0} error(s).
         /// </summary>
-        internal static string ConversationController_RetryLimitReached {
+        public static string ConversationController_RetryLimitReached {
             get {
                 return ResourceManager.GetString("ConversationController_RetryLimitReached", resourceCulture);
             }
@@ -283,7 +283,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Recognized an unknown command: {0}.
         /// </summary>
-        internal static string ConversationController_UnknownCommand {
+        public static string ConversationController_UnknownCommand {
             get {
                 return ResourceManager.GetString("ConversationController_UnknownCommand", resourceCulture);
             }
@@ -292,7 +292,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Could not reverse {command_to_reverse}. Could not find a command named &apos;{reverse_command}&apos;..
         /// </summary>
-        internal static string ConversationState_CouldNotFindReverseCommand {
+        public static string ConversationState_CouldNotFindReverseCommand {
             get {
                 return ResourceManager.GetString("ConversationState_CouldNotFindReverseCommand", resourceCulture);
             }
@@ -301,7 +301,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Received an invalid semantic value for &apos;{semantic_key}&apos;: {semantic_value}.
         /// </summary>
-        internal static string ConversationState_InvalidSemanticValue {
+        public static string ConversationState_InvalidSemanticValue {
             get {
                 return ResourceManager.GetString("ConversationState_InvalidSemanticValue", resourceCulture);
             }
@@ -310,7 +310,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Did not expect {phrase_kind} but received &quot;{recognized_speech}&quot;.
         /// </summary>
-        internal static string ConversationState_UnexpectedSpeechDetected {
+        public static string ConversationState_UnexpectedSpeechDetected {
             get {
                 return ResourceManager.GetString("ConversationState_UnexpectedSpeechDetected", resourceCulture);
             }
@@ -319,7 +319,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {new_state}.
         /// </summary>
-        internal static string ConversationState_Updated {
+        public static string ConversationState_Updated {
             get {
                 return ResourceManager.GetString("ConversationState_Updated", resourceCulture);
             }
@@ -328,7 +328,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to User reported recognition error: {speech}.
         /// </summary>
-        internal static string ConversationState_UserReportedRecognitionError {
+        public static string ConversationState_UserReportedRecognitionError {
             get {
                 return ResourceManager.GetString("ConversationState_UserReportedRecognitionError", resourceCulture);
             }
@@ -338,7 +338,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Error calling RecognizeAsyncCancel
         ///{0}.
         /// </summary>
-        internal static string ListeningController_RecognizeAsyncCancelError {
+        public static string ListeningController_RecognizeAsyncCancelError {
             get {
                 return ResourceManager.GetString("ListeningController_RecognizeAsyncCancelError", resourceCulture);
             }
@@ -348,7 +348,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Error calling RecognizeAsync
         ///{0}.
         /// </summary>
-        internal static string ListeningController_RecognizeAsyncError {
+        public static string ListeningController_RecognizeAsyncError {
             get {
                 return ResourceManager.GetString("ListeningController_RecognizeAsyncError", resourceCulture);
             }
@@ -357,7 +357,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Listening={0} ({1} listen, {2} pause).
         /// </summary>
-        internal static string ListeningController_State {
+        public static string ListeningController_State {
             get {
                 return ResourceManager.GetString("ListeningController_State", resourceCulture);
             }
@@ -367,7 +367,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Error while updating listen state
         ///{0}.
         /// </summary>
-        internal static string ListeningController_UpdateListenStateError {
+        public static string ListeningController_UpdateListenStateError {
             get {
                 return ResourceManager.GetString("ListeningController_UpdateListenStateError", resourceCulture);
             }
@@ -376,7 +376,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Setting {name}={value}.
         /// </summary>
-        internal static string ProgrammaticSettings_AddSetting {
+        public static string ProgrammaticSettings_AddSetting {
             get {
                 return ResourceManager.GetString("ProgrammaticSettings_AddSetting", resourceCulture);
             }
@@ -385,7 +385,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Failed to set {name}={value}: {exception}.
         /// </summary>
-        internal static string ProgrammaticSettings_Error {
+        public static string ProgrammaticSettings_Error {
             get {
                 return ResourceManager.GetString("ProgrammaticSettings_Error", resourceCulture);
             }
@@ -394,7 +394,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Loaded {count} settings from {path}.
         /// </summary>
-        internal static string ProgrammaticSettings_LoadedExistingSettings {
+        public static string ProgrammaticSettings_LoadedExistingSettings {
             get {
                 return ResourceManager.GetString("ProgrammaticSettings_LoadedExistingSettings", resourceCulture);
             }
@@ -403,7 +403,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Loading existing settings from {path}.
         /// </summary>
-        internal static string ProgrammaticSettings_LoadingExistingSettings {
+        public static string ProgrammaticSettings_LoadingExistingSettings {
             get {
                 return ResourceManager.GetString("ProgrammaticSettings_LoadingExistingSettings", resourceCulture);
             }
@@ -412,7 +412,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Setting {name}={value} was rejected: {reason}.
         /// </summary>
-        internal static string ProgrammaticSettings_Rejected {
+        public static string ProgrammaticSettings_Rejected {
             get {
                 return ResourceManager.GetString("ProgrammaticSettings_Rejected", resourceCulture);
             }
@@ -421,7 +421,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Replacing {name}={old_value} with {name}={new_value}.
         /// </summary>
-        internal static string ProgrammaticSettings_ReplaceSetting {
+        public static string ProgrammaticSettings_ReplaceSetting {
             get {
                 return ResourceManager.GetString("ProgrammaticSettings_ReplaceSetting", resourceCulture);
             }
@@ -430,7 +430,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Saved settings to {path}.
         /// </summary>
-        internal static string ProgrammaticSettings_SavedSettings {
+        public static string ProgrammaticSettings_SavedSettings {
             get {
                 return ResourceManager.GetString("ProgrammaticSettings_SavedSettings", resourceCulture);
             }
@@ -439,7 +439,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Saving {count} settings to {path}.
         /// </summary>
-        internal static string ProgrammaticSettings_SavingSettings {
+        public static string ProgrammaticSettings_SavingSettings {
             get {
                 return ResourceManager.GetString("ProgrammaticSettings_SavingSettings", resourceCulture);
             }
@@ -448,7 +448,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Startup canceled.
         /// </summary>
-        internal static string ScopedBackgroundProcess_CanceledBeforeStarted {
+        public static string ScopedBackgroundProcess_CanceledBeforeStarted {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_CanceledBeforeStarted", resourceCulture);
             }
@@ -458,7 +458,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Terminated due to error
         ///{0}.
         /// </summary>
-        internal static string ScopedBackgroundProcess_Error {
+        public static string ScopedBackgroundProcess_Error {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_Error", resourceCulture);
             }
@@ -467,7 +467,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Started.
         /// </summary>
-        internal static string ScopedBackgroundProcess_Started {
+        public static string ScopedBackgroundProcess_Started {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_Started", resourceCulture);
             }
@@ -476,7 +476,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Starting.
         /// </summary>
-        internal static string ScopedBackgroundProcess_Starting {
+        public static string ScopedBackgroundProcess_Starting {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_Starting", resourceCulture);
             }
@@ -485,7 +485,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Stopped.
         /// </summary>
-        internal static string ScopedBackgroundProcess_Stopped {
+        public static string ScopedBackgroundProcess_Stopped {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_Stopped", resourceCulture);
             }
@@ -494,7 +494,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Stopped early.
         /// </summary>
-        internal static string ScopedBackgroundProcess_StoppedEarly {
+        public static string ScopedBackgroundProcess_StoppedEarly {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_StoppedEarly", resourceCulture);
             }
@@ -503,7 +503,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Stopping.
         /// </summary>
-        internal static string ScopedBackgroundProcess_Stopping {
+        public static string ScopedBackgroundProcess_Stopping {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_Stopping", resourceCulture);
             }
@@ -512,7 +512,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Switched to worker thread {thread_id}.
         /// </summary>
-        internal static string ScopedBackgroundProcess_SwitchedToWorkerThread {
+        public static string ScopedBackgroundProcess_SwitchedToWorkerThread {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_SwitchedToWorkerThread", resourceCulture);
             }
@@ -521,7 +521,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Switching to worker thread.
         /// </summary>
-        internal static string ScopedBackgroundProcess_SwitchingToWorkerThread {
+        public static string ScopedBackgroundProcess_SwitchingToWorkerThread {
             get {
                 return ResourceManager.GetString("ScopedBackgroundProcess_SwitchingToWorkerThread", resourceCulture);
             }
@@ -530,7 +530,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0} was cancelled..
         /// </summary>
-        internal static string SpeechRecognition_CancelledListeningMethod {
+        public static string SpeechRecognition_CancelledListeningMethod {
             get {
                 return ResourceManager.GetString("SpeechRecognition_CancelledListeningMethod", resourceCulture);
             }
@@ -539,7 +539,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Could not set &apos;{recognizer_setting}&apos;: {error_message}.
         /// </summary>
-        internal static string SpeechRecognition_CouldNotConfigureSetting {
+        public static string SpeechRecognition_CouldNotConfigureSetting {
             get {
                 return ResourceManager.GetString("SpeechRecognition_CouldNotConfigureSetting", resourceCulture);
             }
@@ -549,7 +549,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to An error occurred in {0}
         ///{1}.
         /// </summary>
-        internal static string SpeechRecognition_ErrorInListeningMethod {
+        public static string SpeechRecognition_ErrorInListeningMethod {
             get {
                 return ResourceManager.GetString("SpeechRecognition_ErrorInListeningMethod", resourceCulture);
             }
@@ -558,7 +558,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0}.Enabled={1}.
         /// </summary>
-        internal static string SpeechRecognition_GrammarEnabled {
+        public static string SpeechRecognition_GrammarEnabled {
             get {
                 return ResourceManager.GetString("SpeechRecognition_GrammarEnabled", resourceCulture);
             }
@@ -568,7 +568,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Failed to load &apos;{0}&apos;
         ///{1}.
         /// </summary>
-        internal static string SpeechRecognition_GrammarFailedToLoad {
+        public static string SpeechRecognition_GrammarFailedToLoad {
             get {
                 return ResourceManager.GetString("SpeechRecognition_GrammarFailedToLoad", resourceCulture);
             }
@@ -578,7 +578,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to Failed to unload &apos;{0}&apos;
         ///{1}.
         /// </summary>
-        internal static string SpeechRecognition_GrammarFailedToUnload {
+        public static string SpeechRecognition_GrammarFailedToUnload {
             get {
                 return ResourceManager.GetString("SpeechRecognition_GrammarFailedToUnload", resourceCulture);
             }
@@ -587,7 +587,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0} is already in progress.
         /// </summary>
-        internal static string SpeechRecognition_ListeningMethodAlreadyInProgress {
+        public static string SpeechRecognition_ListeningMethodAlreadyInProgress {
             get {
                 return ResourceManager.GetString("SpeechRecognition_ListeningMethodAlreadyInProgress", resourceCulture);
             }
@@ -596,7 +596,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Recognition Error: {0}.
         /// </summary>
-        internal static string SpeechRecognition_RecognitionError {
+        public static string SpeechRecognition_RecognitionError {
             get {
                 return ResourceManager.GetString("SpeechRecognition_RecognitionError", resourceCulture);
             }
@@ -605,7 +605,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to AudioSignalProblemOccurred:{0} at {3} ({1}) with AudioLevel:{2}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_AudioSignalProblemOccurred {
+        public static string SpeechRecognitionEngine_AudioSignalProblemOccurred {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_AudioSignalProblemOccurred", resourceCulture);
             }
@@ -614,7 +614,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to AudioState:{0}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_AudioStateChanged {
+        public static string SpeechRecognitionEngine_AudioStateChanged {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_AudioStateChanged", resourceCulture);
             }
@@ -623,7 +623,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Detected: {0}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_Detected {
+        public static string SpeechRecognitionEngine_Detected {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_Detected", resourceCulture);
             }
@@ -632,7 +632,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Hypothesized: {0}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_Hypothesized {
+        public static string SpeechRecognitionEngine_Hypothesized {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_Hypothesized", resourceCulture);
             }
@@ -641,7 +641,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Loaded Grammar {1}\n   Cancelled:{2}\n   Error: {0}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_LoadGrammarCompleted {
+        public static string SpeechRecognitionEngine_LoadGrammarCompleted {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_LoadGrammarCompleted", resourceCulture);
             }
@@ -650,7 +650,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Recognition rejected: {0}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_RecognitionRejected {
+        public static string SpeechRecognitionEngine_RecognitionRejected {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_RecognitionRejected", resourceCulture);
             }
@@ -661,7 +661,7 @@ namespace AdaptiveRemote.Logging {
         ///   Result:{5}
         ///   Error{3}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_RecognizeCompleted {
+        public static string SpeechRecognitionEngine_RecognizeCompleted {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_RecognizeCompleted", resourceCulture);
             }
@@ -670,7 +670,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Recognized {0}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_Recognized {
+        public static string SpeechRecognitionEngine_Recognized {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_Recognized", resourceCulture);
             }
@@ -684,7 +684,7 @@ namespace AdaptiveRemote.Logging {
         ///   Supported Formats:{supported}
         ///   Additional Information:{additional} .
         /// </summary>
-        internal static string SpeechRecognitionEngine_RecognizerInfo {
+        public static string SpeechRecognitionEngine_RecognizerInfo {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo", resourceCulture);
             }
@@ -694,7 +694,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to 
         ///      {0}: {1}.
         /// </summary>
-        internal static string SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat {
+        public static string SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat", resourceCulture);
             }
@@ -704,7 +704,7 @@ namespace AdaptiveRemote.Logging {
         ///   Looks up a localized string similar to 
         ///      {0} ({1}k bits/s).
         /// </summary>
-        internal static string SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat {
+        public static string SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat", resourceCulture);
             }
@@ -713,7 +713,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Recognizer update reached at {0} ({1}).
         /// </summary>
-        internal static string SpeechRecognitionEngine_UpdateReached {
+        public static string SpeechRecognitionEngine_UpdateReached {
             get {
                 return ResourceManager.GetString("SpeechRecognitionEngine_UpdateReached", resourceCulture);
             }
@@ -722,7 +722,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Cannot say &apos;{0}&apos;; another phrase is already in progress..
         /// </summary>
-        internal static string SpeechSynthesis_AlreadySpeaking {
+        public static string SpeechSynthesis_AlreadySpeaking {
             get {
                 return ResourceManager.GetString("SpeechSynthesis_AlreadySpeaking", resourceCulture);
             }
@@ -731,7 +731,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Cancelled saying &apos;{0}&apos;.
         /// </summary>
-        internal static string SpeechSynthesis_CancelledSaying {
+        public static string SpeechSynthesis_CancelledSaying {
             get {
                 return ResourceManager.GetString("SpeechSynthesis_CancelledSaying", resourceCulture);
             }
@@ -740,7 +740,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Saying &apos;{0}&apos;.
         /// </summary>
-        internal static string SpeechSynthesis_Saying {
+        public static string SpeechSynthesis_Saying {
             get {
                 return ResourceManager.GetString("SpeechSynthesis_Saying", resourceCulture);
             }
@@ -749,7 +749,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Selected voice &apos;{0}&apos;.
         /// </summary>
-        internal static string SpeechSynthesis_SelectedVoice {
+        public static string SpeechSynthesis_SelectedVoice {
             get {
                 return ResourceManager.GetString("SpeechSynthesis_SelectedVoice", resourceCulture);
             }
@@ -758,7 +758,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Set speaking rate to {0}.
         /// </summary>
-        internal static string SpeechSynthesis_SetSpeakingRate {
+        public static string SpeechSynthesis_SetSpeakingRate {
             get {
                 return ResourceManager.GetString("SpeechSynthesis_SetSpeakingRate", resourceCulture);
             }
@@ -767,7 +767,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Voice not found: &apos;{0}&apos;.
         /// </summary>
-        internal static string SpeechSynthesis_VoiceNotFound {
+        public static string SpeechSynthesis_VoiceNotFound {
             get {
                 return ResourceManager.GetString("SpeechSynthesis_VoiceNotFound", resourceCulture);
             }
@@ -776,7 +776,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Connected to TiVo {0}.
         /// </summary>
-        internal static string TiVoConnection_Connected {
+        public static string TiVoConnection_Connected {
             get {
                 return ResourceManager.GetString("TiVoConnection_Connected", resourceCulture);
             }
@@ -785,7 +785,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Disconnecting from TiVo {0}.
         /// </summary>
-        internal static string TiVoConnection_Disconnecting {
+        public static string TiVoConnection_Disconnecting {
             get {
                 return ResourceManager.GetString("TiVoConnection_Disconnecting", resourceCulture);
             }
@@ -794,7 +794,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Error: {0}.
         /// </summary>
-        internal static string TiVoConnection_Error {
+        public static string TiVoConnection_Error {
             get {
                 return ResourceManager.GetString("TiVoConnection_Error", resourceCulture);
             }
@@ -803,7 +803,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Received event code &quot;{0}&quot; in response to &quot;{1}&quot;: &quot;{2}&quot;.
         /// </summary>
-        internal static string TiVoConnection_EventReceived {
+        public static string TiVoConnection_EventReceived {
             get {
                 return ResourceManager.GetString("TiVoConnection_EventReceived", resourceCulture);
             }
@@ -812,7 +812,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Message received: {0}.
         /// </summary>
-        internal static string TiVoConnection_MessageReceived {
+        public static string TiVoConnection_MessageReceived {
             get {
                 return ResourceManager.GetString("TiVoConnection_MessageReceived", resourceCulture);
             }
@@ -821,7 +821,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to Message sent: {0}.
         /// </summary>
-        internal static string TiVoConnection_MessageSent {
+        public static string TiVoConnection_MessageSent {
             get {
                 return ResourceManager.GetString("TiVoConnection_MessageSent", resourceCulture);
             }
@@ -830,7 +830,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0}: Cancelled.
         /// </summary>
-        internal static string UdpService_Cancelled {
+        public static string UdpService_Cancelled {
             get {
                 return ResourceManager.GetString("UdpService_Cancelled", resourceCulture);
             }
@@ -839,7 +839,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0}: Failed: {1}.
         /// </summary>
-        internal static string UdpService_Failed {
+        public static string UdpService_Failed {
             get {
                 return ResourceManager.GetString("UdpService_Failed", resourceCulture);
             }
@@ -848,7 +848,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0}: Received {1} bytes from {2}.
         /// </summary>
-        internal static string UdpService_ReceivedResponse {
+        public static string UdpService_ReceivedResponse {
             get {
                 return ResourceManager.GetString("UdpService_ReceivedResponse", resourceCulture);
             }
@@ -857,7 +857,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0}: Sending {1} bytes to {2}.
         /// </summary>
-        internal static string UdpService_Sending {
+        public static string UdpService_Sending {
             get {
                 return ResourceManager.GetString("UdpService_Sending", resourceCulture);
             }
@@ -866,7 +866,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0}: Sent, waiting for response.
         /// </summary>
-        internal static string UdpService_Sent {
+        public static string UdpService_Sent {
             get {
                 return ResourceManager.GetString("UdpService_Sent", resourceCulture);
             }
@@ -875,7 +875,7 @@ namespace AdaptiveRemote.Logging {
         /// <summary>
         ///   Looks up a localized string similar to {0}: Unexpected {1}.
         /// </summary>
-        internal static string UdpService_UnexpectedError {
+        public static string UdpService_UnexpectedError {
             get {
                 return ResourceManager.GetString("UdpService_UnexpectedError", resourceCulture);
             }

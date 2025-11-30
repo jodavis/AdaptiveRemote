@@ -1,12 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Speech.Recognition;
 
 namespace AdaptiveRemote.Services.Conversation;
 
 internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 {
-    private readonly Dictionary<string, Grammar> _grammars = new();
+    private readonly Dictionary<string, IGrammar> _grammars = new();
 
     private event EventHandler<RecognizedSpeechEventArgs>? _recognized;
     private TaskCompletionSource _pause = new();
@@ -28,8 +26,8 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
         remove { }
     }
 
-    void ISpeechRecognitionEngine.LoadGrammar(Grammar grammar) => _grammars.Add(grammar.Name, grammar);
-    void ISpeechRecognitionEngine.UnloadGrammar(Grammar grammar) => _grammars.Remove(grammar.Name);
+    void ISpeechRecognitionEngine.LoadGrammar(IGrammar grammar) => _grammars.Add(grammar.Name ?? string.Empty, grammar);
+    void ISpeechRecognitionEngine.UnloadGrammar(IGrammar grammar) => _grammars.Remove(grammar.Name ?? string.Empty);
     void ISpeechRecognitionEngine.UnloadAllGrammars() => _grammars.Clear();
     void ISpeechRecognitionEngine.RecognizeAsync() => _pause.TrySetResult();
     void ISpeechRecognitionEngine.RecognizeAsyncCancel() => _pause = new();
@@ -97,7 +95,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
     }
 
     private bool IsEnabled(PhraseKinds phraseKind)
-        => _grammars.TryGetValue(phraseKind.ToString(), out Grammar? grammar) && grammar.Enabled;
+        => _grammars.TryGetValue(phraseKind.ToString(), out IGrammar? grammar) && grammar.Enabled;
 
     private void SendResult(FakeRecognitionResult result)
     {

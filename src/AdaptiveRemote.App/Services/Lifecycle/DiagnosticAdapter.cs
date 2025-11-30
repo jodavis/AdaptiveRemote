@@ -46,9 +46,6 @@ internal class DiagnosticAdapter : IObserver<DiagnosticListener>, IObserver<KeyV
         {
             null => "(null)",
             Exception exception => exception.ToString(),
-            Azure.Core.HttpMessage message => message.HasResponse
-                ? $"{message.Response.ReasonPhrase} {message.Request.Uri}"
-                : message.Request.Uri,
             Activity activity => activity.DisplayName,
             _ => value.Value.GetType().FullName
         }}");

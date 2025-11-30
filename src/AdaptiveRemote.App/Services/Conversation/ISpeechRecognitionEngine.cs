@@ -1,11 +1,10 @@
-﻿using System.Speech.Recognition;
-
-namespace AdaptiveRemote.Services.Conversation;
+﻿namespace AdaptiveRemote.Services.Conversation;
 
 /// <summary>
 /// Think wrapper around System.Speech.Recognition.SpeechRecognitionEngine.
+/// Placed in AdaptiveRemote.App as the shared/core assembly.
 /// </summary>
-internal interface ISpeechRecognitionEngine
+public interface ISpeechRecognitionEngine
 {
     /// <summary>
     /// Raised when the SpeechRecognitionEngine receives input that matches any of its
@@ -22,12 +21,12 @@ internal interface ISpeechRecognitionEngine
     /// <summary>
     /// Synchronously loads a Grammar object.
     /// </summary>
-    void LoadGrammar(Grammar grammar);
+    void LoadGrammar(IGrammar grammar);
 
     /// <summary>
     /// Unloads a specified Grammar object from the SpeechRecognitionEngine instance.
     /// </summary>
-    void UnloadGrammar(Grammar grammar);
+    void UnloadGrammar(IGrammar grammar);
 
     /// <summary>
     /// Unloads all Grammar objects from the recognizer.

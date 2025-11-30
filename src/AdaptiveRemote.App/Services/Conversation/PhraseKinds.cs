@@ -1,7 +1,7 @@
 ﻿namespace AdaptiveRemote.Services.Conversation;
 
 [Flags]
-internal enum PhraseKinds
+public enum PhraseKinds
 {
     WakeWord = 1,
     Commands = 2,

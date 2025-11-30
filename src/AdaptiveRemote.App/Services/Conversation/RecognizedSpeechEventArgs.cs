@@ -2,7 +2,7 @@
 
 public class RecognizedSpeechEventArgs : EventArgs
 {
-    internal RecognizedSpeechEventArgs(IRecognizedSpeech result)
+    public RecognizedSpeechEventArgs(IRecognizedSpeech result)
     {
         Result = result;
     }

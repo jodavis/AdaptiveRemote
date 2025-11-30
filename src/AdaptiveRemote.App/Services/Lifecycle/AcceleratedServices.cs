@@ -11,15 +11,12 @@ public class AcceleratedServices
     public LifecycleView ViewModel { get; }
     internal ILifecycleViewController Controller { get; }
     internal DiagnosticAdapter DiagnosticAdapter { get; }
-    public MainWindow MainWindow { get; }
 
     public AcceleratedServices(string[] args)
     {
         ViewModel = new();
         Controller = new LifecycleViewController(ViewModel);
         DiagnosticAdapter = new(Controller);
-
-        MainWindow = new(ViewModel);
 
         Controller.SetPhase(LifecyclePhase.Waiting);
 
@@ -29,9 +26,14 @@ public class AcceleratedServices
             .ConfigureServices(AddPrecreatedServices);
     }
 
+    public AcceleratedServices ConfigureHostServices(Action<IServiceCollection> configure)
+    {
+        _hostBuilder.ConfigureServices(configure);
+        return this;
+    }
+
     private void AddPrecreatedServices(IServiceCollection services)
         => services
-            .AddSingleton(MainWindow)
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);
 

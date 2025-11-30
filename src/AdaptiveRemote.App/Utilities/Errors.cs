@@ -1,5 +1,4 @@
-﻿using System.Configuration;
-using AdaptiveRemote.Configuration;
+﻿using AdaptiveRemote.Configuration;
 using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Broadlink;
 
@@ -58,6 +57,6 @@ internal static class Errors
     internal static Exception PersistSettings_InvalidValue(string paramName, string settingValue)
         => new ArgumentException($"The setting value '{settingValue}' was in an invalid format.", paramName);
 
-    private static ConfigurationErrorsException SettingRequired(string settingKey, string settingName, string requiredTo)
+    private static Exception SettingRequired(string settingKey, string settingName, string requiredTo)
         => new($"The '{settingKey}:{settingName}' setting is required to {requiredTo}");
 }

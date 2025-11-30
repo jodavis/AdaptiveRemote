@@ -1,5 +1,4 @@
-﻿using System.Speech.Recognition;
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,10 +9,10 @@ internal class SpeechRecognition : ISpeechRecognition
 {
     private static readonly IEnumerable<PhraseKinds> GrammarKinds =
         [
-            PhraseKinds.WakeWord,
-            PhraseKinds.Commands,
-            PhraseKinds.Confirmation,
-            PhraseKinds.Correction
+        PhraseKinds.WakeWord,
+        PhraseKinds.Commands,
+        PhraseKinds.Confirmation,
+        PhraseKinds.Correction
         ];
 
     private readonly ConversationSettings _settings;
@@ -21,7 +20,7 @@ internal class SpeechRecognition : ISpeechRecognition
     private readonly IListeningController _listeningController;
     private readonly ILogger<SpeechRecognition> _logger;
 
-    private readonly IReadOnlyDictionary<PhraseKinds, Grammar> _grammars;
+    private readonly IReadOnlyDictionary<PhraseKinds, IGrammar> _grammars;
 
     public SpeechRecognition(IOptions<ConversationSettings> settings, ISpeechRecognitionEngine engine, IListeningController listeningController, IGrammarProvider grammarProvider, ILogger<SpeechRecognition> logger)
     {
@@ -34,7 +33,7 @@ internal class SpeechRecognition : ISpeechRecognition
 
         _grammars = GrammarKinds.ToDictionary(x => x, x => LoadGrammarIntoEngine(grammarProvider.LoadGrammar(x)));
 
-        Grammar LoadGrammarIntoEngine(Grammar grammar)
+        IGrammar LoadGrammarIntoEngine(IGrammar grammar)
         {
             grammar.Enabled = false;
             _engine.LoadGrammar(grammar);
@@ -44,7 +43,7 @@ internal class SpeechRecognition : ISpeechRecognition
 
     void ISpeechRecognition.SetFilter(PhraseKinds filter)
     {
-        foreach (KeyValuePair<PhraseKinds, Grammar> grammar in _grammars)
+        foreach (KeyValuePair<PhraseKinds, IGrammar> grammar in _grammars)
         {
             grammar.Value.Enabled = filter.HasFlag(grammar.Key);
         }

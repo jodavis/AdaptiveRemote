@@ -1,6 +1,5 @@
 ﻿using AdaptiveRemote.Configuration;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote;
@@ -9,7 +8,6 @@ public static class AppHostBuilderExtensions
 {
     public static IHostBuilder ConfigureApp(this IHostBuilder hostBuilder)
         => hostBuilder
-            .AddBlazorUI()
             .ConfigureTelemetry()
             .AddRemoteServices()
             .AddBroadlinkSupport()
@@ -30,13 +28,10 @@ public static class AppHostBuilderExtensions
                     // to publish telemetry to.
                     // ["telemetry:Publish"] = "True"
                 });
-                config.AddUserSecrets<App>();
+                config.AddUserSecrets<UserSecretsKey>();
                 config.AddCommandLine(args);
             });
 
-    private static IHostBuilder AddBlazorUI(this IHostBuilder hostBuilder)
-    {
-        return hostBuilder.ConfigureServices(services => services
-                .AddWpfBlazorWebView());
-    }
+    // This class is used to locate the user secrets assembly for this project.
+    private class UserSecretsKey { }
 }

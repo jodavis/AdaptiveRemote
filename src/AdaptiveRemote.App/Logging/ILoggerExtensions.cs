@@ -2,7 +2,7 @@
 
 namespace AdaptiveRemote.Logging;
 
-internal static class ILoggerExtensions
+public static class ILoggerExtensions
 {
     private static readonly IReadOnlyDictionary<Message, string> LoggingMessages = InitializeLoggingMessages();
 
@@ -33,7 +33,7 @@ internal static class ILoggerExtensions
 
     private static IReadOnlyDictionary<Message, string> InitializeLoggingMessages()
     {
-        System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+        System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static;
         return Enum.GetValues<Message>()
             .Select(x => (key: x, value: typeof(LoggingMessages).GetProperty(x.ToString(), flags)?.GetValue(null)))
             .Where(x => x.value is not null)

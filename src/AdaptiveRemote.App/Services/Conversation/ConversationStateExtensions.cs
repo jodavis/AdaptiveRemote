@@ -2,7 +2,6 @@
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Client;
 
 namespace AdaptiveRemote.Services.Conversation;
 

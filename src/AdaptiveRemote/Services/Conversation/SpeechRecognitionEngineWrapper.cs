@@ -46,8 +46,35 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     private void BroadcastSpeechRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
         => _speechRejected?.Invoke(this, new RecognizedSpeechEventArgs(WrapRequired(e.Result)));
 
-    public void LoadGrammar(Grammar grammar) => _engine.LoadGrammar(grammar);
-    public void UnloadGrammar(Grammar grammar) => _engine.UnloadGrammar(grammar);
+    public void LoadGrammar(IGrammar grammar)
+    {
+        ArgumentNullException.ThrowIfNull(grammar, nameof(grammar));
+
+        object? native = grammar.GetNativeGrammar();
+        if (native is Grammar g)
+        {
+            _engine.LoadGrammar(g);
+        }
+        else
+        {
+            throw new InvalidOperationException("Cannot load grammar: native Grammar instance unavailable on this platform");
+        }
+    }
+
+    public void UnloadGrammar(IGrammar grammar)
+    {
+        ArgumentNullException.ThrowIfNull(grammar, nameof(grammar));
+
+        if (grammar.GetNativeGrammar() is Grammar native)
+        {
+            _engine.UnloadGrammar(native);
+        }
+        else
+        {
+            // nothing to do for non-native grammar
+        }
+    }
+
     public void UnloadAllGrammars() => _engine.UnloadAllGrammars();
     public void SetInputToDefaultAudioDevice() => _engine.SetInputToDefaultAudioDevice();
     public void RecognizeAsync() => _engine.RecognizeAsync(RecognizeMode.Multiple);
@@ -94,16 +121,16 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
     public void Dispose() => _engine.Dispose();
 
     private void LogRecognizerInfo(RecognizerInfo recognizerInfo, bool selected)
-        => _logger.LogInformation(Message.SpeechRecognitionEngine_RecognizerInfo,
-                recognizerInfo.Name,
-                recognizerInfo.Description,
-                selected,
-                recognizerInfo.Id,
-                recognizerInfo.Culture,
-                string.Concat(recognizerInfo.SupportedAudioFormats.Select(
-                    x => string.Format(LoggingMessages.SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat, x.EncodingFormat, x.SamplesPerSecond * x.BitsPerSample / 1000))),
-                string.Concat(recognizerInfo.AdditionalInfo.Select(
-                    x => string.Format(LoggingMessages.SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat, x.Key, x.Value))));
+         => _logger.LogInformation(Message.SpeechRecognitionEngine_RecognizerInfo,
+                 recognizerInfo.Name,
+                 recognizerInfo.Description,
+                 selected,
+                 recognizerInfo.Id,
+                 recognizerInfo.Culture,
+                 string.Concat(recognizerInfo.SupportedAudioFormats.Select(
+                     x => string.Format(LoggingMessages.SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat, x.EncodingFormat, x.SamplesPerSecond * x.BitsPerSample / 1000))),
+                 string.Concat(recognizerInfo.AdditionalInfo.Select(
+                     x => string.Format(LoggingMessages.SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat, x.Key, x.Value))));
 
     private class ResultWrapper : IRecognizedSpeech
     {

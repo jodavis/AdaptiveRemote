@@ -1,5 +1,4 @@
-﻿using System.Speech.Recognition;
-using Moq;
+﻿using Moq;
 
 namespace AdaptiveRemote.Services.Conversation;
 
@@ -15,10 +14,10 @@ public class SpeechRecognitionTests
     private readonly Mock<IDisposable> MockListenDisposable = new();
     private readonly MockOptions<ConversationSettings> MockOptions = new();
 
-    private readonly Grammar MockAttentionGrammar = new(new GrammarBuilder("Attention")) { Name = nameof(MockAttentionGrammar) };
-    private readonly Grammar MockCommandsGrammar = new(new GrammarBuilder("Commands")) { Name = nameof(MockCommandsGrammar) };
-    private readonly Grammar MockYesNoGrammar = new(new GrammarBuilder("YesNo")) { Name = nameof(MockYesNoGrammar) };
-    private readonly Grammar MockCorrectionGrammar = new(new GrammarBuilder("Correction")) { Name = nameof(MockCorrectionGrammar) };
+    private readonly Mock<IGrammar> MockAttentionGrammar = new();
+    private readonly Mock<IGrammar> MockCommandsGrammar = new();
+    private readonly Mock<IGrammar> MockYesNoGrammar = new();
+    private readonly Mock<IGrammar> MockCorrectionGrammar = new();
 
     public TestContext? TestContext { get; set; }
 
@@ -56,49 +55,49 @@ public class SpeechRecognitionTests
     [TestInitialize]
     public void SetupMocks()
     {
-        MockAttentionGrammar.Enabled = true;
+        MockAttentionGrammar.SetupProperty(x => x.Enabled, true);
         MockGrammarProvider
             .Setup(x => x.LoadGrammar(PhraseKinds.WakeWord))
-            .Returns(MockAttentionGrammar)
+            .Returns(MockAttentionGrammar.Object)
             .Verifiable(Times.Once);
         MockEngine
-            .Setup(x => x.LoadGrammar(MockAttentionGrammar))
-            .Callback(() => Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar) + ".Enabled"))
+            .Setup(x => x.LoadGrammar(It.IsAny<IGrammar>()))
+            .Callback<IGrammar>(g => Assert.IsFalse(g.Enabled, "Grammar.Enabled"))
             .Verifiable(Times.Once);
 
-        MockCommandsGrammar.Enabled = true;
+        MockCommandsGrammar.SetupProperty(x => x.Enabled, true);
         MockGrammarProvider
             .Setup(x => x.LoadGrammar(PhraseKinds.Commands))
-            .Returns(MockCommandsGrammar)
+            .Returns(MockCommandsGrammar.Object)
             .Verifiable(Times.Once);
         MockEngine
-            .Setup(x => x.LoadGrammar(MockCommandsGrammar))
-            .Callback(() => Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar) + ".Enabled"))
+            .Setup(x => x.LoadGrammar(MockCommandsGrammar.Object))
+            .Callback<IGrammar>(g => Assert.IsFalse(g.Enabled, "Grammar.Enabled"))
             .Verifiable(Times.Once);
 
-        MockYesNoGrammar.Enabled = true;
+        MockYesNoGrammar.SetupProperty(x => x.Enabled, true);
         MockGrammarProvider
             .Setup(x => x.LoadGrammar(PhraseKinds.Confirmation))
-            .Returns(MockYesNoGrammar)
+            .Returns(MockYesNoGrammar.Object)
             .Verifiable(Times.Once);
         MockEngine
-            .Setup(x => x.LoadGrammar(MockYesNoGrammar))
-            .Callback(() => Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar) + ".Enabled"))
+            .Setup(x => x.LoadGrammar(MockYesNoGrammar.Object))
+            .Callback<IGrammar>(g => Assert.IsFalse(g.Enabled, "Grammar.Enabled"))
             .Verifiable(Times.Once);
 
-        MockCorrectionGrammar.Enabled = true;
+        MockCorrectionGrammar.SetupProperty(x => x.Enabled, true);
         MockGrammarProvider
             .Setup(x => x.LoadGrammar(PhraseKinds.Correction))
-            .Returns(MockCorrectionGrammar)
+            .Returns(MockCorrectionGrammar.Object)
             .Verifiable(Times.Once);
         MockEngine
-            .Setup(x => x.LoadGrammar(MockCorrectionGrammar))
-            .Callback(() => Assert.IsFalse(MockCorrectionGrammar.Enabled, nameof(MockCorrectionGrammar) + ".Enabled"))
+            .Setup(x => x.LoadGrammar(MockCorrectionGrammar.Object))
+            .Callback<IGrammar>(g => Assert.IsFalse(g.Enabled, "Grammar.Enabled"))
             .Verifiable(Times.Once);
 
         MockEngine
             .Setup(x => x.UnloadAllGrammars())
-            .Callback(() => MockEngine.Verify(x => x.LoadGrammar(It.IsAny<Grammar>()), Times.Never))
+            .Callback(() => MockEngine.Verify(x => x.LoadGrammar(It.IsAny<IGrammar>()), Times.Never))
             .Verifiable(Times.Once);
 
         MockEngine
@@ -154,10 +153,10 @@ public class SpeechRecognitionTests
         sut.SetFilter(input);
 
         // Assert
-        Assert.IsTrue(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar));
-        Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar));
-        Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar));
-        Assert.IsTrue(MockCorrectionGrammar.Enabled, nameof(MockCorrectionGrammar));
+        Assert.IsTrue(MockAttentionGrammar.Object.Enabled, nameof(MockAttentionGrammar));
+        Assert.IsTrue(MockCommandsGrammar.Object.Enabled, nameof(MockCommandsGrammar));
+        Assert.IsTrue(MockYesNoGrammar.Object.Enabled, nameof(MockYesNoGrammar));
+        Assert.IsTrue(MockCorrectionGrammar.Object.Enabled, nameof(MockCorrectionGrammar));
     }
 
     [TestMethod]
@@ -175,10 +174,10 @@ public class SpeechRecognitionTests
         sut.SetFilter(input);
 
         // Assert
-        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar));
-        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar));
-        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar));
-        Assert.IsFalse(MockCorrectionGrammar.Enabled, nameof(MockCorrectionGrammar));
+        Assert.IsFalse(MockAttentionGrammar.Object.Enabled, nameof(MockAttentionGrammar));
+        Assert.IsFalse(MockCommandsGrammar.Object.Enabled, nameof(MockCommandsGrammar));
+        Assert.IsFalse(MockYesNoGrammar.Object.Enabled, nameof(MockYesNoGrammar));
+        Assert.IsFalse(MockCorrectionGrammar.Object.Enabled, nameof(MockCorrectionGrammar));
     }
 
     [TestMethod]
@@ -197,10 +196,10 @@ public class SpeechRecognitionTests
         sut.SetFilter(input);
 
         // Assert
-        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar));
-        Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar));
-        Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar));
-        Assert.IsFalse(MockCorrectionGrammar.Enabled, nameof(MockCorrectionGrammar));
+        Assert.IsFalse(MockAttentionGrammar.Object.Enabled, nameof(MockAttentionGrammar));
+        Assert.IsTrue(MockCommandsGrammar.Object.Enabled, nameof(MockCommandsGrammar));
+        Assert.IsTrue(MockYesNoGrammar.Object.Enabled, nameof(MockYesNoGrammar));
+        Assert.IsFalse(MockCorrectionGrammar.Object.Enabled, nameof(MockCorrectionGrammar));
     }
 
     [TestMethod]
@@ -220,10 +219,10 @@ public class SpeechRecognitionTests
         sut.SetFilter(input);
 
         // Assert
-        Assert.IsFalse(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar));
-        Assert.IsTrue(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar));
-        Assert.IsTrue(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar));
-        Assert.IsFalse(MockCorrectionGrammar.Enabled, nameof(MockCorrectionGrammar));
+        Assert.IsFalse(MockAttentionGrammar.Object.Enabled, nameof(MockAttentionGrammar));
+        Assert.IsTrue(MockCommandsGrammar.Object.Enabled, nameof(MockCommandsGrammar));
+        Assert.IsTrue(MockYesNoGrammar.Object.Enabled, nameof(MockYesNoGrammar));
+        Assert.IsFalse(MockCorrectionGrammar.Object.Enabled, nameof(MockCorrectionGrammar));
     }
 
     [TestMethod]
@@ -242,10 +241,10 @@ public class SpeechRecognitionTests
         sut.SetFilter(input);
 
         // Assert
-        Assert.IsTrue(MockAttentionGrammar.Enabled, nameof(MockAttentionGrammar));
-        Assert.IsFalse(MockCommandsGrammar.Enabled, nameof(MockCommandsGrammar));
-        Assert.IsFalse(MockYesNoGrammar.Enabled, nameof(MockYesNoGrammar));
-        Assert.IsFalse(MockCorrectionGrammar.Enabled, nameof(MockCorrectionGrammar));
+        Assert.IsTrue(MockAttentionGrammar.Object.Enabled, nameof(MockAttentionGrammar));
+        Assert.IsFalse(MockCommandsGrammar.Object.Enabled, nameof(MockCommandsGrammar));
+        Assert.IsFalse(MockYesNoGrammar.Object.Enabled, nameof(MockYesNoGrammar));
+        Assert.IsFalse(MockCorrectionGrammar.Object.Enabled, nameof(MockCorrectionGrammar));
     }
 
     [TestMethod]

@@ -1,6 +1,6 @@
 ﻿namespace AdaptiveRemote.Logging;
 
-internal enum Message
+public enum Message
 {
     SpeechRecognitionEngine_Recognized = 101,
     SpeechRecognitionEngine_RecognitionRejected = 102,
