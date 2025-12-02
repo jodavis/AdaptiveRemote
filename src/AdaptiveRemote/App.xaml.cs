@@ -1,7 +1,5 @@
 ﻿using System.Windows;
-using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Lifecycle;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AdaptiveRemote;
 
@@ -18,19 +16,9 @@ public partial class App : Application
             mainWindow.Show();
 
             accelerator.ConfigureHostServices(services =>
-            {
-                // UI-related host services
-                services.AddSingleton(mainWindow);
-                services.AddSingleton<IApplicationScopeFactory, BlazorWindowScopeFactory>();
-                services.AddWpfBlazorWebView();
-
-                // System.Speech host services
-                services.AddScoped<IGrammarProvider, StaticGrammarProvider>();
-                services.AddSingleton<ISpeechSynthesizer, SpeechSynthesizerWrapper>();
-                services.AddSingleton<ISpeechRecognitionEngine, SpeechRecognitionEngineWrapper>();
-                services.AddSingleton<IAudioConfigurationService, DefaultDeviceAudioConfiguration>();
-
-            });
+                services
+                    .AddWindowsUIServices(mainWindow)
+                    .AddWindowsSpeechServices());
 
             base.OnStartup(e);
 

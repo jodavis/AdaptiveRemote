@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote", "src\Adapt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.Console", "src\AdaptiveRemote.Console\AdaptiveRemote.Console.csproj", "{345B73FC-07F9-490F-B566-2677D10B1834}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote.Tests", "test\AdaptiveRemote.Tests\AdaptiveRemote.Tests.csproj", "{99181C45-EACC-45CE-87B3-20A4AA28E793}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdaptiveRemote.App.Tests", "test\AdaptiveRemote.App.Tests\AdaptiveRemote.App.Tests.csproj", "{99181C45-EACC-45CE-87B3-20A4AA28E793}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.props = Directory.Build.props
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.Speech.Tests", "AdaptiveRemote.Speech.Tests\AdaptiveRemote.Speech.Tests.csproj", "{F00FC7B3-D7EA-4F1A-B8CE-9051E1611D96}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,10 @@ Global
 		{99181C45-EACC-45CE-87B3-20A4AA28E793}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99181C45-EACC-45CE-87B3-20A4AA28E793}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99181C45-EACC-45CE-87B3-20A4AA28E793}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F00FC7B3-D7EA-4F1A-B8CE-9051E1611D96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F00FC7B3-D7EA-4F1A-B8CE-9051E1611D96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F00FC7B3-D7EA-4F1A-B8CE-9051E1611D96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F00FC7B3-D7EA-4F1A-B8CE-9051E1611D96}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

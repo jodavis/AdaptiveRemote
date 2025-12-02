@@ -4,10 +4,12 @@ using System.Reflection;
 using System.Speech.Recognition;
 using System.Speech.Synthesis;
 using AdaptiveRemote.Configuration;
+using AdaptiveRemote.Services.Conversation;
+using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace AdaptiveRemote.Services.Conversation;
+namespace AdaptiveRemote.Speech.Tests;
 
 [TestClass]
 public class GrammarTests
@@ -120,7 +122,7 @@ public class GrammarTests
         Log("Done waiting");
 
         // Assert
-        resultTask.Should().BeComplete(because: nameof(GetFirstResult) + " should return within 2000ms");
+        Assert.IsTrue(resultTask.IsCompleted, "Timed out waiting for a result from speech recognition");
         IRecognizedSpeech result = resultTask.Result;
 
         Assert.AreEqual(expectedText, result.Text, nameof(result) + "." + nameof(result.Text));
@@ -157,7 +159,9 @@ public class GrammarTests
     private IHost CreateTestHost() =>
         Host.CreateDefaultBuilder()
             .AddConversationSystem()
-            .ConfigureServices(s => s.AddSingleton<IAudioConfigurationService>(audioConfiguration))
+            .ConfigureServices(s => s
+                .AddWindowsSpeechServices()
+                .AddSingleton<IAudioConfigurationService>(audioConfiguration))
             .Build();
 
     public static IEnumerable<object[]> GetTestSamples()
