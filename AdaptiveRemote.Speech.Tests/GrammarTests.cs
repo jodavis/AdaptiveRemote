@@ -1,5 +1,4 @@
-﻿#if false
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Reflection;
 using System.Speech.Recognition;
 using System.Speech.Synthesis;
@@ -225,4 +224,3 @@ public class GrammarTests
         }
     }
 }
-#endif
