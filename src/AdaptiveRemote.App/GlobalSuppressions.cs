@@ -7,3 +7,5 @@ using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Usage", "CA2254:Template should be a static expression",
     Justification = "Error templates are coming from a resource file. They are static expressions, I'm just collecting them there.")]
+[assembly: SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance",
+    Justification = "Return types are cast to interfaces for future compatibility.")]

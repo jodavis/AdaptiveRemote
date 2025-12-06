@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Hosting;
 
@@ -12,13 +11,19 @@ public partial class App : Application
         try
         {
             AcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
-
-            accelerator.MainWindow.Show();
             accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
+
+            MainWindow mainWindow = new(accelerator.ViewModel);
+            mainWindow.Show();
+
+            IHostBuilder hostBuilder = Host.CreateDefaultBuilder(e.Args)
+                .AddAcceleratedServices(accelerator)
+                .AddWindowsUIServices(mainWindow)
+                .AddWindowsSpeechServices();
 
             base.OnStartup(e);
 
-            _ = RunApplicationLoopAndShutdownAsync(accelerator);
+            _ = RunApplicationLoopAndShutdownAsync(hostBuilder, accelerator.Controller);
         }
         catch (Exception startupFailure)
         {
@@ -33,9 +38,25 @@ public partial class App : Application
 
     protected virtual AcceleratedServices CreateAcceleratedServices(string[] args) => new(args);
 
-    private async Task RunApplicationLoopAndShutdownAsync(AcceleratedServices accelerator)
+    private async Task RunApplicationLoopAndShutdownAsync(IHostBuilder hostBuilder, Services.ILifecycleViewController controller)
     {
-        await accelerator.RunApplicationLoopAsync();
+        await Task.Run(async () =>
+        {
+            try
+            {
+                IHost host = hostBuilder.Build();
+                await host.RunAsync();
+            }
+            catch (Exception configErrors)
+            {
+                controller.SetFatalError(configErrors);
+                throw;
+            }
+            finally
+            {
+                controller.SetPhase(LifecyclePhase.CleaningUp);
+            }
+        });
 
         // If the application loop completes without error, it means
         // the app is shutting down normally. If it ends with an exception

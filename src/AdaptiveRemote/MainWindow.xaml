@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:blazor="clr-namespace:Microsoft.AspNetCore.Components.WebView.Wpf;assembly=Microsoft.AspNetCore.Components.WebView.Wpf"
-        xmlns:components="clr-namespace:AdaptiveRemote.Components"
+        xmlns:components="clr-namespace:AdaptiveRemote.Components;assembly=AdaptiveRemote.App"
         mc:Ignorable="d"
         Title="MainWindow" WindowStyle="None" WindowState="Maximized"
         Background="#222">

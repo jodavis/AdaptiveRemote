@@ -31,10 +31,11 @@ from that directory or through Visual Studio's Test Explorer.
 Design documentation
 --------------------
 Architecture and design notes are stored alongside implementations using `_doc_*.md` filenames so they surface at the top of each folder. See:
-- `AdaptiveRemote/Services/_doc_Services.md`: Services folder organization and API conventions
-- `AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Lifecycle subsystem
-- `AdaptiveRemote/Services/Commands/_doc_Commands.md`: Remote control command model subsystem
-- `AdaptiveRemote/Services/Broadlink/_doc_Broadlink.md`: Broadlink RM4 mini device driver for handling `IRCommand`
-- `AdaptiveRemote/Services/Conversation/_doc_Conversation.md`: Speech recognition and conversation subsystem
-- `AdaptiveRemote/Mvvm/_doc_Mvvm.md`: MVVM property change notification subsystem
-- `AdaptiveRemote/Components/_doc_UI.md`: Visual user interface subsystem
+- `src/_doc_Projects.md`: High-level project organization and boundaries
+- `src/AdaptiveRemote/Services/_doc_Services.md`: Services folder organization and API conventions
+- `src/AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Lifecycle subsystem
+- `src/AdaptiveRemote/Services/Commands/_doc_Commands.md`: Remote control command model subsystem
+- `src/AdaptiveRemote/Services/Broadlink/_doc_Broadlink.md`: Broadlink RM4 mini device driver for handling `IRCommand`
+- `src/AdaptiveRemote/Services/Conversation/_doc_Conversation.md`: Speech recognition and conversation subsystem
+- `src/AdaptiveRemote/Mvvm/_doc_Mvvm.md`: MVVM property change notification subsystem
+- `src/AdaptiveRemote/Components/_doc_UI.md`: Visual user interface subsystem
