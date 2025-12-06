@@ -4,23 +4,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>$(MSBuildProjectName.Split('.')[0])</RootNamespace>
+    <RootNamespace>AdaptiveRemote</RootNamespace>
+    <UserSecretsId>e53e63d6-21f1-4896-85e5-7a4831aadbd2</UserSecretsId>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Remove="compilerconfig.json" />
-    <Content Remove="wwwroot\css\app.less" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="compilerconfig.json" />
-    <None Include="wwwroot\css\app.less" />
-  </ItemGroup>
-
-
-  <ItemGroup>
-    <SupportedPlatform Include="browser" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.11.4" />

@@ -1,6 +1,5 @@
 ﻿using System.Resources;
 using System.Runtime.CompilerServices;
-using System.Runtime.Versioning;
 
 [assembly: InternalsVisibleTo("AdaptiveRemote.App.Tests")]
 [assembly: InternalsVisibleTo("AdaptiveRemote.Speech.Tests")]
@@ -8,6 +7,3 @@ using System.Runtime.Versioning;
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 
 [assembly: NeutralResourcesLanguage("en-US")]
-
-[assembly: SupportedOSPlatform("windows")]
-[assembly: SupportedOSPlatform("linux")]

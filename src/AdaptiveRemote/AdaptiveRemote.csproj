@@ -8,7 +8,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <RootNamespace>AdaptiveRemote</RootNamespace>
-    <UserSecretsId>e53e63d6-21f1-4896-85e5-7a4831aadbd2</UserSecretsId>
     <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Microsoft.Extensions.Configuration.Binder.SourceGeneration</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
