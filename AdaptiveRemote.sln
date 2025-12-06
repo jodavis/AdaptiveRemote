@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.Speech.Tests", "AdaptiveRemote.Speech.Tests\AdaptiveRemote.Speech.Tests.csproj", "{F00FC7B3-D7EA-4F1A-B8CE-9051E1611D96}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.Speech.Tests", "test\AdaptiveRemote.Speech.Tests\AdaptiveRemote.Speech.Tests.csproj", "{F00FC7B3-D7EA-4F1A-B8CE-9051E1611D96}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
