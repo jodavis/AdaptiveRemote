@@ -33,11 +33,7 @@ internal class StaticGrammarProvider : IGrammarProvider
             _inner = inner ?? throw new ArgumentNullException(nameof(inner));
         }
 
-        public string? Name
-        {
-            get => _inner.Name;
-            set => _inner.Name = value;
-        }
+        public string? Name => _inner.Name;
 
         public bool Enabled
         {

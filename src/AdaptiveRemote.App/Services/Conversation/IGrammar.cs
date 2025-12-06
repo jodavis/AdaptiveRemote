@@ -5,8 +5,15 @@ namespace AdaptiveRemote.Services.Conversation;
 /// </summary>
 public interface IGrammar
 {
+    /// <summary>
+    /// Gets the name associated with this grammar.
+    /// </summary>
     string? Name { get; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether this grammar should be used in speech
+    /// recognition.
+    /// </summary>
     bool Enabled { get; set; }
 
     /// <summary>
