@@ -98,7 +98,6 @@ internal class SamplesRecorder : IHostedService
 
         ILogger ILoggerProvider.CreateLogger(string categoryName)
         {
-            // Avoid referencing System.Speech type directly here; compare to the fully-qualified type name string.
             if (categoryName == "System.Speech.Recognition.SpeechRecognitionEngine")
             {
                 return this;
