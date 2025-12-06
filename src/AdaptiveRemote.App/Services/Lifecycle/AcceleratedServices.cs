@@ -6,10 +6,10 @@ namespace AdaptiveRemote.Services.Lifecycle;
 
 public class AcceleratedServices
 {
-    private IHostBuilder _hostBuilder;
+    private readonly string[] _args;
 
     public LifecycleView ViewModel { get; }
-    internal ILifecycleViewController Controller { get; }
+    public ILifecycleViewController Controller { get; }
     internal DiagnosticAdapter DiagnosticAdapter { get; }
 
     public AcceleratedServices(string[] args)
@@ -20,41 +20,19 @@ public class AcceleratedServices
 
         Controller.SetPhase(LifecyclePhase.Waiting);
 
-        _hostBuilder = Host.CreateDefaultBuilder()
-            .ConfigureAppSettings(args)
-            .ConfigureApp()
-            .ConfigureServices(AddPrecreatedServices);
+        _args = args;
     }
 
-    public AcceleratedServices ConfigureHostServices(Action<IServiceCollection> configure)
+    public void ConfigureHost(IHostBuilder hostBuilder)
     {
-        _hostBuilder.ConfigureServices(configure);
-        return this;
+        hostBuilder
+            .ConfigureAppSettings(_args)
+            .ConfigureApp()
+            .ConfigureServices(AddPrecreatedServices);
     }
 
     private void AddPrecreatedServices(IServiceCollection services)
         => services
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);
-
-    public async Task RunApplicationLoopAsync()
-    {
-        await Task.Run(async () =>
-        {
-            try
-            {
-                IHost host = _hostBuilder.Build();
-                await host.RunAsync();
-            }
-            catch (Exception configErrors)
-            {
-                Controller.SetFatalError(configErrors);
-                throw;
-            }
-            finally
-            {
-                Controller.SetPhase(LifecyclePhase.CleaningUp);
-            }
-        });
-    }
 }

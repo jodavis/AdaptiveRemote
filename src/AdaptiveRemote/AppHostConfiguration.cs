@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AdaptiveRemote.Services.Conversation;
+﻿using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +7,15 @@ namespace AdaptiveRemote;
 
 internal static class AppHostConfiguration
 {
+    internal static IHostBuilder AddAcceleratedServices(this IHostBuilder builder, AcceleratedServices acceleratedServices)
+    {
+        acceleratedServices.ConfigureHost(builder);
+        return builder;
+    }
+
+    internal static IHostBuilder AddWindowsUIServices(this IHostBuilder builder, MainWindow mainWindow)
+        => builder.ConfigureServices(services => services.AddWindowsUIServices(mainWindow));
+
     internal static IServiceCollection AddWindowsUIServices(this IServiceCollection services, MainWindow mainWindow)
     {
         // UI-related host services
@@ -21,6 +25,9 @@ internal static class AppHostConfiguration
 
         return services;
     }
+
+    internal static IHostBuilder AddWindowsSpeechServices(this IHostBuilder builder)
+        => builder.ConfigureServices(services => services.AddWindowsSpeechServices());
 
     internal static IServiceCollection AddWindowsSpeechServices(this IServiceCollection services)
     {

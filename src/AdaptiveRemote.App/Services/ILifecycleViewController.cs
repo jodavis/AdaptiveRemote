@@ -1,6 +1,6 @@
 ﻿namespace AdaptiveRemote.Services;
 
-internal interface ILifecycleViewController
+public interface ILifecycleViewController
 {
     /// <summary>
     /// Report an unrecoverable error that should stop the normal operation of

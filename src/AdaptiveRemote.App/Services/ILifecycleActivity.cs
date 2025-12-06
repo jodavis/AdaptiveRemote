@@ -1,6 +1,6 @@
 ﻿namespace AdaptiveRemote.Services;
 
-internal interface ILifecycleActivity : IDisposable
+public interface ILifecycleActivity : IDisposable
 {
     /// <summary>
     /// The initialization status message associated with this activity.
