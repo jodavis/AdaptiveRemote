@@ -20,7 +20,7 @@ internal static class AppHostConfiguration
     {
         // UI-related host services
         services.AddSingleton(mainWindow);
-        services.AddSingleton<IApplicationScopeFactory, BlazorWindowScopeFactory>();
+        services.AddHostedService<BlazorWindowServicesSetter>();
         services.AddWpfBlazorWebView();
 
         return services;
