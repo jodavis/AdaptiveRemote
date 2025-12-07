@@ -1,6 +1,8 @@
 ﻿namespace AdaptiveRemote.Services.Lifecycle;
 
-public interface IApplicationScope : IDisposable
+public interface IApplicationScope
 {
-    Task TryInvokeAsync(Func<IServiceProvider, CancellationToken, Task> workItem, CancellationToken cancellationToken);
+    Task InvokeInScopeAsync(Func<IServiceProvider, CancellationToken, Task> workItem, CancellationToken cancellationToken);
+
+    Task RecycleAsync(CancellationToken cancellationToken);
 }

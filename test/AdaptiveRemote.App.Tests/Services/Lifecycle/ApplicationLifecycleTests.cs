@@ -1,5 +1,4 @@
 ﻿using AdaptiveRemote.Logging;
-using AdaptiveRemote.Services;
 using FluentAssertions;
 using Moq;
 
@@ -14,37 +13,31 @@ public class ApplicationLifecycleTests
     private readonly Mock<IScopedLifecycle> MockService2 = new();
     private readonly Mock<IScopedLifecycle> MockService3 = new();
 
-    private readonly Mock<IApplicationScopeFactory> MockScopeFactory = new();
-    private readonly Mock<IApplicationScope> MockScope = new();
+    private readonly Mock<IApplicationScopeProvider> MockScopeProvider = new();
     private readonly Mock<ILifecycleViewController> MockLifecycleViewController = new();
     private readonly Mock<ILifecycleActivity> MockActivity = new();
     private readonly Mock<IServiceProvider> MockServiceProvider = new();
-    private readonly MockLogger<ApplicationLifecycle> MockLogger = new();
+    private readonly MockLogger<ApplicationLifecycle, ScopedLifecycleContainer> MockLogger = new();
 
     public TestContext? TestContext { get; set; }
 
     public LifecyclePhase LatestLifecyclePhase { get; private set; }
 
-    private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeFactory.Object, MockLifecycleViewController.Object, MockLogger);
+    private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeProvider.Object, MockLogger);
 
     [TestInitialize]
     public void SetupMocks()
     {
-        MockScopeFactory
-            .Setup(x => x.CreateNewScopeAsync(It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(MockScope.Object))
-            .Verifiable(Times.Once);
-
-        MockScope
-            .Setup(x => x.TryInvokeAsync(It.IsAny<Func<IServiceProvider, CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
+        MockScopeProvider
+            .Setup(x => x.InvokeInScopeAsync(It.IsAny<Func<IServiceProvider, CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
             .Returns(delegate (Func<IServiceProvider, CancellationToken, Task> workItem, CancellationToken cancellationToken)
             {
                 return workItem.Invoke(MockServiceProvider.Object, cancellationToken);
             });
 
         MockServiceProvider
-            .Setup(x => x.GetService(typeof(IEnumerable<IScopedLifecycle>)))
-            .Returns(new[] { MockService1.Object, MockService2.Object, MockService3.Object })
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Returns(() => new ScopedLifecycleContainer([MockService1.Object, MockService2.Object, MockService3.Object], MockLifecycleViewController.Object, MockLogger))
             .Verifiable(Times.Between(1, 2, Moq.Range.Inclusive));
 
         MockService1
@@ -95,8 +88,7 @@ public class ApplicationLifecycleTests
     public void VerifyMocks()
     {
         Verify(MockServiceProvider, nameof(MockServiceProvider));
-        Verify(MockScopeFactory, nameof(MockScopeFactory));
-        Verify(MockScope, nameof(MockScope));
+        Verify(MockScopeProvider, nameof(MockScopeProvider));
 
         Verify(MockService1, nameof(MockService1));
         Verify(MockService2, nameof(MockService2));
@@ -291,7 +283,6 @@ public class ApplicationLifecycleTests
         Expect_InitializeAsyncOn(MockService1);
         Expect_InitializeAsyncOn(MockService2);
         Expect_InitializeAsyncOn(MockService3);
-        Expect_DisposeScope();
         Expect_CleanupAsyncOn(MockService1);
         Expect_CleanupAsyncOn(MockService2);
         Expect_CleanupAsyncOn(MockService3);
@@ -372,7 +363,6 @@ public class ApplicationLifecycleTests
         Expect_InitializeAsyncOn(MockService1);
         Expect_InitializeAsyncOn(MockService2);
         Expect_InitializeAsyncOn(MockService3);
-        Expect_DisposeScope();
         Expect_CleanupAsyncOn(MockService1, result: Task.FromException(expectedError1));
         Expect_CleanupAsyncOn(MockService2, result: Task.FromException(expectedError2));
         Expect_CleanupAsyncOn(MockService3);
@@ -414,7 +404,6 @@ public class ApplicationLifecycleTests
         Expect_InitializeAsyncOn(MockService1);
         Expect_InitializeAsyncOn(MockService2, result: IncompleteTask);
         Expect_InitializeAsyncOn(MockService3);
-        Expect_DisposeScope();
         Expect_CleanupAsyncOn(MockService1);
         Expect_CleanupAsyncOn(MockService2);
         Expect_CleanupAsyncOn(MockService3);
@@ -483,11 +472,6 @@ public class ApplicationLifecycleTests
         sut.ExecuteTask.Should().BeComplete(because: "ExecuteTask should complete after all services have stopped");
         LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "we stay in this state until the application exits");
     }
-
-    private void Expect_DisposeScope()
-        => MockScope
-            .Setup(x => x.Dispose())
-            .Verifiable(Times.Once);
 
     private static void Expect_InitializeAsyncOn(Mock<IScopedLifecycle> service, Task? result = default)
         => service
