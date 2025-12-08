@@ -23,7 +23,7 @@
         <a class="dismiss">🗙</a>
     </div>
     <!-- Workaround for Electron -->
-    @* Blazor won't initialize a WebSocket connection if hosted in Node.js, so we have to fake it *@
+    @* Electron's Node.js integration exposes a global `process` variable, which causes Blazor to detect a Node.js environment and disables WebSocket support (required for SignalR). Setting `process = undefined` here ensures Blazor initializes the SignalR connection properly in Electron. *@
     <script>process = undefined;</script>
     <script src="_framework/blazor.server.js"></script>
 </body>

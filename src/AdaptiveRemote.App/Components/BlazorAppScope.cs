@@ -48,7 +48,7 @@ internal class BlazorAppScope : IApplicationScope, IAsyncDisposable
         return workItem(_serviceProvider, cancellationToken);
     }
 
-    public Task RecycleAsync(CancellationToken cancellationToken)
+    public Task RecycleAsync()
     {
         _logger.LogInformation("Recycling Blazor application scope.");
 

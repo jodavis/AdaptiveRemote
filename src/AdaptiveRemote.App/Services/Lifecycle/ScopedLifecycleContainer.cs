@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace AdaptiveRemote.Services.Lifecycle;
 
 /// <summary>
-/// ScopedLifecycleContainer is a scoped service that imports all the <see cref="IScopedLifecycle">
+/// ScopedLifecycleContainer is a scoped service that imports all the <see cref="IScopedLifecycle"/>
 /// services and manages calls to InitializeAsync and CleanUpAsync for the lifecycle of a scope.
 /// </summary>
 internal class ScopedLifecycleContainer

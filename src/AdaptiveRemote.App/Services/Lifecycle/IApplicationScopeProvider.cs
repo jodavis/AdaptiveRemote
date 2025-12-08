@@ -13,5 +13,5 @@ internal interface IApplicationScopeProvider
     /// will be delayed until a new IApplicationScope is available.
     /// </summary>
     /// <returns>A Task that completes when the scope has been reset.</returns>
-    Task RecycleScopeAsync(CancellationToken cancellationToken);
+    Task RecycleScopeAsync();
 }
