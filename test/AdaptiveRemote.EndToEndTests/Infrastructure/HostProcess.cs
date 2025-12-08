@@ -131,17 +131,17 @@ public class HostProcess : IDisposable
     /// </summary>
     public void Kill()
     {
-        if (!_process.HasExited)
+        try
         {
-            try
+            if (!_process.HasExited)
             {
                 _process.Kill(entireProcessTree: true);
                 _process.WaitForExit(5000); // Wait up to 5 seconds for clean exit
             }
-            catch
-            {
-                // Process may have already exited
-            }
+        }
+        catch
+        {
+            // Process may have already exited or we may not have permission
         }
     }
 

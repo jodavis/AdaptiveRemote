@@ -101,6 +101,18 @@ internal class TestControlService : BackgroundService
 
         try
         {
+            // Validate that the assembly path is an absolute path to prevent directory traversal
+            if (!Path.IsPathFullyQualified(assemblyPath))
+            {
+                throw new InvalidOperationException($"Assembly path must be fully qualified: {assemblyPath}");
+            }
+
+            // Validate that the file exists
+            if (!File.Exists(assemblyPath))
+            {
+                throw new FileNotFoundException($"Assembly not found: {assemblyPath}");
+            }
+
             var assembly = Assembly.LoadFrom(assemblyPath);
             var type = assembly.GetType(typeName);
 

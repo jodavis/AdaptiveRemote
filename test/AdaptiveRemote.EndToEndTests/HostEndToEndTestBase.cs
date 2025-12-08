@@ -70,7 +70,7 @@ public abstract class HostEndToEndTestBase
                 TestContext?.WriteLine("=== STDERR ===");
                 TestContext?.WriteLine(hostProcess.Error);
                 Assert.Fail($"Host did not become ready within {DefaultStartupTimeoutSeconds}s. " +
-                    "Expected log message: '{0}'", readyMessage);
+                    $"Expected log message: '{readyMessage}'");
             }
 
             TestContext?.WriteLine("Host is ready");

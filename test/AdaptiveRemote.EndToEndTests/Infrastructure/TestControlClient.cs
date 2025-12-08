@@ -59,7 +59,12 @@ public class TestControlClient : IDisposable
         if (_rpc == null)
             throw new InvalidOperationException("Not connected to test control endpoint");
 
-        return _rpc.Attach<ITestService>();
+        // Note: This creates a proxy for invoking methods on the remote test service
+        // The actual test service instance is managed by the TestControlService
+        // We use the existing JsonRpc connection to invoke methods
+        throw new NotSupportedException(
+            "GetTestServiceProxy is not currently implemented. " +
+            "Use InvokeAsync to call methods directly on the test service.");
     }
 
     /// <summary>
