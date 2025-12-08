@@ -1,5 +1,7 @@
 ﻿using AdaptiveRemote.Configuration;
+using AdaptiveRemote.Services.TestControl;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote;
@@ -13,7 +15,8 @@ public static class AppHostBuilderExtensions
             .AddBroadlinkSupport()
             .AddTiVoSupport()
             .AddConversationSystem()
-            .AddSystemWrapperServices();
+            .AddSystemWrapperServices()
+            .AddTestControlService();
 
     public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)
         => hostBuilder
@@ -31,6 +34,9 @@ public static class AppHostBuilderExtensions
                 config.AddUserSecrets<UserSecretsKey>();
                 config.AddCommandLine(args);
             });
+
+    public static IHostBuilder AddTestControlService(this IHostBuilder hostBuilder)
+        => hostBuilder.ConfigureServices(services => services.AddHostedService<TestControlService>());
 
     // This class is used to locate the user secrets assembly for this project.
     private class UserSecretsKey { }
