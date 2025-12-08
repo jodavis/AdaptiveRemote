@@ -3,10 +3,10 @@
 internal interface IApplicationScopeContainer
 {
     /// <summary>
-    /// Sets a new application scope. If there was an existing scope, it is released
+    /// Sets a new application scope. If there was an existing scope, it is released.
     /// </summary>
-    /// <param name="scope"></param>
-    /// <returns></returns>
+    /// <param name="scope">The new application scope to set and activate.</param>
+    /// <returns>A task that completes when the new scope has been set and any previous scope has been released.</returns>
     internal Task SetScopeAsync(IApplicationScope scope);
 
     /// <summary>
