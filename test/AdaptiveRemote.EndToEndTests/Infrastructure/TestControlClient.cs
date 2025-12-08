@@ -52,22 +52,6 @@ public class TestControlClient : IDisposable
     }
 
     /// <summary>
-    /// Gets a proxy to the loaded test service.
-    /// </summary>
-    public ITestService GetTestServiceProxy()
-    {
-        if (_rpc == null)
-            throw new InvalidOperationException("Not connected to test control endpoint");
-
-        // Note: This creates a proxy for invoking methods on the remote test service
-        // The actual test service instance is managed by the TestControlService
-        // We use the existing JsonRpc connection to invoke methods
-        throw new NotSupportedException(
-            "GetTestServiceProxy is not currently implemented. " +
-            "Use InvokeAsync to call methods directly on the test service.");
-    }
-
-    /// <summary>
     /// Invokes a method on the test control endpoint.
     /// </summary>
     public async Task<T> InvokeAsync<T>(string methodName, params object[] args)

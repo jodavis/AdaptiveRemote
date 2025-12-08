@@ -133,15 +133,21 @@ public class HostProcess : IDisposable
     {
         try
         {
+            // Check if process has exited and kill if not
+            // This entire block needs to be in try-catch as HasExited can throw
+            // if the process has been disposed
             if (!_process.HasExited)
             {
                 _process.Kill(entireProcessTree: true);
-                _process.WaitForExit(5000); // Wait up to 5 seconds for clean exit
+                if (!_process.WaitForExit(5000))
+                {
+                    // Process didn't exit after 5 seconds
+                }
             }
         }
         catch
         {
-            // Process may have already exited or we may not have permission
+            // Process may have already exited, been disposed, or we may not have permission
         }
     }
 
