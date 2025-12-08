@@ -22,7 +22,7 @@ so that Blazor components can access initialized components. This is handled by 
 will execute work using a scoped IServiceProvider. The components involved are:
 - [`IApplicationScope`](./IApplicationScope.cs): Represents a DI scope in which work can be run.
 - [`BlazorAppScope`](../../Components/BlazorAppScope.cs): Implements `IApplicationScope`. This object is created for the root Blazor component, and pushes itself into the `IApplicationScopeContainer`.
-- [`IApplicationScopeContainer`](./IApplicationScopeContainer.cs): A scope can into this interface is used by `IApplicationScopeProvider` as the current scope.
+- [`IApplicationScopeContainer`](./IApplicationScopeContainer.cs): A scope object (such as `BlazorAppScope`) can be pushed into this interface, which is then used by `IApplicationScopeProvider` as the current scope.
 - [`IApplicationScopeProvider`](./IApplicationScopeProvider.cs): Provides the ability to run work items in the current scope.
 - [`ApplicationLifecycle`](./ApplicationLifecycle.cs): Uses `IApplicationScopeProvider` to get a `ScopedServiceContainer`.
 - [`ScopedLifecycleContainer`](./ScopedLifecycleContainer.cs): A scoped service that resolves all the `IScopedLifecycle` services and manages calls to `InitializeAsync` and `CleanUpAsync` for the lifetime of the scope. 
