@@ -220,6 +220,15 @@ public abstract class HostTestBase
             context.TestContext.WriteLine("WARNING: Host logs contain warnings");
         }
     }
+
+    protected static int GetAvailablePort()
+    {
+        using TcpListener listener = new(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
+    }
 }
 
 public class HostTestContext : IDisposable

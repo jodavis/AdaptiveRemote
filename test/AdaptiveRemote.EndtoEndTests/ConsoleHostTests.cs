@@ -83,12 +83,5 @@ public class ConsoleHostTests : HostTestBase
         VerifyLogs(context);
     }
 
-    private static int GetAvailablePort()
-    {
-        using TcpListener listener = new(System.Net.IPAddress.Loopback, 0);
-        listener.Start();
-        int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-        return port;
-    }
 }
+

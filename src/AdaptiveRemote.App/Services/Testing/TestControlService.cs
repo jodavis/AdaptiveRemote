@@ -86,11 +86,16 @@ internal class TestControlService : IHostedService
         {
             try
             {
-                TcpClient client = await _listener!.AcceptTcpClientAsync(cancellationToken);
+                TcpClient client = await _listener!.AcceptTcpClientAsync(CancellationToken.None);
                 _ = HandleClientAsync(client, cancellationToken);
             }
             catch (OperationCanceledException)
             {
+                break;
+            }
+            catch (ObjectDisposedException)
+            {
+                // Listener was stopped
                 break;
             }
             catch (Exception ex)
@@ -139,12 +144,20 @@ internal class TestControlService : IHostedService
                 return false;
             }
 
-            // Create instance with shutdown callback
-            _testService = Activator.CreateInstance(serviceType, new Action(() =>
+            // Create instance with shutdown callback, falling back to parameterless constructor
+            try
             {
-                _logger.LogInformation("Test service requested shutdown");
-                _lifetime.StopApplication();
-            }));
+                _testService = Activator.CreateInstance(serviceType, new Action(() =>
+                {
+                    _logger.LogInformation("Test service requested shutdown");
+                    _lifetime.StopApplication();
+                }));
+            }
+            catch (MissingMethodException)
+            {
+                // Try parameterless constructor
+                _testService = Activator.CreateInstance(serviceType);
+            }
 
             if (_testService is null)
             {
