@@ -14,7 +14,7 @@ internal static class HostBuilderExtensions
 
     internal static IServiceCollection AddRemoteServices(this IServiceCollection services)
         => services
-            .AddHostedService<ApplicationLifecycle>()
+            .AddApplicationLifecycleServices()
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
             .AddSingleton<IPersistSettings, PersistSettings>();
@@ -30,4 +30,12 @@ internal static class HostBuilderExtensions
     internal static IServiceCollection AddNullCommandService<CommandType>(this IServiceCollection services)
         where CommandType : Models.Command
         => services.AddScopedLifecycleService<NullCommandService<CommandType>>();
+
+    private static IServiceCollection AddApplicationLifecycleServices(this IServiceCollection services)
+        => services
+            .AddHostedService<ApplicationLifecycle>()
+            .AddScoped<ScopedLifecycleContainer>()
+            .AddScoped<Components.BlazorAppScope>()
+            .AddSingleton<IApplicationScopeContainer, ApplicationScopeContainer>()
+            .AddSingleton(sp => (IApplicationScopeProvider)sp.GetRequiredService<IApplicationScopeContainer>());
 }
