@@ -1,4 +1,5 @@
 using AdaptiveRemote.Services.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -7,12 +8,19 @@ namespace AdaptiveRemote.Configuration;
 internal static class TestingHostBuilderExtensions
 {
     /// <summary>
-    /// Adds test control services for E2E testing.
-    /// The test control endpoint is only activated when --test:ControlPort is provided.
+    /// Optionally adds test control services for E2E testing.
+    /// The test control endpoint is only added when --test:ControlPort is provided.
     /// </summary>
-    internal static IHostBuilder AddTestControlEndpoint(this IHostBuilder builder)
-        => builder.ConfigureServices(services =>
+    internal static IHostBuilder OptionallyAddTestControlEndpoint(this IHostBuilder builder)
+        => builder.ConfigureServices((context, services) =>
         {
-            services.AddHostedService<TestControlService>();
+            // Only add the service if test:ControlPort is configured
+            int? controlPort = context.Configuration.GetValue<int?>("test:ControlPort");
+            
+            if (controlPort.HasValue)
+            {
+                services.Configure<TestingSettings>(context.Configuration.GetSection("test"));
+                services.AddHostedService<TestControlService>();
+            }
         });
 }

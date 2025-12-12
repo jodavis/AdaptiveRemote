@@ -11,4 +11,8 @@
     <PackageReference Include="StreamJsonRpc" Version="2.19.27" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AdaptiveRemote.App\AdaptiveRemote.App.csproj" />
+  </ItemGroup>
+
 </Project>

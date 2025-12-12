@@ -1,4 +1,3 @@
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace AdaptiveRemote.EndtoEndTests;
@@ -6,7 +5,7 @@ namespace AdaptiveRemote.EndtoEndTests;
 [TestClass]
 public class WpfHostTests : HostTestBase
 {
-    private static string? _hostPath;
+    private static string? _solutionRoot;
     private static string? _testServicesPath;
 
     public TestContext TestContext { get; set; } = null!;
@@ -14,15 +13,10 @@ public class WpfHostTests : HostTestBase
     [ClassInitialize]
     public static void ClassInitialize(TestContext context)
     {
-        // Locate the WPF host binary
-        string baseDir = AppContext.BaseDirectory;
-        string solutionRoot = Path.GetFullPath(Path.Combine(baseDir, "../../../../.."));
-        
-        _hostPath = Path.Combine(solutionRoot, "src/AdaptiveRemote/bin/Debug/net8.0-windows/AdaptiveRemote.exe");
-        _testServicesPath = Path.Combine(baseDir, "AdaptiveRemote.EndtoEndTests.TestServices.dll");
+        _solutionRoot = GetSolutionRoot();
+        _testServicesPath = Path.Combine(AppContext.BaseDirectory, "AdaptiveRemote.EndtoEndTests.TestServices.dll");
 
-        context.WriteLine($"Solution root: {solutionRoot}");
-        context.WriteLine($"Host path: {_hostPath}");
+        context.WriteLine($"Solution root: {_solutionRoot}");
         context.WriteLine($"Test services path: {_testServicesPath}");
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -37,7 +31,16 @@ public class WpfHostTests : HostTestBase
         }
     }
 
-    protected override string HostExecutablePath => _hostPath ?? "";
+    protected override string GetHostPath(string solutionRoot)
+    {
+        return Path.Combine(solutionRoot, "src/AdaptiveRemote/bin/Debug/net8.0-windows/AdaptiveRemote.exe");
+    }
+
+    protected override string GetHostExecutable()
+    {
+        // WPF host is an .exe, run it directly (not via dotnet)
+        return GetHostPath(_solutionRoot!);
+    }
 
     [TestMethod]
     [Timeout(180000)] // 3 minutes
@@ -49,39 +52,13 @@ public class WpfHostTests : HostTestBase
             return;
         }
 
-        if (!File.Exists(_hostPath))
+        string hostPath = GetHostPath(_solutionRoot!);
+        if (!File.Exists(hostPath))
         {
-            Assert.Inconclusive($"WPF host not built at: {_hostPath}");
+            Assert.Inconclusive($"WPF host not built at: {hostPath}");
             return;
         }
 
-        int controlPort = GetAvailablePort();
-
-        using HostTestContext context = await LaunchHostAsync(controlPort, TestContext);
-
-        // Load test service
-        bool loaded = await LoadTestServiceAsync(
-            context,
-            _testServicesPath!,
-            "AdaptiveRemote.EndtoEndTests.BasicTestService");
-
-        Assert.IsTrue(loaded, "Failed to load test service");
-
-        // Execute a test command
-        object? result = await InvokeTestServiceAsync(
-            context,
-            "ExecuteTestAsync",
-            "Hello from WPF E2E test");
-
-        Assert.IsNotNull(result);
-        Assert.AreEqual("Echo: Hello from WPF E2E test", result.ToString());
-
-        // Request shutdown
-        await ShutdownHostAsync(context);
-
-        // Verify logs
-        VerifyLogs(context);
+        await RunStandardE2ETestAsync(_solutionRoot!, _testServicesPath!, TestContext);
     }
-
 }
-

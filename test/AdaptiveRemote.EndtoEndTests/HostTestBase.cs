@@ -10,29 +10,101 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// </summary>
 public abstract class HostTestBase
 {
-    protected abstract string HostExecutablePath { get; }
-    protected virtual string? HostWorkingDirectory => null;
     protected virtual TimeSpan StartupTimeout => TimeSpan.FromSeconds(120);
     protected virtual TimeSpan RpcTimeout => TimeSpan.FromSeconds(30);
     protected virtual TimeSpan ShutdownTimeout => TimeSpan.FromSeconds(30);
 
-    protected async Task<HostTestContext> LaunchHostAsync(int controlPort, TestContext testContext)
+    /// <summary>
+    /// Finds the solution root directory by looking for the .sln file.
+    /// </summary>
+    protected static string GetSolutionRoot()
+    {
+        string baseDir = AppContext.BaseDirectory;
+        DirectoryInfo? dir = new DirectoryInfo(baseDir);
+
+        while (dir is not null)
+        {
+            if (dir.GetFiles("*.sln").Length > 0)
+            {
+                return dir.FullName;
+            }
+            dir = dir.Parent;
+        }
+
+        throw new InvalidOperationException($"Could not find solution root starting from {baseDir}");
+    }
+
+    /// <summary>
+    /// Gets the path to the host binary for testing.
+    /// </summary>
+    protected abstract string GetHostPath(string solutionRoot);
+
+    /// <summary>
+    /// Gets the working directory for the host process.
+    /// </summary>
+    protected virtual string? GetHostWorkingDirectory(string hostPath) => Path.GetDirectoryName(hostPath);
+
+    /// <summary>
+    /// Runs a standard E2E test: launch host, load test service, execute test, and shutdown.
+    /// </summary>
+    protected async Task RunStandardE2ETestAsync(
+        string solutionRoot,
+        string testServicesPath,
+        TestContext testContext)
+    {
+        int controlPort = GetAvailablePort();
+        string hostPath = GetHostPath(solutionRoot);
+
+        using HostTestContext context = await LaunchHostAsync(hostPath, controlPort, testContext);
+
+        // Load test service
+        bool loaded = await context.ControlProxy.LoadTestServiceAsync(
+            testServicesPath,
+            "AdaptiveRemote.EndtoEndTests.BasicTestService");
+
+        Assert.IsTrue(loaded, "Failed to load test service");
+
+        // Execute a test command via strongly-typed proxy
+        object? resultObj = await context.ControlProxy.InvokeTestServiceAsync(
+            "ExecuteTestAsync",
+            new object?[] { $"Hello from {GetType().Name}" });
+        
+        string? result = resultObj?.ToString();
+        Assert.AreEqual($"Echo: Hello from {GetType().Name}", result);
+
+        // Request shutdown via strongly-typed proxy
+        await context.ControlProxy.InvokeTestServiceAsync("RequestShutdownAsync", null);
+
+        // Wait for shutdown
+        await WaitForShutdownAsync(context);
+
+        // Verify logs (optional, can be overridden)
+        VerifyLogs(context);
+    }
+
+    protected async Task<HostTestContext> LaunchHostAsync(string hostPath, int controlPort, TestContext testContext)
     {
         StringBuilder logOutput = new();
         StringBuilder errorOutput = new();
 
         string arguments = $"--test:ControlPort={controlPort}";
+        string workingDirectory = GetHostWorkingDirectory(hostPath) ?? AppContext.BaseDirectory;
+
+        string executable = GetHostExecutable();
+        bool isExe = executable == hostPath; // If they're the same, it's a native exe
 
         ProcessStartInfo startInfo = new()
         {
-            FileName = HostExecutablePath,
-            Arguments = arguments,
-            WorkingDirectory = HostWorkingDirectory ?? Path.GetDirectoryName(HostExecutablePath),
+            FileName = executable,
+            Arguments = isExe ? arguments : $"\"{hostPath}\" {arguments}",
+            WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+
+        ConfigureProcessStartInfo(startInfo);
 
         Process process = new()
         {
@@ -58,7 +130,7 @@ public abstract class HostTestBase
             }
         };
 
-        testContext.WriteLine($"Launching host: {HostExecutablePath} {arguments}");
+        testContext.WriteLine($"Launching host: {startInfo.FileName} {startInfo.Arguments}");
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
@@ -79,7 +151,12 @@ public abstract class HostTestBase
                 {
                     client = new TcpClient();
                     await client.ConnectAsync("127.0.0.1", controlPort, cts.Token);
-                    rpc = JsonRpc.Attach(client.GetStream());
+                    
+                    // Create JsonRpc with target for control methods
+                    var stream = client.GetStream();
+                    rpc = new JsonRpc(stream, stream);
+                    rpc.StartListening();
+                    
                     testContext.WriteLine("Connected to test control endpoint");
                     break;
                 }
@@ -105,69 +182,28 @@ public abstract class HostTestBase
                 $"Failed to connect to test control endpoint on port {controlPort} within {StartupTimeout}");
         }
 
-        return new HostTestContext(process, rpc, client!, logOutput, errorOutput, testContext);
+        // Create control proxy for bootstrapping
+        ITestControlService controlProxy = rpc.Attach<ITestControlService>();
+
+        return new HostTestContext(process, rpc, controlProxy, client!, logOutput, errorOutput, testContext);
     }
 
-    protected async Task<bool> LoadTestServiceAsync(
-        HostTestContext context,
-        string assemblyPath,
-        string typeName)
+    /// <summary>
+    /// Gets the executable to use for launching the host (e.g., "dotnet" for DLL hosts).
+    /// </summary>
+    protected virtual string GetHostExecutable() => "dotnet";
+
+    /// <summary>
+    /// Configures the ProcessStartInfo with any host-specific settings (e.g., environment variables).
+    /// </summary>
+    protected virtual void ConfigureProcessStartInfo(ProcessStartInfo startInfo)
     {
-        using CancellationTokenSource cts = new(RpcTimeout);
-
-        try
-        {
-            bool result = await context.Rpc
-                .InvokeWithCancellationAsync<bool>(
-                    "LoadTestServiceAsync",
-                    new object[] { assemblyPath, typeName },
-                    cts.Token);
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            context.TestContext.WriteLine($"Failed to load test service: {ex.Message}");
-            throw;
-        }
+        // Base implementation does nothing - override in derived classes
     }
 
-    protected async Task<object?> InvokeTestServiceAsync(
-        HostTestContext context,
-        string methodName,
-        params object?[] args)
+    protected async Task WaitForShutdownAsync(HostTestContext context)
     {
-        using CancellationTokenSource cts = new(RpcTimeout);
-
-        try
-        {
-            object? result = await context.Rpc
-                .InvokeWithCancellationAsync<object?>(
-                    "InvokeTestServiceAsync",
-                    new object?[] { methodName, args },
-                    cts.Token);
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            context.TestContext.WriteLine($"Failed to invoke test service method: {ex.Message}");
-            throw;
-        }
-    }
-
-    protected async Task ShutdownHostAsync(HostTestContext context)
-    {
-        context.TestContext.WriteLine("Requesting host shutdown...");
-
-        try
-        {
-            await InvokeTestServiceAsync(context, "RequestShutdownAsync");
-        }
-        catch
-        {
-            // Shutdown request may fail if host is already shutting down
-        }
+        context.TestContext.WriteLine("Waiting for host to exit...");
 
         using CancellationTokenSource cts = new(ShutdownTimeout);
 
@@ -197,7 +233,7 @@ public abstract class HostTestBase
         }
     }
 
-    protected static void VerifyLogs(HostTestContext context)
+    protected virtual void VerifyLogs(HostTestContext context)
     {
         string logs = context.LogOutput.ToString();
         string errors = context.ErrorOutput.ToString();
@@ -235,6 +271,7 @@ public class HostTestContext : IDisposable
 {
     public Process Process { get; }
     public JsonRpc Rpc { get; }
+    public ITestControlService ControlProxy { get; }
     public TcpClient Client { get; }
     public StringBuilder LogOutput { get; }
     public StringBuilder ErrorOutput { get; }
@@ -243,6 +280,7 @@ public class HostTestContext : IDisposable
     public HostTestContext(
         Process process,
         JsonRpc rpc,
+        ITestControlService controlProxy,
         TcpClient client,
         StringBuilder logOutput,
         StringBuilder errorOutput,
@@ -250,6 +288,7 @@ public class HostTestContext : IDisposable
     {
         Process = process;
         Rpc = rpc;
+        ControlProxy = controlProxy;
         Client = client;
         LogOutput = logOutput;
         ErrorOutput = errorOutput;

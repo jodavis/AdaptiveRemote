@@ -21,6 +21,7 @@
     <AnalysisMode>Minimum</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- TODO: Log an issue to review and unsuppress these warnings where they make sense -->
     <!-- Suppress VSTHRD analyzers that are too strict for this project -->
     <NoWarn>$(NoWarn);VSTHRD011;VSTHRD002;VSTHRD003;VSTHRD103;VSTHRD200;MSTEST0045</NoWarn>
   </PropertyGroup>

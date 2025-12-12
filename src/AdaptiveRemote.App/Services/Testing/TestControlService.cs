@@ -1,6 +1,7 @@
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using StreamJsonRpc;
 using System.Net;
 using System.Net.Sockets;
@@ -12,96 +13,61 @@ namespace AdaptiveRemote.Services.Testing;
 /// Provides a test control endpoint via TCP/JSON-RPC for E2E testing.
 /// Enabled when --test:ControlPort argument is provided.
 /// </summary>
-internal class TestControlService : IHostedService
+internal class TestControlService : BackgroundService
 {
-    private readonly IConfiguration _configuration;
-    private readonly IHostApplicationLifetime _lifetime;
+    private readonly TestingSettings _settings;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<TestControlService> _logger;
     private TcpListener? _listener;
-    private Task? _listenerTask;
-    private CancellationTokenSource? _cts;
     private object? _testService;
 
     public TestControlService(
-        IConfiguration configuration,
-        IHostApplicationLifetime lifetime,
+        IOptions<TestingSettings> settings,
+        IServiceProvider serviceProvider,
         ILogger<TestControlService> logger)
     {
-        _configuration = configuration;
-        _lifetime = lifetime;
+        _settings = settings.Value;
+        _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        int? port = _configuration.GetValue<int?>("test:ControlPort");
-
-        if (port is null)
+        if (_settings.ControlPort is null)
         {
             // Test control endpoint not requested
-            return Task.CompletedTask;
-        }
-
-        _logger.LogInformation("Starting test control endpoint on port {Port}", port.Value);
-
-        _cts = new CancellationTokenSource();
-        _listener = new TcpListener(IPAddress.Loopback, port.Value);
-        _listener.Start();
-
-        _listenerTask = AcceptConnectionsAsync(_cts.Token);
-
-        return Task.CompletedTask;
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (_listener is null)
-        {
             return;
         }
 
-        _logger.LogInformation("Stopping test control endpoint");
+        _logger.LogInformation("Starting test control endpoint on port {Port}", _settings.ControlPort.Value);
 
-        _cts?.Cancel();
-        _listener.Stop();
+        _listener = new TcpListener(IPAddress.Loopback, _settings.ControlPort.Value);
+        _listener.Start();
 
-        if (_listenerTask is not null)
+        try
         {
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                await _listenerTask;
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected
+                try
+                {
+                    TcpClient client = await _listener.AcceptTcpClientAsync(CancellationToken.None);
+                    _ = HandleClientAsync(client, stoppingToken);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Listener was stopped
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error accepting test control connection");
+                }
             }
         }
-
-        _cts?.Dispose();
-    }
-
-    private async Task AcceptConnectionsAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
+        finally
         {
-            try
-            {
-                TcpClient client = await _listener!.AcceptTcpClientAsync(CancellationToken.None);
-                _ = HandleClientAsync(client, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (ObjectDisposedException)
-            {
-                // Listener was stopped
-                break;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error accepting test control connection");
-            }
+            _logger.LogInformation("Stopping test control endpoint");
+            _listener.Stop();
         }
     }
 
@@ -144,20 +110,8 @@ internal class TestControlService : IHostedService
                 return false;
             }
 
-            // Create instance with shutdown callback, falling back to parameterless constructor
-            try
-            {
-                _testService = Activator.CreateInstance(serviceType, new Action(() =>
-                {
-                    _logger.LogInformation("Test service requested shutdown");
-                    _lifetime.StopApplication();
-                }));
-            }
-            catch (MissingMethodException)
-            {
-                // Try parameterless constructor
-                _testService = Activator.CreateInstance(serviceType);
-            }
+            // Create instance using service provider for dependency injection
+            _testService = ActivatorUtilities.CreateInstance(_serviceProvider, serviceType);
 
             if (_testService is null)
             {
