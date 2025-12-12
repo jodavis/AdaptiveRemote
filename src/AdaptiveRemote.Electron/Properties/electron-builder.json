@@ -5,7 +5,6 @@
     "target": [
       "tar.xz"
     ],
-    "executableArgs": [ "--no-sandbox" ],
     "artifactName": "${name}-${arch}-${version}.${ext}"
   },
   "win": {

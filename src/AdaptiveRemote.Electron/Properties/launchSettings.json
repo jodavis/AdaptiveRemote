@@ -10,7 +10,7 @@
       "commandLineArgs": "--conversation:Fake=true --telemetry:Publish=False --tivo:Fake=True --broadlink:Fake=True",
       "workingDirectory": "."
     },
-    "FakeConversation with TelemtryLogging": {
+    "FakeConversation with TelemetryLogging": {
       "commandName": "Project",
       "commandLineArgs": "--conversation:Fake=true --telemetry:Publish=False --telemetry:LogToConsole=true --tivo:Fake=True --broadlink:Fake=True",
       "workingDirectory": "."

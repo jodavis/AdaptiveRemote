@@ -238,7 +238,7 @@ public class ScopedLifecycleContainerTests
     [TestMethod]
     public async Task Initialize_Cancellation_TriggersCleanup()
     {
-        CancellationTokenSource cts = new CancellationTokenSource();
+        using CancellationTokenSource cts = new CancellationTokenSource();
 
         Expect_InitializeAsyncOn(MockService1, IncompleteTask);
         Expect_InitializeAsyncOn(MockService2, IncompleteTask);

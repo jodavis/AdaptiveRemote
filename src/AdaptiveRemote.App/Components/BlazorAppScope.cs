@@ -44,7 +44,6 @@ internal class BlazorAppScope : IApplicationScope, IAsyncDisposable
 
     public Task InvokeInScopeAsync(Func<IServiceProvider, CancellationToken, Task> workItem, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Invoking work item in Blazor application scope.");
         return workItem(_serviceProvider, cancellationToken);
     }
 

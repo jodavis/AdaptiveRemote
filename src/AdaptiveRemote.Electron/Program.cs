@@ -17,7 +17,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(options);
 AcceleratedServices accelerated = new(args);
 accelerated.ConfigureHost(builder.Host);
 
-    // Stub speech services to satisfy DI for prototype
+// Stub speech services to satisfy DI for prototype
 builder.Services
     .AddSingleton<ISpeechSynthesizer, StubSpeechSynthesizer>()
     .AddSingleton<IGrammarProvider, StubGrammarProvider>()
