@@ -19,9 +19,11 @@ public class ElectronHostTests : HostTestBase
     {
         // Locate the Electron host binary
         string baseDir = AppContext.BaseDirectory;
-        string solutionRoot = Path.GetFullPath(Path.Combine(baseDir, "../../../../../.."));
+        string solutionRoot = Path.GetFullPath(Path.Combine(baseDir, "../../../../.."));
         
-        _hostPath = Path.Combine(solutionRoot, "src/AdaptiveRemote.Electron/bin/Debug/net8.0/AdaptiveRemote.Electron.dll");
+        // Determine runtime identifier
+        string rid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
+        _hostPath = Path.Combine(solutionRoot, $"src/AdaptiveRemote.Electron/bin/Debug/net8.0/{rid}/AdaptiveRemote.Electron.dll");
         _testServicesPath = Path.Combine(baseDir, "AdaptiveRemote.EndtoEndTests.TestServices.dll");
 
         context.WriteLine($"Solution root: {solutionRoot}");
@@ -97,6 +99,7 @@ public class ElectronHostTests : HostTestBase
         // Set environment to prevent Electron from opening a window
         startInfo.Environment["ELECTRON_ENABLE_LOGGING"] = "1";
         startInfo.Environment["DISPLAY"] = ":99"; // Use virtual display on Linux
+        startInfo.Environment["ELECTRON_DISABLE_SANDBOX"] = "1"; // Disable sandbox for CI environments
 
         Process process = new()
         {

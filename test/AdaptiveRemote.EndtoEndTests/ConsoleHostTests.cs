@@ -16,7 +16,7 @@ public class ConsoleHostTests : HostTestBase
     {
         // Locate the Console host binary
         string baseDir = AppContext.BaseDirectory;
-        string solutionRoot = Path.GetFullPath(Path.Combine(baseDir, "../../../../../.."));
+        string solutionRoot = Path.GetFullPath(Path.Combine(baseDir, "../../../../.."));
         
         _hostPath = Path.Combine(solutionRoot, "src/AdaptiveRemote.Console/bin/Debug/net8.0-windows7.0/AdaptiveRemote.Console.exe");
         _testServicesPath = Path.Combine(baseDir, "AdaptiveRemote.EndtoEndTests.TestServices.dll");

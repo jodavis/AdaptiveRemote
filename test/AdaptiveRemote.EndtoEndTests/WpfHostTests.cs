@@ -16,7 +16,7 @@ public class WpfHostTests : HostTestBase
     {
         // Locate the WPF host binary
         string baseDir = AppContext.BaseDirectory;
-        string solutionRoot = Path.GetFullPath(Path.Combine(baseDir, "../../../../../.."));
+        string solutionRoot = Path.GetFullPath(Path.Combine(baseDir, "../../../../.."));
         
         _hostPath = Path.Combine(solutionRoot, "src/AdaptiveRemote/bin/Debug/net8.0-windows/AdaptiveRemote.exe");
         _testServicesPath = Path.Combine(baseDir, "AdaptiveRemote.EndtoEndTests.TestServices.dll");
