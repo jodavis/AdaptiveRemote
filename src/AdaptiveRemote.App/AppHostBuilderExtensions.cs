@@ -13,7 +13,8 @@ public static class AppHostBuilderExtensions
             .AddBroadlinkSupport()
             .AddTiVoSupport()
             .AddConversationSystem()
-            .AddSystemWrapperServices();
+            .AddSystemWrapperServices()
+            .AddTestControlEndpoint();
 
     public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)
         => hostBuilder
