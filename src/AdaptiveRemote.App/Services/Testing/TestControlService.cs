@@ -1,3 +1,4 @@
+using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -16,18 +17,18 @@ namespace AdaptiveRemote.Services.Testing;
 internal class TestControlService : BackgroundService
 {
     private readonly TestingSettings _settings;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IApplicationScopeProvider _scopeProvider;
     private readonly ILogger<TestControlService> _logger;
     private TcpListener? _listener;
-    private object? _testService;
+    private Type? _testServiceType;
 
     public TestControlService(
         IOptions<TestingSettings> settings,
-        IServiceProvider serviceProvider,
+        IApplicationScopeProvider scopeProvider,
         ILogger<TestControlService> logger)
     {
         _settings = settings.Value;
-        _serviceProvider = serviceProvider;
+        _scopeProvider = scopeProvider;
         _logger = logger;
     }
 
@@ -110,22 +111,15 @@ internal class TestControlService : BackgroundService
                 return false;
             }
 
-            // Create instance using service provider for dependency injection
-            _testService = ActivatorUtilities.CreateInstance(_serviceProvider, serviceType);
-
-            if (_testService is null)
-            {
-                _logger.LogError("Failed to create test service instance");
-                return false;
-            }
-
-            _logger.LogInformation("Test service loaded successfully");
-            return await Task.FromResult(true);
+            // Store the type to instantiate later within each scoped invocation
+            _testServiceType = serviceType;
+            _logger.LogInformation("Test service type loaded successfully");
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load test service");
-            return await Task.FromResult(false);
+            return false;
         }
     }
 
@@ -135,34 +129,44 @@ internal class TestControlService : BackgroundService
     /// </summary>
     public async Task<object?> InvokeTestServiceAsync(string methodName, object?[]? args)
     {
-        if (_testService is null)
+        if (_testServiceType is null)
         {
             throw new InvalidOperationException("No test service loaded");
         }
 
-        MethodInfo? method = _testService.GetType().GetMethod(methodName);
-        if (method is null)
+        // Invoke within the application scope to ensure scoped services (including commands) are available
+        object? finalResult = null;
+        await _scopeProvider.InvokeInScopeAsync(async (scopedProvider, ct) =>
         {
-            throw new InvalidOperationException($"Method not found: {methodName}");
-        }
+            // Create test service instance with scoped services
+            object testService = ActivatorUtilities.CreateInstance(scopedProvider, _testServiceType);
 
-        object? result = method.Invoke(_testService, args);
-
-        if (result is Task task)
-        {
-            await task;
-
-            // Check if it's Task<T>
-            Type resultType = task.GetType();
-            if (resultType.IsGenericType)
+            MethodInfo? method = testService.GetType().GetMethod(methodName);
+            if (method is null)
             {
-                PropertyInfo? resultProperty = resultType.GetProperty("Result");
-                return resultProperty?.GetValue(task);
+                throw new InvalidOperationException($"Method not found: {methodName}");
             }
 
-            return null;
-        }
+            object? result = method.Invoke(testService, args);
 
-        return result;
+            if (result is Task task)
+            {
+                await task;
+
+                // Check if it's Task<T>
+                Type resultType = task.GetType();
+                if (resultType.IsGenericType)
+                {
+                    PropertyInfo? resultProperty = resultType.GetProperty("Result");
+                    finalResult = resultProperty?.GetValue(task);
+                }
+            }
+            else
+            {
+                finalResult = result;
+            }
+        }, CancellationToken.None);
+
+        return finalResult;
     }
 }

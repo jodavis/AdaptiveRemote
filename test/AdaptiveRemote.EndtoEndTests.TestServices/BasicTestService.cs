@@ -4,15 +4,16 @@ namespace AdaptiveRemote.EndtoEndTests;
 
 /// <summary>
 /// Basic implementation of ITestService for E2E testing.
-/// Uses RemoteDefinitionService to find and invoke the Exit command by walking the tree.
+/// Uses IRemoteDefinitionService to find and invoke the Exit command, demonstrating
+/// that the test service has access to the properly scoped services including commands.
 /// </summary>
 public class BasicTestService : ITestService
 {
-    private readonly RemoteLayoutElement _remoteRoot;
+    private readonly Services.IRemoteDefinitionService _remoteDefinitionService;
 
     public BasicTestService(Services.IRemoteDefinitionService remoteDefinitionService)
     {
-        _remoteRoot = remoteDefinitionService.RemoteRoot;
+        _remoteDefinitionService = remoteDefinitionService;
     }
 
     public Task<string> ExecuteTestAsync(string testData)
@@ -23,7 +24,7 @@ public class BasicTestService : ITestService
     public async Task RequestShutdownAsync()
     {
         // Find the Exit command by walking the remote tree
-        Command? exitCommand = FindCommandByName(_remoteRoot, "Exit");
+        Command? exitCommand = FindCommandByName(_remoteDefinitionService.RemoteRoot, "Exit");
 
         if (exitCommand is null)
         {
