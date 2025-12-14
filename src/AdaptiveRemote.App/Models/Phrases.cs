@@ -23,6 +23,7 @@ internal static class Phrases
     public static string Startup_ConnectingToBroadlink => "Connecting to Broadlink device";
     public static string Startup_ConnectingToTiVo => "Connecting to TiVo";
     public static string Startup_Starting(string service) => $"Starting {service}";
+    public static string Cleanup_StoppingApplication => "Stopping application";
     public static string Cleanup_CleaningUpApplication => "Cleaning up application";
     public static string Cleanup_CleaningUp(string service) => $"Cleaning up {service}";
     public static string Cleanup_ShuttingDown => "Shutting down...";

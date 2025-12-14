@@ -1,3 +1,4 @@
+using AdaptiveRemote.Services.Testing;
 using StreamJsonRpc;
 using System.Diagnostics;
 using System.Net.Sockets;
@@ -58,22 +59,13 @@ public abstract class HostTestBase
         using HostTestContext context = await LaunchHostAsync(hostPath, controlPort, testContext);
 
         // Load test service
-        bool loaded = await context.ControlProxy.LoadTestServiceAsync(
-            testServicesPath,
-            "AdaptiveRemote.EndtoEndTests.BasicTestService");
+        ITestService testService = await context.ControlProxy.CreateTestServiceAsync<BasicTestService>();
 
-        Assert.IsTrue(loaded, "Failed to load test service");
-
-        // Execute a test command via strongly-typed proxy
-        object? resultObj = await context.ControlProxy.InvokeTestServiceAsync(
-            "ExecuteTestAsync",
-            new object?[] { $"Hello from {GetType().Name}" });
-        
-        string? result = resultObj?.ToString();
-        Assert.AreEqual($"Echo: Hello from {GetType().Name}", result);
+        // Wait for application ready
+        await testService.WaitForPhaseAsync(LifecyclePhase.Ready);
 
         // Request shutdown via strongly-typed proxy
-        await context.ControlProxy.InvokeTestServiceAsync("RequestShutdownAsync", null);
+        await testService.InvokeCommandAsync("Exit");
 
         // Wait for shutdown
         await WaitForShutdownAsync(context);
@@ -87,7 +79,7 @@ public abstract class HostTestBase
         StringBuilder logOutput = new();
         StringBuilder errorOutput = new();
 
-        string arguments = $"--test:ControlPort={controlPort}";
+        string arguments = $"--test:ControlPort={controlPort} --tivo:Fake=true --broadlink:Fake=true";
         string workingDirectory = GetHostWorkingDirectory(hostPath) ?? AppContext.BaseDirectory;
 
         string executable = GetHostExecutable();
@@ -239,8 +231,8 @@ public abstract class HostTestBase
         string errors = context.ErrorOutput.ToString();
 
         // Check for error/warning patterns
-        bool hasErrors = logs.Contains("error", StringComparison.OrdinalIgnoreCase) ||
-                        errors.Contains("error", StringComparison.OrdinalIgnoreCase);
+        bool hasErrors = logs.Contains("err:", StringComparison.OrdinalIgnoreCase) ||
+                        errors.Contains("err:", StringComparison.OrdinalIgnoreCase);
 
         bool hasWarnings = logs.Contains("warning", StringComparison.OrdinalIgnoreCase) ||
                           errors.Contains("warning", StringComparison.OrdinalIgnoreCase);

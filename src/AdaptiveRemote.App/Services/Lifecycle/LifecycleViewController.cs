@@ -49,6 +49,7 @@ internal class LifecycleViewController : ILifecycleViewController
             LifecyclePhase.Starting => Phrases.Startup_StartingApplication,
             LifecyclePhase.Building => Phrases.Startup_BuildingServiceGraph,
             LifecyclePhase.SettingUp => Phrases.Startup_StartingServices,
+            LifecyclePhase.Stopping => Phrases.Cleanup_StoppingApplication,
             LifecyclePhase.CleaningUp => Phrases.Cleanup_CleaningUpApplication,
             _ => string.Empty,
         };

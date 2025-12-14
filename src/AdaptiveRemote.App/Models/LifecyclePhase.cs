@@ -7,6 +7,7 @@ public enum LifecyclePhase
     Starting,
     SettingUp,
     Ready,
+    Stopping,
     CleaningUp,
     FatalError,
 }

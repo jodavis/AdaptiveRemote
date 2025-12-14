@@ -1,4 +1,5 @@
 using AdaptiveRemote.Models;
+using AdaptiveRemote.Services.Testing;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -10,34 +11,27 @@ namespace AdaptiveRemote.EndtoEndTests;
 public class BasicTestService : ITestService
 {
     private readonly Services.IRemoteDefinitionService _remoteDefinitionService;
+    private readonly LifecycleView _lifecycleView;
 
-    public BasicTestService(Services.IRemoteDefinitionService remoteDefinitionService)
+    public BasicTestService(Services.IRemoteDefinitionService remoteDefinitionService, LifecycleView lifecycleView)
     {
         _remoteDefinitionService = remoteDefinitionService;
+        _lifecycleView = lifecycleView;
     }
 
-    public Task<string> ExecuteTestAsync(string testData)
-    {
-        return Task.FromResult($"Echo: {testData}");
-    }
-
-    public async Task RequestShutdownAsync()
+    public async Task InvokeCommandAsync(string commandName, CancellationToken cancellationToken)
     {
         // Find the Exit command by walking the remote tree
-        Command? exitCommand = FindCommandByName(_remoteDefinitionService.RemoteRoot, "Exit");
-
-        if (exitCommand is null)
+        Command command = FindCommandByName(_remoteDefinitionService.RemoteRoot, commandName)
+            ?? throw new InvalidOperationException($"{commandName} command not found in remote definition service");
+        
+        if (command.ExecuteAsync is null)
         {
-            throw new InvalidOperationException("Exit command not found in remote definition service");
-        }
-
-        if (exitCommand.ExecuteAsync is null)
-        {
-            throw new InvalidOperationException("Exit command does not have an ExecuteAsync delegate");
+            throw new InvalidOperationException($"{commandName} command does not have an ExecuteAsync delegate");
         }
 
         // Execute the Exit command
-        await exitCommand.ExecuteAsync(CancellationToken.None);
+        await command.ExecuteAsync(CancellationToken.None);
     }
 
     private static Command? FindCommandByName(RemoteLayoutElement element, string name)
@@ -60,5 +54,19 @@ public class BasicTestService : ITestService
         }
 
         return null;
+    }
+
+    public void Dispose()
+    {
+        // No resources to dispose, but the proxy requires IDisposable
+        GC.SuppressFinalize(this);
+    }
+
+    public async Task WaitForPhaseAsync(LifecyclePhase phase, CancellationToken cancellationToken = default)
+    {
+        while (_lifecycleView.CurrentPhase != phase)
+        {
+            await Task.Delay(100, cancellationToken);
+        }
     }
 }

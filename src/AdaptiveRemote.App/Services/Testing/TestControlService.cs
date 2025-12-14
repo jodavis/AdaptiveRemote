@@ -14,7 +14,7 @@ namespace AdaptiveRemote.Services.Testing;
 /// Provides a test control endpoint via TCP/JSON-RPC for E2E testing.
 /// Enabled when --test:ControlPort argument is provided.
 /// </summary>
-internal class TestControlService : BackgroundService
+internal class TestControlService : BackgroundService, ITestControlService
 {
     private readonly TestingSettings _settings;
     private readonly IApplicationScopeProvider _scopeProvider;
@@ -51,8 +51,13 @@ internal class TestControlService : BackgroundService
             {
                 try
                 {
-                    TcpClient client = await _listener.AcceptTcpClientAsync(CancellationToken.None);
+                    TcpClient client = await _listener.AcceptTcpClientAsync(stoppingToken);
                     _ = HandleClientAsync(client, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Listener was stopped
+                    break;
                 }
                 catch (ObjectDisposedException)
                 {
@@ -72,7 +77,7 @@ internal class TestControlService : BackgroundService
         }
     }
 
-    private async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
+    private async Task HandleClientAsync(TcpClient client, CancellationToken stoppingToken)
     {
         try
         {
@@ -80,6 +85,8 @@ internal class TestControlService : BackgroundService
             {
                 NetworkStream stream = client.GetStream();
                 JsonRpc rpc = JsonRpc.Attach(stream, this);
+
+                stoppingToken.Register(rpc.Dispose);
 
                 _logger.LogInformation("Test control client connected");
 
@@ -89,37 +96,6 @@ internal class TestControlService : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error handling test control client");
-        }
-    }
-
-    /// <summary>
-    /// Loads a test service from the specified assembly and type.
-    /// This is called via JSON-RPC from the test orchestrator.
-    /// </summary>
-    public async Task<bool> LoadTestServiceAsync(string assemblyPath, string typeName)
-    {
-        try
-        {
-            _logger.LogInformation("Loading test service: {TypeName} from {AssemblyPath}", typeName, assemblyPath);
-
-            Assembly assembly = Assembly.LoadFrom(assemblyPath);
-            Type? serviceType = assembly.GetType(typeName);
-
-            if (serviceType is null)
-            {
-                _logger.LogError("Test service type not found: {TypeName}", typeName);
-                return false;
-            }
-
-            // Store the type to instantiate later within each scoped invocation
-            _testServiceType = serviceType;
-            _logger.LogInformation("Test service type loaded successfully");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to load test service");
-            return false;
         }
     }
 
@@ -168,5 +144,35 @@ internal class TestControlService : BackgroundService
         }, CancellationToken.None);
 
         return finalResult;
+    }
+
+    public async Task<ITestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Loading test service: {TypeName} from {AssemblyPath}", typeName, assemblyPath);
+
+        Assembly assembly = Assembly.LoadFrom(assemblyPath);
+        Type? serviceType = assembly.GetType(typeName);
+
+        if (serviceType is null)
+        {
+            throw new ArgumentException($"Type not found: {typeName}", nameof(typeName));
+        }
+
+        // Store the type to instantiate later within each scoped invocation
+        _testServiceType = serviceType;
+        _logger.LogInformation("Test service type loaded successfully"); ITestService? testService = null;
+        await _scopeProvider.InvokeInScopeAsync((scopedProvider, ct) =>
+        {
+            object? testServiceObject = ActivatorUtilities.CreateInstance(scopedProvider, _testServiceType);
+            testService = testServiceObject as ITestService;
+            return Task.CompletedTask;
+        }, CancellationToken.None);
+
+        if (testService is null)
+        {
+            throw new InvalidOperationException("Failed to create test service instance");
+        }
+
+        return testService;
     }
 }
