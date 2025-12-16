@@ -53,22 +53,36 @@ cd test/AdaptiveRemote.EndtoEndTests && dotnet test
 
 ### E2E Tests for Electron
 The Electron E2E tests require:
-- **Linux:** Xvfb virtual display running on :99
-  ```bash
-  Xvfb :99 -screen 0 1024x768x24 &
-  export DISPLAY=:99
-  ```
+- **Linux:** Use xvfb-run wrapper to provide virtual display
 - **Build:** Electron project must be built for the correct RID before running tests
   ```bash
   dotnet build src/AdaptiveRemote.Electron/AdaptiveRemote.Electron.csproj -r linux-x64
+  ```
+- **Electron Sandbox Workaround:** Create wrapper script to pass --no-sandbox flag
+  ```bash
+  cd src/AdaptiveRemote.Electron/bin/Debug/net8.0/linux-x64/.electron/node_modules/electron/dist
+  mv electron electron.original
+  cat > electron << 'EOF'
+  #!/bin/bash
+  DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  exec "$DIR/electron.original" --no-sandbox --disable-gpu "$@"
+  EOF
+  chmod +x electron
+  ```
+- **Run Tests:** Use xvfb-run wrapper
+  ```bash
+  xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
+      dotnet test test/AdaptiveRemote.EndtoEndTests/AdaptiveRemote.EndtoEndTests.csproj \
+      --filter "FullyQualifiedName~ElectronHostTests"
   ```
 
 **Important:** Any code change should not be considered complete unless the Electron E2E test runs successfully.
 
 **Known Issues in CI Environments:**
-- The Electron UI may not render properly in headless environments
-- If tests hang or timeout, check that Xvfb is running and DISPLAY is set
-- GPU/sandbox errors from Electron are expected but should not prevent tests from passing
+- Electron requires the --no-sandbox flag to run in CI environments (SUID sandbox errors)
+- The wrapper script must be created after each Electron build
+- The Electron UI may not fully render in headless environments, causing tests to timeout waiting for Ready phase
+- If tests timeout waiting for LifecyclePhase.Ready, check that xvfb-run is being used and the wrapper script exists
 
 ## Coding Standards
 
