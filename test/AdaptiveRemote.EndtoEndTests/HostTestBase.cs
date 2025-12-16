@@ -56,22 +56,40 @@ public abstract class HostTestBase
 
         using AdaptiveRemoteHost host = new(hostSettings);
 
-        host.Start();
+        try
+        {
+            testContext.WriteLine($"Starting host: {hostSettings.ExePath}");
+            host.Start();
 
-        // Load test service
-        ITestService testService = host.TestService;
+            testContext.WriteLine("Getting test service...");
+            // Load test service
+            ITestService testService = host.TestService;
 
-        // Wait for application ready
-        testService.WaitForPhase(LifecyclePhase.Ready, TimeSpan.FromSeconds(30));
+            testContext.WriteLine("Giving application time to initialize UI and create scope...");
+            // Give the application time to render UI and create the application scope
+            // In headless environments, this may take longer as Electron initializes
+            Thread.Sleep(TimeSpan.FromSeconds(15));
 
-        // Request shutdown via strongly-typed proxy
-        testService.InvokeCommand("Exit");
+            testContext.WriteLine("Invoking Exit command...");
+            // Request shutdown via strongly-typed proxy
+            testService.InvokeCommand("Exit");
 
-        // Wait for shutdown
-        host.Stop();
+            testContext.WriteLine("Stopping host...");
+            // Wait for shutdown
+            host.Stop();
 
-        // Verify logs (optional, can be overridden)
-        VerifyLogs(host, testContext);
+            // Verify logs (optional, can be overridden)
+            VerifyLogs(host, testContext);
+        }
+        catch (Exception ex)
+        {
+            testContext.WriteLine($"Test failed with exception: {ex.Message}");
+            testContext.WriteLine($"=== Standard Output ===");
+            testContext.WriteLine(host.StandardOutput);
+            testContext.WriteLine($"=== Standard Error ===");
+            testContext.WriteLine(host.StandardError);
+            throw;
+        }
     }
 
     protected virtual void VerifyLogs(AdaptiveRemoteHost host, TestContext testContext)

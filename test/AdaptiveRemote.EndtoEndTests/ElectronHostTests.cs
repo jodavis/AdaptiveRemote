@@ -12,7 +12,8 @@ public class ElectronHostTests : HostTestBase
         ImmutableDictionary<string, string>.Empty
             .Add("ELECTRON_ENABLE_LOGGING", "1")
             .Add("DISPLAY", ":99") // Use virtual display on Linux
-            .Add("ELECTRON_DISABLE_SANDBOX", "1"); // Disable sandbox for CI environments
+            .Add("ELECTRON_DISABLE_SANDBOX", "1") // Disable sandbox for CI environments
+            .Add("ELECTRON_DISABLE_GPU", "1"); // Disable GPU for headless environments
 
     public TestContext TestContext { get; set; } = null!;
 
@@ -27,8 +28,19 @@ public class ElectronHostTests : HostTestBase
     protected override AdaptiveRemoteHostSettings GetHostSettings(string solutionRoot)
     {
         string rid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
+        // On Linux, the executable doesn't have .exe extension
+        string exeName = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
+            ? "AdaptiveRemote.Electron.exe"
+            : "AdaptiveRemote.Electron";
+        
+        // Add Electron-specific flags for headless operation
+        string electronArgs = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux)
+            ? "--no-sandbox --disable-gpu --disable-dev-shm-usage"
+            : "";
+        
         return new(
-            ExePath: Path.Combine(solutionRoot, $"src/AdaptiveRemote.Electron/bin/Debug/net8.0/{rid}/AdaptiveRemote.Electron.exe"),
+            ExePath: Path.Combine(solutionRoot, $"src/AdaptiveRemote.Electron/bin/Debug/net8.0/{rid}/{exeName}"),
+            CommandLineArgs: electronArgs,
             EnvironmentVariables: StandardElectronEnvironmentVariables);
     }
 

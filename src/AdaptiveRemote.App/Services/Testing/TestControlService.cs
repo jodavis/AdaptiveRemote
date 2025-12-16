@@ -146,7 +146,7 @@ internal class TestControlService : BackgroundService, ITestControlService
         return finalResult;
     }
 
-    public async Task<ITestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+    public Task<ITestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Loading test service: {TypeName} from {AssemblyPath}", typeName, assemblyPath);
 
@@ -160,19 +160,12 @@ internal class TestControlService : BackgroundService, ITestControlService
 
         // Store the type to instantiate later within each scoped invocation
         _testServiceType = serviceType;
-        _logger.LogInformation("Test service type loaded successfully"); ITestService? testService = null;
-        await _scopeProvider.InvokeInScopeAsync((scopedProvider, ct) =>
-        {
-            object? testServiceObject = ActivatorUtilities.CreateInstance(scopedProvider, _testServiceType);
-            testService = testServiceObject as ITestService;
-            return Task.CompletedTask;
-        }, CancellationToken.None);
-
-        if (testService is null)
-        {
-            throw new InvalidOperationException("Failed to create test service instance");
-        }
-
-        return testService;
+        _logger.LogInformation("Test service type loaded successfully");
+        
+        // Return a proxy that will create instances within the scope when methods are called
+        // This allows the test service to be created before the application scope exists
+        ITestService testService = new TestServiceProxy(serviceType, _scopeProvider);
+        
+        return Task.FromResult(testService);
     }
 }

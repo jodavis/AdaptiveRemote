@@ -55,6 +55,12 @@ public class AdaptiveRemoteHost : IDisposable
             CreateNoWindow = true
         };
 
+        // Apply environment variables from settings
+        foreach (var kvp in _settings.EnvironmentVariables)
+        {
+            startInfo.Environment[kvp.Key] = kvp.Value;
+        }
+
         Process process = new()
         {
             StartInfo = startInfo,
@@ -80,9 +86,10 @@ public class AdaptiveRemoteHost : IDisposable
         };
 
         //testContext.WriteLine($"Launching host: {startInfo.FileName} {startInfo.Arguments}");
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+        _process = process;
+        _process.Start();
+        _process.BeginOutputReadLine();
+        _process.BeginErrorReadLine();
 
         // Wait for the host to be ready and establish control connection
         Exception? connectionError = null;
