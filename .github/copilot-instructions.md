@@ -46,7 +46,29 @@ dotnet test
 
 # Run tests from specific project
 cd AdaptiveRemote.Tests && dotnet test
+
+# Run E2E tests (Electron only)
+cd test/AdaptiveRemote.EndtoEndTests && dotnet test
 ```
+
+### E2E Tests for Electron
+The Electron E2E tests require:
+- **Linux:** Xvfb virtual display running on :99
+  ```bash
+  Xvfb :99 -screen 0 1024x768x24 &
+  export DISPLAY=:99
+  ```
+- **Build:** Electron project must be built for the correct RID before running tests
+  ```bash
+  dotnet build src/AdaptiveRemote.Electron/AdaptiveRemote.Electron.csproj -r linux-x64
+  ```
+
+**Important:** Any code change should not be considered complete unless the Electron E2E test runs successfully.
+
+**Known Issues in CI Environments:**
+- The Electron UI may not render properly in headless environments
+- If tests hang or timeout, check that Xvfb is running and DISPLAY is set
+- GPU/sandbox errors from Electron are expected but should not prevent tests from passing
 
 ## Coding Standards
 

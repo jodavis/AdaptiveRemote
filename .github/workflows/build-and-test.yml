@@ -36,6 +36,15 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults"
     
+    - name: Upload E2E Test Logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-logs
+        path: |
+          test/**/bin/**/*.log
+        retention-days: 30
+    
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action/windows@v2
       if: always()
