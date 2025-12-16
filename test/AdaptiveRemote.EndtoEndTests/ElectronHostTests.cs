@@ -11,7 +11,7 @@ public class ElectronHostTests : HostTestBase
     private static readonly ImmutableDictionary<string, string> StandardElectronEnvironmentVariables =
         ImmutableDictionary<string, string>.Empty
             .Add("ELECTRON_ENABLE_LOGGING", "1")
-            .Add("DISPLAY", ":99") // Use virtual display on Linux
+            // Don't set DISPLAY here - let xvfb-run handle it automatically
             .Add("ELECTRON_DISABLE_SANDBOX", "1") // Disable sandbox for CI environments
             .Add("ELECTRON_DISABLE_GPU", "1"); // Disable GPU for headless environments
 

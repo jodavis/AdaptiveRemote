@@ -73,12 +73,26 @@ public class AdaptiveRemoteHost : IDisposable
             CreateNoWindow = true
         };
 
+        // Log the DISPLAY environment variable from the parent process (set by xvfb-run)
+        string? displayFromParent = Environment.GetEnvironmentVariable("DISPLAY");
+        _logFileWriter.WriteLine($"DISPLAY from parent process: {displayFromParent ?? "(not set)"}");
+        _logFileWriter.WriteLine();
+        
         // Apply environment variables from settings
         foreach (var kvp in _settings.EnvironmentVariables)
         {
             startInfo.Environment[kvp.Key] = kvp.Value;
             _logFileWriter.WriteLine($"ENV: {kvp.Key}={kvp.Value}");
         }
+        
+        // If DISPLAY is set in parent process but not in settings, inherit it
+        // (important for xvfb-run which sets DISPLAY automatically)
+        if (!string.IsNullOrEmpty(displayFromParent) && !_settings.EnvironmentVariables.ContainsKey("DISPLAY"))
+        {
+            startInfo.Environment["DISPLAY"] = displayFromParent;
+            _logFileWriter.WriteLine($"ENV (inherited): DISPLAY={displayFromParent}");
+        }
+        
         _logFileWriter.WriteLine();
 
         Process process = new()
