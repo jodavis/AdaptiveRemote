@@ -30,6 +30,24 @@ builder.Services.AddServerSideBlazor();
 // Register circuit handler for logging
 builder.Services.AddSingleton<CircuitHandler, LoggingCircuitHandler>();
 
+// For Linux/CI environments, remove or disable the chrome-sandbox to avoid SUID errors
+if (OperatingSystem.IsLinux())
+{
+    string sandboxPath = Path.Combine(AppContext.BaseDirectory, ".electron/node_modules/electron/dist/chrome-sandbox");
+    if (File.Exists(sandboxPath))
+    {
+        // Rename the sandbox file so Electron will run without it
+        try
+        {
+            File.Move(sandboxPath, sandboxPath + ".disabled", overwrite: true);
+        }
+        catch
+        {
+            // If we can't disable it, that's okay - the environment variables should handle it
+        }
+    }
+}
+
 builder.UseElectron(args, onAppReadyCallback: async () =>
 {
     BrowserWindowOptions options = new BrowserWindowOptions

@@ -65,10 +65,9 @@ public abstract class HostTestBase
             // Load test service
             ITestService testService = host.TestService;
 
-            testContext.WriteLine("Giving application time to initialize UI and create scope...");
-            // Give the application time to render UI and create the application scope
-            // In headless environments, this may take longer as Electron initializes
-            Thread.Sleep(TimeSpan.FromSeconds(15));
+            testContext.WriteLine("Waiting for application to reach Ready phase...");
+            // Wait for application ready - this ensures the UI has rendered and the application scope exists
+            testService.WaitForPhase(LifecyclePhase.Ready, TimeSpan.FromSeconds(60));
 
             testContext.WriteLine("Invoking Exit command...");
             // Request shutdown via strongly-typed proxy
