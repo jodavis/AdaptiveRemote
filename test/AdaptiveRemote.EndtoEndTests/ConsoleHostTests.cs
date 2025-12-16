@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using AdaptiveRemote.EndtoEndTests.Host;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -6,7 +7,6 @@ namespace AdaptiveRemote.EndtoEndTests;
 public class ConsoleHostTests : HostTestBase
 {
     private static string? _solutionRoot;
-    private static string? _testServicesPath;
 
     public TestContext TestContext { get; set; } = null!;
 
@@ -14,37 +14,22 @@ public class ConsoleHostTests : HostTestBase
     public static void ClassInitialize(TestContext context)
     {
         _solutionRoot = GetSolutionRoot();
-        _testServicesPath = Path.Combine(AppContext.BaseDirectory, "AdaptiveRemote.EndtoEndTests.TestServices.dll");
 
         context.WriteLine($"Solution root: {_solutionRoot}");
-        context.WriteLine($"Test services path: {_testServicesPath}");
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             context.WriteLine("Skipping Console host test - requires Windows");
             return;
         }
-
-        if (!File.Exists(_testServicesPath))
-        {
-            throw new FileNotFoundException($"Test services not found at: {_testServicesPath}");
-        }
     }
 
-    protected override string GetHostPath(string solutionRoot)
-    {
-        return Path.Combine(solutionRoot, "src/AdaptiveRemote.Console/bin/Debug/net8.0-windows7.0/AdaptiveRemote.Console.exe");
-    }
-
-    protected override string GetHostExecutable()
-    {
-        // Console host is an .exe, run it directly (not via dotnet)
-        return GetHostPath(_solutionRoot!);
-    }
+    protected override AdaptiveRemoteHostSettings GetHostSettings(string solutionRoot) 
+        => new(ExePath: Path.Combine(solutionRoot, "src/AdaptiveRemote.Console/bin/Debug/net8.0-windows7.0/AdaptiveRemote.Console.exe"));
 
     [TestMethod]
     [Timeout(180000)] // 3 minutes
-    public async Task ConsoleHost_StartsAndRespondsToTestCommands()
+    public void ConsoleHost_StartsAndRespondsToTestCommands()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -52,13 +37,6 @@ public class ConsoleHostTests : HostTestBase
             return;
         }
 
-        string hostPath = GetHostPath(_solutionRoot!);
-        if (!File.Exists(hostPath))
-        {
-            Assert.Inconclusive($"Console host not built at: {hostPath}");
-            return;
-        }
-
-        await RunStandardE2ETestAsync(_solutionRoot!, _testServicesPath!, TestContext);
+        RunStandardE2ETestAsync(_solutionRoot!, TestContext);
     }
 }

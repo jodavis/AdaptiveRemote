@@ -64,7 +64,7 @@ public class BasicTestService : ITestService
 
     public async Task WaitForPhaseAsync(LifecyclePhase phase, CancellationToken cancellationToken = default)
     {
-        while (_lifecycleView.CurrentPhase != phase)
+        while (_lifecycleView.CurrentPhase != phase && !cancellationToken.IsCancellationRequested)
         {
             await Task.Delay(100, cancellationToken);
         }

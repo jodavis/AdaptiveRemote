@@ -1,8 +1,5 @@
-using System.Diagnostics;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Text;
-using StreamJsonRpc;
+using System.Collections.Immutable;
+using AdaptiveRemote.EndtoEndTests.Host;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -10,7 +7,12 @@ namespace AdaptiveRemote.EndtoEndTests;
 public class ElectronHostTests : HostTestBase
 {
     private static string? _solutionRoot;
-    private static string? _testServicesPath;
+
+    private static readonly ImmutableDictionary<string, string> StandardElectronEnvironmentVariables =
+        ImmutableDictionary<string, string>.Empty
+            .Add("ELECTRON_ENABLE_LOGGING", "1")
+            .Add("DISPLAY", ":99") // Use virtual display on Linux
+            .Add("ELECTRON_DISABLE_SANDBOX", "1"); // Disable sandbox for CI environments
 
     public TestContext TestContext { get; set; } = null!;
 
@@ -18,42 +20,23 @@ public class ElectronHostTests : HostTestBase
     public static void ClassInitialize(TestContext context)
     {
         _solutionRoot = GetSolutionRoot();
-        _testServicesPath = Path.Combine(AppContext.BaseDirectory, "AdaptiveRemote.EndtoEndTests.TestServices.dll");
 
         context.WriteLine($"Solution root: {_solutionRoot}");
-        context.WriteLine($"Test services path: {_testServicesPath}");
-
-        if (!File.Exists(_testServicesPath))
-        {
-            throw new FileNotFoundException($"Test services not found at: {_testServicesPath}");
-        }
     }
 
-    protected override string GetHostPath(string solutionRoot)
+    protected override AdaptiveRemoteHostSettings GetHostSettings(string solutionRoot)
     {
-        // Determine runtime identifier for Electron
         string rid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
-        return Path.Combine(solutionRoot, $"src/AdaptiveRemote.Electron/bin/Debug/net8.0/{rid}/AdaptiveRemote.Electron.dll");
-    }
-
-    protected override void ConfigureProcessStartInfo(ProcessStartInfo startInfo)
-    {
-        // Set environment to prevent Electron from opening a window
-        startInfo.Environment["ELECTRON_ENABLE_LOGGING"] = "1";
-        startInfo.Environment["DISPLAY"] = ":99"; // Use virtual display on Linux
-        startInfo.Environment["ELECTRON_DISABLE_SANDBOX"] = "1"; // Disable sandbox for CI environments
-    }
-
-    protected override void VerifyLogs(HostTestContext context)
-    {
-        // Don't verify logs for Electron as it may have expected warnings from Electron itself
+        return new(
+            ExePath: Path.Combine(solutionRoot, $"src/AdaptiveRemote.Electron/bin/Debug/net8.0/{rid}/AdaptiveRemote.Electron.exe"),
+            EnvironmentVariables: StandardElectronEnvironmentVariables);
     }
 
     [TestMethod]
     [Timeout(180000)] // 3 minutes
-    public async Task ElectronHost_StartsAndRespondsToTestCommands()
+    public void ElectronHost_StartsAndRespondsToTestCommands()
     {
-        await RunStandardE2ETestAsync(_solutionRoot!, _testServicesPath!, TestContext);
+        RunStandardE2ETestAsync(_solutionRoot!, TestContext);
     }
 }
 
