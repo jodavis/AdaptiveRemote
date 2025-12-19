@@ -25,6 +25,9 @@ internal class PlaywrightHostedService : BackgroundService
         _lifetime = lifetime;
     }
 
+    private const int AppStartupDelayMs = 1000; // Delay to allow ASP.NET server to fully initialize
+    private const int NavigationTimeoutMs = 30000; // Timeout for navigating to the Blazor app
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Wait for the application to start
@@ -71,17 +74,28 @@ internal class PlaywrightHostedService : BackgroundService
 
             _logger.LogInformation("Playwright page created");
 
-            // Wait a moment for the ASP.NET server to fully initialize
-            await Task.Delay(1000, stoppingToken);
+            // Wait for the ASP.NET server to fully initialize before navigating
+            await Task.Delay(AppStartupDelayMs, stoppingToken);
 
             // Navigate to the Blazor app
             _logger.LogInformation("Navigating to {AppUrl}", appUrl);
-            await _page.GotoAsync(appUrl, new() { WaitUntil = WaitUntilState.NetworkIdle, Timeout = 30000 });
+            await _page.GotoAsync(appUrl, new() 
+            { 
+                WaitUntil = WaitUntilState.NetworkIdle, 
+                Timeout = NavigationTimeoutMs 
+            });
 
             _logger.LogInformation("Playwright browser navigated to Blazor app");
 
-            // Keep running until cancelled
-            await Task.Delay(Timeout.Infinite, stoppingToken);
+            // Keep running until cancellation is requested
+            try
+            {
+                await Task.Delay(-1, stoppingToken);
+            }
+            catch (TaskCanceledException)
+            {
+                // Expected when stopping
+            }
         }
         catch (OperationCanceledException)
         {

@@ -18,6 +18,7 @@ internal class StubSpeechSynthesizer : ISpeechSynthesizer
 
 internal class StubSpeechRecognition : ISpeechRecognitionEngine
 {
+    // Events are not used in headless mode - no speech recognition needed
     public event EventHandler<RecognizedSpeechEventArgs> SpeechRecognized { add { } remove { } }
     public event EventHandler<RecognizedSpeechEventArgs> SpeechRejected { add { } remove { } }
 
