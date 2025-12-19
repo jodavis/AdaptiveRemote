@@ -78,7 +78,7 @@ public class AdaptiveRemoteHost : IDisposable
         _logFileWriter.WriteLine();
         
         // Apply environment variables from settings
-        foreach (var kvp in _settings.EnvironmentVariables)
+        foreach (KeyValuePair<string, string> kvp in _settings.EnvironmentVariables)
         {
             startInfo.Environment[kvp.Key] = kvp.Value;
             _logFileWriter.WriteLine($"ENV: {kvp.Key}={kvp.Value}");
@@ -125,7 +125,6 @@ public class AdaptiveRemoteHost : IDisposable
 
         // Wait for the host to be ready and establish control connection
         Exception? connectionError = null;
-
 
         WaitUtilities.ExecuteWithRetries(async (cancellationToken) =>
         {

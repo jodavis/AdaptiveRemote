@@ -27,7 +27,6 @@ public class WpfHostTests : HostTestBase
     protected override AdaptiveRemoteHostSettings GetHostSettings(string solutionRoot)
         => new(ExePath: Path.Combine(solutionRoot, "src/AdaptiveRemote/bin/Debug/net8.0-windows/AdaptiveRemote.exe"));
 
-
     [TestMethod]
     [Timeout(180000)] // 3 minutes
     public void WpfHost_StartsAndRespondsToTestCommands()

@@ -31,8 +31,8 @@ internal class PlaywrightHostedService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Wait for the application to start
-        var tcs = new TaskCompletionSource();
-        using var reg = _lifetime.ApplicationStarted.Register(() => tcs.SetResult());
+        TaskCompletionSource tcs = new();
+        using CancellationTokenRegistration reg = _lifetime.ApplicationStarted.Register(tcs.SetResult);
         await tcs.Task;
 
         _logger.LogInformation("Starting Playwright hosted service");
@@ -46,7 +46,7 @@ internal class PlaywrightHostedService : BackgroundService
             if (!string.IsNullOrEmpty(urls))
             {
                 // Parse the first URL from the list
-                var urlList = urls.Split(';');
+                string[] urlList = urls.Split(';');
                 if (urlList.Length > 0)
                 {
                     appUrl = urlList[0];
@@ -59,7 +59,7 @@ internal class PlaywrightHostedService : BackgroundService
             _playwright = await Playwright.CreateAsync();
 
             // Launch headless browser
-            var launchOptions = new BrowserTypeLaunchOptions
+            BrowserTypeLaunchOptions launchOptions = new BrowserTypeLaunchOptions
             {
                 Headless = true,
                 Args = new[] { "--no-sandbox", "--disable-dev-shm-usage" }
