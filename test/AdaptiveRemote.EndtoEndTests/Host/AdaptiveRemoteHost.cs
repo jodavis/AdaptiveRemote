@@ -2,7 +2,6 @@
 using System.Net.Sockets;
 using System.Text;
 using AdaptiveRemote.Services.Testing;
-using I8Beef.TiVo;
 using StreamJsonRpc;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;

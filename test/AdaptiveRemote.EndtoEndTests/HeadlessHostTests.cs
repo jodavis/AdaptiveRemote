@@ -23,14 +23,13 @@ public class HeadlessHostTests : HostTestBase
 
     protected override AdaptiveRemoteHostSettings GetHostSettings(string solutionRoot)
     {
-        string rid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
         // On Linux, the executable doesn't have .exe extension
         string exeName = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
             ? "AdaptiveRemote.Headless.exe"
             : "AdaptiveRemote.Headless";
         
         return new(
-            ExePath: Path.Combine(solutionRoot, $"src/AdaptiveRemote.Headless/bin/Debug/net8.0/{rid}/{exeName}"),
+            ExePath: Path.Combine(solutionRoot, $"src/AdaptiveRemote.Headless/bin/Debug/net8.0/{exeName}"),
             CommandLineArgs: "",
             EnvironmentVariables: StandardHeadlessEnvironmentVariables);
     }

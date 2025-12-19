@@ -33,7 +33,7 @@ public static class WaitUtilities
             bool result = false;
 
             WaitForAsyncTask(
-                async cancellationToken => result = await action(cancellationToken), 
+                async cancellationToken => { result = await action(cancellationToken); },
                 endTime - DateTime.UtcNow);
 
             return result;
