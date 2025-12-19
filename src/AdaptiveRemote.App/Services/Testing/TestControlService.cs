@@ -117,12 +117,8 @@ internal class TestControlService : BackgroundService, ITestControlService
             // Create test service instance with scoped services
             object testService = ActivatorUtilities.CreateInstance(scopedProvider, _testServiceType);
 
-            MethodInfo? method = testService.GetType().GetMethod(methodName);
-            if (method is null)
-            {
-                throw new InvalidOperationException($"Method not found: {methodName}");
-            }
-
+            MethodInfo? method = testService.GetType().GetMethod(methodName)
+                ?? throw new InvalidOperationException($"Method not found: {methodName}");
             object? result = method.Invoke(testService, args);
 
             if (result is Task task)
@@ -151,12 +147,9 @@ internal class TestControlService : BackgroundService, ITestControlService
         _logger.LogInformation("Loading test service: {TypeName} from {AssemblyPath}", typeName, assemblyPath);
 
         Assembly assembly = Assembly.LoadFrom(assemblyPath);
-        Type? serviceType = assembly.GetType(typeName);
-
-        if (serviceType is null)
-        {
-            throw new ArgumentException($"Type not found: {typeName}", nameof(typeName));
-        }
+        
+        Type? serviceType = assembly.GetType(typeName)
+            ?? throw new ArgumentException($"Type not found: {typeName}", nameof(typeName));
 
         // Store the type to instantiate later within each scoped invocation
         _testServiceType = serviceType;

@@ -37,12 +37,8 @@ internal class TestServiceProxy : ITestService
             // Create test service instance with scoped services
             object testService = ActivatorUtilities.CreateInstance(scopedProvider, _testServiceType);
 
-            MethodInfo? method = testService.GetType().GetMethod(methodName);
-            if (method is null)
-            {
-                throw new InvalidOperationException($"Method not found: {methodName}");
-            }
-
+            MethodInfo? method = testService.GetType().GetMethod(methodName)
+                ?? throw new InvalidOperationException($"Method not found: {methodName}");
             object? methodResult = method.Invoke(testService, args);
 
             if (methodResult is Task task)
