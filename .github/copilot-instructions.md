@@ -84,6 +84,33 @@ The Electron E2E tests require:
 - The Electron UI may not fully render in headless environments, causing tests to timeout waiting for Ready phase
 - If tests timeout waiting for LifecyclePhase.Ready, check that xvfb-run is being used and the wrapper script exists
 
+### E2E Tests for Headless (Playwright) - RECOMMENDED FOR CI
+The AdaptiveRemote.Headless host uses Playwright for cross-platform E2E testing without requiring xvfb or graphical environments.
+
+- **Prerequisites:** Playwright browsers are installed automatically on first use (cached in `~/.cache/ms-playwright/`)
+- **Build:** Build the headless host for the current platform
+  ```bash
+  dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj -r linux-x64
+  ```
+- **Install Playwright Browsers (one-time):**
+  ```bash
+  pwsh src/AdaptiveRemote.Headless/bin/Debug/net8.0/playwright.ps1 install chromium
+  ```
+- **Run Tests:** No special environment needed - fully headless
+  ```bash
+  dotnet test test/AdaptiveRemote.EndtoEndTests/AdaptiveRemote.EndtoEndTests.csproj \
+      --filter "FullyQualifiedName~HeadlessHostTests"
+  ```
+
+**Advantages:**
+- ✅ Cross-platform (Linux, Windows, macOS)
+- ✅ No xvfb or graphical environment required
+- ✅ No wrapper scripts or sandbox workarounds needed
+- ✅ Reliably connects to Blazor app (no Ready phase timeout issues)
+- ✅ Recommended for CI/CD pipelines and Copilot agent environments
+
+**Important:** Any code change should not be considered complete unless EITHER the Electron E2E test OR the Headless E2E test runs successfully.
+
 ## Coding Standards
 
 ### Code Style
