@@ -32,9 +32,7 @@ internal class PlaywrightHostedService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Wait for the application to start
-        TaskCompletionSource tcs = new();
-        using CancellationTokenRegistration reg = _lifetime.ApplicationStarted.Register(tcs.SetResult);
-        await tcs.Task;
+        await _lifetime.ApplicationStarted.WaitForCancelled();
 
         _logger.LogInformation("Starting Playwright hosted service");
 

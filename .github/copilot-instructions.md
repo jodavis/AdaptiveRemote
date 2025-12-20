@@ -54,7 +54,6 @@ cd test/AdaptiveRemote.EndtoEndTests && dotnet test
 ### E2E Tests for Headless (Playwright) - RECOMMENDED FOR COPILOT AGENTS
 The AdaptiveRemote.Headless host uses Playwright for cross-platform E2E testing without requiring xvfb or graphical environments.
 
-- **Prerequisites:** Playwright browsers are installed automatically on first use (cached in `~/.cache/ms-playwright/`)
 - **Build:** Build the headless host for the current platform
   ```bash
   dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj -r linux-x64
