@@ -15,9 +15,6 @@ public class AdaptiveRemoteHost : IDisposable
 
     private readonly StringBuilder _standardOutput = new();
     private readonly StringBuilder _standardError = new();
-    
-    private StreamWriter? _logFileWriter;
-    private string? _logFilePath;
 
     private Process? _process = null;
     private TcpClient? _client = null;
@@ -46,21 +43,6 @@ public class AdaptiveRemoteHost : IDisposable
 
         AdaptiveRemoteHostSettings settingsWithControlPort = _settings.AddCommandLineArgs($"--test:ControlPort={controlPort}");
 
-        // Create log file for this test run
-        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        string exeName = Path.GetFileNameWithoutExtension(_settings.ExePath);
-        _logFilePath = Path.Combine(AppContext.BaseDirectory, $"{exeName}_{timestamp}.log");
-        _logFileWriter = new StreamWriter(_logFilePath, append: false) { AutoFlush = true };
-        
-        _logFileWriter.WriteLine($"=== E2E Test Log for {exeName} ===");
-        _logFileWriter.WriteLine($"Started: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        _logFileWriter.WriteLine($"Executable: {_settings.ExePath}");
-        _logFileWriter.WriteLine($"Arguments: {settingsWithControlPort.CommandLineArgs}");
-        _logFileWriter.WriteLine($"Working Directory: {_settings.WorkingDirectory}");
-        _logFileWriter.WriteLine($"Control Port: {controlPort}");
-        _logFileWriter.WriteLine($"Log File: {_logFilePath}");
-        _logFileWriter.WriteLine();
-
         ProcessStartInfo startInfo = new()
         {
             FileName = _settings.ExePath,
@@ -72,27 +54,19 @@ public class AdaptiveRemoteHost : IDisposable
             CreateNoWindow = true
         };
 
-        // Log the DISPLAY environment variable from the parent process (set by xvfb-run)
-        string? displayFromParent = Environment.GetEnvironmentVariable("DISPLAY");
-        _logFileWriter.WriteLine($"DISPLAY from parent process: {displayFromParent ?? "(not set)"}");
-        _logFileWriter.WriteLine();
-        
         // Apply environment variables from settings
         foreach (KeyValuePair<string, string> kvp in _settings.EnvironmentVariables)
         {
             startInfo.Environment[kvp.Key] = kvp.Value;
-            _logFileWriter.WriteLine($"ENV: {kvp.Key}={kvp.Value}");
         }
         
         // If DISPLAY is set in parent process but not in settings, inherit it
         // (important for xvfb-run which sets DISPLAY automatically)
+        string? displayFromParent = Environment.GetEnvironmentVariable("DISPLAY");
         if (!string.IsNullOrEmpty(displayFromParent) && !_settings.EnvironmentVariables.ContainsKey("DISPLAY"))
         {
             startInfo.Environment["DISPLAY"] = displayFromParent;
-            _logFileWriter.WriteLine($"ENV (inherited): DISPLAY={displayFromParent}");
         }
-        
-        _logFileWriter.WriteLine();
 
         Process process = new()
         {
@@ -105,7 +79,6 @@ public class AdaptiveRemoteHost : IDisposable
             if (e.Data is not null)
             {
                 _standardOutput.AppendLine(e.Data);
-                _logFileWriter?.WriteLine($"[OUT] {e.Data}");
             }
         };
 
@@ -114,7 +87,6 @@ public class AdaptiveRemoteHost : IDisposable
             if (e.Data is not null)
             {
                 _standardError.AppendLine(e.Data);
-                _logFileWriter?.WriteLine($"[ERR] {e.Data}");
             }
         };
 
@@ -227,17 +199,6 @@ public class AdaptiveRemoteHost : IDisposable
                     _process.Kill(entireProcessTree: true);
                 }
                 _process.Dispose();
-            }
-        }
-        catch { }
-
-        try
-        {
-            if (_logFileWriter is not null)
-            {
-                _logFileWriter.WriteLine();
-                _logFileWriter.WriteLine($"=== Test Complete at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===");
-                _logFileWriter.Dispose();
             }
         }
         catch { }

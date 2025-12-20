@@ -47,44 +47,11 @@ dotnet test
 # Run tests from specific project
 cd AdaptiveRemote.Tests && dotnet test
 
-# Run E2E tests (Electron only)
+# Run E2E tests (Headless only)
 cd test/AdaptiveRemote.EndtoEndTests && dotnet test
 ```
 
-### E2E Tests for Electron
-The Electron E2E tests require:
-- **Linux:** Use xvfb-run wrapper to provide virtual display
-- **Build:** Electron project must be built for the correct RID before running tests
-  ```bash
-  dotnet build src/AdaptiveRemote.Electron/AdaptiveRemote.Electron.csproj -r linux-x64
-  ```
-- **Electron Sandbox Workaround:** Create wrapper script to pass --no-sandbox flag
-  ```bash
-  cd src/AdaptiveRemote.Electron/bin/Debug/net8.0/linux-x64/.electron/node_modules/electron/dist
-  mv electron electron.original
-  cat > electron << 'EOF'
-  #!/bin/bash
-  DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  exec "$DIR/electron.original" --no-sandbox --disable-gpu "$@"
-  EOF
-  chmod +x electron
-  ```
-- **Run Tests:** Use xvfb-run wrapper
-  ```bash
-  xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
-      dotnet test test/AdaptiveRemote.EndtoEndTests/AdaptiveRemote.EndtoEndTests.csproj \
-      --filter "FullyQualifiedName~ElectronHostTests"
-  ```
-
-**Important:** Any code change should not be considered complete unless the Electron E2E test runs successfully.
-
-**Known Issues in CI Environments:**
-- Electron requires the --no-sandbox flag to run in CI environments (SUID sandbox errors)
-- The wrapper script must be created after each Electron build
-- The Electron UI may not fully render in headless environments, causing tests to timeout waiting for Ready phase
-- If tests timeout waiting for LifecyclePhase.Ready, check that xvfb-run is being used and the wrapper script exists
-
-### E2E Tests for Headless (Playwright) - RECOMMENDED FOR CI
+### E2E Tests for Headless (Playwright) - RECOMMENDED FOR COPILOT AGENTS
 The AdaptiveRemote.Headless host uses Playwright for cross-platform E2E testing without requiring xvfb or graphical environments.
 
 - **Prerequisites:** Playwright browsers are installed automatically on first use (cached in `~/.cache/ms-playwright/`)
@@ -109,7 +76,7 @@ The AdaptiveRemote.Headless host uses Playwright for cross-platform E2E testing 
 - ✅ Reliably connects to Blazor app (no Ready phase timeout issues)
 - ✅ Recommended for CI/CD pipelines and Copilot agent environments
 
-**Important:** Any code change should not be considered complete unless EITHER the Electron E2E test OR the Headless E2E test runs successfully.
+**Important:** Any code change should not be considered complete unless the Headless E2E test runs successfully.
 
 ## Coding Standards
 

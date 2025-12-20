@@ -26,30 +26,16 @@ AdaptiveRemote.Headless is a cross-platform .NET console host for the AdaptiveRe
 
 3. **Playwright Integration:**
     - Launches a headless browser instance (Chromium by default; configurable).
-    - The browser lifecycle is managed by an `IHostedService` implementation, which starts Playwright in `InitializeAsync()` and shuts it down cleanly in `ShutDownAsync()`. This ensures proper cleanup on graceful shutdown, but cannot guarantee cleanup if the process is killed abruptly (see Limitations).
+    - The browser lifecycle is managed by `PlaywrightHostedService` which inherits from `BackgroundService`. This ensures proper cleanup on graceful shutdown, but cannot guarantee cleanup if the process is killed abruptly (see Limitations).
+    - Waits for the ASP.NET application to start before launching the browser.
     - Navigates to the hosted Blazor app.
-    - Exposes Playwright/browser control to the test project via StreamJsonRpc.
-    - Captures screenshots and traces on test failure or as requested.
+    - Browser control can be exposed to test services in future iterations via dependency injection.
+    - Captures screenshots and traces on test failure or as requested (future enhancement).
 
 4. **Communication:**
-    - Uses the existing StreamJsonRpc channel for test-to-app and test-to-browser communication.
-    - No additional custom protocol is required; extend the channel as needed for browser control.
-    - **Intent-based API:** The test service interface should expose high-level, intent-based commands (e.g., `ClickButton(string label)`, `CheckButtonIsVisible(string label)`) rather than duplicating the Playwright API. This keeps tests maintainable and decoupled from Playwright details. The TestService class will translate these commands into Playwright actions internally.
-
-    **Example:**
-    ```csharp
-    // In the test service interface:
-    Task ClickButton(string label);
-    Task<bool> CheckButtonIsVisible(string label);
-    
-    // Implementation (simplified):
-    public async Task ClickButton(string label)
-    {
-        var button = await _page.QuerySelectorAsync($"button:text('{label}')");
-        if (button != null) await button.ClickAsync();
-        else throw new Exception($"Button '{label}' not found");
-    }
-    ```
+    - Uses the existing StreamJsonRpc test control channel for test-to-app communication.
+    - Test services can wait for lifecycle phases and invoke commands via `IRemoteDefinitionService`.
+    - **Intent-based API (future):** The test service interface can be extended with high-level, intent-based commands (e.g., `ClickButton(string label)`, `CheckButtonIsVisible(string label)`) rather than exposing raw Playwright API. This would keep tests maintainable and decoupled from Playwright details.
 
 5. **Configuration:**
     - All settings (port, browser type, logging, etc.) are configurable via .NET configuration (command-line, environment, config files).
@@ -81,8 +67,3 @@ Additional commands can be added as test coverage expands.
 ## Limitations
 - If the host process is killed abruptly (e.g., SIGKILL), Playwright and browser resources may not be cleaned up. Graceful shutdown (SIGTERM, Ctrl+C) is supported and recommended in CI.
 - Headless Chromium is used by default for maximum compatibility. Microsoft Edge headless is not available cross-platform, but Chromium is very close to Edge (same engine).
-- The intent-based API means not all Playwright features are exposed; only those needed for test intent are implemented.
-
-## Open Questions / Next Steps
-- Expand the intent-based command set as new test scenarios are identified.
-- Document how to run the host and connect from tests.

@@ -1,3 +1,4 @@
+using AdaptiveRemote.Utilities;
 using Microsoft.Playwright;
 
 namespace AdaptiveRemote.Headless;
@@ -88,14 +89,7 @@ internal class PlaywrightHostedService : BackgroundService
             _logger.LogInformation("Playwright browser navigated to Blazor app");
 
             // Keep running until cancellation is requested
-            try
-            {
-                await Task.Delay(-1, stoppingToken);
-            }
-            catch (TaskCanceledException)
-            {
-                // Expected when stopping
-            }
+            await stoppingToken.WaitForCancelled();
         }
         catch (OperationCanceledException)
         {
@@ -119,13 +113,13 @@ internal class PlaywrightHostedService : BackgroundService
 
         try
         {
-            if (_page != null)
+            if (_page is not null)
             {
                 await _page.CloseAsync();
                 _page = null;
             }
 
-            if (_browser != null)
+            if (_browser is not null)
             {
                 await _browser.CloseAsync();
                 _browser = null;
