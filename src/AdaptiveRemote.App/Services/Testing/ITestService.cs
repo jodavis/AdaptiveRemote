@@ -9,12 +9,11 @@ namespace AdaptiveRemote.Services.Testing;
 public interface ITestService : IDisposable
 {
     /// <summary>
-    /// Waits for the application to reach the specified lifecycle phase.
+    /// Gets the current lifecycle phase of the application.
     /// </summary>
-    /// <param name="phase">The lifecycle phase to wait for (e.g., Ready).</param>
     /// <param name="cancellationToken">Cancellation token for the wait operation.</param>
-    /// <returns>A task that completes when the specified phase is reached.</returns>
-    Task WaitForPhaseAsync(LifecyclePhase phase, CancellationToken cancellationToken = default);
+    /// <returns>A task that completes when the current phase has been fetched.</returns>
+    Task<LifecyclePhase> GetCurrentPhaseAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Invokes a command in the host application by its command ID.

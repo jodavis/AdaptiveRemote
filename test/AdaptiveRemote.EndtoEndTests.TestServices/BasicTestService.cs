@@ -62,11 +62,8 @@ public class BasicTestService : ITestService
         GC.SuppressFinalize(this);
     }
 
-    public async Task WaitForPhaseAsync(LifecyclePhase phase, CancellationToken cancellationToken = default)
+    public Task<LifecyclePhase> GetCurrentPhaseAsync(CancellationToken cancellationToken)
     {
-        while (_lifecycleView.CurrentPhase != phase && !cancellationToken.IsCancellationRequested)
-        {
-            await Task.Delay(100, cancellationToken);
-        }
+        return Task.FromResult(_lifecycleView.CurrentPhase);
     }
 }

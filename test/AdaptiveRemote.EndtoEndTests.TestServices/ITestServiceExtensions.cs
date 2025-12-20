@@ -1,17 +1,26 @@
 ﻿using AdaptiveRemote.Services.Testing;
+using FluentAssertions;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
 public static class ITestServiceExtensions
 {
-    public static void WaitForPhase(this ITestService testService, LifecyclePhase phase, TimeSpan timeout)
+    public static void WaitForPhase(this ITestService testService, LifecyclePhase expectedPhase, TimeSpan timeout)
     {
-        bool succeeded = WaitUtilities.WaitForAsyncTask(ct => testService.WaitForPhaseAsync(phase, ct), timeout);
-
-        if (!succeeded)
+        LifecyclePhase? currentPhase = null;
+        bool result = WaitUtilities.ExecuteWithRetries(() =>
         {
-            throw new TimeoutException($"Waiting for phase '{phase}' timed out after {timeout.TotalMilliseconds} ms.");
-        }
+            currentPhase = testService.GetCurrentPhase();
+            return currentPhase >= expectedPhase;
+        }, timeout);
+
+        currentPhase.Should().Be(expectedPhase,
+            because: $"the test service should reach phase '{expectedPhase}' within {timeout.TotalSeconds}s.");
+    }
+
+    public static LifecyclePhase GetCurrentPhase(this ITestService testService)
+    {
+        return WaitUtilities.WaitForAsyncTask(testService.GetCurrentPhaseAsync);
     }
 
     public static void InvokeCommand(this ITestService testService, string commandName)
