@@ -114,12 +114,12 @@ internal class TestControlService : BackgroundService, ITestControlService
         
         // Create the test service within the application scope so it gets access to scoped services
         ITestService? testService = null;
-        await _scopeProvider.InvokeInScopeAsync(async (scopedProvider, ct) =>
+        await _scopeProvider.InvokeInScopeAsync((scopedProvider, ct) =>
         {
             testService = (ITestService)ActivatorUtilities.CreateInstance(scopedProvider, serviceType);
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }, cancellationToken);
         
-        return testService!;
+        return testService ?? throw new InvalidOperationException("Failed to create test service instance");
     }
 }
