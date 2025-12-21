@@ -1,5 +1,7 @@
 using AdaptiveRemote.EndtoEndTests.Host;
+using AdaptiveRemote.EndtoEndTests.Logging;
 using AdaptiveRemote.Services.Testing;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -42,6 +44,13 @@ public abstract class HostTestBase
     {
         AdaptiveRemoteHostSettings hostSettings = GetHostSettings(solutionRoot);
 
+        ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddDebug();
+            builder.AddTestContext(testContext);
+
+        });
+
         if (!File.Exists(hostSettings.ExePath))
         {
             Assert.Inconclusive($"Host not found at: {hostSettings.ExePath}");
@@ -54,44 +63,52 @@ public abstract class HostTestBase
 
         hostSettings = hostSettings.AddCommandLineArgs("--tivo:Fake=True --broadlink:Fake=True");
 
-        using AdaptiveRemoteHost host = new(hostSettings);
+        using AdaptiveRemoteHost host = new(hostSettings, loggerFactory.CreateLogger<AdaptiveRemoteHost>());
+        ILogger logger = loggerFactory.CreateLogger<HostTestBase>();
 
         try
         {
-            testContext.WriteLine($"Starting host: {hostSettings.ExePath}");
             host.Start();
 
-            testContext.WriteLine("Getting test service...");
             // Load test service
             ITestService testService = host.TestService;
 
-            testContext.WriteLine("Waiting for application to reach Ready phase...");
-            // Wait for application ready - this ensures the UI has rendered and the application scope exists
-            testService.WaitForPhase(LifecyclePhase.Ready, TimeSpan.FromSeconds(60));
+            using (logger.BeginScope("Executing test"))
+            {
 
-            testContext.WriteLine("Invoking Exit command...");
-            // Request shutdown via strongly-typed proxy
-            testService.InvokeCommand("Exit");
+                logger.LogInformation("Waiting for application to reach Ready phase...");
+                // Wait for application ready - this ensures the UI has rendered and the application scope exists
+                testService.WaitForPhase(LifecyclePhase.Ready, TimeSpan.FromSeconds(60));
 
-            testContext.WriteLine("Stopping host...");
+                logger.LogInformation("Invoking Exit command...");
+                // Request shutdown via strongly-typed proxy
+                testService.InvokeCommand("Exit");
+            }
+
             // Wait for shutdown
             host.Stop();
 
             // Verify logs (optional, can be overridden)
-            VerifyLogs(host, testContext);
+            VerifyLogs(host, logger);
         }
         catch (Exception ex)
         {
-            testContext.WriteLine($"Test failed with exception: {ex.Message}");
-            testContext.WriteLine($"=== Standard Output ===");
-            testContext.WriteLine(host.StandardOutput);
-            testContext.WriteLine($"=== Standard Error ===");
-            testContext.WriteLine(host.StandardError);
+            logger.LogError(ex,
+                """
+                Test failed with exception: {ErrorMessage}
+                === Standard Output ===
+                {StandardOutput}
+                === Standard Error ===
+                {StandardError}
+                """,
+                ex.Message,
+                host.StandardOutput,
+                host.StandardError);
             throw;
         }
     }
 
-    protected virtual void VerifyLogs(AdaptiveRemoteHost host, TestContext testContext)
+    protected virtual void VerifyLogs(AdaptiveRemoteHost host, ILogger logger)
     {
         string logs = host.StandardOutput;
         string errors = host.StandardError;
@@ -111,7 +128,7 @@ public abstract class HostTestBase
         // Note: Warnings are informational but not a failure for now
         if (hasWarnings)
         {
-            testContext.WriteLine("WARNING: Host logs contain warnings");
+            logger.LogWarning("Host logs contain warnings");
         }
     }
 }

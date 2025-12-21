@@ -37,7 +37,7 @@ public static class WaitUtilities
                 endTime - DateTime.UtcNow);
 
             return result;
-        });
+        }, timeout);
     }
 
     public static bool WaitForAsyncTask(Func<CancellationToken, Task> action, int timeoutInMilliseconds = DefaultTimeoutInMilliseconds)

@@ -11,7 +11,7 @@ public record AdaptiveRemoteHostSettings(
     TimeSpan RpcTimeout,
     TimeSpan ShutdownTimeout)
 {
-    internal AdaptiveRemoteHostSettings(
+    public AdaptiveRemoteHostSettings(
         string ExePath,
         string CommandLineArgs = "",
         string? WorkingDirectory = null,
@@ -24,7 +24,7 @@ public record AdaptiveRemoteHostSettings(
               ShutdownTimeout: TimeSpan.FromSeconds(30))
     { }
 
-    internal AdaptiveRemoteHostSettings AddCommandLineArgs(string args)
+    public AdaptiveRemoteHostSettings AddCommandLineArgs(string args)
         => this with
         {
             CommandLineArgs = CommandLineArgs.Length > 0
