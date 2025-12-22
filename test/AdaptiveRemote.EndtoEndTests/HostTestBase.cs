@@ -44,13 +44,6 @@ public abstract class HostTestBase
     {
         AdaptiveRemoteHostSettings hostSettings = GetHostSettings(solutionRoot);
 
-        ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
-        {
-            builder.AddDebug();
-            builder.AddTestContext(testContext);
-
-        });
-
         if (!File.Exists(hostSettings.ExePath))
         {
             Assert.Inconclusive($"Host not found at: {hostSettings.ExePath}");
@@ -63,19 +56,22 @@ public abstract class HostTestBase
 
         hostSettings = hostSettings.AddCommandLineArgs("--tivo:Fake=True --broadlink:Fake=True");
 
-        using AdaptiveRemoteHost host = new(hostSettings, loggerFactory.CreateLogger<AdaptiveRemoteHost>());
-        ILogger logger = loggerFactory.CreateLogger<HostTestBase>();
+        AdaptiveRemoteHostBuilder hostBuilder = new AdaptiveRemoteHostBuilder(hostSettings)
+            .ConfigureLogging(builder =>
+            {
+                builder.AddDebug();
+                builder.AddTestContext(testContext);
+            });
+        using AdaptiveRemoteHost host = hostBuilder.Start();
+        ILogger logger = host.LoggerFactory.CreateLogger<HostTestBase>();
 
         try
         {
-            host.Start();
-
             // Load test service
             ITestService testService = host.TestService;
 
             using (logger.BeginScope("Executing test"))
             {
-
                 logger.LogInformation("Waiting for application to reach Ready phase...");
                 // Wait for application ready - this ensures the UI has rendered and the application scope exists
                 testService.WaitForPhase(LifecyclePhase.Ready, TimeSpan.FromSeconds(60));
@@ -93,7 +89,7 @@ public abstract class HostTestBase
         }
         catch (Exception ex)
         {
-            logger.LogError(ex,
+            logger?.LogError(ex,
                 """
                 Test failed with exception: {ErrorMessage}
                 === Standard Output ===
