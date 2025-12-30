@@ -7,7 +7,7 @@ using StreamJsonRpc;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
 
-public class AdaptiveRemoteHost : IDisposable
+public partial class AdaptiveRemoteHost : IDisposable
 {
     private readonly AdaptiveRemoteHostSettings _settings;
     private readonly ILogger<AdaptiveRemoteHost> _logger;
@@ -21,15 +21,15 @@ public class AdaptiveRemoteHost : IDisposable
     private readonly TcpClient _client;
     private readonly JsonRpc _rpc;
 
-    internal AdaptiveRemoteHost(AdaptiveRemoteHostSettings settings,
-                                ILoggerFactory loggerFactory,
-                                ILogger<AdaptiveRemoteHost> logger,
-                                Process process,
-                                TcpClient client,
-                                JsonRpc rpc,
-                                ITestControlService testControlService,
-                                StringBuilder standardOutput,
-                                StringBuilder standardError)
+    private AdaptiveRemoteHost(AdaptiveRemoteHostSettings settings,
+                               ILoggerFactory loggerFactory,
+                               ILogger<AdaptiveRemoteHost> logger,
+                               Process process,
+                               TcpClient client,
+                               JsonRpc rpc,
+                               ITestControlService testControlService,
+                               StringBuilder standardOutput,
+                               StringBuilder standardError)
     {
         _settings = settings;
         LoggerFactory = loggerFactory;
@@ -66,7 +66,11 @@ public class AdaptiveRemoteHost : IDisposable
                 if (!_process.HasExited)
                 {
                     _logger.LogInformation("Waiting for host to exit...");
-                    _process.WaitForExit(_settings.ShutdownTimeout);
+                    bool exited = _process.WaitForExit(_settings.ShutdownTimeout);
+                    if (!exited)
+                    {
+                        _logger.LogWarning("Host did not exit within timeout of {ShutdownTimeout}", _settings.ShutdownTimeout);
+                    }
                 }
                 _logger.LogInformation("Host exited with code: {ExitCode}", _process.ExitCode);
             }
@@ -118,27 +122,5 @@ public class AdaptiveRemoteHost : IDisposable
         catch { }
 
         GC.SuppressFinalize(this);
-    }
-
-    private static IEnumerable<ILoggerProvider> GetProvidersFromFactory(ILoggerFactory factory)
-    {
-        // LoggerFactory exposes providers via reflection (internal field). Try common approaches.
-        // This is a best-effort helper to locate our test provider instances.
-        var bindingFlags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
-        var field = factory.GetType().GetField("_providers", bindingFlags) ?? factory.GetType().GetField("Providers", bindingFlags);
-        if (field is not null)
-        {
-            if (field.GetValue(factory) is IEnumerable<ILoggerProvider> providers)
-            {
-                return providers;
-            }
-            if (field.GetValue(factory) is object arr && arr is System.Collections.IEnumerable ie)
-            {
-                return ie.Cast<ILoggerProvider>();
-            }
-        }
-
-        // Fallback: no providers found
-        return Array.Empty<ILoggerProvider>();
     }
 }

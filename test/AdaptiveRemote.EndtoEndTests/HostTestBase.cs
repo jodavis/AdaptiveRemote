@@ -58,13 +58,14 @@ public abstract class HostTestBase
 
         hostSettings = hostSettings.AddCommandLineArgs($"--tivo:Fake=True --broadlink:Fake=True --log:FilePath=\"{logFilePath}\"");
 
-        AdaptiveRemoteHostBuilder hostBuilder = new AdaptiveRemoteHostBuilder(hostSettings)
+        using AdaptiveRemoteHost host = AdaptiveRemoteHost.CreateBuilder(hostSettings)
             .ConfigureLogging(builder =>
             {
                 builder.AddDebug();
                 builder.AddTestContext(testContext);
-            });
-        using AdaptiveRemoteHost host = hostBuilder.Start();
+            })
+            .Start();
+
         ILogger logger = host.LoggerFactory.CreateLogger<HostTestBase>();
 
         try
@@ -114,8 +115,6 @@ public abstract class HostTestBase
                 host.StandardError);
             throw;
         }
-
-        Assert.Fail("Test failure");
     }
 
     protected virtual void VerifyLogs(AdaptiveRemoteHost host, ILogger logger)
