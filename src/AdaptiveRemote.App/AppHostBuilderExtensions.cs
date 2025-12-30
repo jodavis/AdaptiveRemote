@@ -1,6 +1,8 @@
 ﻿using AdaptiveRemote.Configuration;
+using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote;
 
@@ -14,6 +16,15 @@ public static class AppHostBuilderExtensions
             .AddTiVoSupport()
             .AddConversationSystem()
             .AddSystemWrapperServices()
+            // Ensure logging configured early so FileLoggerProvider captures all logs including RPC-handled test logs
+            .ConfigureLogging((context, logging) =>
+            {
+                string? hostLogFile = context.Configuration.GetValue<string>("log:FilePath");
+                if (!string.IsNullOrEmpty(hostLogFile))
+                {
+                    logging.AddProvider(new FileLoggerProvider(hostLogFile));
+                }
+            })
             .OptionallyAddTestControlEndpoint();
 
     public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)

@@ -119,4 +119,26 @@ public class AdaptiveRemoteHost : IDisposable
 
         GC.SuppressFinalize(this);
     }
+
+    private static IEnumerable<ILoggerProvider> GetProvidersFromFactory(ILoggerFactory factory)
+    {
+        // LoggerFactory exposes providers via reflection (internal field). Try common approaches.
+        // This is a best-effort helper to locate our test provider instances.
+        var bindingFlags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var field = factory.GetType().GetField("_providers", bindingFlags) ?? factory.GetType().GetField("Providers", bindingFlags);
+        if (field is not null)
+        {
+            if (field.GetValue(factory) is IEnumerable<ILoggerProvider> providers)
+            {
+                return providers;
+            }
+            if (field.GetValue(factory) is object arr && arr is System.Collections.IEnumerable ie)
+            {
+                return ie.Cast<ILoggerProvider>();
+            }
+        }
+
+        // Fallback: no providers found
+        return Array.Empty<ILoggerProvider>();
+    }
 }

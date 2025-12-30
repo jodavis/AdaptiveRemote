@@ -54,7 +54,9 @@ public abstract class HostTestBase
             Assert.Inconclusive($"Working directory not found: {hostSettings.WorkingDirectory}");
         }
 
-        hostSettings = hostSettings.AddCommandLineArgs("--tivo:Fake=True --broadlink:Fake=True");
+        string logFilePath = Path.Combine(testContext.TestResultsDirectory!, "applog.txt");
+
+        hostSettings = hostSettings.AddCommandLineArgs($"--tivo:Fake=True --broadlink:Fake=True --log:FilePath=\"{logFilePath}\"");
 
         AdaptiveRemoteHostBuilder hostBuilder = new AdaptiveRemoteHostBuilder(hostSettings)
             .ConfigureLogging(builder =>
@@ -84,6 +86,16 @@ public abstract class HostTestBase
             // Wait for shutdown
             host.Stop();
 
+            if (File.Exists(logFilePath))
+            {
+                logger.LogInformation("Found log file at {LogFilePath}", logFilePath);
+                testContext.AddResultFile(logFilePath);
+            }
+            else
+            {
+                logger.LogWarning("No log file found at {LogFilePath}", logFilePath);
+            }
+
             // Verify logs (optional, can be overridden)
             VerifyLogs(host, logger);
         }
@@ -102,6 +114,8 @@ public abstract class HostTestBase
                 host.StandardError);
             throw;
         }
+
+        Assert.Fail("Test failure");
     }
 
     protected virtual void VerifyLogs(AdaptiveRemoteHost host, ILogger logger)

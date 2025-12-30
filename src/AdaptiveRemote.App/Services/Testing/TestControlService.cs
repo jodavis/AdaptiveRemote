@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StreamJsonRpc;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -18,17 +19,20 @@ internal class TestControlService : BackgroundService, ITestControlService
 {
     private readonly TestingSettings _settings;
     private readonly IApplicationScopeProvider _scopeProvider;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<TestControlService> _logger;
+    private readonly ConcurrentDictionary<string, ILogger> _loggers = new();
     private TcpListener? _listener;
-    private Type? _testServiceType;
 
     public TestControlService(
         IOptions<TestingSettings> settings,
         IApplicationScopeProvider scopeProvider,
+        ILoggerFactory loggerFactory,
         ILogger<TestControlService> logger)
     {
         _settings = settings.Value;
         _scopeProvider = scopeProvider;
+        _loggerFactory = loggerFactory;
         _logger = logger;
     }
 
@@ -99,27 +103,39 @@ internal class TestControlService : BackgroundService, ITestControlService
         }
     }
 
-    public async Task<ITestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+    public Task<ITestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+        => CreateRemotableServiceAsync<ITestService>(assemblyPath, typeName, cancellationToken);
+
+    public Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+        => CreateRemotableServiceAsync<ITestLogger>(assemblyPath, typeName, cancellationToken);
+
+    private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
+        where ServiceType : class
     {
         _logger.LogInformation("Loading test service: {TypeName} from {AssemblyPath}", typeName, assemblyPath);
 
         Assembly assembly = Assembly.LoadFrom(assemblyPath);
-        
+
         Type? serviceType = assembly.GetType(typeName)
             ?? throw new ArgumentException($"Type not found: {typeName}", nameof(typeName));
 
+        if (!typeof(ServiceType).IsAssignableFrom(serviceType))
+        {
+            _logger.LogError("Type {TypeName} does not implement {ServiceType}", typeName, typeof(ServiceType).FullName);
+            throw new ArgumentException($"Type {typeName} does not implement {typeof(ServiceType).FullName}", nameof(typeName));
+        }
+
         // Store the type to instantiate later within each scoped invocation
-        _testServiceType = serviceType;
         _logger.LogInformation("Test service type loaded successfully");
-        
+
         // Create the test service within the application scope so it gets access to scoped services
-        ITestService? testService = null;
+        ServiceType? testService = null;
         await _scopeProvider.InvokeInScopeAsync((scopedProvider, ct) =>
         {
-            testService = (ITestService)ActivatorUtilities.CreateInstance(scopedProvider, serviceType);
+            testService = (ServiceType)ActivatorUtilities.CreateInstance(scopedProvider, serviceType);
             return Task.CompletedTask;
         }, cancellationToken);
-        
+
         return testService ?? throw new InvalidOperationException("Failed to create test service instance");
     }
 }

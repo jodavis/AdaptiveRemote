@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
 using StreamJsonRpc;
+using AdaptiveRemote.EndtoEndTests.Logging;
+using AdaptiveRemote.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
 
@@ -30,18 +27,48 @@ public class AdaptiveRemoteHostBuilder
 
     public AdaptiveRemoteHost Start()
     {
+        // Determine log file path via command line arg --test:HostLogFile
+        string? hostLogFile = null;
+        string[] args = _settings.CommandLineArgs?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (args[i].StartsWith("--test:HostLogFile=", StringComparison.OrdinalIgnoreCase))
+            {
+                hostLogFile = args[i].Substring("--test:HostLogFile=".Length).Trim();
+                break;
+            }
+        }
+
+        HostRpcLoggerProvider rpcProvider = new();
+
         ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
         {
+            // Add test-side provider that forwards to host when available
+            builder.AddProvider(rpcProvider);
+
+            // If a host log file was requested, add the file logger provider
+            if (!string.IsNullOrEmpty(hostLogFile))
+            {
+                builder.AddProvider(new FileLoggerProvider(hostLogFile));
+            }
+
             foreach (Action<ILoggingBuilder> configure in _configureLogging)
             {
                 configure(builder);
             }
         });
+
         ILogger<AdaptiveRemoteHost> logger = loggerFactory.CreateLogger<AdaptiveRemoteHost>();
 
         int controlPort = GetAvailablePort();
 
         AdaptiveRemoteHostSettings settingsWithControlPort = _settings.AddCommandLineArgs($"--test:ControlPort={controlPort}");
+
+        // If host log file was requested, also pass it to the host via command line so host can configure its logging
+        if (!string.IsNullOrEmpty(hostLogFile))
+        {
+            settingsWithControlPort = settingsWithControlPort.AddCommandLineArgs($"--test:HostLogFile={hostLogFile}");
+        }
 
         string exePath = Path.GetFullPath(settingsWithControlPort.ExePath);
 
@@ -163,6 +190,32 @@ public class AdaptiveRemoteHostBuilder
             // Create control proxy for bootstrapping
             ITestControlService testControlService = rpc.Attach<ITestControlService>();
 
+            // Attach the RPC proxy to our HostRpcLoggerProvider so test-side logs are forwarded to the host
+            ITestLogger testLogger = WaitUtilities.WaitForAsyncTask(ct => testControlService.CreateTestLoggerAsync<HostRpcTestLogger>(ct));
+            rpcProvider.AttachControlProxy(testLogger);
+            logger.LogInformation("Attached RPC test logger");
+
+            // If the test-side TestContextLoggerProvider was added, attach the host log file to the test result
+            if (!string.IsNullOrEmpty(hostLogFile))
+            {
+                try
+                {
+                    // Find TestContextLoggerProvider in factory providers via reflection
+                    foreach (var provider in GetProvidersFromFactory(loggerFactory))
+                    {
+                        if (provider is TestContextLoggerProvider testContextProvider)
+                        {
+                            try
+                            {
+                                testContextProvider.TestContext.AddResultFile(hostLogFile);
+                            }
+                            catch { }
+                        }
+                    }
+                }
+                catch { }
+            }
+
             return new(_settings, loggerFactory, logger, process, client, rpc, testControlService, standardOutput, standardError);
         }
         catch (Exception ex)
@@ -212,6 +265,28 @@ public class AdaptiveRemoteHostBuilder
         int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
         return port;
+    }
+
+    private static IEnumerable<ILoggerProvider> GetProvidersFromFactory(ILoggerFactory factory)
+    {
+        // LoggerFactory exposes providers via reflection (internal field). Try common approaches.
+        // This is a best-effort helper to locate our test provider instances.
+        var bindingFlags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var field = factory.GetType().GetField("_providers", bindingFlags) ?? factory.GetType().GetField("Providers", bindingFlags);
+        if (field is not null)
+        {
+            if (field.GetValue(factory) is IEnumerable<ILoggerProvider> providers)
+            {
+                return providers;
+            }
+            if (field.GetValue(factory) is object arr && arr is System.Collections.IEnumerable ie)
+            {
+                return ie.Cast<ILoggerProvider>();
+            }
+        }
+
+        // Fallback: no providers found
+        return Array.Empty<ILoggerProvider>();
     }
 
 }

@@ -10,4 +10,11 @@ public static class ITestControlServiceExtensions
             typeof(ServiceType).Assembly.Location,
             typeof(ServiceType).FullName!,
             cancellationToken);
+
+    public static async Task<ITestLogger> CreateTestLoggerAsync<ServiceType>(this ITestControlService controlService, CancellationToken cancellationToken = default)
+        where ServiceType : ITestLogger
+        => await controlService.CreateTestLoggerAsync(
+            typeof(ServiceType).Assembly.Location,
+            typeof(ServiceType).FullName!,
+            cancellationToken);
 }

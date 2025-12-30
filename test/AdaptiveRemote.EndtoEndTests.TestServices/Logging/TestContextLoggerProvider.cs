@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AdaptiveRemote.EndtoEndTests.Logging;
 
@@ -21,6 +22,9 @@ public sealed class TestContextLoggerProvider : ILoggerProvider
 
     void IDisposable.Dispose()
         => _loggers.Clear();
+
+    // Expose TestContext so callers (tests) can attach result files
+    internal TestContext TestContext => _state.TestContext;
 
     private sealed class LoggerState
     {

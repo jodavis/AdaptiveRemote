@@ -1,9 +1,12 @@
+using StreamJsonRpc;
+
 namespace AdaptiveRemote.Services.Testing;
 
 /// <summary>
 /// Interface for the test control service that runs in the host.
 /// Used for bootstrapping test services via JSON-RPC.
 /// </summary>
+[RpcMarshalable]
 public interface ITestControlService
 {
     /// <summary>
@@ -15,4 +18,6 @@ public interface ITestControlService
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A proxy to the test service that can be used to invoke test commands.</returns>
     Task<ITestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
+
+    Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
 }
