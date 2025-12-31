@@ -32,7 +32,7 @@ public partial class AdaptiveRemoteHost
         public AdaptiveRemoteHost Start()
         {
             // Configure logging, including HostRpcLoggerProvider for forwarding test logs to host
-            HostRpcLoggerProvider rpcProvider = new();
+            HostApplicationLoggerProvider rpcProvider = new();
 
             ILoggerFactory loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
             {
@@ -121,7 +121,7 @@ public partial class AdaptiveRemoteHost
 
                 logger.LogInformation("Connecting to test control endpoint on port {Port}...", controlPort);
 
-                WaitUtilities.ExecuteWithRetries(async (cancellationToken) =>
+                WaitHelpers.ExecuteWithRetries(async (cancellationToken) =>
                 {
                     try
                     {
@@ -162,14 +162,14 @@ public partial class AdaptiveRemoteHost
                 }
 
                 // Create control proxy for bootstrapping
-                ITestControlService testControlService = rpc.Attach<ITestControlService>();
+                ITestEndpoint testEndpoint = rpc.Attach<ITestEndpoint>();
 
                 // Attach the RPC proxy to our HostRpcLoggerProvider so test-side logs are forwarded to the host
-                ITestLogger testLogger = WaitUtilities.WaitForAsyncTask(ct => testControlService.CreateTestLoggerAsync<HostRpcTestLogger>(ct), _settings.StartupTimeout);
-                rpcProvider.AttachControlProxy(testLogger);
+                ITestLogger testLogger = WaitHelpers.WaitForAsyncTask(ct => testEndpoint.CreateTestLoggerAsync<HostApplicationTestLogger>(ct), _settings.StartupTimeout);
+                rpcProvider.AttachTestLoggerProxy(testLogger);
                 logger.LogInformation("Attached RPC test logger");
 
-                return new(_settings, loggerFactory, logger, process, client, rpc, testControlService, standardOutput, standardError);
+                return new(_settings, loggerFactory, process, client, rpc, testEndpoint, standardOutput, standardError);
             }
             catch (Exception ex)
             {
@@ -219,29 +219,6 @@ public partial class AdaptiveRemoteHost
             listener.Stop();
             return port;
         }
-
-        private static IEnumerable<ILoggerProvider> GetProvidersFromFactory(ILoggerFactory factory)
-        {
-            // LoggerFactory exposes providers via reflection (internal field). Try common approaches.
-            // This is a best-effort helper to locate our test provider instances.
-            var bindingFlags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
-            var field = factory.GetType().GetField("_providers", bindingFlags) ?? factory.GetType().GetField("Providers", bindingFlags);
-            if (field is not null)
-            {
-                if (field.GetValue(factory) is IEnumerable<ILoggerProvider> providers)
-                {
-                    return providers;
-                }
-                if (field.GetValue(factory) is object arr && arr is System.Collections.IEnumerable ie)
-                {
-                    return ie.Cast<ILoggerProvider>();
-                }
-            }
-
-            // Fallback: no providers found
-            return Array.Empty<ILoggerProvider>();
-        }
-
     }
 }
 

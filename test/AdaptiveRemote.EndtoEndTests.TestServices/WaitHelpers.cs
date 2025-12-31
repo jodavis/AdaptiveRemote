@@ -1,6 +1,6 @@
 ﻿namespace AdaptiveRemote.EndtoEndTests;
 
-public static class WaitUtilities
+public static class WaitHelpers
 {
     public const int DefaultTimeoutInMilliseconds = 1000;
 

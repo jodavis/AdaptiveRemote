@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using AdaptiveRemote.EndtoEndTests.Host;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -26,6 +27,9 @@ public class WpfHostTests : HostTestBase
 
     protected override AdaptiveRemoteHostSettings GetHostSettings(string solutionRoot)
         => new(ExePath: Path.Combine(solutionRoot, "src/AdaptiveRemote/bin/Debug/net8.0-windows/AdaptiveRemote.exe"));
+
+    protected override ILogger CreateTypedLogger(AdaptiveRemoteHost host)
+        => host.CreateLogger<WpfHostTests>();
 
     [TestMethod]
     [Timeout(180000)] // 3 minutes

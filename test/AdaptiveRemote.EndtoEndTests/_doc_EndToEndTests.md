@@ -1,32 +1,31 @@
 # End-to-End Test Architecture
 
 ## Overview
-The E2E testing subsystem validates that AdaptiveRemote host applications (WPF, Console, and Electron) can start correctly, establish test control connections, execute commands, and shut down cleanly. These tests run as separate processes to validate the complete deployment artifacts.
+The E2E testing subsystem validates that AdaptiveRemote host applications (WPF, Console, and Headless) can start correctly, establish test control connections, execute commands, and shut down cleanly. These tests run as separate processes to validate the complete deployment artifacts.
 
 ## Responsibilities & Boundaries
-- **Host Process Management:** Launches host binaries, captures output, and manages lifecycle
+- **Host Process Management:** Launches host binaries via command line, captures output, and manages lifecycle
 - **Test Control Channel:** Establishes TCP/JSON-RPC connection for remote test control
 - **Service Validation:** Dynamically loads test services to validate DI scope and command execution
-- **Log Capture:** Records stdout/stderr to files for CI artifact collection and debugging
+- **Log Capture:** Application writes logs to a file for post-mortem analysis
 
 ## Key Abstractions
 
 ### Host Management
-- [`AdaptiveRemoteHost`](./Host/AdaptiveRemoteHost.cs): Manages the lifecycle of a host application process during testing. Handles process startup, log capture, JSON-RPC connection establishment, and cleanup.
-- [`AdaptiveRemoteHostSettings`](./Host/AdaptiveRemoteHostSettings.cs): Configuration for launching a host, including executable path, command-line arguments, working directory, environment variables, and timeouts.
+- `AdaptiveRemoteHost` (`test/.../Host/AdaptiveRemoteHost.cs`): Manages the lifecycle of a host application process during testing. Handles process startup, log capture, JSON-RPC connection establishment, and cleanup.
+- `AdaptiveRemoteHostSettings` (`test/.../Host/AdaptiveRemoteHostSettings.cs`): Configuration for launching a host, including executable path, command-line arguments, working directory, environment variables, and timeouts.
 
 ### Test Orchestration
-- [`HostTestBase`](./HostTestBase.cs): Abstract base class for E2E tests. Provides common functionality for launching hosts, loading test services, and verifying logs.
-- [`ElectronHostTests`](./ElectronHostTests.cs), [`ConsoleHostTests`](./ConsoleHostTests.cs), [`WpfHostTests`](./WpfHostTests.cs): Concrete test classes for each host variant.
+- `HostTestBase` (`test/.../HostTestBase.cs`): Abstract base class for E2E tests. Provides common functionality for launching hosts, loading test services, and verifying logs.
+- `HeadlessHostTests` (`test/.../HeadlessHostTests.cs`), `ConsoleHostTests` (`test/.../ConsoleHostTests.cs`), `WpfHostTests` (`test/.../WpfHostTests.cs`): Concrete test classes for each host variant.
 
 ### Test Services
-- [`ITestService`](../AdaptiveRemote.EndtoEndTests.TestServices/ITestService.cs): Interface for test services that can be loaded dynamically by the host. Provides methods to wait for lifecycle phases and invoke commands.
-- [`BasicTestService`](../AdaptiveRemote.EndtoEndTests.TestServices/BasicTestService.cs): Implementation that uses `IRemoteDefinitionService` to find and invoke commands, demonstrating proper DI scope access.
-- [`TestServiceProxy`](../../src/AdaptiveRemote.App/Services/Testing/TestServiceProxy.cs): Server-side proxy that defers test service instantiation until methods are called, allowing test services to be created before the application scope exists.
+- `IApplicationTestService` (`test/AdaptiveRemote.EndtoEndTests.TestServices/IApplicationTestService.cs`): Interface for the main test service that can be loaded dynamically by the host. Provides methods to wait for lifecycle phases and invoke commands.
+- `ApplicationTestService` (`test/AdaptiveRemote.EndtoEndTests.TestServices/ApplicationTestService.cs`): Implementation that uses `IRemoteDefinitionService` to find and invoke commands, demonstrating proper DI scope access.
 
 ### Control Endpoint
-- [`ITestControlService`](../../src/AdaptiveRemote.App/Services/Testing/ITestControlService.cs): JSON-RPC interface exposed by the host for test control operations.
-- [`TestControlService`](../../src/AdaptiveRemote.App/Services/Testing/TestControlService.cs): Background service that listens on TCP port (when `--test:ControlPort` is provided) and handles JSON-RPC requests.
+- `ITestEndpoint` (`src/AdaptiveRemote.App/Services/Testing/ITestEndpoint.cs`): JSON-RPC interface exposed by the host for test control operations. It exposes `CreateTestServiceAsync(...)` and `CreateTestLoggerAsync(...)` to load test-side services and logger targets into the host process.
+- `TestEndpointService` (`src/AdaptiveRemote.App/Services/Testing/TestEndpointService.cs`): Background service that listens on TCP port (when `--test:ControlPort` is provided) and handles JSON-RPC requests.
 
 ## Architecture Patterns
 
@@ -45,11 +44,7 @@ Test services are loaded at runtime without compile-time dependencies from hosts
 4. Creates instances within DI scope using `IApplicationScopeProvider`
 5. Returns JSON-RPC marshalable proxy for test service
 
-### Deferred Instantiation Pattern
-The `TestServiceProxy` pattern solves a critical timing issue:
-- **Problem:** Test service creation requires `IApplicationScopeProvider.InvokeInScopeAsync`, but the scope doesn't exist until Blazor UI renders
-- **Solution:** `CreateTestServiceAsync` returns a proxy immediately; actual instances are created within the scope when proxy methods are called
-- This allows test setup to complete before the application finishes initializing
+The host also supports `CreateTestLoggerAsync` which loads a test-side logger type into the host scope and returns an `ITestLogger` RPC target that the test process can use as a sink.
 
 ### Log Capture and Artifacts
 Each test run creates a timestamped log file containing:
@@ -57,6 +52,8 @@ Each test run creates a timestamped log file containing:
 - Complete stdout and stderr streams
 - Timestamps for debugging timing issues
 - Automatic upload to CI artifacts for post-mortem analysis
+
+See `test/AdaptiveRemote.EndtoEndTests.TestServices/Logging/_doc_TestLogging.md` for details.
 
 ## Test Flow
 
@@ -74,6 +71,7 @@ Each test run creates a timestamped log file containing:
    └─> Connect to test control endpoint via JSON-RPC
    └─> Call CreateTestServiceAsync with test service type
    └─> Receive ITestService proxy
+   └─> Optionally call CreateTestLoggerAsync to obtain an ITestLogger RPC target
 
 4. Test Execution
    └─> Wait for application initialization (or skip for headless)

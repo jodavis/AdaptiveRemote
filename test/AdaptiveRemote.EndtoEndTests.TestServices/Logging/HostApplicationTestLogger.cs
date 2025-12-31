@@ -4,12 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.Logging;
 
-internal class HostRpcTestLogger : ITestLogger
+/// <summary>
+/// This class runs in the host application process and receives log messages from
+/// <see cref="HostApplicationLoggerProvider" />, adding them to the application's
+/// own logs.
+/// </summary>
+internal class HostApplicationTestLogger : ITestLogger
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly ConcurrentDictionary<string, ILogger> _categoryLoggers = new();
 
-    public HostRpcTestLogger(ILoggerFactory loggerFactory)
+    public HostApplicationTestLogger(ILoggerFactory loggerFactory)
     {
         _loggerFactory = loggerFactory;
     }

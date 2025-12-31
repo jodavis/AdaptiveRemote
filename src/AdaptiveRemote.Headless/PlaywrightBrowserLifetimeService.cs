@@ -1,4 +1,5 @@
 using AdaptiveRemote.Utilities;
+using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
 namespace AdaptiveRemote.Headless;
@@ -7,27 +8,25 @@ namespace AdaptiveRemote.Headless;
 /// Hosted service that manages the Playwright browser lifecycle.
 /// Launches a headless Chromium browser and navigates to the hosted Blazor app.
 /// </summary>
-internal class PlaywrightHostedService : BackgroundService
+internal class PlaywrightBrowserLifetimeService : BackgroundService
 {
-    private readonly ILogger<PlaywrightHostedService> _logger;
-    private readonly IConfiguration _configuration;
+    private readonly ILogger<PlaywrightBrowserLifetimeService> _logger;
     private readonly IHostApplicationLifetime _lifetime;
+    private readonly PlaywrightSettings _settings;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
+    private IBrowserContext? _browserContext;
     private IPage? _page;
 
-    public PlaywrightHostedService(
-        ILogger<PlaywrightHostedService> logger,
-        IConfiguration configuration,
+    public PlaywrightBrowserLifetimeService(
+        ILogger<PlaywrightBrowserLifetimeService> logger,
+        IOptions<PlaywrightSettings> options,
         IHostApplicationLifetime lifetime)
     {
         _logger = logger;
-        _configuration = configuration;
         _lifetime = lifetime;
+        _settings = options.Value;
     }
-
-    private const int AppStartupDelayMs = 1000; // Delay to allow ASP.NET server to fully initialize
-    private const int NavigationTimeoutMs = 30000; // Timeout for navigating to the Blazor app
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -39,18 +38,7 @@ internal class PlaywrightHostedService : BackgroundService
         try
         {
             // Get the port the app is listening on (from configuration or default)
-            string? urls = _configuration["ASPNETCORE_URLS"] ?? _configuration["urls"];
             string appUrl = "http://localhost:5000"; // Default
-
-            if (!string.IsNullOrEmpty(urls))
-            {
-                // Parse the first URL from the list
-                string[] urlList = urls.Split(';');
-                if (urlList.Length > 0)
-                {
-                    appUrl = urlList[0];
-                }
-            }
 
             _logger.LogInformation("Will navigate to: {AppUrl}", appUrl);
 
@@ -60,28 +48,38 @@ internal class PlaywrightHostedService : BackgroundService
             // Launch headless browser
             BrowserTypeLaunchOptions launchOptions = new BrowserTypeLaunchOptions
             {
-                Headless = true,
-                Args = new[] { "--no-sandbox", "--disable-dev-shm-usage" }
+                Headless = _settings.Headless,
+                Args = ["--no-sandbox", "--disable-dev-shm-usage"],
+                TracesDir = _settings.TracesDir,
             };
-            
+
             _browser = await _playwright.Chromium.LaunchAsync(launchOptions);
 
             _logger.LogInformation("Playwright browser launched");
 
+            _browserContext = await _browser.NewContextAsync();
+            if (_settings.TracesDir is not null)
+            {
+                await _browserContext.Tracing.StartAsync(new TracingStartOptions
+                {
+                    Screenshots = true,
+                    Snapshots = true,
+                    Sources = true,
+                });
+                _logger.LogInformation("Playwright traces will be saved to {TracesDir}", _settings.TracesDir);
+            }
+
             // Create a page
-            _page = await _browser.NewPageAsync();
+            _page = await _browserContext.NewPageAsync();
 
             _logger.LogInformation("Playwright page created");
 
-            // Wait for the ASP.NET server to fully initialize before navigating
-            await Task.Delay(AppStartupDelayMs, stoppingToken);
-
             // Navigate to the Blazor app
             _logger.LogInformation("Navigating to {AppUrl}", appUrl);
-            await _page.GotoAsync(appUrl, new() 
-            { 
-                WaitUntil = WaitUntilState.NetworkIdle, 
-                Timeout = NavigationTimeoutMs 
+            await _page.GotoAsync(appUrl, new()
+            {
+                WaitUntil = WaitUntilState.NetworkIdle,
+                Timeout = _settings.NavigationTimeout,
             });
 
             _logger.LogInformation("Playwright browser navigated to Blazor app");
@@ -101,6 +99,16 @@ internal class PlaywrightHostedService : BackgroundService
         }
         finally
         {
+            if (_browserContext is not null && _settings.TracesDir is not null)
+            {
+                await _browserContext.Tracing.StopAsync(new TracingStopOptions
+                {
+                    Path = Path.Combine(_settings.TracesDir, "traces.zip"),
+                });
+                _logger.LogInformation("Playwright tracing stopped and saved to {TraceFilePath}", _settings.TracesDir);
+                _logger.LogInformation("Go to https://traces.playwright.dev/ to open and view the trace");
+            }
+
             await CleanupAsync();
         }
     }
@@ -115,6 +123,12 @@ internal class PlaywrightHostedService : BackgroundService
             {
                 await _page.CloseAsync();
                 _page = null;
+            }
+
+            if (_browserContext is not null)
+            {
+                await _browserContext.CloseAsync();
+                _browserContext = null;
             }
 
             if (_browser is not null)
@@ -133,9 +147,4 @@ internal class PlaywrightHostedService : BackgroundService
             _logger.LogError(ex, "Error while cleaning up Playwright");
         }
     }
-
-    /// <summary>
-    /// Gets the Playwright page for browser interaction (for testing).
-    /// </summary>
-    public IPage? Page => _page;
 }

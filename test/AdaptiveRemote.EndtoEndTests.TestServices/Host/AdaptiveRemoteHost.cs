@@ -10,9 +10,10 @@ namespace AdaptiveRemote.EndtoEndTests.Host;
 public partial class AdaptiveRemoteHost : IDisposable
 {
     private readonly AdaptiveRemoteHostSettings _settings;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<AdaptiveRemoteHost> _logger;
-    private readonly Lazy<ITestService> _lazyTestService;
-    private readonly ITestControlService _testControlService;
+    private readonly Lazy<IApplicationTestService> _lazyTestService;
+    private readonly ITestEndpoint _testEndpoint;
 
     private readonly StringBuilder _standardOutput;
     private readonly StringBuilder _standardError;
@@ -23,36 +24,35 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     private AdaptiveRemoteHost(AdaptiveRemoteHostSettings settings,
                                ILoggerFactory loggerFactory,
-                               ILogger<AdaptiveRemoteHost> logger,
                                Process process,
                                TcpClient client,
                                JsonRpc rpc,
-                               ITestControlService testControlService,
+                               ITestEndpoint testEndpoint,
                                StringBuilder standardOutput,
                                StringBuilder standardError)
     {
         _settings = settings;
-        LoggerFactory = loggerFactory;
-        _logger = logger;
+        _loggerFactory = loggerFactory;
+        _logger = _loggerFactory.CreateLogger<AdaptiveRemoteHost>();
         _process = process;
         _client = client;
         _rpc = rpc;
-        _testControlService = testControlService;
+        _testEndpoint = testEndpoint;
         _standardOutput = standardOutput;
         _standardError = standardError;
 
         _lazyTestService = new(() =>
         {
-            _logger.LogInformation("Creating {TestServiceName} proxy...", nameof(BasicTestService));
-            return WaitUtilities.WaitForAsyncTask(
-                _testControlService.CreateTestServiceAsync<BasicTestService>,
+            _logger.LogInformation("Creating {TestServiceName} proxy...", nameof(ApplicationTestService));
+            return WaitHelpers.WaitForAsyncTask(
+                _testEndpoint.CreateTestServiceAsync<ApplicationTestService>,
                 _settings.RpcTimeout);
         });
     }
 
-    public ITestService TestService => _lazyTestService.Value;
+    public IApplicationTestService Application => _lazyTestService.Value;
 
-    public ILoggerFactory LoggerFactory { get; }
+    public ILogger<CategoryType> CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
 
     public string StandardOutput => _standardOutput.ToString();
     public string StandardError => _standardError.ToString();

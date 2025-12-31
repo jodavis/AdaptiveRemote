@@ -7,7 +7,7 @@ namespace AdaptiveRemote.Services.Testing;
 /// Used for bootstrapping test services via JSON-RPC.
 /// </summary>
 [RpcMarshalable]
-public interface ITestControlService
+public interface ITestEndpoint
 {
     /// <summary>
     /// Dynamically loads a test service from the specified assembly and type.
@@ -17,7 +17,16 @@ public interface ITestControlService
     /// <param name="typeName">Fully qualified name of the test service type to instantiate.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A proxy to the test service that can be used to invoke test commands.</returns>
-    Task<ITestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
+    Task<IApplicationTestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Dynamically loads a test logger from the specified assembly and type.
+    /// The test logger is instantiated within the application's DI scope so it can access scoped services
+    /// and forward log events back to the host test harness.
+    /// </summary>
+    /// <param name="assemblyPath">Full path to the assembly containing the test logger type.</param>
+    /// <param name="typeName">Fully qualified name of the test logger type to instantiate.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A proxy to the test logger that can be used by tests to emit or collect log events.</returns>
     Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
 }

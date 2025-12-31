@@ -54,7 +54,7 @@ public abstract class HostTestBase
             Assert.Inconclusive($"Working directory not found: {hostSettings.WorkingDirectory}");
         }
 
-        string logFilePath = Path.Combine(testContext.TestResultsDirectory!, "applog.txt");
+        string logFilePath = Path.Combine(testContext.TestResultsDirectory!, testContext.TestDisplayName + ".log");
 
         hostSettings = hostSettings.AddCommandLineArgs($"--tivo:Fake=True --broadlink:Fake=True --log:FilePath=\"{logFilePath}\"");
 
@@ -66,12 +66,12 @@ public abstract class HostTestBase
             })
             .Start();
 
-        ILogger logger = host.LoggerFactory.CreateLogger<HostTestBase>();
+        ILogger logger = CreateTypedLogger(host);
 
         try
         {
             // Load test service
-            ITestService testService = host.TestService;
+            IApplicationTestService testService = host.Application;
 
             using (logger.BeginScope("Executing test"))
             {
@@ -116,6 +116,8 @@ public abstract class HostTestBase
             throw;
         }
     }
+
+    protected abstract ILogger CreateTypedLogger(AdaptiveRemoteHost host);
 
     protected virtual void VerifyLogs(AdaptiveRemoteHost host, ILogger logger)
     {

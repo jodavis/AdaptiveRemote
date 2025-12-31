@@ -15,20 +15,20 @@ namespace AdaptiveRemote.Services.Testing;
 /// Provides a test control endpoint via TCP/JSON-RPC for E2E testing.
 /// Enabled when --test:ControlPort argument is provided.
 /// </summary>
-internal class TestControlService : BackgroundService, ITestControlService
+internal class TestEndpointService : BackgroundService, ITestEndpoint
 {
     private readonly TestingSettings _settings;
     private readonly IApplicationScopeProvider _scopeProvider;
     private readonly ILoggerFactory _loggerFactory;
-    private readonly ILogger<TestControlService> _logger;
+    private readonly ILogger<TestEndpointService> _logger;
     private readonly ConcurrentDictionary<string, ILogger> _loggers = new();
     private TcpListener? _listener;
 
-    public TestControlService(
+    public TestEndpointService(
         IOptions<TestingSettings> settings,
         IApplicationScopeProvider scopeProvider,
         ILoggerFactory loggerFactory,
-        ILogger<TestControlService> logger)
+        ILogger<TestEndpointService> logger)
     {
         _settings = settings.Value;
         _scopeProvider = scopeProvider;
@@ -103,8 +103,8 @@ internal class TestControlService : BackgroundService, ITestControlService
         }
     }
 
-    public Task<ITestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        => CreateRemotableServiceAsync<ITestService>(assemblyPath, typeName, cancellationToken);
+    public Task<IApplicationTestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+        => CreateRemotableServiceAsync<IApplicationTestService>(assemblyPath, typeName, cancellationToken);
 
     public Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
         => CreateRemotableServiceAsync<ITestLogger>(assemblyPath, typeName, cancellationToken);

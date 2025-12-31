@@ -8,12 +8,12 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// Uses IRemoteDefinitionService to find and invoke the Exit command, demonstrating
 /// that the test service has access to the properly scoped services including commands.
 /// </summary>
-public class BasicTestService : ITestService
+public class ApplicationTestService : IApplicationTestService
 {
     private readonly Services.IRemoteDefinitionService _remoteDefinitionService;
     private readonly LifecycleView _lifecycleView;
 
-    public BasicTestService(Services.IRemoteDefinitionService remoteDefinitionService, LifecycleView lifecycleView)
+    public ApplicationTestService(Services.IRemoteDefinitionService remoteDefinitionService, LifecycleView lifecycleView)
     {
         _remoteDefinitionService = remoteDefinitionService;
         _lifecycleView = lifecycleView;

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using AdaptiveRemote.EndtoEndTests.Host;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -12,6 +13,8 @@ public class HeadlessHostTests : HostTestBase
         ImmutableDictionary<string, string>.Empty;
 
     public TestContext TestContext { get; set; } = null!;
+
+    public string? TracesPath => Path.Combine(TestContext.TestResultsDirectory!, "playwright-traces");
 
     [ClassInitialize]
     public static void ClassInitialize(TestContext context)
@@ -30,14 +33,22 @@ public class HeadlessHostTests : HostTestBase
         
         return new(
             ExePath: Path.Combine(solutionRoot, $"src/AdaptiveRemote.Headless/bin/Debug/net8.0/{exeName}"),
-            CommandLineArgs: "",
+            CommandLineArgs: $"--playwright:TracesDir=\"{TracesPath}\"",
             EnvironmentVariables: StandardHeadlessEnvironmentVariables);
     }
+
+    protected override ILogger CreateTypedLogger(AdaptiveRemoteHost host) 
+        => host.CreateLogger<HeadlessHostTests>();
 
     [TestMethod]
     [Timeout(180000)] // 3 minutes
     public void HeadlessHost_StartsAndRespondsToTestCommands()
     {
         RunStandardE2ETestAsync(_solutionRoot!, TestContext);
+
+        foreach (string traceFile in Directory.GetFiles(TracesPath!, "*.zip"))
+        {
+            TestContext.AddResultFile(traceFile);
+        }
     }
 }
