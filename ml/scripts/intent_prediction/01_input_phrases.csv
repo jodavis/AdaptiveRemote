@@ -1,0 +1,52 @@
+phrase,command
+Back,Back
+Go back,Back
+Page down,ChannelDown
+Channel down,ChannelDown
+Page up,ChannelUp
+Channel up,ChannelUp
+Go down,Down
+Down,Down
+Quit,Exit
+Exit,Exit
+Guide,Guide
+Go to Guide,Guide
+Left,Left
+Go left,Left
+Mute,Mute
+Netflix,Netflix
+Go to Netflix,Netflix
+Pause,Pause
+Play,Play
+Turn Off,PowerOff
+Power Off,PowerOff
+Off,PowerOff
+Turn Off the TV,PowerOff
+On,PowerOn
+Power On,PowerOn
+Turn On,PowerOn
+Turn On the TV,PowerOn
+Record,Record
+Replay,Replay
+Skip back,Replay
+Right,Right
+Go right,Right
+Select,Select
+OK,Select
+Advance,Skip
+Skip forward,Skip
+Skip,Skip
+Go to TiVo,TiVo
+TiVo,TiVo
+Up,Up
+Go up,Up
+Turn it down,VolumeDown
+Quieter,VolumeDown
+Softer,VolumeDown
+Volume down,VolumeDown
+Turn down the volume,VolumeDown
+Louder,VolumeUp
+Volume up,VolumeUp
+Turn it up,VolumeUp
+Crank it up,VolumeUp
+Turn up the volume,VolumeUp
