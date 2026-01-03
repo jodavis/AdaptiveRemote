@@ -1,0 +1,206 @@
+vars:
+  - intent01:
+      name: "01_generate_phrases"
+      script: "scripts/intent_prediction/01_generate_phrases.py"
+      phrasefile: "scripts/intent_prediction/01_input_phrases.csv"
+      outputfile: "data/intent_prediction/01_generate_phrases/training_data.csv"
+
+  - tts01a: 
+      name: "01a_generate_speech_sample_variations"
+      script: "scripts/speech_to_text/01a_generate_speech_sample_variations.py"
+      speech_sample_variations: "data/speech_to_text/01a_generate_speech_sample_variations/speech_sample_variations.csv"
+  - tts01:
+      name: "01_generate_speech_samples"
+      script: "scripts/speech_to_text/01_generate_speech_samples.py"
+      clean_speech_samples: "data/speech_to_text/01_generate_speech_samples"
+  - tts02a:
+      name: "02a_randomize_delay_variations"
+      script: "scripts/speech_to_text/02a_randomize_delay_variations.py"
+      delay_variations: "data/speech_to_text/02a_randomize_delay_variations/randomized_delay_variations.csv"
+  - tts02:
+      name: "02_add_delays"
+      script: "scripts/speech_to_text/02_add_delays.py"
+      speech_samples_with_delays: "data/speech_to_text/02_add_delays"
+  - tts03:
+      name: "03_add_background_noise"
+      script: "scripts/speech_to_text/03_add_background_noise.py"
+      speech_samples_with_bg_noise: "data/speech_to_text/03_add_background_noise"
+  - tts03a:
+      name: "03a_download_background_noise"
+      script: "scripts/speech_to_text/03a_download_background_noise.py"
+      background_noise_samples: "data/speech_to_text/03a_download_background_noise"
+  - tts04:
+      name: "04_add_microphone_noise"
+      script: "scripts/speech_to_text/04_add_microphone_noise.py"
+      noisy_speech_samples: "data/speech_to_text/04_add_microphone_noise"
+  - tts05:
+      name: "05_create_set_manifests"
+      script: "scripts/speech_to_text/05_create_set_manifests.py"
+      speech_sample_manifests: "data/speech_to_text/05_create_set_manifests"
+  - tts06:
+      name: "06_create_vocab_list"
+      script: "scripts/speech_to_text/06_create_vocab_list.py"
+      vocab_list: "data/speech_to_text/06_create_vocab_list/vocab_list.txt"
+  - tts07:
+      name: "07_compute_spectrograms"
+      script: "scripts/speech_to_text/07_compute_spectrograms.py"
+      speech_sample_spectrograms: "data/speech_to_text/07_compute_spectrograms"
+  - tts08:
+      name: "08_train_model"
+      script: "scripts/speech_to_text/08_train_model.py"
+      speech_to_text_model: "data/speech_to_text/08_train_model"
+  - tts09:
+      name: "09_evaluate_model"
+      script: "scripts/speech_to_text/09_evaluate_model.py"
+      evaluation_results: "data/speech_to_text/09_evaluate_model"
+  - tts10:
+      name: "10_evaluate_test_samples"
+      script: "scripts/speech_to_text/10_evaluate_test_samples.py"
+      test_samples_zip: "data/speech_to_text/10_evaluate_test_samples/test_samples.zip"
+
+stages:
+  # Intent Prediction Data Preparation and Model Training Stages
+  generate_intent_phrases:
+    cmd: python ${intent01.script}
+    deps:
+    - ${intent01.script}
+    - ${intent01.phrasefile}
+    outs:
+    - ${intent01.outputfile}:
+        persist: true
+
+  # Speech-to-Text Data Preparation and Model Training Stages
+  generate_speech_sample_variations:
+    cmd: python ${tts01a.script} --input-file ${intent01.outputfile}
+                                 --samples-dir ${tts01.clean_speech_samples}
+                                 --output-file ${tts01a.speech_sample_variations}
+    deps:
+    - ${tts01a.script}
+    - ${intent01.outputfile}
+    outs:
+    - ${tts01a.speech_sample_variations}:
+        persist: true
+  generate_speech_samples:
+    cmd: python ${tts01.script} --input-file ${tts01a.speech_sample_variations}
+                                --output-dir ${tts01.clean_speech_samples}
+    deps:
+    - ${tts01a.speech_sample_variations}
+    - ${tts01.script}
+    outs:
+    - ${tts01.clean_speech_samples}:
+        persist: true
+  randomize_delay_variations:
+    cmd: python ${tts02a.script} --input-dir ${tts01.clean_speech_samples}
+                                 --output-file ${tts02a.delay_variations}
+    deps:
+    - ${tts02a.script}
+    - ${tts01.clean_speech_samples}
+    outs:
+    - ${tts02a.delay_variations}:
+        persist: true
+  add_delays:
+    cmd: python ${tts02.script} --input-file ${tts02a.delay_variations}
+                                --output-dir ${tts02.speech_samples_with_delays}
+    deps:
+    - ${tts01.clean_speech_samples}
+    - ${tts02.script}
+    - ${tts02a.delay_variations}
+    outs:
+    - ${tts02.speech_samples_with_delays}
+  add_microphone_noise:
+    cmd: python ${tts04.script} --input-dir ${tts03.speech_samples_with_bg_noise}
+                                --output-dir ${tts04.noisy_speech_samples}
+    deps:
+    - ${tts03.speech_samples_with_bg_noise}
+    - ${tts04.script}
+    outs:
+    - ${tts04.noisy_speech_samples}
+  add_background_noise:
+    cmd: python ${tts03.script} --input-dir ${tts02.speech_samples_with_delays}
+                                --noise-dir ${tts03a.background_noise_samples}
+                                --output-dir ${tts03.speech_samples_with_bg_noise}
+    deps:
+    - ${tts02.speech_samples_with_delays}
+    - ${tts03a.background_noise_samples}
+    - ${tts03.script}
+    outs:
+    - ${tts03.speech_samples_with_bg_noise}
+  create_set_manifests:
+    cmd: python ${tts05.script} --input-manifest ${intent01.outputfile}
+                                --clean-dir ${tts01.clean_speech_samples}
+                                --noisy-dir ${tts04.noisy_speech_samples}
+                                --output-dir ${tts05.speech_sample_manifests}
+    deps:
+    - ${tts01.clean_speech_samples}
+    - ${tts04.noisy_speech_samples}
+    - ${tts05.script}
+    outs:
+    - ${tts05.speech_sample_manifests}
+  create_vocab_list:
+    cmd: python ${tts06.script} --input-file ${intent01.outputfile} 
+                                --output-file ${tts06.vocab_list}
+    deps:
+    - ${intent01.outputfile}
+    - ${tts06.script}
+    outs:
+    - ${tts06.vocab_list}
+  compute_spectrograms:
+    cmd: python ${tts07.script} --train-manifest ${tts05.speech_sample_manifests}/train_manifest.csv
+                                --eval-manifest ${tts05.speech_sample_manifests}/val_manifest.csv
+                                --test-manifest ${tts05.speech_sample_manifests}/test_manifest.csv
+                                --vocab ${tts06.vocab_list}
+                                --output-dir ${tts07.speech_sample_spectrograms}
+    deps:
+    - ${tts01.clean_speech_samples}
+    - ${tts04.noisy_speech_samples}
+    - ${tts05.speech_sample_manifests}
+    - ${tts06.vocab_list}
+    - ${tts07.script}
+    outs:
+    - ${tts07.speech_sample_spectrograms}
+  download_noise_samples:
+    cmd: python ${tts03a.script} --output-dir ${tts03a.background_noise_samples}
+    deps:
+    - ${tts03a.script}
+    outs:
+    - ${tts03a.background_noise_samples}
+  train_model:
+    cmd: python ${tts08.script} --manifest ${tts05.speech_sample_manifests}/train_manifest.csv 
+                                --vocab ${tts06.vocab_list}
+                                --spectrogram-dir ${tts07.speech_sample_spectrograms}
+                                --output-dir ${tts08.speech_to_text_model}
+    deps:
+    - ${tts05.speech_sample_manifests}/train_manifest.csv
+    - ${tts06.vocab_list}
+    - ${tts07.speech_sample_spectrograms}
+    - ${tts08.script}
+    outs:
+    - ${tts08.speech_to_text_model}
+  evaluate_model:
+    cmd: python ${tts09.script} --manifest ${tts05.speech_sample_manifests}/val_manifest.csv 
+                                --vocab ${tts06.vocab_list}
+                                --model ${tts08.speech_to_text_model}/speech_to_text_model.keras
+                                --spectrogram-dir ${tts07.speech_sample_spectrograms}
+                                --output-dir ${tts09.evaluation_results}
+    deps:
+    - ${tts05.speech_sample_manifests}/val_manifest.csv
+    - ${tts06.vocab_list}
+    - ${tts07.speech_sample_spectrograms}
+    - ${tts08.speech_to_text_model}/speech_to_text_model.keras
+    - ${tts09.script}
+    outs:
+    - ${tts09.evaluation_results}
+  evaluate_test_samples:
+    cmd: python ${tts10.script} --manifest ${tts05.speech_sample_manifests}/test_manifest.csv
+                                --vocab ${tts06.vocab_list}
+                                --model ${tts08.speech_to_text_model}/speech_to_text_model.keras
+                                --spectrogram-dir ${tts07.speech_sample_spectrograms}
+                                --output-zip ${tts10.test_samples_zip}
+    deps:
+    - ${tts05.speech_sample_manifests}/test_manifest.csv
+    - ${tts06.vocab_list}
+    - ${tts07.speech_sample_spectrograms}
+    - ${tts08.speech_to_text_model}/speech_to_text_model.keras
+    - ${tts10.script}
+    outs:
+    - ${tts10.test_samples_zip}
