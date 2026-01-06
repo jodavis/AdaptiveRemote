@@ -50,7 +50,6 @@ internal static class TaskAssert
                         .TaskShouldNotBeCanceled()
                         .TaskShouldNotBeFaulted()
                         .TaskShouldBeCompleted()
-                        .Then
                         .Given(task => ((Task<TResult>)task).Result)
                         .ForCondition(CheckEquivalency)
                         //.ForCondition(result => (result is null) == (expectedResult is null))
@@ -141,7 +140,6 @@ internal static class TaskAssert
                         .Given(() => Subject)
                         .TaskShouldNotBeNull()
                         .ForCondition(TaskIsNotNull)
-                        .Then
                         .ForCondition(task => task.ContinueWith(_ => { }).Wait(timeout))
                         .FailWith("it did not.");
                 });
@@ -240,55 +238,46 @@ internal static class TaskAssert
         => selector
             .ForCondition(TaskIsNotNull)
             .FailWith("{context} was <null>.")
-            .Then.Given(task => task!);
+            .Given(task => task!);
     [CustomAssertion]
     private static GivenSelector<Task> TaskShouldNotBeFaulted(this GivenSelector<Task> selector)
         => selector
             .ForCondition(TaskIsNotFaulted)
             .FailWith("{context} was faulted with {0}",
-                task => task.Exception?.InnerException)
-            .Then;
+                task => task.Exception?.InnerException);
     [CustomAssertion]
     private static GivenSelector<Task> TaskShouldBeCompleted(this GivenSelector<Task> selector)
         => selector
             .ForCondition(TaskIsCompleted)
-            .FailWith("{context}.IsCompleted=False.")
-            .Then;
+            .FailWith("{context}.IsCompleted=False.");
     [CustomAssertion]
     private static GivenSelector<Task> TaskShouldBeCompletedWithin(this GivenSelector<Task> selector, TimeSpan timeout)
         => selector
             .ForCondition(task => task.ContinueWith(_ => { }).Wait(timeout))
-            .FailWith("{context}.IsComplete=False after {0}ms.", timeout.TotalMilliseconds)
-            .Then;
+            .FailWith("{context}.IsComplete=False after {0}ms.", timeout.TotalMilliseconds);
     [CustomAssertion]
     private static GivenSelector<Task> TaskShouldNotBeCompleted(this GivenSelector<Task> selector)
         => selector
             .ForCondition(TaskIsNotCompleted)
-            .FailWith("{context}.IsCompleted=True.")
-            .Then;
+            .FailWith("{context}.IsCompleted=True.");
     [CustomAssertion]
     private static GivenSelector<Task> TaskShouldNotBeCanceled(this GivenSelector<Task> selector)
         => selector
             .ForCondition(TaskIsNotCanceled)
-            .FailWith("{context} was canceled.")
-            .Then;
+            .FailWith("{context} was canceled.");
     [CustomAssertion]
     private static GivenSelector<Exception> TaskShouldBeFaultedWith(this GivenSelector<Task> selector, Exception expectedException)
         => selector
             .ForCondition(TaskIsFaulted)
             .FailWith("{context}.IsFaulted=False.")
-            .Then
             .Given(task => task.Exception?.InnerException)
             .ForCondition(exception => exception is not null)
             .FailWith("Expected {context}.InnerException.Exception should not be null")
-            .Then
             .Given(exception => exception!)
             .ForCondition(exception => exception.GetType() == expectedException.GetType())
             .FailWith("Expected {context}.InnerException.Exception is of type {0}, but found {1}",
                 _ => expectedException.GetType().FullName, exception => exception.GetType().FullName)
-            .Then
             .ForCondition(exception => exception.Message == expectedException.Message)
             .FailWith("Expected {context}.InnerException.Exception.Message is {0}, but found {1}",
-                _ => expectedException.Message, exception => exception.Message)
-            .Then;
+                _ => expectedException.Message, exception => exception.Message);
 }
