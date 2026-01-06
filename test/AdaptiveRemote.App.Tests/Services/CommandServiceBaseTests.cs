@@ -120,7 +120,7 @@ public class CommandServiceBaseTests
             {
                 command.ExecuteAsync.Should().BeNull(because: $"{{0}} is not handled by {nameof(MockCommandService)}", command);
                 command.IsEnabled.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}", command);
-                command.IsActive.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}");
+                command.IsActive.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}", command);
             }
         }
     }
@@ -150,7 +150,7 @@ public class CommandServiceBaseTests
             {
                 command.ExecuteAsync.Should().BeNull(because: $"{{0}} is not handled by {nameof(MockCommandService)}", command);
                 command.IsEnabled.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}", command);
-                command.IsActive.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}");
+                command.IsActive.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}", command);
             }
         }
 
@@ -343,7 +343,7 @@ public class CommandServiceBaseTests
             {
                 command.ExecuteAsync.Should().BeNull(because: $"{{0}} is not handled by {nameof(MockCommandService)}", command);
                 command.IsEnabled.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}", command);
-                command.IsActive.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}");
+                command.IsActive.Should().BeTrue(because: $"the properties of {{0}} are not changed by {nameof(MockCommandService)}", command);
             }
         }
     }

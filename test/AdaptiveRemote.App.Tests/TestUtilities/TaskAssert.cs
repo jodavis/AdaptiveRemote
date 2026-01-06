@@ -50,7 +50,6 @@ internal static class TaskAssert
                         .TaskShouldNotBeCanceled()
                         .TaskShouldNotBeFaulted()
                         .TaskShouldBeCompleted()
-                        .Then
                         .Given(task => ((Task<TResult>)task).Result)
                         .ForCondition(CheckEquivalency)
                         //.ForCondition(result => (result is null) == (expectedResult is null))
@@ -141,7 +140,6 @@ internal static class TaskAssert
                         .Given(() => Subject)
                         .TaskShouldNotBeNull()
                         .ForCondition(TaskIsNotNull)
-                        .Then
                         .ForCondition(task => task.ContinueWith(_ => { }).Wait(timeout))
                         .FailWith("it did not.");
                 });
@@ -240,7 +238,8 @@ internal static class TaskAssert
         => selector
             .ForCondition(TaskIsNotNull)
             .FailWith("{context} was <null>.")
-            .Then.Given(task => task!);
+            .Then
+            .Given(task => task!);
     [CustomAssertion]
     private static GivenSelector<Task> TaskShouldNotBeFaulted(this GivenSelector<Task> selector)
         => selector
