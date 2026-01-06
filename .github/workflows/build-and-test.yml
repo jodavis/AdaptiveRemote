@@ -32,6 +32,10 @@ jobs:
     
     - name: Build
       run: dotnet build --no-restore /warnaserror
+
+    - name: Install Chromium browser for Playwright headless tests
+      shell: pwsh
+      run: pwsh ./src/AdaptiveRemote.Headless/bin/Debug/net8.0/playwright.ps1 install chromium
     
     - name: Test
       run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults"
