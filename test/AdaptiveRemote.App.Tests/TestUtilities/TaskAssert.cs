@@ -39,22 +39,26 @@ internal static class TaskAssert
         [CustomAssertion]
         public AndConstraint<TaskAssertions<TResult>> HaveResult(TResult expectedResult, string because = "", params object[] becauseArgs)
         {
-            Execute.Assertion
+            CurrentAssertionChain
                 .BecauseOf(because, becauseArgs)
-                .WithExpectation("Expected {context} to have completed with the result {0}, but ", expectedResult)
-                .WithDefaultIdentifier(nameof(Task<TResult>))
-                .Given(() => Subject)
-                .TaskShouldNotBeNull()
-                .TaskShouldNotBeCanceled()
-                .TaskShouldNotBeFaulted()
-                .TaskShouldBeCompleted()
-                .Given(task => ((Task<TResult>)task).Result)
-                .ForCondition(CheckEquivalency)
-                //.ForCondition(result => (result is null) == (expectedResult is null))
-                //.FailWith("found {context}.Result=<null>")
-                //.Then
-                //.ForCondition(result => result!.Equals(expectedResult))
-                .FailWith("found {context}.Result={0}", result => result);
+                .WithExpectation("Expected {context} to have completed with the result {0}, but ", expectedResult, chain =>
+                {
+                    chain
+                        .WithDefaultIdentifier(nameof(Task<TResult>))
+                        .Given(() => Subject)
+                        .TaskShouldNotBeNull()
+                        .TaskShouldNotBeCanceled()
+                        .TaskShouldNotBeFaulted()
+                        .TaskShouldBeCompleted()
+                        .Then
+                        .Given(task => ((Task<TResult>)task).Result)
+                        .ForCondition(CheckEquivalency)
+                        //.ForCondition(result => (result is null) == (expectedResult is null))
+                        //.FailWith("found {context}.Result=<null>")
+                        //.Then
+                        //.ForCondition(result => result!.Equals(expectedResult))
+                        .FailWith("found {context}.Result={0}", result => result);
+                });
 
             return Continuation();
 
@@ -76,10 +80,10 @@ internal static class TaskAssert
     public abstract class TaskAssertionsBase<TAssertions> : ReferenceTypeAssertions<Task?, TAssertions>
         where TAssertions : ReferenceTypeAssertions<Task?, TAssertions>
     {
-
         public TaskAssertionsBase(Task? instance)
-            : base(instance)
-        { }
+            : base(instance, AssertionChain.GetOrCreate())
+        {
+        }
 
         protected abstract AndConstraint<TAssertions> Continuation();
 
@@ -90,15 +94,18 @@ internal static class TaskAssert
         [CustomAssertion]
         public AndConstraint<TAssertions> BeComplete(string because = "", params object[] becauseArgs)
         {
-            Execute.Assertion
+            CurrentAssertionChain
                 .BecauseOf(because, becauseArgs)
                 .WithDefaultIdentifier(nameof(Task))
-                .WithExpectation("Expected {context} to be complete{reason}, but ")
-                .Given(() => Subject)
-                .TaskShouldNotBeNull()
-                .TaskShouldNotBeCanceled()
-                .TaskShouldNotBeFaulted()
-                .TaskShouldBeCompleted();
+                .WithExpectation("Expected {context} to be complete{reason}, but ", chain =>
+                {
+                    chain
+                        .Given(() => Subject)
+                        .TaskShouldNotBeNull()
+                        .TaskShouldNotBeCanceled()
+                        .TaskShouldNotBeFaulted()
+                        .TaskShouldBeCompleted();
+                });
 
             return Continuation();
         }
@@ -106,15 +113,18 @@ internal static class TaskAssert
         [CustomAssertion]
         public AndConstraint<TAssertions> NotBeComplete(string because = "", params object[] becauseArgs)
         {
-            Execute.Assertion
+            CurrentAssertionChain
                 .BecauseOf(because, becauseArgs)
                 .WithDefaultIdentifier(nameof(Task))
-                .WithExpectation("Expected {context} to be incomplete{reason}, but ")
-                .Given(() => Subject)
-                .TaskShouldNotBeNull()
-                .TaskShouldNotBeCanceled()
-                .TaskShouldNotBeFaulted()
-                .TaskShouldNotBeCompleted();
+                .WithExpectation("Expected {context} to be incomplete{reason}, but ", chain =>
+                {
+                    chain
+                        .Given(() => Subject)
+                        .TaskShouldNotBeNull()
+                        .TaskShouldNotBeCanceled()
+                        .TaskShouldNotBeFaulted()
+                        .TaskShouldNotBeCompleted();
+                });
 
             return Continuation();
         }
@@ -122,15 +132,19 @@ internal static class TaskAssert
         [CustomAssertion]
         public AndConstraint<TAssertions> BeCompleteWithin(TimeSpan timeout, string because = "", params object[] becauseArgs)
         {
-            Execute.Assertion
+            CurrentAssertionChain
                 .BecauseOf(because, becauseArgs)
                 .WithDefaultIdentifier(nameof(Task))
-                .WithExpectation("Expected {context} to complete within {0}ms{reason}, but ", timeout.TotalMilliseconds)
-                .Given(() => Subject)
-                .TaskShouldNotBeNull()
-                .ForCondition(TaskIsNotNull)
-                .ForCondition(task => task.ContinueWith(_ => { }).Wait(timeout))
-                .FailWith("it did not.");
+                .WithExpectation("Expected {context} to complete within {0}ms{reason}, but ", timeout.TotalMilliseconds, chain =>
+                {
+                    chain
+                        .Given(() => Subject)
+                        .TaskShouldNotBeNull()
+                        .ForCondition(TaskIsNotNull)
+                        .Then
+                        .ForCondition(task => task.ContinueWith(_ => { }).Wait(timeout))
+                        .FailWith("it did not.");
+                });
 
             return Continuation();
         }
@@ -140,14 +154,17 @@ internal static class TaskAssert
         {
             DateTime startTime = DateTime.Now;
 
-            Execute.Assertion
+            CurrentAssertionChain
                 .BecauseOf(because, becauseArgs)
                 .WithDefaultIdentifier(nameof(Task))
-                .WithExpectation("Expected {context} to be incomplete after {0}ms{reason}, but ", timeout.TotalMilliseconds)
-                .Given(() => Subject)
-                .TaskShouldNotBeNull()
-                .ForCondition(task => !task.ContinueWith(_ => { }).Wait(timeout))
-                .FailWith("it completed in {0}ms.", (DateTime.Now - startTime).TotalMilliseconds);
+                .WithExpectation("Expected {context} to be incomplete after {0}ms{reason}, but ", timeout.TotalMilliseconds, chain =>
+                {
+                    chain
+                        .Given(() => Subject)
+                        .TaskShouldNotBeNull()
+                        .ForCondition(task => !task.ContinueWith(_ => { }).Wait(timeout))
+                        .FailWith("it completed in {0}ms.", (DateTime.Now - startTime).TotalMilliseconds);
+                });
 
             return Continuation();
         }
@@ -155,15 +172,18 @@ internal static class TaskAssert
         [CustomAssertion]
         public AndConstraint<TAssertions> BeCanceled(string because = "", params object[] becauseArgs)
         {
-            Execute.Assertion
+            CurrentAssertionChain
                 .BecauseOf(because, becauseArgs)
                 .WithDefaultIdentifier(nameof(Task))
-                .WithExpectation("Expected {context} to be canceled{reason}, but ")
-                .Given(() => Subject)
-                .TaskShouldNotBeNull()
-                .TaskShouldNotBeFaulted()
-                .ForCondition(TaskIsCanceled)
-                .FailWith("{context}.IsCanceled=False");
+                .WithExpectation("Expected {context} to be canceled{reason}, but ", chain =>
+                {
+                    chain
+                        .Given(() => Subject)
+                        .TaskShouldNotBeNull()
+                        .TaskShouldNotBeFaulted()
+                        .ForCondition(TaskIsCanceled)
+                        .FailWith("{context}.IsCanceled=False");
+                });
 
             return Continuation();
         }
@@ -171,15 +191,18 @@ internal static class TaskAssert
         [CustomAssertion]
         public AndConstraint<TAssertions> BeFaultedWith(Exception expectedException, TimeSpan within, string because = "", params object[] becauseArgs)
         {
-            Execute.Assertion
+            CurrentAssertionChain
                .BecauseOf(because, becauseArgs)
                .WithDefaultIdentifier(nameof(Task))
-               .WithExpectation("Expected {context} to be faulted{reason}, but ")
-               .Given(() => Subject)
-               .TaskShouldNotBeNull()
-               .TaskShouldBeCompletedWithin(within)
-               .TaskShouldNotBeCanceled()
-               .TaskShouldBeFaultedWith(expectedException);
+               .WithExpectation("Expected {context} to be faulted{reason}, but ", chain =>
+               {
+                   chain
+                       .Given(() => Subject)
+                       .TaskShouldNotBeNull()
+                       .TaskShouldBeCompletedWithin(within)
+                       .TaskShouldNotBeCanceled()
+                       .TaskShouldBeFaultedWith(expectedException);
+               });
 
             return Continuation();
         }
@@ -187,15 +210,18 @@ internal static class TaskAssert
         [CustomAssertion]
         public AndConstraint<TAssertions> BeFaultedWith(Exception expectedException, string because = "", params object[] becauseArgs)
         {
-            Execute.Assertion
+            CurrentAssertionChain
                 .BecauseOf(because, becauseArgs)
                 .WithDefaultIdentifier(nameof(Task))
-                .WithExpectation("Expected {context} to be faulted{reason}, but ")
-                .Given(() => Subject)
-                .TaskShouldNotBeNull()
-                .TaskShouldBeCompleted()
-                .TaskShouldNotBeCanceled()
-                .TaskShouldBeFaultedWith(expectedException);
+                .WithExpectation("Expected {context} to be faulted{reason}, but ", chain =>
+                {
+                    chain
+                        .Given(() => Subject)
+                        .TaskShouldNotBeNull()
+                        .TaskShouldBeCompleted()
+                        .TaskShouldNotBeCanceled()
+                        .TaskShouldBeFaultedWith(expectedException);
+                });
 
             return Continuation();
         }
@@ -251,8 +277,6 @@ internal static class TaskAssert
         => selector
             .ForCondition(TaskIsFaulted)
             .FailWith("{context}.IsFaulted=False.")
-            .Then
-            .ClearExpectation()
             .Then
             .Given(task => task.Exception?.InnerException)
             .ForCondition(exception => exception is not null)
