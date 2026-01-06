@@ -23,7 +23,7 @@ public class ApplicationLifecycleTests
 
     public LifecyclePhase LatestLifecyclePhase { get; private set; }
 
-    private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeProvider.Object, MockLogger);
+    private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeProvider.Object, MockLifecycleViewController.Object, MockLogger);
 
     [TestInitialize]
     public void SetupMocks()
@@ -172,7 +172,7 @@ public class ApplicationLifecycleTests
         Expect_InitializeAsyncOn(MockService1, Task.CompletedTask);
         Expect_InitializeAsyncOn(MockService2, Task.FromException(expectedError1));
 
-        Expect_LifecycleActivity_SetFatalError(expectedError1);
+        Expect_SetFatalErrorOn(MockActivity, expectedError1);
 
         Expect_CleanupAsyncOn(MockService1);
         Expect_CleanupAsyncOn(MockService2);
@@ -209,7 +209,7 @@ public class ApplicationLifecycleTests
         Expect_InitializeAsyncOn(MockService2, tcs.Task);
         Expect_InitializeAsyncOn(MockService3);
 
-        Expect_LifecycleActivity_SetFatalError(expectedError1);
+        Expect_SetFatalErrorOn(MockActivity, expectedError1);
 
         Expect_CleanupAsyncOn(MockService1);
         Expect_CleanupAsyncOn(MockService2);
@@ -241,6 +241,56 @@ public class ApplicationLifecycleTests
     }
 
     [TestMethod]
+    public void ApplicationLifecycle_StartAsync_ErrorDuringConstructor_SetsFatalError()
+    {
+        // Arrange
+        ApplicationLifecycle sut = CreateSut();
+
+        Exception expectedError1 = new InvalidOperationException("Error 1");
+        MockServiceProvider
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Throws(expectedError1)
+            .Verifiable(Times.Once);
+
+        Expect_SetFatalErrorOn(MockLifecycleViewController, expectedError1);
+        
+        // Act
+        Task startTask = sut.StartAsync(default);
+
+        // Assert
+        startTask.Should().BeComplete(because: "ApplicationLifecycle handles the exception and reports it as an error");
+        MockLogger.VerifyMessages(
+            Expect_ScopeConstructionFailed);
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StopAsync_AfterErrorDuringConstructor_DoesNothing()
+    {
+        // Arrange
+        ApplicationLifecycle sut = CreateSut();
+
+        Exception expectedError1 = new InvalidOperationException("Error 1");
+        MockServiceProvider
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Throws(expectedError1)
+            .Verifiable(Times.Once);
+
+        Expect_SetFatalErrorOn(MockLifecycleViewController, expectedError1);
+
+        sut.StartAsync(default)
+            .Should().BeComplete(because: "ApplicationLifecycle handles the exception and reports it as an error");
+
+        // Act
+        Task stopTask = sut.StopAsync(default);
+
+        // Assert
+        stopTask.Should().BeComplete(because: "StopAsync should have nothing to do");
+        MockLogger.VerifyMessages(
+            Expect_ScopeConstructionFailed,
+            Expect_ShuttingDownMessage);
+    }
+
+    [TestMethod]
     public void ApplicationLifecycle_StartAsync_ImmediateFailure_CancelsStartupThatIsInProgress()
     {
         // Arrange
@@ -251,7 +301,7 @@ public class ApplicationLifecycleTests
         Expect_InitializeAsyncOn(MockService1, IncompleteTask);
         Expect_InitializeAsyncOn(MockService2, Task.FromException(expectedError1));
 
-        Expect_LifecycleActivity_SetFatalError(expectedError1);
+        Expect_SetFatalErrorOn(MockActivity, expectedError1);
 
         Expect_CleanupAsyncOn(MockService1);
         Expect_CleanupAsyncOn(MockService2);
@@ -366,7 +416,7 @@ public class ApplicationLifecycleTests
         Expect_CleanupAsyncOn(MockService1, result: Task.FromException(expectedError1));
         Expect_CleanupAsyncOn(MockService2, result: Task.FromException(expectedError2));
         Expect_CleanupAsyncOn(MockService3);
-        Expect_LifecycleActivity_SetFatalError(expectedError1, expectedError2);
+        Expect_SetFatalErrorOn(MockActivity, expectedError1, expectedError2);
 
         Task startTask = sut.StartAsync(default);
 
@@ -445,7 +495,7 @@ public class ApplicationLifecycleTests
         Expect_InitializeAsyncOn(MockService1, Task.CompletedTask);
         Expect_InitializeAsyncOn(MockService2, Task.FromException(expectedError1));
 
-        Expect_LifecycleActivity_SetFatalError(expectedError1);
+        Expect_SetFatalErrorOn(MockActivity, expectedError1);
 
         Expect_CleanupAsyncOn(MockService1);
         Expect_CleanupAsyncOn(MockService2);
@@ -485,8 +535,18 @@ public class ApplicationLifecycleTests
             .WithStandardTaskBehavior(result)
             .Verifiable(Times.Once);
 
-    private void Expect_LifecycleActivity_SetFatalError(params Exception[] expectedExceptions)
-        => MockActivity
+    private static void Expect_SetFatalErrorOn(Mock<ILifecycleActivity> activity, params Exception[] expectedExceptions)
+        => activity
+            .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
+            .Callback(delegate (Exception ex)
+            {
+                Assert.IsTrue(expectedExceptions.Any(x => $"{x.GetType().FullName};{x.Message}" == $"{ex.GetType().FullName};{ex.Message}"),
+                    "Unexpected exception for SetFatalError: {0}", ex);
+            })
+            .Verifiable(Times.Exactly(expectedExceptions.Length));
+
+    private static void Expect_SetFatalErrorOn(Mock<ILifecycleViewController> controller, params Exception[] expectedExceptions)
+        => controller
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
             .Callback(delegate (Exception ex)
             {
@@ -509,4 +569,6 @@ public class ApplicationLifecycleTests
         => $"Error[706]: {string.Format(LoggingMessages.ApplicationLifecycle_CleaningUpFailed, service.Object.Name, $"{error.GetType().FullName}: {error.Message}")}";
     private static string Expect_ShuttingDownMessage
         => $"Information[707]: {LoggingMessages.ApplicationLifecycle_ShuttingDown}";
+    private static string Expect_ScopeConstructionFailed
+        => $"Error[708]: {LoggingMessages.ApplicationLifecycle_ScopeConstructionFailed}";
 }

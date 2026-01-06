@@ -8,12 +8,14 @@ namespace AdaptiveRemote.Services.Lifecycle;
 internal class ApplicationLifecycle : BackgroundService
 {
     private readonly IApplicationScopeProvider _scopeProvider;
+    private readonly ILifecycleViewController _viewController;
     private readonly ILogger<ApplicationLifecycle> _logger;
     private ScopedLifecycleContainer? _currentContainer;
 
-    public ApplicationLifecycle(IApplicationScopeProvider scopeProvider, ILogger<ApplicationLifecycle> logger)
+    public ApplicationLifecycle(IApplicationScopeProvider scopeProvider, ILifecycleViewController viewController, ILogger<ApplicationLifecycle> logger)
     {
         _scopeProvider = scopeProvider;
+        _viewController = viewController;
         _logger = logger;
     }
 
@@ -30,11 +32,28 @@ internal class ApplicationLifecycle : BackgroundService
 
     private async Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
     {
-        ScopedLifecycleContainer container = provider.GetRequiredService<ScopedLifecycleContainer>();
+        ScopedLifecycleContainer? container = SafeGetContainer(provider);
 
-        await container.InitializeAllAsync(cancellationToken);
+        if (container is not null)
+        {
+            await container.InitializeAllAsync(cancellationToken);
 
-        _currentContainer = container;
+            _currentContainer = container;
+        }
+
+        ScopedLifecycleContainer? SafeGetContainer(IServiceProvider provider)
+        {
+            try
+            {
+                return provider.GetRequiredService<ScopedLifecycleContainer>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(Message.ApplicationLifecycle_ScopeConstructionFailed, ex);
+                _viewController.SetFatalError(ex);
+                return null;
+            }
+        }
     }
 
     private async Task CleanUpLifecycle(IServiceProvider provider, CancellationToken token)

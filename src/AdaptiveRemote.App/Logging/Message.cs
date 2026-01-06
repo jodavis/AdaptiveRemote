@@ -53,6 +53,7 @@ public enum Message
     ApplicationLifecycle_CleanedUp = 705,
     ApplicationLifecycle_CleaningUpFailed = 706,
     ApplicationLifecycle_ShuttingDown = 707,
+    ApplicationLifecycle_ScopeConstructionFailed = 708,
     TiVoConnection_MessageSent = 801,
     TiVoConnection_MessageReceived = 802,
     TiVoConnection_EventReceived = 803,
