@@ -109,6 +109,9 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
     public Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
         => CreateRemotableServiceAsync<ITestLogger>(assemblyPath, typeName, cancellationToken);
 
+    public Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+        => CreateRemotableServiceAsync<IUITestService>(assemblyPath, typeName, cancellationToken);
+
     private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
         where ServiceType : class
     {

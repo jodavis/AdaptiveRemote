@@ -13,6 +13,7 @@ public partial class AdaptiveRemoteHost : IDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<AdaptiveRemoteHost> _logger;
     private readonly Lazy<IApplicationTestService> _lazyTestService;
+    private readonly Lazy<IUITestService> _lazyUITestService;
     private readonly ITestEndpoint _testEndpoint;
 
     private readonly StringBuilder _standardOutput;
@@ -48,9 +49,19 @@ public partial class AdaptiveRemoteHost : IDisposable
                 _testEndpoint.CreateTestServiceAsync<ApplicationTestService>,
                 _settings.RpcTimeout);
         });
+
+        _lazyUITestService = new(() =>
+        {
+            _logger.LogInformation("Creating {TestServiceName} proxy...", nameof(HeadlessUITestService));
+            return WaitHelpers.WaitForAsyncTask(
+                _testEndpoint.CreateUITestServiceAsync<HeadlessUITestService>,
+                _settings.RpcTimeout);
+        });
     }
 
     public IApplicationTestService Application => _lazyTestService.Value;
+
+    public IUITestService UI => _lazyUITestService.Value;
 
     public ILogger<CategoryType> CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
 

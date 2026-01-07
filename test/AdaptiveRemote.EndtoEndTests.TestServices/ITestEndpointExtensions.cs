@@ -17,4 +17,11 @@ public static class ITestEndpointExtensions
             typeof(ServiceType).Assembly.Location,
             typeof(ServiceType).FullName!,
             cancellationToken);
+
+    public static async Task<IUITestService> CreateUITestServiceAsync<ServiceType>(this ITestEndpoint controlService, CancellationToken cancellationToken = default)
+        where ServiceType : IUITestService
+        => await controlService.CreateUITestServiceAsync(
+            typeof(ServiceType).Assembly.Location,
+            typeof(ServiceType).FullName!,
+            cancellationToken);
 }

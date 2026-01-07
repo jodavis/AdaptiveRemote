@@ -11,10 +11,12 @@
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="MSTest.TestFramework" />
     <PackageReference Include="StreamJsonRpc" />
+    <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AdaptiveRemote.App\AdaptiveRemote.App.csproj" />
+    <ProjectReference Include="..\..\src\AdaptiveRemote.Headless\AdaptiveRemote.Headless.csproj" />
   </ItemGroup>
 
 </Project>
