@@ -41,6 +41,8 @@ public class ConsoleHostTests : HostTestBase
             return;
         }
 
+        AudioDetectionHelper.AssertHasAudioInputAndOutput();
+
         RunStandardE2ETestAsync(_solutionRoot!, TestContext);
     }
 }

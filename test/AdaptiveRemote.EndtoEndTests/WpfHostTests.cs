@@ -41,6 +41,8 @@ public class WpfHostTests : HostTestBase
             return;
         }
 
+        AudioDetectionHelper.AssertHasAudioInputAndOutput();
+
         RunStandardE2ETestAsync(_solutionRoot!, TestContext);
     }
 }
