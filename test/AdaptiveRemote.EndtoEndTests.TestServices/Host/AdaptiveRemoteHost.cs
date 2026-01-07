@@ -42,20 +42,20 @@ public partial class AdaptiveRemoteHost : IDisposable
         _standardOutput = standardOutput;
         _standardError = standardError;
 
-        _lazyTestService = new(() =>
-        {
-            _logger.LogInformation("Creating {TestServiceName} proxy...", nameof(ApplicationTestService));
-            return WaitHelpers.WaitForAsyncTask(
-                _testEndpoint.CreateTestServiceAsync<ApplicationTestService>,
-                _settings.RpcTimeout);
-        });
+        _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>(
+            _testEndpoint.CreateTestServiceAsync<ApplicationTestService>);
 
-        _lazyUITestService = new(() =>
+        _lazyUITestService = CreateLazyTestService<HeadlessUITestService, IUITestService>(
+            _testEndpoint.CreateUITestServiceAsync<HeadlessUITestService>);
+    }
+
+    private Lazy<TInterface> CreateLazyTestService<TImplementation, TInterface>(Func<CancellationToken, Task<TInterface>> createServiceAsync)
+        where TImplementation : TInterface
+    {
+        return new Lazy<TInterface>(() =>
         {
-            _logger.LogInformation("Creating {TestServiceName} proxy...", nameof(HeadlessUITestService));
-            return WaitHelpers.WaitForAsyncTask(
-                _testEndpoint.CreateUITestServiceAsync<HeadlessUITestService>,
-                _settings.RpcTimeout);
+            _logger.LogInformation("Creating {TestServiceName} proxy...", typeof(TImplementation).Name);
+            return WaitHelpers.WaitForAsyncTask(createServiceAsync, _settings.RpcTimeout);
         });
     }
 

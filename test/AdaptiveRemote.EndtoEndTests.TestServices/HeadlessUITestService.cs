@@ -8,18 +8,18 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// </summary>
 public class HeadlessUITestService : IUITestService
 {
-    private readonly IPage _page;
+    private readonly IBrowserProvider _browserProvider;
     private const int DefaultTimeoutMs = 2000;
+    private const int ClickSettleDelayMs = 100;
 
-    public HeadlessUITestService(AdaptiveRemote.Headless.PlaywrightBrowserLifetimeService browserService)
+    public HeadlessUITestService(IBrowserProvider browserProvider)
     {
-        ArgumentNullException.ThrowIfNull(browserService);
-        _page = browserService.Page ?? throw new InvalidOperationException("Playwright page is not available. Ensure the browser has been launched.");
+        _browserProvider = browserProvider ?? throw new ArgumentNullException(nameof(browserProvider));
     }
 
     public async Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabel(label);
         
         try
         {
@@ -33,16 +33,11 @@ public class HeadlessUITestService : IUITestService
 
     public async Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabel(label);
         
         try
         {
-            // Check if the button is not disabled and not aria-disabled
-            bool hasDisabledAttribute = await locator.GetAttributeAsync("disabled") != null;
-            string? ariaDisabled = await locator.GetAttributeAsync("aria-disabled");
-            bool isAriaDisabled = ariaDisabled == "true";
-            
-            return !hasDisabledAttribute && !isAriaDisabled;
+            return !await IsButtonDisabledAsync(locator);
         }
         catch
         {
@@ -52,7 +47,7 @@ public class HeadlessUITestService : IUITestService
 
     public async Task ClickButtonAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabel(label);
         
         // Verify the button is visible
         bool isVisible = await locator.IsVisibleAsync();
@@ -62,11 +57,7 @@ public class HeadlessUITestService : IUITestService
         }
 
         // Verify the button is enabled
-        bool hasDisabledAttribute = await locator.GetAttributeAsync("disabled") != null;
-        string? ariaDisabled = await locator.GetAttributeAsync("aria-disabled");
-        bool isAriaDisabled = ariaDisabled == "true";
-        
-        if (hasDisabledAttribute || isAriaDisabled)
+        if (await IsButtonDisabledAsync(locator))
         {
             throw new InvalidOperationException($"Button with label '{label}' is not enabled.");
         }
@@ -78,45 +69,31 @@ public class HeadlessUITestService : IUITestService
         });
 
         // Wait a short time for UI updates to settle
-        await Task.Delay(100, cancellationToken);
+        await Task.Delay(ClickSettleDelayMs, cancellationToken);
     }
 
-    private async Task<ILocator> GetButtonLocatorByLabelAsync(string label)
+    private static async Task<bool> IsButtonDisabledAsync(ILocator locator)
     {
-        // Find all button elements
-        ILocator allButtons = _page.Locator("button");
-        int count = await allButtons.CountAsync();
+        // Check if the button is disabled via attribute or aria-disabled
+        bool hasDisabledAttribute = await locator.GetAttributeAsync("disabled") != null;
+        string? ariaDisabled = await locator.GetAttributeAsync("aria-disabled");
+        bool isAriaDisabled = ariaDisabled == "true";
+        
+        return hasDisabledAttribute || isAriaDisabled;
+    }
 
-        List<ILocator> matchingButtons = new();
-
-        for (int i = 0; i < count; i++)
-        {
-            ILocator button = allButtons.Nth(i);
-            string? buttonText = await button.TextContentAsync();
-            
-            // Trim and compare case-sensitive
-            if (buttonText?.Trim() == label)
-            {
-                matchingButtons.Add(button);
-            }
-        }
-
-        if (matchingButtons.Count == 0)
-        {
-            throw new InvalidOperationException($"No button found with label '{label}'.");
-        }
-
-        if (matchingButtons.Count > 1)
-        {
-            throw new InvalidOperationException($"Multiple buttons found with label '{label}'. Please disambiguate.");
-        }
-
-        return matchingButtons[0];
+    private ILocator GetButtonLocatorByLabel(string label)
+    {
+        IPage page = _browserProvider.BrowserPage as IPage ?? throw new InvalidOperationException("Playwright page is not available. Ensure the browser has been launched.");
+        
+        // Use Playwright's getByRole with exact match - it will throw meaningful errors
+        // if there are no matches or ambiguous matches
+        return page.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
     }
 
     public void Dispose()
     {
-        // Page is managed by PlaywrightBrowserLifetimeService, no cleanup needed
+        // Page is managed by the browser provider, no cleanup needed
         GC.SuppressFinalize(this);
     }
 }

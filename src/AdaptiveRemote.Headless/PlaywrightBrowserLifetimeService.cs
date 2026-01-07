@@ -1,3 +1,4 @@
+using AdaptiveRemote.Services.Testing;
 using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
@@ -8,7 +9,7 @@ namespace AdaptiveRemote.Headless;
 /// Hosted service that manages the Playwright browser lifecycle.
 /// Launches a headless Chromium browser and navigates to the hosted Blazor app.
 /// </summary>
-public class PlaywrightBrowserLifetimeService : BackgroundService
+internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserProvider
 {
     private readonly ILogger<PlaywrightBrowserLifetimeService> _logger;
     private readonly IHostApplicationLifetime _lifetime;
@@ -27,6 +28,11 @@ public class PlaywrightBrowserLifetimeService : BackgroundService
     /// Gets the Playwright browser instance. Available after the browser is launched.
     /// </summary>
     public IBrowser? Browser => _browser;
+
+    /// <summary>
+    /// Gets the browser page for UI testing as a generic object.
+    /// </summary>
+    object? IBrowserProvider.BrowserPage => Page;
 
     public PlaywrightBrowserLifetimeService(
         ILogger<PlaywrightBrowserLifetimeService> logger,

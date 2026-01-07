@@ -33,6 +33,13 @@ public static class IUITestServiceExtensions
     /// <param name="service">The UI test service.</param>
     /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
     /// <param name="timeout">Optional timeout for the operation.</param>
+    /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
     public static void ClickButton(this IUITestService service, string label, TimeSpan? timeout = null)
-        => WaitHelpers.WaitForAsyncTask(ct => service.ClickButtonAsync(label, ct), timeout ?? TimeSpan.FromSeconds(WaitHelpers.DefaultTimeoutInSeconds));
+    {
+        bool succeeded = WaitHelpers.WaitForAsyncTask(ct => service.ClickButtonAsync(label, ct), timeout ?? TimeSpan.FromSeconds(WaitHelpers.DefaultTimeoutInSeconds));
+        if (!succeeded)
+        {
+            throw new TimeoutException($"Clicking button '{label}' did not complete within timeout.");
+        }
+    }
 }
