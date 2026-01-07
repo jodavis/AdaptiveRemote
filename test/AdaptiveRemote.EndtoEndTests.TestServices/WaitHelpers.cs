@@ -4,8 +4,8 @@ public static class WaitHelpers
 {
     public const int DefaultTimeoutInSeconds = 5;
 
-    public static bool ExecuteWithRetries(Func<bool> action, int timeoutInMilliseconds = DefaultTimeoutInSeconds)
-        => ExecuteWithRetries(action, TimeSpan.FromSeconds(timeoutInMilliseconds));
+    public static bool ExecuteWithRetries(Func<bool> action, int timeoutInSeconds = DefaultTimeoutInSeconds)
+        => ExecuteWithRetries(action, TimeSpan.FromSeconds(timeoutInSeconds));
 
     public static bool ExecuteWithRetries(Func<bool> action, TimeSpan timeout)
     {
