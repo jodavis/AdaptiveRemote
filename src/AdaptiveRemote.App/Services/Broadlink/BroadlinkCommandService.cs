@@ -22,7 +22,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         _connectionFactory = connectionFactory;
     }
 
-    public async override Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
+    public override async Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
         activity.Description = Phrases.Startup_ConnectingToBroadlink;
 

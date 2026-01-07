@@ -1,9 +1,10 @@
-﻿using System.IO;
+﻿#pragma warning disable IDE0005 // Using directive is unnecessary - ServiceProviderServiceExtensions.GetService<T> requires Microsoft.Extensions.DependencyInjection
 using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+#pragma warning restore IDE0005
 
 namespace AdaptiveRemote.Services.Conversation;
 

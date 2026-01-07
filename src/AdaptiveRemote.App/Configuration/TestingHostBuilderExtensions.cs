@@ -15,8 +15,9 @@ internal static class TestingHostBuilderExtensions
         => builder.ConfigureServices((context, services) =>
         {
             // Only add the service if test:ControlPort is configured
-            int? controlPort = context.Configuration.GetValue<int?>($"{SettingsKeys.Testing}:{nameof(TestingSettings.ControlPort)}");
-            
+            int? controlPort = context.Configuration.GetValue<int?>(
+                $"{SettingsKeys.Testing}:{nameof(TestingSettings.ControlPort)}");
+
             if (controlPort.HasValue)
             {
                 services.Configure<TestingSettings>(context.Configuration.GetSection(SettingsKeys.Testing));

@@ -4,7 +4,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StreamJsonRpc;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -19,20 +18,16 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
 {
     private readonly TestingSettings _settings;
     private readonly IApplicationScopeProvider _scopeProvider;
-    private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<TestEndpointService> _logger;
-    private readonly ConcurrentDictionary<string, ILogger> _loggers = new();
     private TcpListener? _listener;
 
     public TestEndpointService(
         IOptions<TestingSettings> settings,
         IApplicationScopeProvider scopeProvider,
-        ILoggerFactory loggerFactory,
         ILogger<TestEndpointService> logger)
     {
         _settings = settings.Value;
         _scopeProvider = scopeProvider;
-        _loggerFactory = loggerFactory;
         _logger = logger;
     }
 

@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace AdaptiveRemote.Services;
+﻿namespace AdaptiveRemote.Services;
 
 internal static class IFileSystemExtensions
 {

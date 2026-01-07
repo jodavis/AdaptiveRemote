@@ -20,9 +20,14 @@
     <!-- Enforce Minimum code analysis rules -->
     <AnalysisMode>Minimum</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Enable code style analysis at the latest level -->
+    <AnalysisLevelStyle>latest</AnalysisLevelStyle>
+    <!-- Enable documentation file generation to enable IDE0005 (unused usings) detection -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!-- Suppress VSTHRD analyzers that are too strict for this project -->
     <!-- These supressions should be addressed and removed. See https://github.com/jodavis/AdaptiveRemote/issues/41 -->
-    <NoWarn>$(NoWarn);VSTHRD011;VSTHRD002;VSTHRD003;VSTHRD103;VSTHRD105;VSTHRD110;VSTHRD200;MSTEST0045</NoWarn>
+    <!-- Suppress documentation warnings - we enable GenerateDocumentationFile only to get IDE0005 -->
+    <NoWarn>$(NoWarn);VSTHRD011;VSTHRD002;VSTHRD003;VSTHRD103;VSTHRD105;VSTHRD110;VSTHRD200;MSTEST0045;CS1591;CS1573;CS1584;CS1658</NoWarn>
   </PropertyGroup>
 </Project>

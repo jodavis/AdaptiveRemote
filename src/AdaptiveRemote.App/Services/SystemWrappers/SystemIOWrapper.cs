@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace AdaptiveRemote.Services.SystemWrappers;
+﻿namespace AdaptiveRemote.Services.SystemWrappers;
 
 internal class SystemIOWrapper : IFileSystem
 {

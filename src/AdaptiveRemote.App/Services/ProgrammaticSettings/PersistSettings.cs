@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.IO;
 using System.Text.RegularExpressions;
 using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
