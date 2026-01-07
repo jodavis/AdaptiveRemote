@@ -52,11 +52,9 @@ internal static class TaskAssert
                         .TaskShouldBeCompleted()
                         .Given(task => ((Task<TResult>)task).Result)
                         .ForCondition(CheckEquivalency)
-                        //.ForCondition(result => (result is null) == (expectedResult is null))
-                        //.FailWith("found {context}.Result=<null>")
-                        //.Then
-                        //.ForCondition(result => result!.Equals(expectedResult))
-                        .FailWith("found {context}.Result={0}", result => result);
+                        .FailWith(
+                            "found {context}.Result={0}",
+                            result => result);
                 });
 
             return Continuation();

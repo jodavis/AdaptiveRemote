@@ -1,9 +1,9 @@
+#pragma warning disable IDE0005 // Using directive is unnecessary - MockLogger is from TestUtilities
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
 using AdaptiveRemote.TestUtilities;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
+#pragma warning restore IDE0005
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
