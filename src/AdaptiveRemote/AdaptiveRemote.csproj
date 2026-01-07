@@ -9,6 +9,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>AdaptiveRemote</RootNamespace>
     <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Microsoft.Extensions.Configuration.Binder.SourceGeneration</InterceptorsPreviewNamespaces>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>
