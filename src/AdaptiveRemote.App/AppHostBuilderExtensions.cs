@@ -9,11 +9,13 @@ public static class AppHostBuilderExtensions
     public static IHostBuilder ConfigureApp(this IHostBuilder hostBuilder)
         => hostBuilder
             .ConfigureTelemetry()
+            .OptionallyAddFileLogging()
             .AddRemoteServices()
             .AddBroadlinkSupport()
             .AddTiVoSupport()
             .AddConversationSystem()
-            .AddSystemWrapperServices();
+            .AddSystemWrapperServices()
+            .OptionallyAddTestHookEndpoint();
 
     public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)
         => hostBuilder

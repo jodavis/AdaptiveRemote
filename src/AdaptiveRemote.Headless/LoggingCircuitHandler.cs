@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components.Server.Circuits;
 
-namespace AdaptiveRemote.Electron;
+namespace AdaptiveRemote.Headless;
 
 /// <summary>
 /// Diagnostic hooks to make sure Blazor circuits are initialized correctly

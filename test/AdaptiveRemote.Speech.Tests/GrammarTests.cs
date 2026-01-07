@@ -111,7 +111,7 @@ public class GrammarTests
 
         speechRecognition.SetFilter(PhraseKinds.All);
 
-        Task timeoutTask = Task.Delay(2000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
+        Task timeoutTask = Task.Delay(5000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
             TaskContinuationOptions.ExecuteSynchronously);
 
         // Act

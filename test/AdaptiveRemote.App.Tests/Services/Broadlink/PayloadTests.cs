@@ -397,6 +397,11 @@ public class PayloadTests
         short inputPort = 0x0050;
         short inputChecksum = 0x5432;
 
+        // Since the year is not part of the protocol (it always assumes this year), DayOfWeek changes
+        // every year. So that byte of the payload and the checksum need to be adjusted.
+        byte dofw = (byte)inputRequestTime.DayOfWeek;
+        short expectedChecksum = (short)(-14798 + dofw);
+
         ScanRequestPacket sut = new()
         {
             RequestTime = inputRequestTime,
@@ -409,7 +414,7 @@ public class PayloadTests
         [
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x5C, 0xFE, 0xFF, 0xFF, 0x00, 0x00, 0x22, 0x37, // RequestTime
-            0x0D, 0x04, 0x1E, 0x0A, 0x00, 0x00, 0x00, 0x00,
+            0x0D, dofw, 0x1E, 0x0A, 0x00, 0x00, 0x00, 0x00,
             192, 168, 200, 145, // LocalIPAddress
             0x50, 0x00, // LocalPort
             0x00, 0x00,
@@ -431,7 +436,7 @@ public class PayloadTests
         Assert.AreEqual(inputChecksum, sut.Checksum, nameof(sut.Checksum));
         Assert.AreEqual(0x30, sut.Size, nameof(sut.Size));
 
-        Assert.AreEqual(-14794, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
+        Assert.AreEqual(expectedChecksum, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
     }
 
     [TestMethod]

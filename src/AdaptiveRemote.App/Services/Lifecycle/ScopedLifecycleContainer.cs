@@ -71,7 +71,6 @@ internal class ScopedLifecycleContainer
         using ILifecycleActivity activity = _controller.StartTask(Phrases.Startup_Starting(scopedService.Name));
         try
         {
-
             await scopedService.InitializeAsync(activity, cancellationToken);
             _logger.LogInformation(Message.ApplicationLifecycle_Initialized, scopedService.Name);
         }

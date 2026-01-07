@@ -481,4 +481,7 @@ Last error: {1}</value>
   <data name="ScopedBackgroundProcess_SwitchingToWorkerThread" xml:space="preserve">
     <value>Switching to worker thread</value>
   </data>
+  <data name="ApplicationLifecycle_ScopeConstructionFailed" xml:space="preserve">
+    <value>An error occurred while constructing the ScopedLifecycleContainer. Either there is a missing dependency, or a dependency's constructor threw an exception.</value>
+  </data>
 </root>

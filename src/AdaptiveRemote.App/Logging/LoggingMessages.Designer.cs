@@ -117,6 +117,15 @@ namespace AdaptiveRemote.Logging {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occurred while constructing the ScopedLifecycleContainer. Either there is a missing dependency, or a dependency&apos;s constructor threw an exception..
+        /// </summary>
+        public static string ApplicationLifecycle_ScopeConstructionFailed {
+            get {
+                return ResourceManager.GetString("ApplicationLifecycle_ScopeConstructionFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Shutting down.
         /// </summary>
         public static string ApplicationLifecycle_ShuttingDown {

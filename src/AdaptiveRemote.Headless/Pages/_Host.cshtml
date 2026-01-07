@@ -22,9 +22,6 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
-    <!-- Workaround for Electron -->
-    @* Electron's Node.js integration exposes a global `process` variable, which causes Blazor to detect a Node.js environment and disables WebSocket support (required for SignalR). Setting `process = undefined` here ensures Blazor initializes the SignalR connection properly in Electron. *@
-    <script>process = undefined;</script>
     <script src="_framework/blazor.server.js"></script>
 </body>
 </html>

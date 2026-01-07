@@ -21,5 +21,8 @@
     <AnalysisMode>Minimum</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Suppress VSTHRD analyzers that are too strict for this project -->
+    <!-- These supressions should be addressed and removed. See https://github.com/jodavis/AdaptiveRemote/issues/41 -->
+    <NoWarn>$(NoWarn);VSTHRD011;VSTHRD002;VSTHRD003;VSTHRD103;VSTHRD105;VSTHRD110;VSTHRD200;MSTEST0045</NoWarn>
   </PropertyGroup>
 </Project>

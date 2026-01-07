@@ -163,7 +163,7 @@ public class CommandServiceBaseTests
         // Arrange
         List<string> expectedMessages = new();
         MockCommandService sut = CreateSut();
-        sut.InitializeAsync(InitializeActivity, default);
+        _ = sut.InitializeAsync(InitializeActivity, default);
 
         int commandCount = 0;
         foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
@@ -366,7 +366,7 @@ public class CommandServiceBaseTests
         }
 
         // Act
-        sut.CleanUpAsync(CleanupActivity, default);
+        _ = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
         sut.CancelTokens.ForEach(x => x.IsCancellationRequested.Should().Be(true, because: "all executing commands were cancelled"));

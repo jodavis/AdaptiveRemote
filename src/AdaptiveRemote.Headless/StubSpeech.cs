@@ -1,6 +1,6 @@
 using AdaptiveRemote.Services.Conversation;
 
-namespace AdaptiveRemote.Electron;
+namespace AdaptiveRemote.Headless;
 
 // AdaptiveRemote depends on Windows Speech Services, so we don't have
 // a speech system that works cross-platform yet.
@@ -18,6 +18,7 @@ internal class StubSpeechSynthesizer : ISpeechSynthesizer
 
 internal class StubSpeechRecognition : ISpeechRecognitionEngine
 {
+    // Events are not used in headless mode - no speech recognition needed
     public event EventHandler<RecognizedSpeechEventArgs> SpeechRecognized { add { } remove { } }
     public event EventHandler<RecognizedSpeechEventArgs> SpeechRejected { add { } remove { } }
 
