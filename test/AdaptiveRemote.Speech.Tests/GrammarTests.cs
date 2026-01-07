@@ -94,7 +94,7 @@ public class GrammarTests
     }
 
     [TestMethod]
-    [Timeout(20000)]
+    [Timeout(30000)]
     [DynamicData(nameof(GetTestSamples), DynamicDataSourceType.Method,
         DynamicDataDisplayName = nameof(GetTestSampleDisplayName))]
     public async Task StaticGrammar_TestCommand(

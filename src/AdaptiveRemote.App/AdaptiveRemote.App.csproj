@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.11.4" />
+    <PackageReference Include="Azure.Identity" Version="1.17.1" />
     <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.5.0" />
     <PackageReference Include="I8Beef.TiVo" Version="1.0.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.22" />
