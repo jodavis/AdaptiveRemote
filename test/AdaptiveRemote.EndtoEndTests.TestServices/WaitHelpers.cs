@@ -2,10 +2,10 @@
 
 public static class WaitHelpers
 {
-    public const int DefaultTimeoutInMilliseconds = 1000;
+    public const int DefaultTimeoutInSeconds = 5;
 
-    public static bool ExecuteWithRetries(Func<bool> action, int timeoutInMilliseconds = DefaultTimeoutInMilliseconds)
-        => ExecuteWithRetries(action, TimeSpan.FromMilliseconds(timeoutInMilliseconds));
+    public static bool ExecuteWithRetries(Func<bool> action, int timeoutInMilliseconds = DefaultTimeoutInSeconds)
+        => ExecuteWithRetries(action, TimeSpan.FromSeconds(timeoutInMilliseconds));
 
     public static bool ExecuteWithRetries(Func<bool> action, TimeSpan timeout)
     {
@@ -21,8 +21,8 @@ public static class WaitHelpers
         return false;
     }
 
-    public static bool ExecuteWithRetries(Func<CancellationToken, Task<bool>> action, int timeoutInMilliseconds = DefaultTimeoutInMilliseconds)
-        => ExecuteWithRetries(action, TimeSpan.FromMilliseconds(timeoutInMilliseconds));
+    public static bool ExecuteWithRetries(Func<CancellationToken, Task<bool>> action, int timeoutInSeconds = DefaultTimeoutInSeconds)
+        => ExecuteWithRetries(action, TimeSpan.FromSeconds(timeoutInSeconds));
 
     public static bool ExecuteWithRetries(Func<CancellationToken, Task<bool>> action, TimeSpan timeout)
     {
@@ -40,8 +40,8 @@ public static class WaitHelpers
         }, timeout);
     }
 
-    public static bool WaitForAsyncTask(Func<CancellationToken, Task> action, int timeoutInMilliseconds = DefaultTimeoutInMilliseconds)
-        => WaitForAsyncTask(action, TimeSpan.FromMilliseconds(timeoutInMilliseconds));
+    public static bool WaitForAsyncTask(Func<CancellationToken, Task> action, int timeoutInSeconds = DefaultTimeoutInSeconds)
+        => WaitForAsyncTask(action, TimeSpan.FromSeconds(timeoutInSeconds));
 
     public static bool WaitForAsyncTask(Func<CancellationToken, Task> action, TimeSpan timeout)
     {
@@ -63,8 +63,8 @@ public static class WaitHelpers
         return false;
     }
 
-    public static ResultType WaitForAsyncTask<ResultType>(Func<CancellationToken, Task<ResultType>> action, int timeoutInMilliseconds = DefaultTimeoutInMilliseconds)
-        => WaitForAsyncTask(action, TimeSpan.FromMilliseconds(timeoutInMilliseconds));
+    public static ResultType WaitForAsyncTask<ResultType>(Func<CancellationToken, Task<ResultType>> action, int timeoutInSeconds = DefaultTimeoutInSeconds)
+        => WaitForAsyncTask(action, TimeSpan.FromSeconds(timeoutInSeconds));
 
     public static ResultType WaitForAsyncTask<ResultType>(Func<CancellationToken, Task<ResultType>> action, TimeSpan timeout)
     {

@@ -23,13 +23,16 @@ public static class IApplicationTestServiceExtensions
         return WaitHelpers.WaitForAsyncTask(testService.GetCurrentPhaseAsync);
     }
 
-    public static void InvokeCommand(this IApplicationTestService testService, string commandName)
+    public static void InvokeCommand(this IApplicationTestService testService, string commandName, int timeoutInSeconds = WaitHelpers.DefaultTimeoutInSeconds)
+        => InvokeCommand(testService, commandName, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    public static void InvokeCommand(this IApplicationTestService testService, string commandName, TimeSpan timeout)
     {
-        bool succeeded = WaitHelpers.WaitForAsyncTask(ct => testService.InvokeCommandAsync(commandName, ct));
+        bool succeeded = WaitHelpers.WaitForAsyncTask(ct => testService.InvokeCommandAsync(commandName, ct), timeout);
 
         if (!succeeded)
         {
-            throw new TimeoutException($"Invoking command '{commandName}' timed out.");
+            throw new TimeoutException($"Invoking command '{commandName}' did not complete within {timeout.TotalSeconds}s.");
         }
     }
 }
