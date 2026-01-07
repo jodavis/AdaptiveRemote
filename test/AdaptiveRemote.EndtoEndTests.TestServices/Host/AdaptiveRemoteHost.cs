@@ -45,8 +45,18 @@ public partial class AdaptiveRemoteHost : IDisposable
         _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>(
             _testEndpoint.CreateTestServiceAsync<ApplicationTestService>);
 
-        _lazyUITestService = CreateLazyTestService<HeadlessUITestService, IUITestService>(
-            _testEndpoint.CreateUITestServiceAsync<HeadlessUITestService>);
+        // Choose UI test service based on host type
+        if (_settings.ExePath.Contains("Headless", StringComparison.OrdinalIgnoreCase))
+        {
+            _lazyUITestService = CreateLazyTestService<HeadlessUITestService, IUITestService>(
+                _testEndpoint.CreateUITestServiceAsync<HeadlessUITestService>);
+        }
+        else
+        {
+            // WPF or Console host using BlazorWebView
+            _lazyUITestService = CreateLazyTestService<BlazorWebViewUITestService, IUITestService>(
+                _testEndpoint.CreateUITestServiceAsync<BlazorWebViewUITestService>);
+        }
     }
 
     private Lazy<TInterface> CreateLazyTestService<TImplementation, TInterface>(Func<CancellationToken, Task<TInterface>> createServiceAsync)

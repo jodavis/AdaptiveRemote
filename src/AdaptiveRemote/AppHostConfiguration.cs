@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Lifecycle;
+using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -20,6 +21,8 @@ internal static class AppHostConfiguration
     {
         // UI-related host services
         services.AddSingleton(mainWindow);
+        services.AddSingleton<IBrowserProvider, WebView2BrowserProvider>();
+        services.AddHostedService<WebView2TestConfigurator>();  // Must run before BlazorWindowServicesSetter
         services.AddHostedService<BlazorWindowServicesSetter>();
         services.AddWpfBlazorWebView();
 
