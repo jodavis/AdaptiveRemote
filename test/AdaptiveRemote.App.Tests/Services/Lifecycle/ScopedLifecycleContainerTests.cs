@@ -1,4 +1,4 @@
-#pragma warning disable IDE0005 // Using directive is unnecessary - MockLogger is from TestUtilities
+#pragma warning disable IDE0005 // False positive: MockLogger type requires AdaptiveRemote.TestUtilities
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.TestUtilities;
 using FluentAssertions;

@@ -1,4 +1,4 @@
-﻿#pragma warning disable IDE0005 // Using directive is unnecessary - ServiceProviderServiceExtensions.GetService<T> requires Microsoft.Extensions.DependencyInjection
+﻿#pragma warning disable IDE0005 // False positive: GetService<T>() extension method requires Microsoft.Extensions.DependencyInjection
 using AdaptiveRemote.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
