@@ -7,8 +7,10 @@ namespace AdaptiveRemote.Services.Testing;
 public interface IBrowserProvider
 {
     /// <summary>
-    /// Gets the browser page/document instance for interacting with the UI.
-    /// The actual type depends on the browser implementation (e.g., Playwright IPage, WebView2 CoreWebView2).
+    /// Gets the browser test context for interacting with the UI.
+    /// The actual type depends on the browser implementation:
+    /// - For Playwright-based hosts: IPage instance
+    /// - For WebView2-based hosts: Remote debugging port (int)
     /// </summary>
-    object? BrowserPage { get; }
+    object? TestContext { get; }
 }

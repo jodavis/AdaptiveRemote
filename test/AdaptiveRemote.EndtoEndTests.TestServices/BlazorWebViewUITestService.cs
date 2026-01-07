@@ -7,21 +7,19 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// UI test service implementation for hosts that use BlazorWebView (WPF/Console) with WebView2.
 /// Connects to WebView2 via Playwright using the remote debugging port.
 /// </summary>
-public class BlazorWebViewUITestService : IUITestService
+public class BlazorWebViewUITestService : UITestServiceBase
 {
     private readonly IBrowserProvider _browserProvider;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private IPage? _page;
-    private const int DefaultTimeoutMs = 2000;
-    private const int ClickSettleDelayMs = 100;
 
     public BlazorWebViewUITestService(IBrowserProvider browserProvider)
     {
         _browserProvider = browserProvider ?? throw new ArgumentNullException(nameof(browserProvider));
     }
 
-    private async Task<IPage> EnsurePageAsync()
+    protected override async Task<IPage> GetPageAsync()
     {
         if (_page != null)
         {
@@ -29,7 +27,7 @@ public class BlazorWebViewUITestService : IUITestService
         }
 
         // Get remote debugging port from browser provider
-        int remoteDebuggingPort = _browserProvider.BrowserPage as int? ?? throw new InvalidOperationException("Remote debugging port not configured for WebView2.");
+        int remoteDebuggingPort = _browserProvider.TestContext as int? ?? throw new InvalidOperationException("Remote debugging port not configured for WebView2.");
 
         // Initialize Playwright and connect to WebView2
         _playwright = await Playwright.CreateAsync();
@@ -55,81 +53,7 @@ public class BlazorWebViewUITestService : IUITestService
         return _page;
     }
 
-    public async Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
-        
-        try
-        {
-            return await locator.IsVisibleAsync();
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
-        
-        try
-        {
-            return !await IsButtonDisabledAsync(locator);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task ClickButtonAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
-        
-        // Verify the button is visible
-        bool isVisible = await locator.IsVisibleAsync();
-        if (!isVisible)
-        {
-            throw new InvalidOperationException($"Button with label '{label}' is not visible.");
-        }
-
-        // Verify the button is enabled
-        if (await IsButtonDisabledAsync(locator))
-        {
-            throw new InvalidOperationException($"Button with label '{label}' is not enabled.");
-        }
-
-        // Click the button
-        await locator.ClickAsync(new LocatorClickOptions
-        {
-            Timeout = DefaultTimeoutMs
-        });
-
-        // Wait a short time for UI updates to settle
-        await Task.Delay(ClickSettleDelayMs, cancellationToken);
-    }
-
-    private static async Task<bool> IsButtonDisabledAsync(ILocator locator)
-    {
-        // Check if the button is disabled via attribute or aria-disabled
-        bool hasDisabledAttribute = await locator.GetAttributeAsync("disabled") != null;
-        string? ariaDisabled = await locator.GetAttributeAsync("aria-disabled");
-        bool isAriaDisabled = ariaDisabled == "true";
-        
-        return hasDisabledAttribute || isAriaDisabled;
-    }
-
-    private async Task<ILocator> GetButtonLocatorByLabelAsync(string label)
-    {
-        IPage page = await EnsurePageAsync();
-        
-        // Use Playwright's getByRole with exact match - it will throw meaningful errors
-        // if there are no matches or ambiguous matches
-        return page.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
-    }
-
-    public void Dispose()
+    public override void Dispose()
     {
         // Clean up Playwright resources
         _page = null;

@@ -45,8 +45,8 @@ public partial class AdaptiveRemoteHost : IDisposable
         _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>(
             _testEndpoint.CreateTestServiceAsync<ApplicationTestService>);
 
-        // Choose UI test service based on host type
-        if (_settings.ExePath.Contains("Headless", StringComparison.OrdinalIgnoreCase))
+        // Choose UI test service based on settings
+        if (_settings.UIService == UIServiceType.Headless)
         {
             _lazyUITestService = CreateLazyTestService<HeadlessUITestService, IUITestService>(
                 _testEndpoint.CreateUITestServiceAsync<HeadlessUITestService>);

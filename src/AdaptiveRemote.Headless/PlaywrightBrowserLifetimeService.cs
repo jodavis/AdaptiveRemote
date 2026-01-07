@@ -20,19 +20,9 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserPro
     private IPage? _page;
 
     /// <summary>
-    /// Gets the Playwright page instance. Available after the browser is launched.
-    /// </summary>
-    public IPage? Page => _page;
-
-    /// <summary>
-    /// Gets the Playwright browser instance. Available after the browser is launched.
-    /// </summary>
-    public IBrowser? Browser => _browser;
-
-    /// <summary>
     /// Gets the browser page for UI testing as a generic object.
     /// </summary>
-    object? IBrowserProvider.BrowserPage => Page;
+    object? IBrowserProvider.TestContext => _page;
 
     public PlaywrightBrowserLifetimeService(
         ILogger<PlaywrightBrowserLifetimeService> logger,
