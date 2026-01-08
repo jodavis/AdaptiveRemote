@@ -1,0 +1,49 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup Label="Application Packages">
+    <!-- Azure and Cloud Services -->
+    <PackageReference Update="Azure.Identity" Version="1.17.1" />
+    <PackageReference Update="Azure.Monitor.OpenTelemetry.Exporter" Version="1.5.0" />
+
+    <!-- ASP.NET Core and Web Components -->
+    <PackageReference Update="Microsoft.AspNetCore.Components.Web" Version="8.0.22" />
+    <PackageReference Update="Microsoft.AspNetCore.Components.WebView.Wpf" Version="8.0.14" />
+
+    <!-- Microsoft Extensions -->
+    <PackageReference Update="Microsoft.Extensions.Hosting" Version="8.0.0" />
+
+    <!-- OpenTelemetry -->
+    <PackageReference Update="OpenTelemetry.Exporter.Console" Version="1.8.1" />
+    <PackageReference Update="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.1" />
+    <PackageReference Update="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
+
+    <!-- Third-party Libraries -->
+    <PackageReference Update="I8Beef.TiVo" Version="1.0.0.14" />
+    <PackageReference Update="Microsoft.Playwright" Version="1.48.0" />
+    <PackageReference Update="StreamJsonRpc" Version="2.19.27" />
+    <PackageReference Update="System.Speech" Version="8.0.0" />
+    <PackageReference Update="System.Text.Json" Version="8.0.5" />
+
+    <!-- Development Tools -->
+    <PackageReference Update="Nerdbank.GitVersioning" Version="3.9.50" />
+
+    <!-- Code Analysis -->
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.100" />
+  </ItemGroup>
+
+  <ItemGroup Label="Test-Only Packages">
+    <!-- Test Frameworks -->
+    <PackageReference Update="MSTest" Version="4.0.1" />
+    <PackageReference Update="MSTest.TestAdapter" Version="4.0.1" />
+    <PackageReference Update="MSTest.TestFramework" Version="4.0.1" />
+    <PackageReference Update="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+
+    <!-- Test Utilities -->
+    <PackageReference Update="coverlet.collector" Version="6.0.4" />
+    <PackageReference Update="FluentAssertions" Version="8.8.0" />
+    <PackageReference Update="Moq" Version="4.20.70" />
+  </ItemGroup>
+</Project>

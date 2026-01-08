@@ -11,8 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MSTest" Version="4.0.1" />
-    <PackageReference Include="StreamJsonRpc" Version="2.19.27" />
+    <PackageReference Include="MSTest" />
+    <PackageReference Include="StreamJsonRpc" />
   </ItemGroup>
 
   <ItemGroup>

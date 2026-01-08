@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <!-- Enforce code analysis with latest analyzers -->
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.100" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" PrivateAssets="all" />
   </ItemGroup>
 
   <PropertyGroup>
