@@ -81,7 +81,7 @@ public abstract class HostTestBase
 
                 logger.LogInformation("Invoking Exit command...");
                 // Request shutdown via strongly-typed proxy
-                testService.InvokeCommand("Exit");
+                host.UI.ClickButton("Exit", TimeSpan.FromSeconds(30));
             }
 
             // Wait for shutdown

@@ -31,7 +31,7 @@ public class AcceleratedServices
             .ConfigureServices(AddPrecreatedServices);
     }
 
-    private void AddPrecreatedServices(IServiceCollection services)
+    protected virtual void AddPrecreatedServices(IServiceCollection services)
         => services
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);

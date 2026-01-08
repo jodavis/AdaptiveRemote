@@ -4,13 +4,12 @@ namespace AdaptiveRemote.Services.Testing;
 /// Provides access to browser objects for UI testing.
 /// Implemented by hosts that expose their browser for test automation.
 /// </summary>
-public interface IBrowserProvider
+public interface IBrowserUIAccess
+
 {
     /// <summary>
     /// Gets the browser test context for interacting with the UI.
-    /// The actual type depends on the browser implementation:
-    /// - For Playwright-based hosts: IPage instance
-    /// - For WebView2-based hosts: Remote debugging port (int)
+    /// The actual type is Playwright's IPage, but it's returned as object to avoid a direct dependency.
     /// </summary>
-    object? TestContext { get; }
+    object? CurrentPage { get; }
 }

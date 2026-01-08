@@ -32,7 +32,7 @@ builder.Services.AddSingleton<CircuitHandler, LoggingCircuitHandler>();
 // Register Playwright hosted service to manage browser lifecycle
 // Register as singleton first so it can be injected into test services
 builder.Services.AddSingleton<PlaywrightBrowserLifetimeService>();
-builder.Services.AddSingleton<IBrowserProvider>(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
+builder.Services.AddSingleton<IBrowserUIAccess>(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
 builder.Services.AddHostedService(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
 builder.Services.Configure<PlaywrightSettings>(builder.Configuration.GetSection("playwright"));
 

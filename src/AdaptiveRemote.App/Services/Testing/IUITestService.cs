@@ -16,7 +16,7 @@ public interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>True if the button is visible, false otherwise.</returns>
     /// <exception cref="InvalidOperationException">Thrown if multiple buttons match the label.</exception>
-    Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default);
+    Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken);
 
     /// <summary>
     /// Checks if a button with the specified label is enabled in the UI.
@@ -25,7 +25,7 @@ public interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>True if the button is enabled, false otherwise.</returns>
     /// <exception cref="InvalidOperationException">Thrown if multiple buttons match the label.</exception>
-    Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken = default);
+    Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken);
 
     /// <summary>
     /// Clicks a button with the specified label in the UI.
@@ -34,5 +34,5 @@ public interface IUITestService : IDisposable
     /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <exception cref="InvalidOperationException">Thrown if multiple buttons match the label or if the button is not visible/enabled.</exception>
-    Task ClickButtonAsync(string label, CancellationToken cancellationToken = default);
+    Task ClickButtonAsync(string label, CancellationToken cancellationToken);
 }

@@ -14,14 +14,12 @@ internal static class AppHostConfiguration
         return builder;
     }
 
-    internal static IHostBuilder AddWindowsUIServices(this IHostBuilder builder, MainWindow mainWindow)
-        => builder.ConfigureServices(services => services.AddWindowsUIServices(mainWindow));
+    internal static IHostBuilder AddWindowsUIServices(this IHostBuilder builder)
+        => builder.ConfigureServices(services => services.AddWindowsUIServices());
 
-    internal static IServiceCollection AddWindowsUIServices(this IServiceCollection services, MainWindow mainWindow)
+    internal static IServiceCollection AddWindowsUIServices(this IServiceCollection services)
     {
         // UI-related host services
-        services.AddSingleton(mainWindow);
-        services.AddSingleton<IBrowserProvider, WebView2BrowserProvider>();
         services.AddHostedService<BlazorWindowServicesSetter>();
         services.AddWpfBlazorWebView();
 

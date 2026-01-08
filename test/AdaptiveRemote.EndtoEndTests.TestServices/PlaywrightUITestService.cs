@@ -7,20 +7,23 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// Base class for UI test service implementations that use Playwright.
 /// Subclasses are responsible for providing the IPage instance.
 /// </summary>
-public abstract class UITestServiceBase : IUITestService
+public class PlaywrightUITestService : IUITestService
 {
     private const int DefaultTimeoutMs = 2000;
-    private const int ClickSettleDelayMs = 100;
 
-    /// <summary>
-    /// Gets the Playwright page instance for interacting with the UI.
-    /// Subclasses must implement this to provide access to their specific page source.
-    /// </summary>
-    protected abstract Task<IPage> GetPageAsync();
+    private readonly IBrowserUIAccess _browserProvider;
+
+    public PlaywrightUITestService(IBrowserUIAccess browserProvider)
+    {
+        _browserProvider = browserProvider;
+    }
+
+    private IPage CurrentPage => _browserProvider.CurrentPage as IPage 
+        ?? throw new InvalidOperationException("IBrowserProvider service did not provide an object of type IPage");
 
     public async Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabelAsync(label);
         
         try
         {
@@ -34,11 +37,11 @@ public abstract class UITestServiceBase : IUITestService
 
     public async Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabelAsync(label);
         
         try
         {
-            return !await IsButtonDisabledAsync(locator);
+            return await locator.IsEnabledAsync();
         }
         catch
         {
@@ -48,7 +51,7 @@ public abstract class UITestServiceBase : IUITestService
 
     public async Task ClickButtonAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = await GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabelAsync(label);
         
         // Verify the button is visible
         bool isVisible = await locator.IsVisibleAsync();
@@ -68,9 +71,6 @@ public abstract class UITestServiceBase : IUITestService
         {
             Timeout = DefaultTimeoutMs
         });
-
-        // Wait a short time for UI updates to settle
-        await Task.Delay(ClickSettleDelayMs, cancellationToken);
     }
 
     private static async Task<bool> IsButtonDisabledAsync(ILocator locator)
@@ -83,14 +83,20 @@ public abstract class UITestServiceBase : IUITestService
         return hasDisabledAttribute || isAriaDisabled;
     }
 
-    private async Task<ILocator> GetButtonLocatorByLabelAsync(string label)
+    private ILocator GetButtonLocatorByLabelAsync(string label)
     {
-        IPage page = await GetPageAsync();
-        
         // Use Playwright's getByRole with exact match - it will throw meaningful errors
         // if there are no matches or ambiguous matches
-        return page.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
+        return CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
     }
 
-    public abstract void Dispose();
+    public void Dispose()
+    {
+        if (_browserProvider is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+
+        GC.SuppressFinalize(this);
+    }
 }

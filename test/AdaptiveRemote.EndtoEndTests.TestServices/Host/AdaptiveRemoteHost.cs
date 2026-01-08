@@ -42,30 +42,32 @@ public partial class AdaptiveRemoteHost : IDisposable
         _standardOutput = standardOutput;
         _standardError = standardError;
 
-        _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>(
-            _testEndpoint.CreateTestServiceAsync<ApplicationTestService>);
+        _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>();
 
         // Choose UI test service based on settings
-        if (_settings.UIService == UIServiceType.Headless)
+        _lazyUITestService = _settings.UIService switch
         {
-            _lazyUITestService = CreateLazyTestService<HeadlessUITestService, IUITestService>(
-                _testEndpoint.CreateUITestServiceAsync<HeadlessUITestService>);
-        }
-        else
-        {
-            // WPF or Console host using BlazorWebView
-            _lazyUITestService = CreateLazyTestService<BlazorWebViewUITestService, IUITestService>(
-                _testEndpoint.CreateUITestServiceAsync<BlazorWebViewUITestService>);
-        }
+            UIServiceType.Playwright => CreateLazyTestService<PlaywrightUITestService, IUITestService>(),
+            UIServiceType.BlazorWebView => CreateLazyTestService<BlazorWebViewUITestService, IUITestService>(),
+            _ => throw new InvalidOperationException($"Unsupported UIServiceType '{_settings.UIService}'")
+        };
     }
 
-    private Lazy<TInterface> CreateLazyTestService<TImplementation, TInterface>(Func<CancellationToken, Task<TInterface>> createServiceAsync)
+    private Lazy<TInterface> CreateLazyTestService<TImplementation, TInterface>()
         where TImplementation : TInterface
     {
         return new Lazy<TInterface>(() =>
         {
-            _logger.LogInformation("Creating {TestServiceName} proxy...", typeof(TImplementation).Name);
-            return WaitHelpers.WaitForAsyncTask(createServiceAsync, _settings.RpcTimeout);
+            try
+            {
+                _logger.LogInformation("Creating {TestServiceName} proxy...", typeof(TImplementation).Name);
+                return WaitHelpers.WaitForAsyncTask(ct => _testEndpoint.CreateTestServiceAsync<TInterface, TImplementation>(ct), _settings.RpcTimeout);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create {TestServiceName} proxy", typeof(TImplementation).Name);
+                throw;
+            }
         });
     }
 

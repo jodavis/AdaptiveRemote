@@ -1,4 +1,5 @@
 using AdaptiveRemote.Services.Testing;
+using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 
 namespace AdaptiveRemote.EndtoEndTests;
@@ -7,67 +8,92 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// UI test service implementation for hosts that use BlazorWebView (WPF/Console) with WebView2.
 /// Connects to WebView2 via Playwright using the remote debugging port.
 /// </summary>
-public class BlazorWebViewUITestService : UITestServiceBase
+public class BlazorWebViewUITestService : PlaywrightUITestService
 {
-    private readonly IBrowserProvider _browserProvider;
-    private IPlaywright? _playwright;
-    private IBrowser? _browser;
-    private IPage? _page;
+    private static readonly TimeSpan InitializePlaywrightTimeout = TimeSpan.FromSeconds(30);
 
-    public BlazorWebViewUITestService(IBrowserProvider browserProvider)
+    public BlazorWebViewUITestService(IBrowserDebuggerAccess browserDebugger, ILogger<BlazorWebViewUITestService> logger)
+        : base (new BrowserFromPortProvider(browserDebugger, logger))
     {
-        _browserProvider = browserProvider ?? throw new ArgumentNullException(nameof(browserProvider));
     }
 
-    protected override async Task<IPage> GetPageAsync()
+    private class BrowserFromPortProvider : IBrowserUIAccess, IDisposable
     {
-        if (_page != null)
+        private readonly IBrowserDebuggerAccess _browserDebugger;
+        private readonly ILogger<BlazorWebViewUITestService> _logger;
+        private readonly Lazy<IPlaywright> _playwright;
+        private readonly Lazy<IBrowser> _browser;
+
+        public BrowserFromPortProvider(IBrowserDebuggerAccess browserDebugger, ILogger<BlazorWebViewUITestService> logger)
         {
-            return _page;
+            _browserDebugger = browserDebugger;
+            _logger = logger;
+
+            _playwright = new(InitializePlaywright);
+            _browser = new(ConnectToBrowser);
         }
 
-        // Get remote debugging port from browser provider
-        int remoteDebuggingPort = _browserProvider.TestContext as int? ?? throw new InvalidOperationException("Remote debugging port not configured for WebView2.");
-
-        // Initialize Playwright and connect to WebView2
-        _playwright = await Playwright.CreateAsync();
-        
-        // Connect to the WebView2 instance via remote debugging protocol
-        string cdpUrl = $"http://localhost:{remoteDebuggingPort}";
-        _browser = await _playwright.Chromium.ConnectOverCDPAsync(cdpUrl);
-        
-        // Get the default context and first page
-        var contexts = _browser.Contexts;
-        if (contexts.Count == 0)
+        private IPlaywright InitializePlaywright()
         {
-            throw new InvalidOperationException("No browser contexts available in WebView2.");
-        }
-        
-        var pages = contexts[0].Pages;
-        if (pages.Count == 0)
-        {
-            throw new InvalidOperationException("No pages available in WebView2 browser context.");
-        }
-        
-        _page = pages[0];
-        return _page;
-    }
-
-    public override void Dispose()
-    {
-        // Clean up Playwright resources
-        _page = null;
-        
-        if (_browser != null)
-        {
-            try
+            using (_logger.LogTimedOperation("Initializing Playwright"))
             {
-                _ = _browser.CloseAsync().ConfigureAwait(false);
+                return WaitHelpers.WaitForAsyncTask(
+                    ct => Playwright.CreateAsync(),
+                    InitializePlaywrightTimeout);
             }
-            catch { }
         }
-        
-        _playwright?.Dispose();
-        GC.SuppressFinalize(this);
+
+        private IBrowser ConnectToBrowser()
+        {
+            string debuggerUrl = $"http://localhost:{_browserDebugger.Port}";
+
+            using (_logger.LogTimedOperation("Connecting Playwright to Browser"))
+            {
+                _logger.LogInformation("Connecting to browser debugger at {DebuggerUrl}", debuggerUrl);
+                return WaitHelpers.WaitForAsyncTask(
+                    ct => _playwright.Value.Chromium.ConnectOverCDPAsync(debuggerUrl),
+                    InitializePlaywrightTimeout);
+            }
+        }
+
+        public object? CurrentPage
+        {
+            get
+            {
+                // Get the default context and first page
+                IReadOnlyList<IBrowserContext> contexts = _browser.Value.Contexts;
+                if (contexts.Count == 0)
+                {
+                    throw new InvalidOperationException("No browser contexts available in WebView2.");
+                }
+
+                IReadOnlyList<IPage> pages = contexts[0].Pages;
+                if (pages.Count == 0)
+                {
+                    throw new InvalidOperationException("No pages available in WebView2 browser context.");
+                }
+
+                return pages[0];
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_browser.IsValueCreated)
+            {
+                try
+                {
+                    _ = _browser.Value.CloseAsync().ConfigureAwait(false);
+                }
+                catch { }
+            }
+
+            if (_playwright.IsValueCreated)
+            {
+                _playwright.Value.Dispose();
+            }
+
+            GC.SuppressFinalize(this);
+        }
     }
 }
