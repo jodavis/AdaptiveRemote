@@ -114,7 +114,7 @@ public class GrammarTests
         speechRecognition.SetFilter(PhraseKinds.All);
 
         Task<IRecognizedSpeech> resultTask = GetFirstResult(speechRecognition, _cts.Token);
-        for (int retry = 0; retry < MaxRetries && !resultTask.IsCompleted; retry++)
+        for (int retry = 0; retry < MaxRetries; retry++)
         {
             Task timeoutTask = Task.Delay(5000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
                 TaskContinuationOptions.ExecuteSynchronously);
@@ -123,6 +123,19 @@ public class GrammarTests
             Log(retry == 0 ? "Waiting for a command" : $"Waiting for a command (retry #{retry})");
             await Task.WhenAny(resultTask, timeoutTask);
             Log("Done waiting");
+
+            if (resultTask.IsCompleted)
+            {
+                break;
+            }
+
+            speechRecognition = CreateSut();
+
+            audioConfiguration.SetAudioInputToWaveStream(waveFileName);
+
+            speechRecognition.SetFilter(PhraseKinds.All);
+
+            resultTask = GetFirstResult(speechRecognition, _cts.Token);
         }
 
         // Assert
