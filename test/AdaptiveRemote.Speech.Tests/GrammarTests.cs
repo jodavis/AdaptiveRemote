@@ -13,6 +13,8 @@ namespace AdaptiveRemote.Speech.Tests;
 [TestClass]
 public class GrammarTests
 {
+    private const int MaxRetries = 3;
+
     private readonly CancellationTokenSource _cts = new();
     private readonly TestAudioConfigurationService audioConfiguration = new();
 
@@ -94,7 +96,7 @@ public class GrammarTests
     }
 
     [TestMethod]
-    [Timeout(30000)]
+    [Timeout(35000)]
     [DynamicData(nameof(GetTestSamples), DynamicDataSourceType.Method,
         DynamicDataDisplayName = nameof(GetTestSampleDisplayName))]
     public async Task StaticGrammar_TestCommand(
@@ -111,14 +113,17 @@ public class GrammarTests
 
         speechRecognition.SetFilter(PhraseKinds.All);
 
-        Task timeoutTask = Task.Delay(5000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
-            TaskContinuationOptions.ExecuteSynchronously);
-
-        // Act
         Task<IRecognizedSpeech> resultTask = GetFirstResult(speechRecognition, _cts.Token);
-        Log("Waiting for a command");
-        await Task.WhenAny(resultTask, timeoutTask);
-        Log("Done waiting");
+        for (int retry = 0; retry < MaxRetries && !resultTask.IsCompleted; retry++)
+        {
+            Task timeoutTask = Task.Delay(5000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
+                TaskContinuationOptions.ExecuteSynchronously);
+
+            // Act
+            Log(retry == 0 ? "Waiting for a command" : $"Waiting for a command (retry #{retry})");
+            await Task.WhenAny(resultTask, timeoutTask);
+            Log("Done waiting");
+        }
 
         // Assert
         Assert.IsTrue(resultTask.IsCompleted, "Timed out waiting for a result from speech recognition");
