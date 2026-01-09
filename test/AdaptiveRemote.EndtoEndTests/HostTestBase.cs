@@ -54,7 +54,7 @@ public abstract class HostTestBase
             Assert.Inconclusive($"Working directory not found: {hostSettings.WorkingDirectory}");
         }
 
-        string logFilePath = Path.Combine(testContext.TestResultsDirectory!, testContext.TestDisplayName + ".log");
+        string logFilePath = Path.Combine(testContext.TestResultsDirectory!, testContext.TestName + ".log");
 
         hostSettings = hostSettings.AddCommandLineArgs($"--tivo:Fake=True --broadlink:Fake=True --log:FilePath=\"{logFilePath}\"");
 
