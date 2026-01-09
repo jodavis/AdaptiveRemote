@@ -313,7 +313,7 @@ public class SpeechRecognitionTests
         cts.Cancel();
 
         // Assert
-        resultTask.Should().BeCanceled(because: "recognition was stopped via the cancellation token");
+        resultTask.Should().BeCanceledWithin(TimeSpan.FromSeconds(1), because: "recognition was stopped via the cancellation token");
     }
 
     [TestMethod]

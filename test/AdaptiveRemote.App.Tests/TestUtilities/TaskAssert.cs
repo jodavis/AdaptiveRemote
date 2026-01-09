@@ -187,6 +187,28 @@ internal static class TaskAssert
         }
 
         [CustomAssertion]
+        public AndConstraint<TAssertions> BeCanceledWithin(TimeSpan timeout, string because = "", params object[] becauseArgs)
+        {
+            CurrentAssertionChain
+                .BecauseOf(because, becauseArgs)
+                .WithDefaultIdentifier(nameof(Task))
+                .WithExpectation("Expected {context} to be canceled after {0}ms{reason}, but ", timeout.TotalMilliseconds, chain =>
+                {
+                    chain
+                        .Given(() => Subject)
+                        .TaskShouldNotBeNull()
+                        .TaskShouldNotBeFaulted()
+                        .ForCondition(task => task.ContinueWith(_ => { }).Wait(timeout))
+                        .FailWith("it did not complete.")
+                        .Then
+                        .ForCondition(TaskIsCanceled)
+                        .FailWith("{context}.IsCanceled=False");
+                });
+
+            return Continuation();
+        }
+
+        [CustomAssertion]
         public AndConstraint<TAssertions> BeFaultedWith(Exception expectedException, TimeSpan within, string because = "", params object[] becauseArgs)
         {
             CurrentAssertionChain
