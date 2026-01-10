@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Lifecycle;
+using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -13,13 +14,12 @@ internal static class AppHostConfiguration
         return builder;
     }
 
-    internal static IHostBuilder AddWindowsUIServices(this IHostBuilder builder, MainWindow mainWindow)
-        => builder.ConfigureServices(services => services.AddWindowsUIServices(mainWindow));
+    internal static IHostBuilder AddWindowsUIServices(this IHostBuilder builder)
+        => builder.ConfigureServices(services => services.AddWindowsUIServices());
 
-    internal static IServiceCollection AddWindowsUIServices(this IServiceCollection services, MainWindow mainWindow)
+    internal static IServiceCollection AddWindowsUIServices(this IServiceCollection services)
     {
         // UI-related host services
-        services.AddSingleton(mainWindow);
         services.AddHostedService<BlazorWindowServicesSetter>();
         services.AddWpfBlazorWebView();
 

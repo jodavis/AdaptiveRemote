@@ -13,6 +13,7 @@ public partial class AdaptiveRemoteHost : IDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<AdaptiveRemoteHost> _logger;
     private readonly Lazy<IApplicationTestService> _lazyTestService;
+    private readonly Lazy<IUITestService> _lazyUITestService;
     private readonly ITestEndpoint _testEndpoint;
 
     private readonly StringBuilder _standardOutput;
@@ -41,16 +42,38 @@ public partial class AdaptiveRemoteHost : IDisposable
         _standardOutput = standardOutput;
         _standardError = standardError;
 
-        _lazyTestService = new(() =>
+        _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>();
+
+        // Choose UI test service based on settings
+        _lazyUITestService = _settings.UIService switch
         {
-            _logger.LogInformation("Creating {TestServiceName} proxy...", nameof(ApplicationTestService));
-            return WaitHelpers.WaitForAsyncTask(
-                _testEndpoint.CreateTestServiceAsync<ApplicationTestService>,
-                _settings.RpcTimeout);
+            UIServiceType.Playwright => CreateLazyTestService<PlaywrightUITestService, IUITestService>(),
+            UIServiceType.BlazorWebView => CreateLazyTestService<BlazorWebViewUITestService, IUITestService>(),
+            _ => throw new InvalidOperationException($"Unsupported UIServiceType '{_settings.UIService}'")
+        };
+    }
+
+    private Lazy<TInterface> CreateLazyTestService<TImplementation, TInterface>()
+        where TImplementation : TInterface
+    {
+        return new Lazy<TInterface>(() =>
+        {
+            try
+            {
+                _logger.LogInformation("Creating {TestServiceName} proxy...", typeof(TImplementation).Name);
+                return WaitHelpers.WaitForAsyncTask(ct => _testEndpoint.CreateTestServiceAsync<TInterface, TImplementation>(ct), _settings.RpcTimeout);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create {TestServiceName} proxy", typeof(TImplementation).Name);
+                throw;
+            }
         });
     }
 
     public IApplicationTestService Application => _lazyTestService.Value;
+
+    public IUITestService UI => _lazyUITestService.Value;
 
     public ILogger<CategoryType> CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
 

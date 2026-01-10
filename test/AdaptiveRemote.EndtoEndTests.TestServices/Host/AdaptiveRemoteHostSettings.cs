@@ -2,7 +2,14 @@
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
 
+public enum UIServiceType
+{
+    Playwright,
+    BlazorWebView
+}
+
 public record AdaptiveRemoteHostSettings(
+    UIServiceType UIService,
     string ExePath,
     string CommandLineArgs,
     string WorkingDirectory,
@@ -12,16 +19,17 @@ public record AdaptiveRemoteHostSettings(
     TimeSpan ShutdownTimeout)
 {
     public AdaptiveRemoteHostSettings(
+        UIServiceType UIService,
         string ExePath,
         string CommandLineArgs = "",
         string? WorkingDirectory = null,
         ImmutableDictionary<string, string>? EnvironmentVariables = null)
-        : this(ExePath, CommandLineArgs,
-              WorkingDirectory ?? Path.GetDirectoryName(ExePath) ?? AppContext.BaseDirectory,
-              EnvironmentVariables ?? ImmutableDictionary<string, string>.Empty,
-              StartupTimeout: TimeSpan.FromSeconds(120),
-              RpcTimeout: TimeSpan.FromSeconds(30),
-              ShutdownTimeout: TimeSpan.FromSeconds(30))
+        : this(UIService, ExePath, CommandLineArgs,
+               WorkingDirectory: WorkingDirectory ?? Path.GetDirectoryName(ExePath) ?? AppContext.BaseDirectory,
+               EnvironmentVariables: EnvironmentVariables ?? ImmutableDictionary<string, string>.Empty,
+               StartupTimeout: TimeSpan.FromSeconds(120),
+               RpcTimeout: TimeSpan.FromSeconds(30),
+               ShutdownTimeout: TimeSpan.FromSeconds(30))
     { }
 
     public AdaptiveRemoteHostSettings AddCommandLineArgs(string args)

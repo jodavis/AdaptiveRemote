@@ -1,6 +1,7 @@
 using AdaptiveRemote.Headless;
 using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Lifecycle;
+using AdaptiveRemote.Services.Testing;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 
 WebApplicationOptions options = new()
@@ -29,8 +30,11 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<CircuitHandler, LoggingCircuitHandler>();
 
 // Register Playwright hosted service to manage browser lifecycle
+// Register as singleton first so it can be injected into test services
+builder.Services.AddSingleton<PlaywrightBrowserLifetimeService>();
+builder.Services.AddSingleton<IBrowserUIAccess>(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
 builder.Services.Configure<PlaywrightSettings>(builder.Configuration.GetSection("playwright"));
-builder.Services.AddHostedService<PlaywrightBrowserLifetimeService>();
 
 WebApplication app = builder.Build();
 

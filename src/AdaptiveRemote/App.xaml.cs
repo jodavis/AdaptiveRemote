@@ -1,6 +1,9 @@
 ﻿using System.Windows;
 using AdaptiveRemote.Services.Lifecycle;
+using AdaptiveRemote.Services.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Web.WebView2.Core;
 
 namespace AdaptiveRemote;
 
@@ -10,15 +13,14 @@ public partial class App : Application
     {
         try
         {
-            AcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
+            WpfAcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
             accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
-
-            MainWindow mainWindow = new(accelerator.ViewModel);
-            mainWindow.Show();
+            
+            accelerator.MainWindow.Show();
 
             IHostBuilder hostBuilder = Host.CreateDefaultBuilder(e.Args)
                 .AddAcceleratedServices(accelerator)
-                .AddWindowsUIServices(mainWindow)
+                .AddWindowsUIServices()
                 .AddWindowsSpeechServices();
 
             base.OnStartup(e);
@@ -36,7 +38,7 @@ public partial class App : Application
         }
     }
 
-    protected virtual AcceleratedServices CreateAcceleratedServices(string[] args) => new(args);
+    protected virtual WpfAcceleratedServices CreateAcceleratedServices(string[] args) => new(args);
 
     private async Task RunApplicationLoopAndShutdownAsync(IHostBuilder hostBuilder, Services.ILifecycleViewController controller)
     {

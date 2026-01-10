@@ -17,6 +17,6 @@ internal class Program : App
         new Program(args).Run();
     }
 
-    protected override AcceleratedServices CreateAcceleratedServices(string[] args)
+    protected override WpfAcceleratedServices CreateAcceleratedServices(string[] args)
         => base.CreateAcceleratedServices(_args);
 }

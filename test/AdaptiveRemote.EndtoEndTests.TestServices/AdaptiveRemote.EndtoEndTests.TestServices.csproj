@@ -11,6 +11,7 @@
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="MSTest.TestFramework" />
     <PackageReference Include="StreamJsonRpc" />
+    <PackageReference Include="Microsoft.Playwright" />
   </ItemGroup>
 
   <ItemGroup>

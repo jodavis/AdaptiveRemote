@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using AdaptiveRemote.EndtoEndTests.Host;
 using Microsoft.Extensions.Logging;
 
@@ -8,9 +7,6 @@ namespace AdaptiveRemote.EndtoEndTests;
 public class HeadlessHostTests : HostTestBase
 {
     private static string? _solutionRoot;
-
-    private static readonly ImmutableDictionary<string, string> StandardHeadlessEnvironmentVariables =
-        ImmutableDictionary<string, string>.Empty;
 
     public TestContext TestContext { get; set; } = null!;
 
@@ -32,9 +28,9 @@ public class HeadlessHostTests : HostTestBase
             : "AdaptiveRemote.Headless";
         
         return new(
+            UIService: UIServiceType.Playwright,
             ExePath: Path.Combine(solutionRoot, $"src/AdaptiveRemote.Headless/bin/Debug/net8.0/{exeName}"),
-            CommandLineArgs: $"--playwright:TracesDir=\"{TracesPath}\"",
-            EnvironmentVariables: StandardHeadlessEnvironmentVariables);
+            CommandLineArgs: $"--playwright:TracesDir=\"{TracesPath}\"");
     }
 
     protected override ILogger CreateTypedLogger(AdaptiveRemoteHost host) 

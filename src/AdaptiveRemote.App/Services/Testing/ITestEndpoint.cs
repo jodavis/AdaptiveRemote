@@ -29,4 +29,15 @@ public interface ITestEndpoint
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A proxy to the test logger that can be used by tests to emit or collect log events.</returns>
     Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Dynamically loads a UI test service from the specified assembly and type.
+    /// The UI test service is instantiated within the application's DI scope so it can access
+    /// Playwright/WebView2 objects and interact with the UI.
+    /// </summary>
+    /// <param name="assemblyPath">Full path to the assembly containing the UI test service type.</param>
+    /// <param name="typeName">Fully qualified name of the UI test service type to instantiate.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A proxy to the UI test service that can be used to interact with the UI.</returns>
+    Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
 }

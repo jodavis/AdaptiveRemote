@@ -51,6 +51,11 @@ public partial class AdaptiveRemoteHost
 
             AdaptiveRemoteHostSettings settingsWithControlPort = _settings.AddCommandLineArgs($"--test:ControlPort={controlPort}");
 
+            // Configure the WebView debugging port
+            int debuggingPort = GetAvailablePort();
+
+            settingsWithControlPort = settingsWithControlPort.AddCommandLineArgs($"--test:WebViewRemoteDebuggingPort={debuggingPort}");
+
             // Start the host process
             string exePath = Path.GetFullPath(settingsWithControlPort.ExePath);
 
@@ -165,7 +170,7 @@ public partial class AdaptiveRemoteHost
                 ITestEndpoint testEndpoint = rpc.Attach<ITestEndpoint>();
 
                 // Attach the RPC proxy to our HostRpcLoggerProvider so test-side logs are forwarded to the host
-                ITestLogger testLogger = WaitHelpers.WaitForAsyncTask(ct => testEndpoint.CreateTestLoggerAsync<HostApplicationTestLogger>(ct), _settings.StartupTimeout);
+                ITestLogger testLogger = testEndpoint.CreateTestService<ITestLogger, HostApplicationTestLogger>(_settings.StartupTimeout);
                 rpcProvider.AttachTestLoggerProxy(testLogger);
                 logger.LogInformation("Attached RPC test logger");
 
