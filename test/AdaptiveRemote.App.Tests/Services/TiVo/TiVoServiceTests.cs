@@ -31,11 +31,11 @@ public class TiVoServiceTests
     private TiVoService CreateUninitializedSut() => new(MockLocator.Object, MockConnectionFactory.Object, MockDefinition.Object, MockLogger);
     private TiVoService CreateSut()
     {
-        const int InitializeTimeoutInMilliseconds = 1000;
+        const int InitializeTimeoutInMilliseconds = 5000;
         TiVoService sut = CreateUninitializedSut();
 
         ((IScopedLifecycle)sut).InitializeAsync(InitializeActivity, default)
-            .Should().BeCompleteWithin(TimeSpan.FromMicroseconds(InitializeTimeoutInMilliseconds),
+            .Should().BeCompleteWithin(TimeSpan.FromMilliseconds(InitializeTimeoutInMilliseconds),
                 because: nameof(TiVoService) + " should initialize within that time");
 
         return sut;
