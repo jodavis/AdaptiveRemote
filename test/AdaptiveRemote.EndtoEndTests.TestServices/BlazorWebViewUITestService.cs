@@ -13,7 +13,7 @@ public class BlazorWebViewUITestService : PlaywrightUITestService
     private static readonly TimeSpan InitializePlaywrightTimeout = TimeSpan.FromSeconds(30);
 
     public BlazorWebViewUITestService(IBrowserDebuggerAccess browserDebugger, ILogger<BlazorWebViewUITestService> logger)
-        : base (new BrowserFromPortProvider(browserDebugger, logger))
+        : base(new BrowserFromPortProvider(browserDebugger, logger))
     {
     }
 
@@ -85,7 +85,9 @@ public class BlazorWebViewUITestService : PlaywrightUITestService
                 {
                     _ = _browser.Value.CloseAsync().ConfigureAwait(false);
                 }
-                catch { }
+                catch
+                {
+                }
             }
 
             if (_playwright.IsValueCreated)

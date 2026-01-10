@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -14,10 +9,10 @@ public static class ILoggerExtensions
         return new TimedOperation(logger, operationDescription);
     }
 
-    private class TimedOperation : IDisposable
+    private sealed class TimedOperation : IDisposable
     {
-        private ILogger _logger;
-        private string _operationDescription;
+        private readonly ILogger _logger;
+        private readonly string _operationDescription;
         private readonly DateTime _startTime;
 
         public TimedOperation(ILogger logger, string operationDescription)

@@ -18,13 +18,13 @@ public class PlaywrightUITestService : IUITestService
         _browserProvider = browserProvider;
     }
 
-    private IPage CurrentPage => _browserProvider.CurrentPage as IPage 
+    private IPage CurrentPage => _browserProvider.CurrentPage as IPage
         ?? throw new InvalidOperationException("IBrowserProvider service did not provide an object of type IPage");
 
     public async Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default)
     {
         ILocator locator = GetButtonLocatorByLabelAsync(label);
-        
+
         try
         {
             return await locator.IsVisibleAsync();
@@ -38,7 +38,7 @@ public class PlaywrightUITestService : IUITestService
     public async Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken = default)
     {
         ILocator locator = GetButtonLocatorByLabelAsync(label);
-        
+
         try
         {
             return await locator.IsEnabledAsync();
@@ -52,7 +52,7 @@ public class PlaywrightUITestService : IUITestService
     public async Task ClickButtonAsync(string label, CancellationToken cancellationToken = default)
     {
         ILocator locator = GetButtonLocatorByLabelAsync(label);
-        
+
         // Verify the button is visible
         bool isVisible = await locator.IsVisibleAsync();
         if (!isVisible)
@@ -79,7 +79,7 @@ public class PlaywrightUITestService : IUITestService
         bool hasDisabledAttribute = await locator.GetAttributeAsync("disabled") != null;
         string? ariaDisabled = await locator.GetAttributeAsync("aria-disabled");
         bool isAriaDisabled = ariaDisabled == "true";
-        
+
         return hasDisabledAttribute || isAriaDisabled;
     }
 

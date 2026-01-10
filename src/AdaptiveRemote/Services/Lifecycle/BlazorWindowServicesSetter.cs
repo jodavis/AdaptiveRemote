@@ -20,6 +20,6 @@ internal class BlazorWindowServicesSetter : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
         => await _browser.Dispatcher.InvokeAsync(() => _browser.Services = _services);
-    
+
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

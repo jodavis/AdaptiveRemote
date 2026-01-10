@@ -1,3 +1,4 @@
+#pragma warning disable IDE0055, IDE0005
 using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Testing;
 
@@ -67,3 +68,5 @@ public class ApplicationTestService : IApplicationTestService
         return Task.FromResult(_lifecycleView.CurrentPhase);
     }
 }
+
+#pragma warning restore IDE0055, IDE0005
