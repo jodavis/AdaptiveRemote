@@ -9,8 +9,8 @@ internal class MockLogger<LoggerType1, LoggerType2> : MockLogger<LoggerType1>, I
 internal class MockLogger<LoggerType> : ILogger<LoggerType>
 {
     private readonly List<string> _messages = new();
+    private readonly object _lock = new();
     private Exception? _assertException = null;
-    private object _lock = new();
 
     public IEnumerable<string> Messages => _messages;
     public TestContext? OutputWriter { get; set; }

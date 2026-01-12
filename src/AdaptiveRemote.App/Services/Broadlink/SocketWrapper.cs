@@ -7,7 +7,7 @@ namespace AdaptiveRemote.Services.Broadlink;
 [ExcludeFromCodeCoverage(Justification = "Simple wrapper around System.Net.Socket")]
 internal class SocketWrapper : ISocket
 {
-    private Socket _socket;
+    private readonly Socket _socket;
 
     private SocketWrapper(Socket socket)
     {

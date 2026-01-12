@@ -1,13 +1,12 @@
 ﻿using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote.Services.Lifecycle;
 
 public class WpfAcceleratedServices : AcceleratedServices
 {
-    private IBrowserDebuggerAccess? _browserDebugger = null;
+    private readonly IBrowserDebuggerAccess? _browserDebugger;
 
     public WpfAcceleratedServices(string[] args)
         : base(args)
@@ -28,7 +27,7 @@ public class WpfAcceleratedServices : AcceleratedServices
 
     public MainWindow MainWindow { get; }
 
-    protected override void AddPrecreatedServices(IServiceCollection services) 
+    protected override void AddPrecreatedServices(IServiceCollection services)
     {
         base.AddPrecreatedServices(services);
 

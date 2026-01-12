@@ -1,0 +1,10 @@
+<Project>
+  <!-- Import parent Directory.Build.props -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- Relax code style rules for test projects -->
+    <!-- Suppress warnings for unused private members, unnecessary assignments, and formatting in tests -->
+    <NoWarn>$(NoWarn);IDE0051;IDE0052;IDE0059</NoWarn>
+  </PropertyGroup>
+</Project>

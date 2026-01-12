@@ -26,14 +26,14 @@ public class HeadlessHostTests : HostTestBase
         string exeName = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
             ? "AdaptiveRemote.Headless.exe"
             : "AdaptiveRemote.Headless";
-        
+
         return new(
             UIService: UIServiceType.Playwright,
             ExePath: Path.Combine(solutionRoot, $"src/AdaptiveRemote.Headless/bin/Debug/net8.0/{exeName}"),
             CommandLineArgs: $"--playwright:TracesDir=\"{TracesPath}\"");
     }
 
-    protected override ILogger CreateTypedLogger(AdaptiveRemoteHost host) 
+    protected override ILogger CreateTypedLogger(AdaptiveRemoteHost host)
         => host.CreateLogger<HeadlessHostTests>();
 
     [TestMethod]

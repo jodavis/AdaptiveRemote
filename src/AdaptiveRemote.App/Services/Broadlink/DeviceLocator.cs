@@ -2,7 +2,7 @@
 
 internal class DeviceLocator : IDeviceLocator
 {
-    private IUdpService _udpService;
+    private readonly IUdpService _udpService;
 
     public DeviceLocator(IUdpService udpService)
     {

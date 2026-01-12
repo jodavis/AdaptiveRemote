@@ -10,7 +10,7 @@ internal static class LoggingHostBuilderExtensions
     internal static IHostBuilder OptionallyAddFileLogging(this IHostBuilder builder)
         => builder.ConfigureLogging((context, logging) =>
         {
-            LoggingSettings settings = context.Configuration.GetSection(SettingsKeys.Logging).Get<LoggingSettings>() 
+            LoggingSettings settings = context.Configuration.GetSection(SettingsKeys.Logging).Get<LoggingSettings>()
                 ?? new LoggingSettings();
             if (settings.FilePath is not null)
             {

@@ -176,10 +176,10 @@ public class ScopedBackgroundProcessTests
         // Arrange
         Exception expectedException = new DataMisalignedException();
 
+        // No error logged here because lifecycle should report it
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
                 Expect_Starting
-            // No error logged here because lifecycle should report it
             );
 
         sut.ExecuteCompletionSource.SetException(expectedException);

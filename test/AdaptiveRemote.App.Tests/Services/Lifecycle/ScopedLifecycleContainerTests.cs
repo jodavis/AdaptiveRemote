@@ -1,8 +1,5 @@
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
-using AdaptiveRemote.TestUtilities;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace AdaptiveRemote.Services.Lifecycle;

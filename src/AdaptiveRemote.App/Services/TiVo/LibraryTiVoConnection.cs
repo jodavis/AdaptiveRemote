@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Net;
+﻿using System.Net;
 using AdaptiveRemote.Logging;
 using I8Beef.TiVo;
 using I8Beef.TiVo.Commands;

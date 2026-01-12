@@ -20,7 +20,7 @@ public interface IEncryption
     /// <returns>Decrypted result</returns>
     Memory<byte> Decrypt(Memory<byte> memory);
 
-    public interface Factory
+    interface Factory
     {
         /// <summary>
         /// Return an encryption model using the default Broadlink key

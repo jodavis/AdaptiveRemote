@@ -13,5 +13,5 @@ public abstract class RemoteLayoutElement : MvvmObject
         CSSID = id;
     }
 
-    public override abstract string ToString();
+    public abstract override string ToString();
 }

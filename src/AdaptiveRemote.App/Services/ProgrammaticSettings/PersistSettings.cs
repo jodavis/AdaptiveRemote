@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.IO;
 using System.Text.RegularExpressions;
 using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
@@ -15,19 +14,19 @@ internal class PersistSettings : IPersistSettings
     private const string ValueKey = "value";
     private const string ValuePattern = @"[^\\r\\n]*";
 
-    private static Regex KeyRegex = new($"^{NamePattern}$", RegexOptions.Singleline);
-    private static Regex ValueRegex = new($"^{ValuePattern}$", RegexOptions.Singleline);
-    private static Regex LineRegex = new($"^(?<{NameKey}>{NamePattern}){Separator}(?<{ValueKey}>{ValuePattern})$");
+    private static readonly Regex KeyRegex = new($"^{NamePattern}$", RegexOptions.Singleline);
+    private static readonly Regex ValueRegex = new($"^{ValuePattern}$", RegexOptions.Singleline);
+    private static readonly Regex LineRegex = new($"^(?<{NameKey}>{NamePattern}){Separator}(?<{ValueKey}>{ValuePattern})$");
 
     private readonly IFileSystem _fileSystem;
     private readonly string _filePath;
     private readonly ILogger<PersistSettings> _logger;
 
     private readonly Lazy<Task<ConcurrentDictionary<string, string>>> _lazyValues;
+    private readonly object _lockObject = new();
 
     private bool _needsSave = false;
     private bool _isSaving = false;
-    private object _lockObject = new();
 
     public PersistSettings(IFileSystem fileSystem, IOptions<ProgrammaticSettings> settings, ILogger<PersistSettings> logger)
     {

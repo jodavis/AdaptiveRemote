@@ -24,7 +24,7 @@ public class ApplicationTestService : IApplicationTestService
         // Find the Exit command by walking the remote tree
         Command command = FindCommandByName(_remoteDefinitionService.RemoteRoot, commandName)
             ?? throw new InvalidOperationException($"{commandName} command not found in remote definition service");
-        
+
         if (command.ExecuteAsync is null)
         {
             throw new InvalidOperationException($"{commandName} command does not have an ExecuteAsync delegate");

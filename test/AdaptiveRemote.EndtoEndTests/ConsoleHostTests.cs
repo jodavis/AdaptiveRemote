@@ -25,12 +25,12 @@ public class ConsoleHostTests : HostTestBase
         }
     }
 
-    protected override AdaptiveRemoteHostSettings GetHostSettings(string solutionRoot) 
+    protected override AdaptiveRemoteHostSettings GetHostSettings(string solutionRoot)
         => new(
-            UIService: UIServiceType.BlazorWebView, 
+            UIService: UIServiceType.BlazorWebView,
             ExePath: Path.Combine(solutionRoot, "src/AdaptiveRemote.Console/bin/Debug/net8.0-windows7.0/AdaptiveRemote.Console.exe"));
 
-    protected override ILogger CreateTypedLogger(AdaptiveRemoteHost host) 
+    protected override ILogger CreateTypedLogger(AdaptiveRemoteHost host)
         => host.CreateLogger<ConsoleHostTests>();
 
     [TestMethod]

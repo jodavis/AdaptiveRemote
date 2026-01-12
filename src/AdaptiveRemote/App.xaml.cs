@@ -1,9 +1,6 @@
 ﻿using System.Windows;
 using AdaptiveRemote.Services.Lifecycle;
-using AdaptiveRemote.Services.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Web.WebView2.Core;
 
 namespace AdaptiveRemote;
 
@@ -15,7 +12,7 @@ public partial class App : Application
         {
             WpfAcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
             accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
-            
+
             accelerator.MainWindow.Show();
 
             IHostBuilder hostBuilder = Host.CreateDefaultBuilder(e.Args)

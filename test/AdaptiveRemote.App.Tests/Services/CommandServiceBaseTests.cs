@@ -17,7 +17,7 @@ public class CommandServiceBaseTests
     private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
     private ILifecycleActivity CleanupActivity => MockCleanupActivity.Object;
 
-    private LayoutGroup RemoteDefinition = new LayoutGroup("ROOT",
+    private readonly LayoutGroup RemoteDefinition = new LayoutGroup("ROOT",
         [
             new MockCommand("Mock1") { IsEnabled = true, IsActive = true },
             new OtherCommand("Other1") { IsEnabled = true, IsActive = true },

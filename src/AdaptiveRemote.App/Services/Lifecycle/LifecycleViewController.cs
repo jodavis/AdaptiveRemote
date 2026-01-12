@@ -5,6 +5,7 @@ namespace AdaptiveRemote.Services.Lifecycle;
 internal class LifecycleViewController : ILifecycleViewController
 {
     private readonly List<Activity> _activities;
+    private readonly object _lock = new();
 
     public LifecycleViewController(LifecycleView viewModel)
     {
@@ -54,7 +55,6 @@ internal class LifecycleViewController : ILifecycleViewController
             _ => string.Empty,
         };
 
-    private object _lock = new();
     private void UpdateTaskName()
     {
         lock (_lock)

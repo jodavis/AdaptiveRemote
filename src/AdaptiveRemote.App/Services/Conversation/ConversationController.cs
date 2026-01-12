@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using AdaptiveRemote.Logging;
+﻿using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

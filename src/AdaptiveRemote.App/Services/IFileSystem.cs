@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace AdaptiveRemote.Services;
+﻿namespace AdaptiveRemote.Services;
 
 /// <summary>
 /// Abstraction for the file system
