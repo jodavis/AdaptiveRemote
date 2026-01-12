@@ -87,16 +87,6 @@ public abstract class HostTestBase
             // Wait for shutdown
             host.Stop();
 
-            if (File.Exists(logFilePath))
-            {
-                logger.LogInformation("Found log file at {LogFilePath}", logFilePath);
-                testContext.AddResultFile(logFilePath);
-            }
-            else
-            {
-                logger.LogWarning("No log file found at {LogFilePath}", logFilePath);
-            }
-
             // Verify logs (optional, can be overridden)
             VerifyLogs(host, logger);
         }
@@ -114,6 +104,16 @@ public abstract class HostTestBase
                 host.StandardOutput,
                 host.StandardError);
             throw;
+        }
+
+        if (File.Exists(logFilePath))
+        {
+            logger.LogInformation("Found log file at {LogFilePath}", logFilePath);
+            testContext.AddResultFile(logFilePath);
+        }
+        else
+        {
+            logger.LogWarning("No log file found at {LogFilePath}", logFilePath);
         }
     }
 

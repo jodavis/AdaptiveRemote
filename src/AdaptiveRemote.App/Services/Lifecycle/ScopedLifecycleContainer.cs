@@ -14,6 +14,8 @@ internal class ScopedLifecycleContainer
     private readonly ILifecycleViewController _controller;
     private readonly ILogger<ScopedLifecycleContainer> _logger;
 
+    private IEnumerable<IScopedLifecycle> _initializedServices = Enumerable.Empty<IScopedLifecycle>();
+
     public ScopedLifecycleContainer(IEnumerable<IScopedLifecycle> services, ILifecycleViewController controller, ILogger<ScopedLifecycleContainer> logger)
     {
         _services = services;
@@ -44,25 +46,18 @@ internal class ScopedLifecycleContainer
 
             if (initializeTasks.Any(x => x.IsFaulted))
             {
-                abortTokenSource.Cancel();
+                await abortTokenSource.CancelAsync();
                 break;
             }
         }
 
-        try
-        {
-            await Task.WhenAll(initializeTasks);
+        _initializedServices = initializedServices;
 
-            cancellationToken.ThrowIfCancellationRequested();
+        await Task.WhenAll(initializeTasks);
 
-            _controller.SetPhase(LifecyclePhase.Ready);
-        }
-        catch
-        {
-            _ = CleanUpAllAsync(initializedServices, default);
+        cancellationToken.ThrowIfCancellationRequested();
 
-            throw;
-        }
+        _controller.SetPhase(LifecyclePhase.Ready);
     }
 
     private async Task InitializeServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
@@ -84,8 +79,8 @@ internal class ScopedLifecycleContainer
         }
     }
 
-    public Task CleanUpAllAsync(CancellationToken cancellationToken)
-        => CleanUpAllAsync(_services, cancellationToken);
+    public Task CleanUpInitializedServicesAsync(CancellationToken cancellationToken)
+        => CleanUpAllAsync(_initializedServices, cancellationToken);
 
     private async Task CleanUpAllAsync(IEnumerable<IScopedLifecycle> scopedServices, CancellationToken cancellationToken)
     {

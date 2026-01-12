@@ -124,8 +124,10 @@ public class DeviceLocatorTests
         Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(cts.Token);
 
         // Assert
-        resultTask.Should().BeComplete(because: "FindDeviceAsync should have found the ScanResponsePacket");
-        Assert.IsTrue(result.IsCancellationRequested, nameof(result) + ".IsCancellationRequested");
+        resultTask.Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "FindDeviceAsync should have found the ScanResponsePacket");
+        result.WaitForCancelled().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "the BroadcastAsync cancellation token should have been cancelled after finding the first device");
     }
 
     private void Expect_UdpService_BroadcastAsync(params ScanResponsePacket[] responsePackets)

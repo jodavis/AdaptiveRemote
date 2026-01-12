@@ -40,17 +40,15 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
         return Task.CompletedTask;
     }
 
-    public virtual Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
+    public virtual async Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
-        _stop.Cancel();
+        await _stop.CancelAsync();
 
         foreach (Command command in _commands)
         {
             command.IsEnabled = false;
             command.ExecuteAsync = CreateWasShutDownHandler(command);
         }
-
-        return Task.CompletedTask;
     }
 
     private Command.ExecuteDelegate CreateWrappedHandler(CommandType command)

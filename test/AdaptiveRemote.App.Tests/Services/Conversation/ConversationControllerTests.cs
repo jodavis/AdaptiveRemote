@@ -960,7 +960,7 @@ public class ConversationControllerTests
             Expected_Started,
             Expected_Stopping);
 
-        resultTask.Should().NotBeComplete(because: "Recognition.RecognizeAsync is still running");
+        resultTask.Should().NotBeCompleteWithin(TimeSpan.FromMilliseconds(100), because: "Recognition.RecognizeAsync is still running");
 
         cancelled.IsCancellationRequested.Should().BeTrue(because: "RecognizeAsync's CancellationToken should have been triggered");
 
@@ -1029,8 +1029,7 @@ public class ConversationControllerTests
             .Verifiable(Times.Once);
 
         sut.InitializeAsync(InitializeActivity, default)
-            .Wait(1000)
-            .Should().BeTrue(because: "InitializeAsync should complete synchronously");
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "InitializeAsync should complete synchronously");
 
         MockLogger.VerifyMessages( // Wait for successful startup
             Expected_Starting,
@@ -1051,7 +1050,7 @@ public class ConversationControllerTests
             Expected_Started,
             Expected_Stopping);
 
-        resultTask.Should().NotBeComplete(because: "Command1Execute is still running");
+        resultTask.Should().NotBeCompleteWithin(TimeSpan.FromMilliseconds(100), because: "Command1Execute is still running");
 
         token.IsCancellationRequested.Should().BeTrue(because: "ExecuteAsync's CancellationToken should have been triggered");
 

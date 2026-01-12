@@ -28,7 +28,7 @@
     <!-- Suppress VSTHRD analyzers that are too strict for this project -->
     <!-- These supressions should be addressed and removed. See https://github.com/jodavis/AdaptiveRemote/issues/41 -->
     <!-- Suppress documentation warnings - we enable GenerateDocumentationFile only to get IDE0005 -->
-    <NoWarn>$(NoWarn);VSTHRD103;VSTHRD105;VSTHRD110;VSTHRD200;MSTEST0045;CS1591;CS1573;CS1584;CS1658</NoWarn>
+    <NoWarn>$(NoWarn);VSTHRD105;VSTHRD110;VSTHRD200;MSTEST0045;CS1591;CS1573;CS1584;CS1658</NoWarn>
 
     <!-- This warning is about using a JoinableTaskFactory, which is intended to solve a specific
          class of issues that this application does not have. -->

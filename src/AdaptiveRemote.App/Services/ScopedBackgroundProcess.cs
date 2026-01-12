@@ -110,7 +110,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
         {
             Logger.LogInformation(Message.ScopedBackgroundProcess_Stopping);
 
-            _stopToken.Cancel();
+            await _stopToken.CancelAsync();
 
             await Task.Run(async () =>
             {

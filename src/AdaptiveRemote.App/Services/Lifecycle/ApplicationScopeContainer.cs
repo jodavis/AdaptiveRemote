@@ -77,22 +77,24 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
 
     private async Task ReleaseScope(IApplicationScope scope)
     {
-        IEnumerable<Task> invokeTasks = Enumerable.Empty<Task>();
+        IEnumerable<Task> tasksToAwait = Enumerable.Empty<Task>();
+
         lock (_lockObject)
         {
             if (TryGetCurrentScope(out IApplicationScope? currentScope) &&
                 ReferenceEquals(currentScope, scope))
             {
-                invokeTasks = _invokeTasks;
+                _invokeTasks.Add(_stopTokenSource.CancelAsync());
+                _stopTokenSource = new CancellationTokenSource();
+
+                tasksToAwait = _invokeTasks;
                 _invokeTasks = new();
 
-                _stopTokenSource.Cancel();
-                _stopTokenSource = new CancellationTokenSource();
                 _scopeTcs = new TaskCompletionSource<IApplicationScope>();
             }
         }
 
-        await Task.WhenAll(invokeTasks);
+        await Task.WhenAll(tasksToAwait);
     }
 
     private bool TryGetCurrentScope([NotNullWhen(true)] out IApplicationScope? scope)
