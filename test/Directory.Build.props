@@ -6,5 +6,7 @@
     <!-- Relax code style rules for test projects -->
     <!-- Suppress warnings for unused private members, unnecessary assignments, and formatting in tests -->
     <NoWarn>$(NoWarn);IDE0051;IDE0052;IDE0059</NoWarn>
+    <!-- Suppress warnings for async usage in tests, which follow non-standard patterns to exercise async behavior -->
+    <NoWarn>$(NoWarn);VSTHRD002</NoWarn>
   </PropertyGroup>
 </Project>

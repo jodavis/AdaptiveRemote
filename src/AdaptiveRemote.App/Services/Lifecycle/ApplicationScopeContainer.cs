@@ -96,15 +96,5 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
     }
 
     private bool TryGetCurrentScope([NotNullWhen(true)] out IApplicationScope? scope)
-    {
-        Task<IApplicationScope> scopeTask = _scopeTcs.Task;
-        if (scopeTask.IsCompleted)
-        {
-            scope = scopeTask.Result;
-            return true;
-        }
-
-        scope = null;
-        return false;
-    }
+        => _scopeTcs.Task.TryGetResultIfComplete(out scope);
 }
