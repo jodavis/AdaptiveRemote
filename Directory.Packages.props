@@ -32,6 +32,7 @@
 
     <!-- Code Analysis -->
     <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.101" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="17.10.48" />
   </ItemGroup>
 
   <ItemGroup Label="Test-Only Packages">
