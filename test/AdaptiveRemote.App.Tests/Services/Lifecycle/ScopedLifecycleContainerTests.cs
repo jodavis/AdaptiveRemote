@@ -1,9 +1,6 @@
-#pragma warning disable IDE0005 // False positive: MockLogger type requires AdaptiveRemote.TestUtilities
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.TestUtilities;
 using FluentAssertions;
 using Moq;
-#pragma warning restore IDE0005
 
 namespace AdaptiveRemote.Services.Lifecycle;
 

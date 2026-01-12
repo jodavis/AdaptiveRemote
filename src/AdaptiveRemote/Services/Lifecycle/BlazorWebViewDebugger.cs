@@ -1,6 +1,5 @@
 using AdaptiveRemote.Services.Testing;
 using Microsoft.AspNetCore.Components.WebView.Wpf;
-using Microsoft.Extensions.Configuration;
 
 namespace AdaptiveRemote.Services.Lifecycle;
 

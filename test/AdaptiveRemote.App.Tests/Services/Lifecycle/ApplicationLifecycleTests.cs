@@ -252,8 +252,7 @@ public class ApplicationLifecycleTests
             .Throws(expectedError1)
             .Verifiable(Times.Once);
 
-        Expect_SetFatalErrorOn(
-            MockLifecycleViewController, expectedError1);
+        Expect_SetFatalErrorOn(MockLifecycleViewController, expectedError1);
 
         // Act
         Task startTask = sut.StartAsync(default);

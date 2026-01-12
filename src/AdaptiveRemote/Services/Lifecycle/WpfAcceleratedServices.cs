@@ -6,7 +6,7 @@ namespace AdaptiveRemote.Services.Lifecycle;
 
 public class WpfAcceleratedServices : AcceleratedServices
 {
-    private IBrowserDebuggerAccess? _browserDebugger;
+    private readonly IBrowserDebuggerAccess? _browserDebugger;
 
     public WpfAcceleratedServices(string[] args)
         : base(args)
