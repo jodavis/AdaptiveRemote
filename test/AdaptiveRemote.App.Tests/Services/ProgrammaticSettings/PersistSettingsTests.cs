@@ -32,7 +32,7 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
-    public async Task PersistSettings_Set_SavesSettingsToFile()
+    public async Task PersistSettings_Set_SavesSettingsToFileAsync()
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -45,7 +45,7 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+        await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
         // Assert
         MockFileSystem.VerifyFileContents(InputSettingsPath, "ExistingSetting=123\r\nNewSetting=abc\r\n");
@@ -59,7 +59,7 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
-    public async Task PersistSettings_Set_CalledMultipleTimes_SavesSettingsToFile()
+    public async Task PersistSettings_Set_CalledMultipleTimes_SavesSettingsToFileAsync()
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -74,7 +74,7 @@ public class PersistSettingsTests
         sut.Set("NewSetting2", "def");
         sut.Set("NewSetting3", "ghi");
 
-        await MockLogger.WaitForMessage(ExpectMessage_SavingSettings(4));
+        await MockLogger.WaitForMessageAsync(ExpectMessage_SavingSettings(4));
 
         // Assert
         DateTime startTime = DateTime.Now;
@@ -97,7 +97,7 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
-    public async Task PersistSettings_Set_ChangesExistingSettingInFile()
+    public async Task PersistSettings_Set_ChangesExistingSettingInFileAsync()
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -110,7 +110,7 @@ public class PersistSettingsTests
         // Act
         sut.Set("ExistingSetting", "ghi");
 
-        await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+        await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
         // Assert
         MockFileSystem.VerifyFileContents(InputSettingsPath, "ExistingSetting=ghi\r\n");
@@ -124,7 +124,7 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
-    public async Task PersistSettings_Set_OnFailureToLoadExistingFile_LogsError()
+    public async Task PersistSettings_Set_OnFailureToLoadExistingFile_LogsErrorAsync()
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -140,7 +140,7 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessage(ExpectMessage_Error("NewSetting", "abc", expectedException));
+        await MockLogger.WaitForMessageAsync(ExpectMessage_Error("NewSetting", "abc", expectedException));
 
         // Assert
         MockLogger.VerifyMessages(
@@ -149,7 +149,7 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
-    public async Task PersistSettings_Set_OnFailureToSaveFile_LogsError()
+    public async Task PersistSettings_Set_OnFailureToSaveFile_LogsErrorAsync()
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -167,7 +167,7 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessage(ExpectMessage_Error("NewSetting", "abc", expectedException));
+        await MockLogger.WaitForMessageAsync(ExpectMessage_Error("NewSetting", "abc", expectedException));
 
         // Assert
         MockLogger.VerifyMessages(
@@ -179,7 +179,7 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
-    public async Task PersistSettings_Set_WhenFileNotFound_CreatesFile()
+    public async Task PersistSettings_Set_WhenFileNotFound_CreatesFileAsync()
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -192,7 +192,7 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+        await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
         // Assert
         MockFileSystem.VerifyFileContents(InputSettingsPath, "NewSetting=abc\r\n");
@@ -204,7 +204,7 @@ public class PersistSettingsTests
     }
 
     [TestMethod]
-    public async Task PersistSettings_Set_WhenFileNotFound_CreatesDirectory()
+    public async Task PersistSettings_Set_WhenFileNotFound_CreatesDirectoryAsync()
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -221,7 +221,7 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+        await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
         // Assert
         MockFileSystem.VerifyFileContents(InputSettingsPath, "NewSetting=abc\r\n");
@@ -247,7 +247,7 @@ public class PersistSettingsTests
     [DataRow("Hello!", false)] // Rejects special characters
     [DataRow("Hi There", false)] // Rejects spaces
     [DataRow("Hello\n", false)] // Rejects newline
-    public async Task PersistSettings_Set_ValidatesKeyName(string input, bool expectedResult)
+    public async Task PersistSettings_Set_ValidatesKeyNameAsync(string input, bool expectedResult)
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -262,7 +262,7 @@ public class PersistSettingsTests
             // Assert
             Assert.IsTrue(expectedResult, "Expected ArgumentException was not thrown for input:'{0}'.", input);
 
-            await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+            await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
             MockLogger.VerifyMessages(
                 ExpectMessage_LoadingExistingSettings(),
@@ -289,7 +289,7 @@ public class PersistSettingsTests
     [DataRow("", true)]
     [DataRow("Invalid\n", false)] // Rejects newline
     [DataRow("Invalid\r", false)] // Rejects carriage return
-    public async Task PersistSettings_Set_ValidatesValue(string input, bool expectedResult)
+    public async Task PersistSettings_Set_ValidatesValueAsync(string input, bool expectedResult)
     {
         // Arrange
         IPersistSettings sut = CreateSut();
@@ -304,7 +304,7 @@ public class PersistSettingsTests
             // Assert
             Assert.IsTrue(expectedResult, "Expected ArgumentException was not thrown for input:'{0}'.", input);
 
-            await MockLogger.WaitForMessage(ExpectMessage_SavedSettings());
+            await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
             MockLogger.VerifyMessages(
                 ExpectMessage_LoadingExistingSettings(),

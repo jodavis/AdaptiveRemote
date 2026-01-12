@@ -33,12 +33,12 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
     {
         TaskCompletionSource startTcs = new();
 
-        ExecuteTask = StartExecutingWithErrorHandling(startTcs, _stopToken.Token, cancellationToken);
+        ExecuteTask = StartExecutingWithErrorHandlingAsync(startTcs, _stopToken.Token, cancellationToken);
 
         return startTcs.Task;
     }
 
-    private async Task StartExecutingWithErrorHandling(TaskCompletionSource startTcs, CancellationToken stopToken, CancellationToken initializationToken)
+    private async Task StartExecutingWithErrorHandlingAsync(TaskCompletionSource startTcs, CancellationToken stopToken, CancellationToken initializationToken)
     {
         try
         {
@@ -46,7 +46,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
 
             Logger.LogInformation(Message.ScopedBackgroundProcess_Starting);
 
-            await MoveToWorkerThreadAsync(() => StartExecutingOnWorkerThread(startTcs, stopToken, initializationToken), initializationToken);
+            await MoveToWorkerThreadAsync(() => StartExecutingOnWorkerThreadAsync(startTcs, stopToken, initializationToken), initializationToken);
 
             if (!stopToken.IsCancellationRequested)
             {
@@ -80,11 +80,11 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
         }
     }
 
-    private Task StartExecutingOnWorkerThread(TaskCompletionSource startTcs, CancellationToken stopToken, CancellationToken initializationToken)
+    private Task StartExecutingOnWorkerThreadAsync(TaskCompletionSource startTcs, CancellationToken stopToken, CancellationToken initializationToken)
     {
         initializationToken.ThrowIfCancellationRequested();
 
-        Task task = StartExecutingWithInitializationCancellation(stopToken, initializationToken);
+        Task task = StartExecutingWithInitializationCancellationAsync(stopToken, initializationToken);
 
         if (!task.IsCompleted && startTcs.TrySetResult())
         {
@@ -94,7 +94,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
         return task;
     }
 
-    private Task StartExecutingWithInitializationCancellation(CancellationToken stopToken, CancellationToken cancellationToken)
+    private Task StartExecutingWithInitializationCancellationAsync(CancellationToken stopToken, CancellationToken cancellationToken)
     {
         CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(stopToken);
 

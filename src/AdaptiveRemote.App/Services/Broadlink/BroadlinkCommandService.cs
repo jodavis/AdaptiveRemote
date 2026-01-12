@@ -46,6 +46,6 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     {
         byte[] data = Convert.FromBase64String(command.Data);
 
-        return cancellationToken => _connection!.SendData(data, cancellationToken);
+        return cancellationToken => _connection!.SendDataAsync(data, cancellationToken);
     }
 }

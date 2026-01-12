@@ -42,7 +42,7 @@ public class ScopedLifecycleContainerTests
     }
 
     [TestMethod]
-    public async Task Initialize_AllServices_Succeeds()
+    public async Task Initialize_AllServices_SucceedsAsync()
     {
         Expect_InitializeAsyncOn(MockService1);
         Expect_InitializeAsyncOn(MockService2);
@@ -84,7 +84,7 @@ public class ScopedLifecycleContainerTests
     }
 
     [TestMethod]
-    public async Task Initialize_ImmediateFailure_ReportsFailure()
+    public async Task Initialize_ImmediateFailure_ReportsFailureAsync()
     {
         Exception expected = new InvalidOperationException("fail1");
 
@@ -111,7 +111,7 @@ public class ScopedLifecycleContainerTests
     }
 
     [TestMethod]
-    public async Task Initialize_DelayedFailure_ReportsFailure()
+    public async Task Initialize_DelayedFailure_ReportsFailureAsync()
     {
         Exception expected = new InvalidOperationException("fail1");
         TaskCompletionSource tcs = new TaskCompletionSource();
@@ -146,7 +146,7 @@ public class ScopedLifecycleContainerTests
     }
 
     [TestMethod]
-    public async Task Initialize_ImmediateFailure_CancelsPending()
+    public async Task Initialize_ImmediateFailure_CancelsPendingAsync()
     {
         Exception expected = new InvalidOperationException("fail1");
 
@@ -205,7 +205,7 @@ public class ScopedLifecycleContainerTests
     }
 
     [TestMethod]
-    public async Task Cleanup_ReportsErrors()
+    public async Task Cleanup_ReportsErrorsAsync()
     {
         Exception expected1 = new InvalidOperationException("Error 1");
         Exception expected2 = new FormatException("Error 2");

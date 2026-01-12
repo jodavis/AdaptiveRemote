@@ -64,7 +64,7 @@ public class BroadlinkCommandServiceTests
 
         Expect_IDeviceLocator_FindDevice("10.20.30.40:1234", 0x78AB, "AA:BB:CC:DD:EE:FF");
         Expect_ConnectionFactory_Create();
-        Expect_Connection_AuthenticateAsync();
+        Expect_Connection_Authenticate();
         Expect_InitializeActivity_Description("Connecting to Broadlink device");
 
         // Act
@@ -84,7 +84,7 @@ public class BroadlinkCommandServiceTests
             .Setup(x => x.Create(It.IsAny<IPEndPoint>(), It.IsAny<PhysicalAddress>(), It.IsAny<short>()))
             .Returns(MockConnection.Object)
             .Verifiable(Times.Once);
-    private void Expect_Connection_AuthenticateAsync()
+    private void Expect_Connection_Authenticate()
         => MockConnection
             .Setup(x => x.AuthenticateAsync(It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(true)

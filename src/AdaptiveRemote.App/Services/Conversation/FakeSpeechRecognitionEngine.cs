@@ -11,7 +11,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 
     public FakeSpeechRecognitionEngine()
     {
-        _ = RecognitionLoop();
+        _ = RecognitionLoopAsync();
     }
 
     event EventHandler<RecognizedSpeechEventArgs> ISpeechRecognitionEngine.SpeechRecognized
@@ -29,18 +29,18 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
     void ISpeechRecognitionEngine.LoadGrammar(IGrammar grammar) => _grammars.Add(grammar.Name ?? string.Empty, grammar);
     void ISpeechRecognitionEngine.UnloadGrammar(IGrammar grammar) => _grammars.Remove(grammar.Name ?? string.Empty);
     void ISpeechRecognitionEngine.UnloadAllGrammars() => _grammars.Clear();
-    void ISpeechRecognitionEngine.RecognizeAsync() => _pause.Cancel();
+    void ISpeechRecognitionEngine.Recognize() => _pause.Cancel();
     void ISpeechRecognitionEngine.RecognizeAsyncCancel() => _pause = new();
     void ISpeechRecognitionEngine.SetConfidenceThreshold(int threshold) { }
 
-    private async Task RecognitionLoop()
+    private async Task RecognitionLoopAsync()
     {
         IEnumerator<FakeRecognitionResult> commands = CommandLoop();
         int ticks = 0;
 
         while (true)
         {
-            await _pause.Token.WaitForCancelled();
+            await _pause.Token.WaitForCancelledAsync();
             await Task.Delay(1000);
             ticks++;
 

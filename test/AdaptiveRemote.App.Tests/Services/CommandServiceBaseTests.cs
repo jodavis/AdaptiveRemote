@@ -369,7 +369,7 @@ public class CommandServiceBaseTests
         _ = sut.CleanUpAsync(CleanupActivity, default);
 
         // Assert
-        sut.CancelTokens.ForEach(x => x.WaitForCancelled().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+        sut.CancelTokens.ForEach(x => x.WaitForCancelledAsync().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
             because: "all executing commands were cancelled"));
 
         MockLogger.VerifyMessages(

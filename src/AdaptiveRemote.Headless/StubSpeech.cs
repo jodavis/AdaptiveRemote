@@ -10,7 +10,7 @@ internal class StubSpeechSynthesizer : ISpeechSynthesizer
     public event EventHandler? SpeakCompleted;
 
     public void CancelAll() { }
-    public void SpeakAsync(string phrase) { SpeakCompleted?.Invoke(this, EventArgs.Empty); }
+    public void Speak(string phrase) { SpeakCompleted?.Invoke(this, EventArgs.Empty); }
     public IEnumerable<string> GetInstalledVoices() => Array.Empty<string>();
     public void SelectVoice(string fullName) { }
     public void SetSpeakingRate(int rate) { }
@@ -23,7 +23,7 @@ internal class StubSpeechRecognition : ISpeechRecognitionEngine
     public event EventHandler<RecognizedSpeechEventArgs> SpeechRejected { add { } remove { } }
 
     public void LoadGrammar(IGrammar grammar) { }
-    public void RecognizeAsync() { }
+    public void Recognize() { }
     public void RecognizeAsyncCancel() { }
     public void SetConfidenceThreshold(int threshold) { }
     public void UnloadAllGrammars() { }

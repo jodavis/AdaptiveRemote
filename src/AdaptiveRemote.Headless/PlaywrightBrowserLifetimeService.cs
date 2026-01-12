@@ -37,7 +37,7 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Wait for the application to start
-        await _lifetime.ApplicationStarted.WaitForCancelled();
+        await _lifetime.ApplicationStarted.WaitForCancelledAsync();
 
         _logger.LogInformation("Starting Playwright hosted service");
 
@@ -91,7 +91,7 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
             _logger.LogInformation("Playwright browser navigated to Blazor app");
 
             // Keep running until cancellation is requested
-            await stoppingToken.WaitForCancelled();
+            await stoppingToken.WaitForCancelledAsync();
         }
         catch (OperationCanceledException)
         {

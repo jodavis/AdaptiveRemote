@@ -23,7 +23,7 @@ internal class ApplicationLifecycle : BackgroundService
     {
         try
         {
-            await _scopeProvider.InvokeInScopeAsync(InitializeLifecycle, stoppingToken);
+            await _scopeProvider.InvokeInScopeAsync(InitializeLifecycleAsync, stoppingToken);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -32,17 +32,17 @@ internal class ApplicationLifecycle : BackgroundService
         catch
         {
             // An error occurred, so stop all the services
-            _ = _scopeProvider.InvokeInScopeAsync(CleanUpLifecycle, default);
+            _ = _scopeProvider.InvokeInScopeAsync(CleanUpLifecycleAsync, default);
         }
 
-        await stoppingToken.WaitForCancelled();
+        await stoppingToken.WaitForCancelledAsync();
 
         _logger.LogInformation(Message.ApplicationLifecycle_ShuttingDown);
 
-        await _scopeProvider.InvokeInScopeAsync(CleanUpLifecycle, default);
+        await _scopeProvider.InvokeInScopeAsync(CleanUpLifecycleAsync, default);
     }
 
-    private async Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
+    private async Task InitializeLifecycleAsync(IServiceProvider provider, CancellationToken cancellationToken)
     {
         _currentContainer = SafeGetContainer(provider);
 
@@ -66,7 +66,7 @@ internal class ApplicationLifecycle : BackgroundService
         }
     }
 
-    private async Task CleanUpLifecycle(IServiceProvider provider, CancellationToken token)
+    private async Task CleanUpLifecycleAsync(IServiceProvider provider, CancellationToken token)
     {
         ScopedLifecycleContainer? scope = Interlocked.Exchange(ref _currentContainer, null);
 

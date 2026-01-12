@@ -11,7 +11,7 @@ internal class SystemNetWrapper : INetworking
     public async Task<IPHostEntry> GetDnsEntryAsync(string hostNameOrAddress, CancellationToken cancellationToken)
         => await Dns.GetHostEntryAsync(hostNameOrAddress, cancellationToken);
 
-    public Task<IEnumerable<(IPAddress, IPAddress)>> GetOperationalNetworkInterfaceAddresses(CancellationToken cancellationToken)
+    public Task<IEnumerable<(IPAddress, IPAddress)>> GetOperationalNetworkInterfaceAddressesAsync(CancellationToken cancellationToken)
         => Task.FromResult<IEnumerable<(IPAddress, IPAddress)>>(
             NetworkInterface.GetAllNetworkInterfaces()
             .Where(x => x.OperationalStatus == OperationalStatus.Up)

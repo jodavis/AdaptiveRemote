@@ -22,7 +22,7 @@ public class ListeningControllerTests
     public void SetupMocks()
     {
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Never);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -36,13 +36,13 @@ public class ListeningControllerTests
     }
 
     [TestMethod]
-    public void ListeningController_Listen_CallsRecognizeAsync()
+    public void ListeningController_Listen_CallsRecognize()
     {
         // Arrange
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
 
         // Act
@@ -62,7 +62,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
 
         sut.Listen();
@@ -85,7 +85,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -109,7 +109,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
 
         sut.Listen();
@@ -132,7 +132,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -160,7 +160,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -188,7 +188,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
 
         sut.Listen();
@@ -245,7 +245,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -271,7 +271,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -293,13 +293,13 @@ public class ListeningControllerTests
     }
 
     [TestMethod]
-    public void ListeningController_Pause_Dispose_WhenListening_CallsRecognizeAsync()
+    public void ListeningController_Pause_Dispose_WhenListening_CallsRecognize()
     {
         // Arrange
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Exactly(2));
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -321,13 +321,13 @@ public class ListeningControllerTests
     }
 
     [TestMethod]
-    public void ListeningController_Pause_DisposeTwice_WhenListening_CallsRecognizeAsync()
+    public void ListeningController_Pause_DisposeTwice_WhenListening_CallsRecognize()
     {
         // Arrange
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Exactly(2));
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -350,13 +350,13 @@ public class ListeningControllerTests
     }
 
     [TestMethod]
-    public void ListeningController_PauseTwice_DisposeOnce_WhenListening_DoesNotCallRecognizeAsync()
+    public void ListeningController_PauseTwice_DisposeOnce_WhenListening_DoesNotCallRecognize()
     {
         // Arrange
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -380,13 +380,13 @@ public class ListeningControllerTests
     }
 
     [TestMethod]
-    public void ListeningController_PauseTwice_DisposeTwice_WhenListening_CallsRecognizeAsync()
+    public void ListeningController_PauseTwice_DisposeTwice_WhenListening_CallsRecognize()
     {
         // Arrange
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Exactly(2));
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -413,13 +413,13 @@ public class ListeningControllerTests
     }
 
     [TestMethod]
-    public void ListeningController_PauseTwice_DisposeTwiceOnSameObject_WhenListening_DoesNotCallRecognizeAsync()
+    public void ListeningController_PauseTwice_DisposeTwiceOnSameObject_WhenListening_DoesNotCallRecognize()
     {
         // Arrange
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -451,7 +451,7 @@ public class ListeningControllerTests
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -472,13 +472,13 @@ public class ListeningControllerTests
     }
 
     [TestMethod]
-    public void ListeningController_Pause_Listen_DoesNotCallRecognizeAsync()
+    public void ListeningController_Pause_Listen_DoesNotCallRecognize()
     {
         // Arrange
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Never);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -495,13 +495,13 @@ public class ListeningControllerTests
     }
 
     [TestMethod]
-    public void ListeningController_Pause_Listen_Unpause_CallsRecognizeAsync()
+    public void ListeningController_Pause_Listen_Unpause_CallsRecognize()
     {
         // Arrange
         IListeningController sut = CreateSut();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -528,7 +528,7 @@ public class ListeningControllerTests
         Exception expectedException = new InvalidOperationException("Some thing didn't work");
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Throws(expectedException)
             .Verifiable(Times.Once);
 
@@ -560,7 +560,7 @@ public class ListeningControllerTests
         Exception expectedException = new InvalidOperationException("Some thing didn't work");
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -588,7 +588,7 @@ public class ListeningControllerTests
         Exception expectedException = new InvalidOperationException("Some thing didn't work");
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -626,7 +626,7 @@ public class ListeningControllerTests
         Exception expectedException = new InvalidOperationException("Some thing didn't work");
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Once);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -636,7 +636,7 @@ public class ListeningControllerTests
         IDisposable pause = sut.Pause();
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Throws(expectedException)
             .Verifiable(Times.Once);
 

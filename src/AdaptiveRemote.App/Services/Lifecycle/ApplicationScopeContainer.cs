@@ -49,7 +49,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
     {
         if (TryGetCurrentScope(out IApplicationScope? scope))
         {
-            await ReleaseScope(scope);
+            await ReleaseScopeAsync(scope);
 
             await scope.RecycleAsync();
         }
@@ -57,7 +57,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
 
     async Task IApplicationScopeContainer.ReleaseScopeAsync(IApplicationScope scope)
     {
-        await ReleaseScope(scope);
+        await ReleaseScopeAsync(scope);
     }
 
     Task IApplicationScopeContainer.SetScopeAsync(IApplicationScope scope)
@@ -66,7 +66,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
         {
             if (TryGetCurrentScope(out IApplicationScope? currentScope))
             {
-                _ = ReleaseScope(currentScope);
+                _ = ReleaseScopeAsync(currentScope);
             }
 
             _scopeTcs.SetResult(scope);
@@ -75,7 +75,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
         return Task.CompletedTask;
     }
 
-    private async Task ReleaseScope(IApplicationScope scope)
+    private async Task ReleaseScopeAsync(IApplicationScope scope)
     {
         IEnumerable<Task> tasksToAwait = Enumerable.Empty<Task>();
 

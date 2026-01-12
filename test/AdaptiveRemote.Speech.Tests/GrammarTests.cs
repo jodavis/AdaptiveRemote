@@ -99,7 +99,7 @@ public class GrammarTests
     [Timeout(35000)]
     [DynamicData(nameof(GetTestSamples), DynamicDataSourceType.Method,
         DynamicDataDisplayName = nameof(GetTestSampleDisplayName))]
-    public async Task StaticGrammar_TestCommand(
+    public async Task StaticGrammar_TestCommandAsync(
         string waveFileName,
         string expectedText,
         string expectedSemantics)
@@ -113,7 +113,7 @@ public class GrammarTests
 
         speechRecognition.SetFilter(PhraseKinds.All);
 
-        Task<IRecognizedSpeech> resultTask = GetFirstResult(speechRecognition, _cts.Token);
+        Task<IRecognizedSpeech> resultTask = GetFirstResultAsync(speechRecognition, _cts.Token);
         for (int retry = 0; retry < MaxRetries; retry++)
         {
             Task timeoutTask = Task.Delay(5000, _cts.Token).ContinueWith(t => Log($"Timeout {t.Status}"),
@@ -135,7 +135,7 @@ public class GrammarTests
 
             speechRecognition.SetFilter(PhraseKinds.All);
 
-            resultTask = GetFirstResult(speechRecognition, _cts.Token);
+            resultTask = GetFirstResultAsync(speechRecognition, _cts.Token);
         }
 
         // Assert
@@ -157,7 +157,7 @@ public class GrammarTests
         }
     }
 
-    private async Task<IRecognizedSpeech> GetFirstResult(ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
+    private async Task<IRecognizedSpeech> GetFirstResultAsync(ISpeechRecognition speechRecognition, CancellationToken cancellationToken)
     {
         Log("ListenForCommandsAsync");
         await foreach (IRecognizedSpeech result in speechRecognition.RecognizeAsync(cancellationToken))

@@ -48,7 +48,7 @@ internal class DeviceConnection : IDeviceConnection
         return true;
     }
 
-    public async Task SendData(byte[] data, CancellationToken cancellationToken)
+    public async Task SendDataAsync(byte[] data, CancellationToken cancellationToken)
     {
         CommandPayload payload = new(0x2, data);
         ResponsePacket response = await SendPacketAsync(SendDataCommandCode, payload, cancellationToken);

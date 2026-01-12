@@ -8,7 +8,7 @@ public interface ISpeechSynthesizer
     /// <summary>
     /// Generates speech output asynchronously from a string.
     /// </summary>
-    void SpeakAsync(string phrase);
+    void Speak(string phrase);
 
     /// <summary>
     /// Cancels all queued, asynchronous, speech synthesis operations.

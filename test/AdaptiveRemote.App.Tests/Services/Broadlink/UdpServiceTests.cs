@@ -80,8 +80,8 @@ public class UdpServiceTests
             });
 
         Expect_SocketFactory_Create();
-        Expect_Socket_SendToAsync(inputPacket.GetBuffer());
-        Expect_Socket_ReadFromAsync(expectedResponse.GetBuffer(), inputEndPoint);
+        Expect_Socket_SendTo(inputPacket.GetBuffer());
+        Expect_Socket_ReadFrom(expectedResponse.GetBuffer(), inputEndPoint);
 
         // Act
         Task<ResponsePacket> resultTask = sut.SendAsync(inputPacket, default);
@@ -109,7 +109,7 @@ public class UdpServiceTests
             .Returns(MockSocket.Object)
             .Verifiable(Times.Once);
 
-    private void Expect_Socket_SendToAsync(ReadOnlyMemory<byte> expectedBytes)
+    private void Expect_Socket_SendTo(ReadOnlyMemory<byte> expectedBytes)
         => MockSocket
             .Setup(x => x.SendToAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<EndPoint>(), It.IsAny<CancellationToken>()))
             .WithArgumentValidation("packet", delegate (ReadOnlyMemory<byte> actualBytes)
@@ -122,7 +122,7 @@ public class UdpServiceTests
             .WithStandardTaskBehavior(returnValue: expectedBytes.Length)
             .Verifiable(Times.Once);
 
-    private void Expect_Socket_ReadFromAsync(ReadOnlyMemory<byte> responseBytes, EndPoint responseEndPoint)
+    private void Expect_Socket_ReadFrom(ReadOnlyMemory<byte> responseBytes, EndPoint responseEndPoint)
         => MockSocket
             .Setup(x => x.ReceiveFromAsync(It.IsAny<Memory<byte>>(), It.IsAny<EndPoint>(), It.IsAny<CancellationToken>()))
             .WithArgumentValidation("buffer", delegate (Memory<byte> responseBuffer)

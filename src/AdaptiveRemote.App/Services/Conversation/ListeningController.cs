@@ -50,7 +50,7 @@ internal class ListeningController : IListeningController
                     {
                         errorMessage = Message.ListeningController_RecognizeAsyncError;
 
-                        _engine.RecognizeAsync();
+                        _engine.Recognize();
                         _isListening = true;
                     }
                 }

@@ -2,7 +2,7 @@
 
 public static class CancellationTokenExtensions
 {
-    public static Task WaitForCancelled(this CancellationToken token)
+    public static Task WaitForCancelledAsync(this CancellationToken token)
     {
         TaskCompletionSource tcs = new();
         token.Register(tcs.SetResult);

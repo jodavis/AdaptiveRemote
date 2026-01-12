@@ -101,7 +101,7 @@ public class SpeechRecognitionTests
             .Verifiable(Times.Once);
 
         MockEngine
-            .Setup(x => x.RecognizeAsync())
+            .Setup(x => x.Recognize())
             .Verifiable(Times.Never);
         MockEngine
             .Setup(x => x.RecognizeAsyncCancel())
@@ -251,7 +251,7 @@ public class SpeechRecognitionTests
     public void SpeechRecognition_RecognizeAsync_StartsListeningAndWaitsForRecognizedEvent()
     {
         // Arrange
-        Expect_ListenAsync();
+        Expect_Listen();
 
         ISpeechRecognition sut = CreateSut();
 
@@ -269,7 +269,7 @@ public class SpeechRecognitionTests
     public void SpeechRecognition_RecognizeAsync_ReturnsRecognizedSpeechOnRecognizedEvent()
     {
         // Arrange
-        Expect_ListenAsync();
+        Expect_Listen();
 
         ISpeechRecognition sut = CreateSut();
 
@@ -296,7 +296,7 @@ public class SpeechRecognitionTests
     public void SpeechRecognition_RecognizeAsync_DetachesEventAndStopsListeningOnStopToken()
     {
         // Arrange
-        Expect_ListenAsync();
+        Expect_Listen();
         Expect_ListenDisposed();
         Expect_SpeechRecognized_EventHandlerRemoved();
 
@@ -368,7 +368,7 @@ public class SpeechRecognitionTests
             .Setup(x => x.SetConfidenceThreshold(It.IsAny<int>()))
             .Verifiable(Times.Never);
 
-    private void Expect_ListenAsync()
+    private void Expect_Listen()
         => MockListening
             .Setup(x => x.Listen())
             .Returns(MockListenDisposable.Object)

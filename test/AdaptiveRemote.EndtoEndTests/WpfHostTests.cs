@@ -45,6 +45,6 @@ public class WpfHostTests : HostTestBase
 
         AudioDetectionHelper.AssertHasAudioInputAndOutput();
 
-        RunStandardE2ETestAsync(_solutionRoot!, TestContext);
+        RunStandardE2ETest(_solutionRoot!, TestContext);
     }
 }

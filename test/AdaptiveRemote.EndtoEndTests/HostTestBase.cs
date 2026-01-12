@@ -38,7 +38,7 @@ public abstract class HostTestBase
     /// <summary>
     /// Runs a standard E2E test: launch host, load test service, execute test, and shutdown.
     /// </summary>
-    protected void RunStandardE2ETestAsync(
+    protected void RunStandardE2ETest(
         string solutionRoot,
         TestContext testContext)
     {

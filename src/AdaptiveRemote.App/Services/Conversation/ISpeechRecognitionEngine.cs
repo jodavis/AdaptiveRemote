@@ -36,7 +36,7 @@ public interface ISpeechRecognitionEngine
     /// <summary>
     /// Performs one or more asynchronous speech recognition operations.
     /// </summary>
-    void RecognizeAsync();
+    void Recognize();
 
     /// <summary>
     /// Terminates asynchronous recognition without waiting for the current recognition

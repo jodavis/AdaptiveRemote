@@ -20,7 +20,7 @@ internal interface IDeviceConnection
     /// </summary>
     /// <param name="data">IR signal data</param>
     /// <returns>A Task that completes when the IR signal has been sent</returns>
-    Task SendData(byte[] data, CancellationToken cancellationToken);
+    Task SendDataAsync(byte[] data, CancellationToken cancellationToken);
 
     internal interface Factory
     {

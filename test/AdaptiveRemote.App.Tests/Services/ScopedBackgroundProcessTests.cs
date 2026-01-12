@@ -30,7 +30,7 @@ public class ScopedBackgroundProcessTests
         => $"Warning[1207]: {LoggingMessages.ScopedBackgroundProcess_CanceledBeforeStarted}";
 
     [TestMethod]
-    public void ScopedBackgroundProcess_InitializeAsync_CallsExecuteAsync()
+    public void ScopedBackgroundProcess_InitializeAsync_CallsExecute()
     {
         // Arrange
         TestBackgroundProcess sut = CreateSut()
@@ -301,7 +301,7 @@ public class ScopedBackgroundProcessTests
     }
 
     [TestMethod]
-    public void ScopedBackgroundProcess_CleanUpAsync_CancelsExecuteAsync()
+    public void ScopedBackgroundProcess_CleanUpAsync_CancelsExecute()
     {
         // Arrange
         TestBackgroundProcess sut = CreateSut()

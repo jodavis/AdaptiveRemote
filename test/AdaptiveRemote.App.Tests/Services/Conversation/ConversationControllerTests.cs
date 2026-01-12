@@ -69,18 +69,18 @@ public class ConversationControllerTests
             ]))
             .Verifiable(times);
 
-    private void Expect_Recognition_RecognizeAsync()
-        => Expect_Recognition_RecognizeAsync(Array.Empty<Task<IRecognizedSpeech>>());
-    private void Expect_Recognition_RecognizeAsync(params IRecognizedSpeech[] result)
-        => Expect_Recognition_RecognizeAsync(result.Select(x => Task.FromResult(x)).ToArray());
-    private void Expect_Recognition_RecognizeAsync(params Task<IRecognizedSpeech>[] result)
+    private void Expect_Recognition_Recognize()
+        => Expect_Recognition_Recognize(Array.Empty<Task<IRecognizedSpeech>>());
+    private void Expect_Recognition_Recognize(params IRecognizedSpeech[] result)
+        => Expect_Recognition_Recognize(result.Select(x => Task.FromResult(x)).ToArray());
+    private void Expect_Recognition_Recognize(params Task<IRecognizedSpeech>[] result)
     {
         MockRecognition
             .Setup(x => x.RecognizeAsync(It.IsAny<CancellationToken>()))
-            .Returns(delegate (CancellationToken c) { return Enumerate(result, c); })
+            .Returns(delegate (CancellationToken c) { return EnumerateAsync(result, c); })
             .Verifiable(Times.Once);
 
-        async IAsyncEnumerable<IRecognizedSpeech> Enumerate(
+        async IAsyncEnumerable<IRecognizedSpeech> EnumerateAsync(
             IEnumerable<Task<IRecognizedSpeech>> results,
             [EnumeratorCancellation] CancellationToken cancellation)
         {
@@ -91,7 +91,7 @@ public class ConversationControllerTests
 
             _allSpeechWasRead = true;
 
-            await cancellation.WaitForCancelled();
+            await cancellation.WaitForCancelledAsync();
         }
     }
 
@@ -100,13 +100,13 @@ public class ConversationControllerTests
         CancellationTokenSource cts = new();
         MockRecognition
             .Setup(x => x.RecognizeAsync(It.IsAny<CancellationToken>()))
-            .Returns(WaitForCancelled)
+            .Returns(WaitForCancelledAsync)
             .Verifiable(Times.Once);
         return cts.Token;
 
-        async IAsyncEnumerable<IRecognizedSpeech> WaitForCancelled([EnumeratorCancellation] CancellationToken cancellationToken)
+        async IAsyncEnumerable<IRecognizedSpeech> WaitForCancelledAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            await cancellationToken.WaitForCancelled();
+            await cancellationToken.WaitForCancelledAsync();
             cts.Cancel();
 
             if (!returnWhenCancelled)
@@ -126,7 +126,7 @@ public class ConversationControllerTests
             .Setup(x => x.SetFilter(It.IsAny<PhraseKinds>()))
             .Verifiable(Times.Never);
 
-    private void Expect_Synthesis_SayAsync(string phrase, Task? completeTask = default, Times? times = default)
+    private void Expect_Synthesis_Say(string phrase, Task? completeTask = default, Times? times = default)
         => MockSynthesis
             .Setup(x => x.SayAsync(phrase, It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(completeTask)
@@ -135,12 +135,12 @@ public class ConversationControllerTests
     private void Expect_Recognition_AllExpectedSpeechIsRead()
         => _allSpeechWasRead = false;
 
-    private void Expect_Command1_ExecuteAsync(Task? returnTask = default, Times? times = default)
+    private void Expect_Command1_Execute(Task? returnTask = default, Times? times = default)
         => Command1Execute
             .Setup(x => x.ExecuteAsync(It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(returnTask)
             .Verifiable(times ?? Times.Once());
-    private void Expect_Command2_ExecuteAsync(Task? returnTask = default, Times? times = default)
+    private void Expect_Command2_Execute(Task? returnTask = default, Times? times = default)
         => Command2Execute
             .Setup(x => x.ExecuteAsync(It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(returnTask)
@@ -286,7 +286,7 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Expect_Recognition_RecognizeAsync();
+        Expect_Recognition_Recognize();
         Expect_Recognition_AllExpectedSpeechIsRead();
         Expect_Recognition_SetFilter(PhraseKinds.WakeWord);
 
@@ -315,9 +315,9 @@ public class ConversationControllerTests
 
         TaskCompletionSource<IRecognizedSpeech> tcs = new();
 
-        Expect_Recognition_RecognizeAsync(tcs.Task);
+        Expect_Recognition_Recognize(tcs.Task);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening, completeTask: IncompleteTask);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening, completeTask: IncompleteTask);
 
         sut.InitializeAsync(InitializeActivity, default)
             .Wait(1000)
@@ -350,12 +350,12 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech);
         Expect_Recognition_AllExpectedSpeechIsRead();
 
         TaskCompletionSource tcs = new();
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening, tcs.Task);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening, tcs.Task);
 
         sut.InitializeAsync(InitializeActivity, default)
             .Wait(1000)
@@ -403,10 +403,10 @@ public class ConversationControllerTests
         ConversationController sut = CreateSut();
 
         TaskCompletionSource<IRecognizedSpeech> tcs = new();
-        Expect_Recognition_RecognizeAsync(tcs.Task);
+        Expect_Recognition_Recognize(tcs.Task);
         Expect_Recognition_AllExpectedSpeechIsRead();
         Expect_Recognition_SetFilter(PhraseKinds.Commands, Times.Exactly(2));
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
 
         sut.InitializeAsync(InitializeActivity, default)
             .Wait(1000)
@@ -441,15 +441,15 @@ public class ConversationControllerTests
 
         Mock<IRecognizedSpeech> result = CreateMockSpeech(Command1.Name, "command=" + Command1.Name);
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
            StartListeningSpeech,
            result.Object);
         Expect_Recognition_SetFilter(PhraseKinds.Commands, Times.Exactly(2));
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name), IncompleteTask);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name), IncompleteTask);
 
-        Expect_Command1_ExecuteAsync(IncompleteTask);
+        Expect_Command1_Execute(IncompleteTask);
 
         // Act
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
@@ -478,14 +478,14 @@ public class ConversationControllerTests
         Mock<IRecognizedSpeech> result1 = CreateMockSpeech(Command1.Name, "command=" + Command1.Name);
 
         TaskCompletionSource<IRecognizedSpeech> tcs = new();
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             tcs.Task,
             Task.FromResult(result1.Object));
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name));
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name));
 
-        Expect_Command1_ExecuteAsync();
+        Expect_Command1_Execute();
 
         sut.InitializeAsync(InitializeActivity, default)
             .Wait(1000)
@@ -523,15 +523,15 @@ public class ConversationControllerTests
         Mock<IRecognizedSpeech> result1 = CreateMockSpeech(Command1.Name, "command=" + Command1.Name);
         Mock<IRecognizedSpeech> result2 = CreateMockSpeech(Command2.Name, "command=" + Command2.Name);
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             result1.Object,
             result2.Object);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name), IncompleteTask);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name), IncompleteTask);
 
-        Expect_Command1_ExecuteAsync();
+        Expect_Command1_Execute();
         Expect_Command2_ExecuteAsync_IsNotCalled();
 
         // Act
@@ -562,17 +562,17 @@ public class ConversationControllerTests
         Mock<IRecognizedSpeech> result1 = CreateMockSpeech(Command1.Name, "command=" + Command1.Name);
         Mock<IRecognizedSpeech> result2 = CreateMockSpeech(Command2.Name, "command=" + Command2.Name);
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             result1.Object,
             result2.Object);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name));
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command2.Name));
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name));
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command2.Name));
 
-        Expect_Command1_ExecuteAsync();
-        Expect_Command2_ExecuteAsync();
+        Expect_Command1_Execute();
+        Expect_Command2_Execute();
 
         // Act
         Task resultTask = sut.InitializeAsync(InitializeActivity, default);
@@ -603,16 +603,16 @@ public class ConversationControllerTests
 
         Mock<IRecognizedSpeech> result1 = CreateMockSpeech(Command1.Name, "command=" + Command1.Name);
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             result1.Object);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
 
         TaskCompletionSource tcs = new();
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name), tcs.Task);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name), tcs.Task);
 
-        Expect_Command1_ExecuteAsync();
+        Expect_Command1_Execute();
 
         sut.InitializeAsync(InitializeActivity, default)
             .Wait(1000)
@@ -670,14 +670,14 @@ public class ConversationControllerTests
 
         Mock<IRecognizedSpeech> result1 = CreateMockSpeech(Command1.Name, "command=" + Command1.Name, "repeat=3");
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             result1.Object);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name, 3));
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name, 3));
 
-        Expect_Command1_ExecuteAsync(times: Times.Exactly(3));
+        Expect_Command1_Execute(times: Times.Exactly(3));
 
         // Act
         sut.InitializeAsync(InitializeActivity, default)
@@ -708,12 +708,12 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             StopListeningSpeech);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening, IncompleteTask);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_StoppedListening, IncompleteTask);
 
         // Act
         sut.InitializeAsync(InitializeActivity, default)
@@ -733,19 +733,19 @@ public class ConversationControllerTests
     }
 
     [TestMethod]
-    public void ConversationController_OnAttentionAndStopListening_CleanUpWaitsForSayAsync()
+    public void ConversationController_OnAttentionAndStopListening_CleanUpWaitsForSay()
     {
         // Arrange
         ConversationController sut = CreateSut();
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             StopListeningSpeech);
 
         TaskCompletionSource tcs = new();
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening, tcs.Task);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_StoppedListening, tcs.Task);
 
         sut.InitializeAsync(InitializeActivity, default)
             .Wait(1000)
@@ -795,13 +795,13 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             StopListeningSpeech,
             StartListeningSpeech);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening, times: Times.Exactly(2));
-        Expect_Synthesis_SayAsync(Phrases.Conversation_StoppedListening);
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening, times: Times.Exactly(2));
+        Expect_Synthesis_Say(Phrases.Conversation_StoppedListening);
 
         // Act
         sut.InitializeAsync(InitializeActivity, default)
@@ -828,17 +828,17 @@ public class ConversationControllerTests
 
         ConversationController sut = CreateSut();
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             CreateMockSpeech("Play", "command=" + Command1.Name).Object);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name));
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name));
 
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
         Command1Execute
             .Setup(x => x.ExecuteAsync(It.IsAny<CancellationToken>()))
-            .Callback(Expect_Recognition_RecognizeAsync)
+            .Callback(Expect_Recognition_Recognize)
             .Throws(exception);
 
         // Act
@@ -870,12 +870,12 @@ public class ConversationControllerTests
         ConversationController sut = CreateSut();
 
         AccessViolationException exception = new AccessViolationException("Whoopsie!");
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             CreateMockSpeech(Command1.Name, "command=" + Command1.Name).Object);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening, times: Times.Exactly(ConversationSettings.ErrorRetryLimit));
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name), times: Times.Exactly(ConversationSettings.ErrorRetryLimit));
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening, times: Times.Exactly(ConversationSettings.ErrorRetryLimit));
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name), times: Times.Exactly(ConversationSettings.ErrorRetryLimit));
 
         int count = 0;
         Command1Execute
@@ -884,7 +884,7 @@ public class ConversationControllerTests
             {
                 if (++count < ConversationSettings.ErrorRetryLimit)
                 {
-                    Expect_Recognition_RecognizeAsync(
+                    Expect_Recognition_Recognize(
                         StartListeningSpeech,
                         CreateMockSpeech(Command1.Name, "command=" + Command1.Name).Object);
                 }
@@ -895,7 +895,7 @@ public class ConversationControllerTests
         // Act
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
-        MockLogger.WaitForMessage(Expected_SwitchedToWorkerThread, TimeSpan.FromSeconds(10)).Wait();
+        MockLogger.WaitForMessageAsync(Expected_SwitchedToWorkerThread, TimeSpan.FromSeconds(10)).Wait();
 
         // Assert
         MockLogger.VerifyMessages(
@@ -1014,12 +1014,12 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             CreateMockSpeech(Command1.Name, "command=" + Command1.Name).Object);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name));
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name));
 
         CancellationToken token = default;
         Command1Execute
@@ -1065,12 +1065,12 @@ public class ConversationControllerTests
         // Arrange
         ConversationController sut = CreateSut();
 
-        Expect_Recognition_RecognizeAsync(
+        Expect_Recognition_Recognize(
             StartListeningSpeech,
             CreateMockSpeech(Command1.Name, "command=" + Command1.Name).Object);
 
-        Expect_Synthesis_SayAsync(Phrases.Conversation_ImListening);
-        Expect_Synthesis_SayAsync(Phrases.Conversation_Sent(Command1.Name));
+        Expect_Synthesis_Say(Phrases.Conversation_ImListening);
+        Expect_Synthesis_Say(Phrases.Conversation_Sent(Command1.Name));
 
         TaskCompletionSource tcs = new();
         Command1Execute

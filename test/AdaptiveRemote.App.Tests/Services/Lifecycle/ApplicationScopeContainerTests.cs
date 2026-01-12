@@ -411,7 +411,7 @@ public class ApplicationScopeContainerTests
     }
 
     [TestMethod]
-    public void RecycleScopeAsync_WaitsForInvokesToCompleteBeforeRecycleAsync()
+    public void RecycleScopeAsync_WaitsForInvokesToCompleteBeforeRecycle()
     {
         // Arrange
         Expect_RecycleAsyncOn(MockScope, Times.Never());
@@ -520,7 +520,7 @@ public class ApplicationScopeContainerTests
 
         // Assert
         invokeTask.Should().BeComplete(because: "it should be invoked on MockScope2");
-        result.Token.WaitForCancelled().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+        result.Token.WaitForCancelledAsync().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
             because: "The scope that the task was started in is no longer the current scope");
     }
 

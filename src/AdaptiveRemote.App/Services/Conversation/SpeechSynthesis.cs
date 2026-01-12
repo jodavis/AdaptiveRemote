@@ -82,7 +82,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
 
         _synthesizer.SpeakCompleted += onSpeakCompleted;
 
-        _synthesizer.SpeakAsync(phrase);
+        _synthesizer.Speak(phrase);
 
         return tcs.Task;
     }
