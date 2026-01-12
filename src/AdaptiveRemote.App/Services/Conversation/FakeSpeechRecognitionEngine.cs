@@ -7,7 +7,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
     private readonly Dictionary<string, IGrammar> _grammars = new();
 
     private event EventHandler<RecognizedSpeechEventArgs>? _recognized;
-    private TaskCompletionSource _pause = new();
+    private CancellationTokenSource _pause = new();
 
     public FakeSpeechRecognitionEngine()
     {
@@ -29,7 +29,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
     void ISpeechRecognitionEngine.LoadGrammar(IGrammar grammar) => _grammars.Add(grammar.Name ?? string.Empty, grammar);
     void ISpeechRecognitionEngine.UnloadGrammar(IGrammar grammar) => _grammars.Remove(grammar.Name ?? string.Empty);
     void ISpeechRecognitionEngine.UnloadAllGrammars() => _grammars.Clear();
-    void ISpeechRecognitionEngine.RecognizeAsync() => _pause.TrySetResult();
+    void ISpeechRecognitionEngine.RecognizeAsync() => _pause.Cancel();
     void ISpeechRecognitionEngine.RecognizeAsyncCancel() => _pause = new();
     void ISpeechRecognitionEngine.SetConfidenceThreshold(int threshold) { }
 
@@ -40,7 +40,7 @@ internal class FakeSpeechRecognitionEngine : ISpeechRecognitionEngine
 
         while (true)
         {
-            await _pause.Task;
+            await _pause.Token.WaitForCancelled();
             await Task.Delay(1000);
             ticks++;
 

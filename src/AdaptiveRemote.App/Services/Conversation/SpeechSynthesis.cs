@@ -10,7 +10,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
     private readonly IListeningController _listeningController;
     private readonly ILogger<SpeechSynthesis> _logger;
 
-    private TaskCompletionSource _tcs = new();
+    private int _isSpeaking = 0;
 
     public SpeechSynthesis(ISpeechSynthesizer synthesizer, IListeningController listeningController, IOptionsSnapshot<ConversationSettings> settings, ILogger<SpeechSynthesis> logger)
     {
@@ -20,12 +20,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
 
         SelectVoice(settings.Value.Voice);
         SetSpeakingRate(settings.Value.SpeakingRate);
-
-        _synthesizer.SpeakCompleted += OnSpeakCompleted;
-        _tcs.SetResult();
     }
-
-    private void OnSpeakCompleted(object? sender, EventArgs e) => _tcs.TrySetResult();
 
     private void SelectVoice(string[] voiceNames)
     {
@@ -52,20 +47,44 @@ internal class SpeechSynthesis : ISpeechSynthesis
 
     async Task ISpeechSynthesis.SayAsync(string phrase, CancellationToken cancellationToken)
     {
-        if (!_tcs.Task.IsCompleted)
+        if (Interlocked.Exchange(ref _isSpeaking, 1) == 1)
         {
             _logger.LogAndThrowError(Message.SpeechSynthesis_AlreadySpeaking, phrase);
         }
 
-        _tcs = new();
-
-        using (cancellationToken.Register(() => CancelSpeaking(_tcs, phrase)))
         using (_listeningController.Pause())
         {
-            _logger.LogInformation(Message.SpeechSynthesis_Saying, phrase);
-            _synthesizer.SpeakAsync(phrase);
-            await _tcs.Task;
+            try
+            {
+                _logger.LogInformation(Message.SpeechSynthesis_Saying, phrase);
+                await SpeakAndWaitAsync(phrase, cancellationToken);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _isSpeaking, 0);
+            }
         }
+    }
+
+    private Task SpeakAndWaitAsync(string phrase, CancellationToken cancellationToken)
+    {
+        TaskCompletionSource tcs = new();
+
+        CancellationTokenRegistration registration = cancellationToken.Register(() => CancelSpeaking(tcs, phrase));
+
+        EventHandler onSpeakCompleted = null!; // This is set on the next line, so it won't be null
+        onSpeakCompleted = (sender, e) =>
+        {
+            _synthesizer.SpeakCompleted -= onSpeakCompleted;
+            registration.Dispose();
+            tcs.TrySetResult();
+        };
+
+        _synthesizer.SpeakCompleted += onSpeakCompleted;
+
+        _synthesizer.SpeakAsync(phrase);
+
+        return tcs.Task;
     }
 
     private void CancelSpeaking(TaskCompletionSource tcs, string phrase)

@@ -112,7 +112,12 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
 
             _stopToken.Cancel();
 
-            await Task.WhenAny(ExecuteTask!);
+            await Task.Run(async () =>
+            {
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign tasks -- we are intentionally switching to the context of ExecuteTask here
+                await Task.WhenAny(ExecuteTask);
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign tasks
+            }, cancellationToken).ConfigureAwait(false);
 
             Logger.LogInformation(Message.ScopedBackgroundProcess_Stopped);
         }
