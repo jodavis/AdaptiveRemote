@@ -22,7 +22,7 @@
 
     <!-- Third-party Libraries -->
     <PackageVersion Include="I8Beef.TiVo" Version="1.0.0.14" />
-    <PackageVersion Include="Microsoft.Playwright" Version="1.48.0" />
+    <PackageVersion Include="Microsoft.Playwright" Version="1.57.0" />
     <PackageVersion Include="StreamJsonRpc" Version="2.19.27" />
     <PackageVersion Include="System.Speech" Version="8.0.0" />
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />
