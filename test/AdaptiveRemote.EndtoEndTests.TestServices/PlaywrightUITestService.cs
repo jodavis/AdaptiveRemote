@@ -16,6 +16,9 @@ public class PlaywrightUITestService : IUITestService
     public PlaywrightUITestService(IBrowserUIAccess browserProvider)
     {
         _browserProvider = browserProvider;
+
+        // Start warming up Playwright if necessary
+        _ = Task.Run(() => _ = CurrentPage);
     }
 
     private IPage CurrentPage => _browserProvider.CurrentPage as IPage
