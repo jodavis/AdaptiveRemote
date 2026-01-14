@@ -204,7 +204,8 @@ public class ApplicationScopeContainerTests
         Task invokeTask2 = sut.InvokeInScopeAsync(workItem2, default);
 
         // Assert
-        invokeTask2.Should().NotBeComplete(because: "there is no IApplicationScope to call back the work item (MockScope was recycled)");
+        invokeTask2.Should().NotBeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "there is no IApplicationScope to call back the work item (MockScope was recycled)");
         called.Should().BeFalse(because: "there is no IApplicationScope to call back the work item (MockScope was recycled)");
         cancelled.Should().BeTrue(because: "workItem1 should be cancelled when the scope is being recycled");
     }
@@ -242,7 +243,8 @@ public class ApplicationScopeContainerTests
         Task invokeTask2 = sut.InvokeInScopeAsync(workItem2, default);
 
         // Assert
-        invokeTask2.Should().NotBeComplete(because: "there is no IApplicationScope to call back the work item (MockScope was recycled)");
+        invokeTask2.Should().NotBeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "there is no IApplicationScope to call back the work item (MockScope was recycled)");
         called.Should().BeFalse(because: "there is no IApplicationScope to call back the work item (MockScope was recycled)");
         cancelled.Should().BeTrue(because: "workItem1 should be cancelled when the scope is being recycled");
     }
@@ -409,7 +411,7 @@ public class ApplicationScopeContainerTests
     }
 
     [TestMethod]
-    public void RecycleScopeAsync_WaitsForInvokesToCompleteBeforeRecycleAsync()
+    public void RecycleScopeAsync_WaitsForInvokesToCompleteBeforeRecycle()
     {
         // Arrange
         Expect_RecycleAsyncOn(MockScope, Times.Never());
@@ -500,10 +502,10 @@ public class ApplicationScopeContainerTests
         sut.SetScopeAsync(MockScope.Object).Should().BeComplete(
             because: "there is nothing for it to wait on");
 
-        bool cancelled = false;
+        CancellationTokenSource result = new();
         Task preInvokeTask = provider.InvokeInScopeAsync((sp, ct) =>
         {
-            ct.Register(() => cancelled = true);
+            ct.Register(result.Cancel);
             return new TaskCompletionSource().Task;
         }, default);
 
@@ -518,7 +520,8 @@ public class ApplicationScopeContainerTests
 
         // Assert
         invokeTask.Should().BeComplete(because: "it should be invoked on MockScope2");
-        cancelled.Should().BeTrue(because: "The scope that the task was started in is no longer the current scope");
+        result.Token.WaitForCancelledAsync().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "The scope that the task was started in is no longer the current scope");
     }
 
     [TestMethod]

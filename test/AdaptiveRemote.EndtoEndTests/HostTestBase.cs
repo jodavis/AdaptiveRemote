@@ -38,7 +38,7 @@ public abstract class HostTestBase
     /// <summary>
     /// Runs a standard E2E test: launch host, load test service, execute test, and shutdown.
     /// </summary>
-    protected void RunStandardE2ETestAsync(
+    protected void RunStandardE2ETest(
         string solutionRoot,
         TestContext testContext)
     {
@@ -87,16 +87,6 @@ public abstract class HostTestBase
             // Wait for shutdown
             host.Stop();
 
-            if (File.Exists(logFilePath))
-            {
-                logger.LogInformation("Found log file at {LogFilePath}", logFilePath);
-                testContext.AddResultFile(logFilePath);
-            }
-            else
-            {
-                logger.LogWarning("No log file found at {LogFilePath}", logFilePath);
-            }
-
             // Verify logs (optional, can be overridden)
             VerifyLogs(host, logger);
         }
@@ -114,6 +104,16 @@ public abstract class HostTestBase
                 host.StandardOutput,
                 host.StandardError);
             throw;
+        }
+
+        if (File.Exists(logFilePath))
+        {
+            logger.LogInformation("Found log file at {LogFilePath}", logFilePath);
+            testContext.AddResultFile(logFilePath);
+        }
+        else
+        {
+            logger.LogWarning("No log file found at {LogFilePath}", logFilePath);
         }
     }
 

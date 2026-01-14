@@ -21,24 +21,34 @@ internal class ApplicationLifecycle : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _ = _scopeProvider.InvokeInScopeAsync(InitializeLifecycle, stoppingToken);
+        try
+        {
+            await _scopeProvider.InvokeInScopeAsync(InitializeLifecycleAsync, stoppingToken);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // Do nothing, shutdown was requested
+        }
+        catch
+        {
+            // An error occurred, so stop all the services
+            _ = _scopeProvider.InvokeInScopeAsync(CleanUpLifecycleAsync, default);
+        }
 
-        await stoppingToken.WaitForCancelled();
+        await stoppingToken.WaitForCancelledAsync();
 
         _logger.LogInformation(Message.ApplicationLifecycle_ShuttingDown);
 
-        await _scopeProvider.InvokeInScopeAsync(CleanUpLifecycle, default);
+        await _scopeProvider.InvokeInScopeAsync(CleanUpLifecycleAsync, default);
     }
 
-    private async Task InitializeLifecycle(IServiceProvider provider, CancellationToken cancellationToken)
+    private async Task InitializeLifecycleAsync(IServiceProvider provider, CancellationToken cancellationToken)
     {
-        ScopedLifecycleContainer? container = SafeGetContainer(provider);
+        _currentContainer = SafeGetContainer(provider);
 
-        if (container is not null)
+        if (_currentContainer is not null)
         {
-            await container.InitializeAllAsync(cancellationToken);
-
-            _currentContainer = container;
+            await _currentContainer.InitializeAllAsync(cancellationToken);
         }
 
         ScopedLifecycleContainer? SafeGetContainer(IServiceProvider provider)
@@ -56,13 +66,13 @@ internal class ApplicationLifecycle : BackgroundService
         }
     }
 
-    private async Task CleanUpLifecycle(IServiceProvider provider, CancellationToken token)
+    private async Task CleanUpLifecycleAsync(IServiceProvider provider, CancellationToken token)
     {
         ScopedLifecycleContainer? scope = Interlocked.Exchange(ref _currentContainer, null);
 
         if (scope != null)
         {
-            await scope.CleanUpAllAsync(token);
+            await scope.CleanUpInitializedServicesAsync(token);
         }
     }
 }

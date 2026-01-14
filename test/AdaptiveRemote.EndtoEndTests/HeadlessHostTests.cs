@@ -40,7 +40,7 @@ public class HeadlessHostTests : HostTestBase
     [Timeout(180000)] // 3 minutes
     public void HeadlessHost_StartsAndRespondsToTestCommands()
     {
-        RunStandardE2ETestAsync(_solutionRoot!, TestContext);
+        RunStandardE2ETest(_solutionRoot!, TestContext);
 
         foreach (string traceFile in Directory.GetFiles(TracesPath!, "*.zip"))
         {

@@ -19,10 +19,10 @@ internal class BlazorAppScope : IApplicationScope, IAsyncDisposable
         _logger = logger;
         _scopeContainer = scopeContainer;
 
-        _ = PushSelfToScopeContainer();
+        _ = PushSelfToScopeContainerAsync();
     }
 
-    private async Task PushSelfToScopeContainer()
+    private async Task PushSelfToScopeContainerAsync()
     {
         try
         {

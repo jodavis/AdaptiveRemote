@@ -98,9 +98,9 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         return remaining;
     }
 
-    internal Task WaitForMessage(string expectedMessage)
-        => WaitForMessage(expectedMessage, TimeSpan.FromSeconds(5));
-    internal async Task WaitForMessage(string expectedMessage, TimeSpan timeout)
+    internal Task WaitForMessageAsync(string expectedMessage)
+        => WaitForMessageAsync(expectedMessage, TimeSpan.FromSeconds(5));
+    internal async Task WaitForMessageAsync(string expectedMessage, TimeSpan timeout)
     {
         DateTime startTime = DateTime.Now;
 

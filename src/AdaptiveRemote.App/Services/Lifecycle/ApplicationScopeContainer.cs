@@ -49,7 +49,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
     {
         if (TryGetCurrentScope(out IApplicationScope? scope))
         {
-            await ReleaseScope(scope);
+            await ReleaseScopeAsync(scope);
 
             await scope.RecycleAsync();
         }
@@ -57,7 +57,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
 
     async Task IApplicationScopeContainer.ReleaseScopeAsync(IApplicationScope scope)
     {
-        await ReleaseScope(scope);
+        await ReleaseScopeAsync(scope);
     }
 
     Task IApplicationScopeContainer.SetScopeAsync(IApplicationScope scope)
@@ -66,7 +66,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
         {
             if (TryGetCurrentScope(out IApplicationScope? currentScope))
             {
-                _ = ReleaseScope(currentScope);
+                _ = ReleaseScopeAsync(currentScope);
             }
 
             _scopeTcs.SetResult(scope);
@@ -75,36 +75,28 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
         return Task.CompletedTask;
     }
 
-    private async Task ReleaseScope(IApplicationScope scope)
+    private async Task ReleaseScopeAsync(IApplicationScope scope)
     {
-        IEnumerable<Task> invokeTasks = Enumerable.Empty<Task>();
+        IEnumerable<Task> tasksToAwait = Enumerable.Empty<Task>();
+
         lock (_lockObject)
         {
             if (TryGetCurrentScope(out IApplicationScope? currentScope) &&
                 ReferenceEquals(currentScope, scope))
             {
-                invokeTasks = _invokeTasks;
+                _invokeTasks.Add(_stopTokenSource.CancelAsync());
+                _stopTokenSource = new CancellationTokenSource();
+
+                tasksToAwait = _invokeTasks;
                 _invokeTasks = new();
 
-                _stopTokenSource.Cancel();
-                _stopTokenSource = new CancellationTokenSource();
                 _scopeTcs = new TaskCompletionSource<IApplicationScope>();
             }
         }
 
-        await Task.WhenAll(invokeTasks);
+        await Task.WhenAll(tasksToAwait);
     }
 
     private bool TryGetCurrentScope([NotNullWhen(true)] out IApplicationScope? scope)
-    {
-        Task<IApplicationScope> scopeTask = _scopeTcs.Task;
-        if (scopeTask.IsCompleted)
-        {
-            scope = scopeTask.Result;
-            return true;
-        }
-
-        scope = null;
-        return false;
-    }
+        => _scopeTcs.Task.TryGetResultIfComplete(out scope);
 }

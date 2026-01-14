@@ -16,6 +16,9 @@ public class PlaywrightUITestService : IUITestService
     public PlaywrightUITestService(IBrowserUIAccess browserProvider)
     {
         _browserProvider = browserProvider;
+
+        // Start warming up Playwright if necessary
+        _ = Task.Run(() => _ = CurrentPage);
     }
 
     private IPage CurrentPage => _browserProvider.CurrentPage as IPage
@@ -23,7 +26,7 @@ public class PlaywrightUITestService : IUITestService
 
     public async Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabel(label);
 
         try
         {
@@ -37,7 +40,7 @@ public class PlaywrightUITestService : IUITestService
 
     public async Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabel(label);
 
         try
         {
@@ -51,7 +54,7 @@ public class PlaywrightUITestService : IUITestService
 
     public async Task ClickButtonAsync(string label, CancellationToken cancellationToken = default)
     {
-        ILocator locator = GetButtonLocatorByLabelAsync(label);
+        ILocator locator = GetButtonLocatorByLabel(label);
 
         // Verify the button is visible
         bool isVisible = await locator.IsVisibleAsync();
@@ -83,7 +86,7 @@ public class PlaywrightUITestService : IUITestService
         return hasDisabledAttribute || isAriaDisabled;
     }
 
-    private ILocator GetButtonLocatorByLabelAsync(string label)
+    private ILocator GetButtonLocatorByLabel(string label)
     {
         // Use Playwright's getByRole with exact match - it will throw meaningful errors
         // if there are no matches or ambiguous matches

@@ -500,12 +500,16 @@ public class ApplicationLifecycleTests
         Expect_CleanupAsyncOn(MockService1);
         Expect_CleanupAsyncOn(MockService2);
 
-        Task startTask = sut.StartAsync(default);
+        sut.StartAsync(default)
+            .Should().BeComplete(because: "StartAsync should complete after all services are initialized");
 
         // Act
         Task stopTask = sut.StopAsync(default);
 
         // Assert
+        stopTask.Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "StopAsync should complete after all services are cleaned up, even if some have failed");
+
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
             Expect_InitializedMessage(MockService1),
@@ -517,8 +521,6 @@ public class ApplicationLifecycleTests
             Expect_CleanedUpMessage(MockService2),
             Expect_ShuttingDownMessage);
 
-        startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
-        stopTask.Should().BeComplete(because: "StopAsync should complete after all services are cleaned up, even if some have failed");
         sut.ExecuteTask.Should().BeComplete(because: "ExecuteTask should complete after all services have stopped");
         LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "we stay in this state until the application exits");
     }

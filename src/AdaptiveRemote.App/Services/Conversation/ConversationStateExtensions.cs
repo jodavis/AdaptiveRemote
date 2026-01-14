@@ -105,7 +105,7 @@ internal static class ConversationStateExtensions
                 .StopUnless(CommandExists)
                 .StopUnless(SpeechIsHighConfidence, ifStopped: AskForConfirmation)
                 .StopUnless(CommandEnabled, ifStopped: RespondCommandDisabled)
-                .StopUnless(CommandHasExecuteAsync, ifStopped: RespondCommandDisabled)
+                .StopUnless(CommandHasExecuted, ifStopped: RespondCommandDisabled)
                 .Apply(AddCommands)
                 .Apply(SpeakDescriptionOfCommands);
         }
@@ -302,7 +302,7 @@ internal static class ConversationStateExtensions
         => (context.DecodedCommand?.IsEnabled == true)
             .LogErrorIf(false, context.Logger, Message.ConversationController_CommandDisabled, context.DecodedCommand?.Name);
 
-    private static bool CommandHasExecuteAsync(RespondContext context)
+    private static bool CommandHasExecuted(RespondContext context)
         => (context.DecodedCommand?.ExecuteAsync is not null)
             .LogErrorIf(false, context.Logger, Message.ConversationController_CommandMissingExecuteAction, context.DecodedCommand?.Name);
 

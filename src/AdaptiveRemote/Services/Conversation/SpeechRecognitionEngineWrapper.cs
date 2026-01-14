@@ -77,7 +77,7 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
 
     public void UnloadAllGrammars() => _engine.UnloadAllGrammars();
     public void SetInputToDefaultAudioDevice() => _engine.SetInputToDefaultAudioDevice();
-    public void RecognizeAsync() => _engine.RecognizeAsync(RecognizeMode.Multiple);
+    public void Recognize() => _engine.RecognizeAsync(RecognizeMode.Multiple);
     public void RecognizeAsyncCancel() => _engine.RecognizeAsyncCancel();
     public void SetConfidenceThreshold(int threshold) => _engine.UpdateRecognizerSetting("CFGConfidenceRejectionThreshold", threshold);
 

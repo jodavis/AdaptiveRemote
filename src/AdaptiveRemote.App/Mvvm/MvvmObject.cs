@@ -7,7 +7,7 @@ public class MvvmObject : INotifyPropertyChanging, INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public event PropertyChangingEventHandler? PropertyChanging;
 
-    private Dictionary<object, object?> _values = new();
+    private readonly Dictionary<object, object?> _values = new();
 
     public IDisposable Bind<PropertyType>(MvvmProperty<PropertyType> targetProperty, MvvmObject source, MvvmProperty<PropertyType> sourceProperty)
         => new Binding<PropertyType>(source, sourceProperty, this, targetProperty);

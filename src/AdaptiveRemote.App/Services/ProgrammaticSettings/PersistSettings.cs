@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.VisualStudio.Threading;
 
 namespace AdaptiveRemote.Services.ProgrammaticSettings;
 
@@ -22,7 +23,7 @@ internal class PersistSettings : IPersistSettings
     private readonly string _filePath;
     private readonly ILogger<PersistSettings> _logger;
 
-    private readonly Lazy<Task<ConcurrentDictionary<string, string>>> _lazyValues;
+    private readonly AsyncLazy<ConcurrentDictionary<string, string>> _lazyValues;
     private readonly object _lockObject = new();
 
     private bool _needsSave = false;
@@ -68,7 +69,7 @@ internal class PersistSettings : IPersistSettings
     {
         try
         {
-            ConcurrentDictionary<string, string> values = await _lazyValues.Value;
+            ConcurrentDictionary<string, string> values = await _lazyValues.GetValueAsync();
 
             if (values.TryGetValue(name, out string? oldValue))
             {

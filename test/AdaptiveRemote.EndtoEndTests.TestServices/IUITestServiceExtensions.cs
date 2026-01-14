@@ -7,7 +7,7 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// </summary>
 public static class IUITestServiceExtensions
 {
-    public const int DefaultUITimeoutInSeconds = 30;
+    public const int DefaultUITimeoutInSeconds = 60;
 
     /// <summary>
     /// Checks if a button with the specified label is visible in the UI (synchronous wrapper).

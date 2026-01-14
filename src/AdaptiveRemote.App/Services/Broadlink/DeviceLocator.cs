@@ -29,7 +29,7 @@ internal class DeviceLocator : IDeviceLocator
         }
         finally
         {
-            stop.Cancel();
+            await stop.CancelAsync();
         }
     }
 }

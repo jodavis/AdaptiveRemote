@@ -366,7 +366,7 @@ public class TiVoServiceTests
     }
 
     [TestMethod]
-    public void TiVoService_CleanUpAsync_WaitsForConnectionDisposeAsync()
+    public void TiVoService_CleanUpAsync_WaitsForConnectionDispose()
     {
         // Arrange
         IScopedLifecycle sut = CreateSut();
@@ -456,7 +456,7 @@ public class TiVoServiceTests
     }
 
     [TestMethod]
-    public void TiVoService_CleanUpAsync_Cancellation_PassesCancellationToConnectionDisposeAsync()
+    public void TiVoService_CleanUpAsync_Cancellation_PassesCancellationToConnectionDispose()
     {
         // Arrange
         IScopedLifecycle sut = CreateSut();
@@ -481,7 +481,7 @@ public class TiVoServiceTests
         // Arrange
         CreateSut();
 
-        Expect_MockConnection_SendAsync(PlayCommand.CommandId);
+        Expect_MockConnection_Send(PlayCommand.CommandId);
 
         // Act
         Task executeTask = PlayCommand.ExecuteAsync!(default);
@@ -510,7 +510,7 @@ public class TiVoServiceTests
     }
 
     [TestMethod]
-    public void TiVoService_ExecuteAsync_WaitsForTiVoConnectionSendAsync()
+    public void TiVoService_ExecuteAsync_WaitsForTiVoConnectionSend()
     {
         // Arrange
         CreateSut();
@@ -610,7 +610,7 @@ public class TiVoServiceTests
             because: "the service is being disposed");
     }
 
-    private void Expect_MockConnection_SendAsync(string expectedCommand, Task? result = default)
+    private void Expect_MockConnection_Send(string expectedCommand, Task? result = default)
         => MockConnection
             .Setup(x => x.SendIRCommandAsync(expectedCommand, It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(result)

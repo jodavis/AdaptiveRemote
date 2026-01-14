@@ -37,7 +37,7 @@ public class DeviceLocatorTests
 
         ScanResponsePacket expectedPayload = new ScanResponsePacket(IPEndPoint.Parse("1.2.3.4:5"), new byte[0x100]);
 
-        Expect_UdpService_BroadcastAsync(expectedPayload);
+        Expect_UdpService_Broadcast(expectedPayload);
 
         // Act
         Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(default);
@@ -58,7 +58,7 @@ public class DeviceLocatorTests
 
         ScanResponsePacket expectedPayload = new ScanResponsePacket(IPEndPoint.Parse("1.2.3.4:5"), new byte[0x100]);
 
-        Expect_UdpService_BroadcastAsync();
+        Expect_UdpService_Broadcast();
 
         Exception expectedException = Errors.DeviceLocator_DeviceNotFound();
 
@@ -124,11 +124,13 @@ public class DeviceLocatorTests
         Task<ScanResponsePacket> resultTask = sut.FindDeviceAsync(cts.Token);
 
         // Assert
-        resultTask.Should().BeComplete(because: "FindDeviceAsync should have found the ScanResponsePacket");
-        Assert.IsTrue(result.IsCancellationRequested, nameof(result) + ".IsCancellationRequested");
+        resultTask.Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "FindDeviceAsync should have found the ScanResponsePacket");
+        result.WaitForCancelledAsync().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "the BroadcastAsync cancellation token should have been cancelled after finding the first device");
     }
 
-    private void Expect_UdpService_BroadcastAsync(params ScanResponsePacket[] responsePackets)
+    private void Expect_UdpService_Broadcast(params ScanResponsePacket[] responsePackets)
         => MockUdpService
             .Setup(x => x.BroadcastAsync(It.IsAny<ScanRequestPacket>(), It.IsAny<CancellationToken>()))
             .WithArgumentValidation("packet", delegate (ScanRequestPacket packet)

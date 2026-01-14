@@ -21,7 +21,7 @@ public class SpeechSynthesisTests
     public SpeechSynthesisTests()
     {
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(It.IsAny<string>()))
+            .Setup(x => x.Speak(It.IsAny<string>()))
             .Verifiable(Times.Never);
         MockSynthesizer
             .Setup(x => x.GetInstalledVoices())
@@ -187,7 +187,7 @@ public class SpeechSynthesisTests
         const string input = "Hello World!";
 
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(input))
+            .Setup(x => x.Speak(input))
             .Callback(() => MockController.Verify(x => x.Pause(), Times.Once))
             .Verifiable(Times.Once);
 
@@ -220,7 +220,7 @@ public class SpeechSynthesisTests
         const string input = "Hello World!";
 
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(input))
+            .Setup(x => x.Speak(input))
             .Verifiable(Times.Once);
 
         MockController
@@ -248,7 +248,7 @@ public class SpeechSynthesisTests
         const string input = "Hello World!";
 
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(input))
+            .Setup(x => x.Speak(input))
             .Verifiable(Times.Exactly(2));
 
         MockController
@@ -282,7 +282,7 @@ public class SpeechSynthesisTests
         const string input = "Hello World!";
 
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(input))
+            .Setup(x => x.Speak(input))
             .Verifiable(Times.Once);
         MockSynthesizer
             .Setup(x => x.CancelAll())
@@ -320,7 +320,7 @@ public class SpeechSynthesisTests
         const string input = "Hello World!";
 
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(input))
+            .Setup(x => x.Speak(input))
             .Verifiable(Times.Once);
         MockSynthesizer
             .Setup(x => x.CancelAll())
@@ -359,7 +359,7 @@ public class SpeechSynthesisTests
         const string input = "Hello World!";
 
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(input))
+            .Setup(x => x.Speak(input))
             .Verifiable(Times.Once);
 
         MockController
@@ -395,10 +395,10 @@ public class SpeechSynthesisTests
         const string input2 = "Hi Planet?!";
 
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(input1))
+            .Setup(x => x.Speak(input1))
             .Verifiable(Times.Once);
         MockSynthesizer
-            .Setup(x => x.SpeakAsync(input2))
+            .Setup(x => x.Speak(input2))
             .Verifiable(Times.Never);
 
         MockController

@@ -42,7 +42,7 @@ public class ScopedLifecycleContainerTests
     }
 
     [TestMethod]
-    public async Task Initialize_AllServices_Succeeds()
+    public async Task Initialize_AllServices_SucceedsAsync()
     {
         Expect_InitializeAsyncOn(MockService1);
         Expect_InitializeAsyncOn(MockService2);
@@ -84,7 +84,7 @@ public class ScopedLifecycleContainerTests
     }
 
     [TestMethod]
-    public async Task Initialize_ImmediateFailure_CleansUpAndReports()
+    public async Task Initialize_ImmediateFailure_ReportsFailureAsync()
     {
         Exception expected = new InvalidOperationException("fail1");
 
@@ -105,17 +105,13 @@ public class ScopedLifecycleContainerTests
             Expect_InitializingMessage(MockService1),
             Expect_InitializedMessage(MockService1),
             Expect_InitializingMessage(MockService2),
-            Expect_InitializingFailedMessage(MockService2, expected),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2));
+            Expect_InitializingFailedMessage(MockService2, expected));
 
-        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp);
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.SettingUp);
     }
 
     [TestMethod]
-    public async Task Initialize_DelayedFailure_CleansUpAndReports()
+    public async Task Initialize_DelayedFailure_ReportsFailureAsync()
     {
         Exception expected = new InvalidOperationException("fail1");
         TaskCompletionSource tcs = new TaskCompletionSource();
@@ -144,19 +140,13 @@ public class ScopedLifecycleContainerTests
             Expect_InitializingMessage(MockService2),
             Expect_InitializingMessage(MockService3),
             Expect_InitializedMessage(MockService3),
-            Expect_InitializingFailedMessage(MockService2, expected),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2),
-            Expect_CleaningUpMessage(MockService3),
-            Expect_CleanedUpMessage(MockService3));
+            Expect_InitializingFailedMessage(MockService2, expected));
 
-        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp);
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.SettingUp);
     }
 
     [TestMethod]
-    public async Task Initialize_ImmediateFailure_CancelsPending()
+    public async Task Initialize_ImmediateFailure_CancelsPendingAsync()
     {
         Exception expected = new InvalidOperationException("fail1");
 
@@ -176,27 +166,36 @@ public class ScopedLifecycleContainerTests
         MockLogger.VerifyMessages(
             Expect_InitializingMessage(MockService1),
             Expect_InitializingMessage(MockService2),
-            Expect_InitializingFailedMessage(MockService2, expected),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2));
+            Expect_InitializingFailedMessage(MockService2, expected));
 
-        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp);
+        LatestLifecyclePhase.Should().Be(LifecyclePhase.SettingUp);
     }
 
     [TestMethod]
     public void Cleanup_BlocksUntilAllComplete()
     {
+        Expect_InitializeAsyncOn(MockService1);
+        Expect_InitializeAsyncOn(MockService2);
+        Expect_InitializeAsyncOn(MockService3);
+
         Expect_CleanupAsyncOn(MockService1, result: IncompleteTask);
         Expect_CleanupAsyncOn(MockService2, result: IncompleteTask);
         Expect_CleanupAsyncOn(MockService3, result: IncompleteTask);
 
         ScopedLifecycleContainer sut = CreateSut();
 
-        Task cleanupTask = sut.CleanUpAllAsync(default);
+        sut.InitializeAllAsync(default)
+            .Should().BeComplete(because: "all services initialize without errors");
+
+        Task cleanupTask = sut.CleanUpInitializedServicesAsync(default);
 
         MockLogger.VerifyMessages(
+            Expect_InitializingMessage(MockService1),
+            Expect_InitializedMessage(MockService1),
+            Expect_InitializingMessage(MockService2),
+            Expect_InitializedMessage(MockService2),
+            Expect_InitializingMessage(MockService3),
+            Expect_InitializedMessage(MockService3),
             Expect_CleaningUpMessage(MockService1),
             Expect_CleaningUpMessage(MockService2),
             Expect_CleaningUpMessage(MockService3));
@@ -206,10 +205,14 @@ public class ScopedLifecycleContainerTests
     }
 
     [TestMethod]
-    public async Task Cleanup_ReportsErrors()
+    public async Task Cleanup_ReportsErrorsAsync()
     {
         Exception expected1 = new InvalidOperationException("Error 1");
         Exception expected2 = new FormatException("Error 2");
+
+        Expect_InitializeAsyncOn(MockService1);
+        Expect_InitializeAsyncOn(MockService2);
+        Expect_InitializeAsyncOn(MockService3);
 
         Expect_CleanupAsyncOn(MockService1, result: Task.FromException(expected1));
         Expect_CleanupAsyncOn(MockService2, result: Task.FromException(expected2));
@@ -219,50 +222,22 @@ public class ScopedLifecycleContainerTests
 
         ScopedLifecycleContainer sut = CreateSut();
 
-        await sut.CleanUpAllAsync(default);
+        sut.InitializeAllAsync(default)
+            .Should().BeComplete(because: "all services initialize without errors");
+
+        await sut.CleanUpInitializedServicesAsync(default);
 
         MockLogger.VerifyMessages(
+            Expect_InitializingMessage(MockService1),
+            Expect_InitializedMessage(MockService1),
+            Expect_InitializingMessage(MockService2),
+            Expect_InitializedMessage(MockService2),
+            Expect_InitializingMessage(MockService3),
+            Expect_InitializedMessage(MockService3),
             Expect_CleaningUpMessage(MockService1),
             Expect_CleaningUpFailedMessage(MockService1, expected1),
             Expect_CleaningUpMessage(MockService2),
             Expect_CleaningUpFailedMessage(MockService2, expected2),
-            Expect_CleaningUpMessage(MockService3),
-            Expect_CleanedUpMessage(MockService3));
-
-        LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp);
-    }
-
-    [TestMethod]
-    public async Task Initialize_Cancellation_TriggersCleanup()
-    {
-        using CancellationTokenSource cts = new CancellationTokenSource();
-
-        Expect_InitializeAsyncOn(MockService1, IncompleteTask);
-        Expect_InitializeAsyncOn(MockService2, IncompleteTask);
-        Expect_InitializeAsyncOn(MockService3, IncompleteTask);
-
-        // Expect cleanup for all services that may have started
-        Expect_CleanupAsyncOn(MockService1);
-        Expect_CleanupAsyncOn(MockService2);
-        Expect_CleanupAsyncOn(MockService3);
-
-        ScopedLifecycleContainer sut = CreateSut();
-
-        Task initTask = sut.InitializeAllAsync(cts.Token);
-
-        // Cancel to simulate shutdown
-        cts.Cancel();
-
-        await Assert.ThrowsExceptionAsync<OperationCanceledException>(() => initTask);
-
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2),
             Expect_CleaningUpMessage(MockService3),
             Expect_CleanedUpMessage(MockService3));
 

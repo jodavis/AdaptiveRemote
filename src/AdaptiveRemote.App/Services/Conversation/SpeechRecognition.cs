@@ -89,7 +89,7 @@ internal class SpeechRecognition : ISpeechRecognition
                     {
                         _engine.SpeechRecognized += handler;
 
-                        await stopToken.WaitForCancelled();
+                        await stopToken.WaitForCancelledAsync();
 
                         _engine.SpeechRecognized -= handler;
                     }
