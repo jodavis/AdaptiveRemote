@@ -1,0 +1,32 @@
+<Project>
+  <PropertyGroup>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <ReqnrollUseIntermediateOutputPathForCodeBehind>true</ReqnrollUseIntermediateOutputPathForCodeBehind>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="MSTest" />
+    <PackageReference Include="Reqnroll" />
+    <PackageReference Include="Reqnroll.MSTest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AdaptiveRemote.EndToEndTests.Steps\AdaptiveRemote.EndToEndTests.Steps.csproj" />
+  </ItemGroup>
+
+  <!-- Link shared .feature files into this test project so Reqnroll runs per-assembly -->
+  <ItemGroup>
+    <ReqnrollFeatureFile Include="..\AdaptiveRemote.EndToEndTests.Features\**\*.feature">
+      <Link>Features\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </ReqnrollFeatureFile>
+  </ItemGroup>
+
+  <!-- Include generated feature.cs files from obj into compilation -->
+  <ItemGroup>
+    <Compile Include="$(IntermediateOutputPath)**\*.feature.cs">
+      <Link>Features\$(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>true</Visible>
+    </Compile>
+  </ItemGroup>
+</Project>

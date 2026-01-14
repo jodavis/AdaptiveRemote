@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>a2bdee76-e5be-45ad-bd99-3f94fb134358</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>AdaptiveRemote.EndToEndTests.Features</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)FeatureFiles.includeproj" />
+    <None Include="$(MSBuildThisFileDirectory)StartupAndShutdown.feature">
+      <MessagesResourceName>%(NormalizedLogicalName).ndjson</MessagesResourceName>
+      <Visible>$(UsingMicrosoftNETSdk)</Visible>
+      <NormalizedLogicalName>$([System.String]::Copy('%(Identity)').Replace('\','/'))</NormalizedLogicalName>
+      <MessagesFile>$(IntermediateOutputPath)%(NormalizedRelativeDir)%(Filename).feature.ndjson</MessagesFile>
+      <CodeBehindFile>%(RelativeDir)%(Filename).feature$(DefaultLanguageSourceExtension)</CodeBehindFile>
+      <FeatureFileResourceName>%(NormalizedLogicalName)</FeatureFileResourceName>
+      <NormalizedRelativeDir>$([System.String]::Copy('%(RelativeDir)').Replace('..','_'))</NormalizedRelativeDir>
+    </None>
+  </ItemGroup>
+</Project>

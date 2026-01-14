@@ -22,4 +22,9 @@ public interface IApplicationTestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A task that completes when the command has been invoked.</returns>
     Task InvokeCommandAsync(string commandId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Tells the application host to shut down
+    /// </summary>
+    Task StopApplicationAsync(CancellationToken cancellationToken = default);
 }
