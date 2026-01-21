@@ -23,11 +23,19 @@ internal static class IFileSystemExtensions
     {
         if (createDirectory)
         {
-            CreateDirectory(fileSystem, DirectoryFor(path), recursive: true);
+            string? directory = DirectoryFor(path);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                CreateDirectory(fileSystem, directory, recursive: true);
+            }
         }
 
         return fileSystem.OpenWrite(path);
     }
 
-    private static string DirectoryFor(string path) => Path.GetDirectoryName(path)!;
+    private static string? DirectoryFor(string path)
+    {
+        string? directory = Path.GetDirectoryName(path);
+        return string.IsNullOrEmpty(directory) ? null : directory;
+    }
 }
