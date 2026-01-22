@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using AdaptiveRemote.Logging;
 using AdaptiveRemote.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -37,27 +36,6 @@ public class ConversationControllerTests
     private bool _allSpeechWasRead = true;
 
     public TestContext? TestContext { get; set; }
-
-    private static string Expected_Executing(string command)
-        => $"Information[210]: {string.Format(LoggingMessages.ConversationController_Executing, command)}";
-    private static string Expected_Executed(string command)
-        => $"Information[211]: {string.Format(LoggingMessages.ConversationController_Executed, command)}";
-    private static string Expected_Retrying(int times, Exception error)
-        => $"Warning[206]: {string.Format(LoggingMessages.ConversationController_Retrying, times, $"{error.GetType().FullName}: {error.Message}")}";
-    private static string Expected_RetryLimitReached(int times)
-        => $"Warning[205]: {string.Format(LoggingMessages.ConversationController_RetryLimitReached, times)}";
-    private static string Expected_Starting
-        => $"Information[1201]: {LoggingMessages.ScopedBackgroundProcess_Starting}";
-    private static string Expected_Started
-        => $"Information[1202]: {LoggingMessages.ScopedBackgroundProcess_Started}";
-    private static string Expected_Stopping
-        => $"Information[1203]: {LoggingMessages.ScopedBackgroundProcess_Stopping}";
-    private static string Expected_Stopped
-        => $"Information[1204]: {LoggingMessages.ScopedBackgroundProcess_Stopped}";
-    private static string Expected_SwitchedToWorkerThread
-        => $"Debug[1208]: {LoggingMessages.ScopedBackgroundProcess_SwitchedToWorkerThread.AsMessageTemplate("")}";
-    private static string Expected_SwitchingToWorkerThread
-        => $"Debug[1209]: {LoggingMessages.ScopedBackgroundProcess_SwitchingToWorkerThread}";
 
     private void Expect_GetRemoteDefinition(Times times)
         => MockDefinition
@@ -249,6 +227,8 @@ public class ConversationControllerTests
         MockCleanupActivity
             .Setup(x => x.Dispose())
             .Verifiable(Times.Never);
+
+        MockLogger.ReplaceStrings.Add(("worker thread 999", "worker thread "));
     }
 
     [TestCleanup]
@@ -296,11 +276,13 @@ public class ConversationControllerTests
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
@@ -323,21 +305,25 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for expected start-up
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         tcs.SetResult(StartListeningSpeech);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
@@ -361,11 +347,13 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for expected start-up
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
@@ -373,23 +361,27 @@ public class ConversationControllerTests
         // Assert
         resultTask.Should().NotBeComplete(because: "Synthesis.SayAsync is still running");
 
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started,
-            Expected_Stopping);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+            messageLogger.ScopedBackgroundProcess_Stopping();
+        });
 
         // Act
         tcs.SetResult();
 
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started,
-            Expected_Stopping,
-            Expected_Stopped);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+            messageLogger.ScopedBackgroundProcess_Stopping();
+            messageLogger.ScopedBackgroundProcess_Stopped();
+        });
 
         ViewModel.IsListening.Should().BeFalse(because: "ConversationController does not listen while cleaning up");
         ViewModel.StatusMessage.Should().BeEmpty(because: "ConversationController has no status while cleaning up");
@@ -412,21 +404,25 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for expected start-up
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         tcs.SetResult(StartListeningSpeech);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         ViewModel.IsListening.Should().BeTrue(because: "ConversationController should be listening for commands after attention word is recognized");
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
@@ -455,12 +451,14 @@ public class ConversationControllerTests
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ConversationController_Executing(Command1.Name);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         initializeTask.Should().BeComplete(because: "InitializeAsync should complete after the service is initialized");
 
@@ -491,23 +489,27 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for expected start-up
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         tcs.SetResult(StartListeningSpeech);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started,
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name));
+        MockLogger.VerifyMessages(expect =>
+        {
+            expect.ScopedBackgroundProcess_Starting();
+            expect.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            expect.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            expect.ScopedBackgroundProcess_Started();
+            expect.ConversationController_Executing(Command1.Name);
+            expect.ConversationController_Executed(Command1.Name);
+        });
 
         ViewModel.IsListening.Should().BeTrue();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
@@ -538,13 +540,15 @@ public class ConversationControllerTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name),
-            Expected_Started);
+        MockLogger.VerifyMessages(expect =>
+        {
+            expect.ScopedBackgroundProcess_Starting();
+            expect.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            expect.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            expect.ConversationController_Executing(Command1.Name);
+            expect.ConversationController_Executed(Command1.Name);
+            expect.ScopedBackgroundProcess_Started();
+        });
 
         resultTask.Should().BeComplete(because: "InitializeAsync should complete after the service is initialized");
 
@@ -578,15 +582,17 @@ public class ConversationControllerTests
         Task resultTask = sut.InitializeAsync(InitializeActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name),
-            Expected_Executing(Command2.Name),
-            Expected_Executed(Command2.Name),
-            Expected_Started);
+        MockLogger.VerifyMessages(expect =>
+        {
+            expect.ScopedBackgroundProcess_Starting();
+            expect.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            expect.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            expect.ConversationController_Executing(Command1.Name);
+            expect.ConversationController_Executed(Command1.Name);
+            expect.ConversationController_Executing(Command2.Name);
+            expect.ConversationController_Executed(Command2.Name);
+            expect.ScopedBackgroundProcess_Started();
+        });
 
         resultTask.Should().BeComplete(because: "InitializeAsync should complete after the service is initialized");
 
@@ -618,26 +624,30 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for successful startup
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name),
-            Expected_Started);
+        MockLogger.VerifyMessages(expect =>
+        {
+            expect.ScopedBackgroundProcess_Starting();
+            expect.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            expect.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            expect.ConversationController_Executing(Command1.Name);
+            expect.ConversationController_Executed(Command1.Name);
+            expect.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name),
-            Expected_Started,
-            Expected_Stopping);
+        MockLogger.VerifyMessages(expect =>
+        {
+            expect.ScopedBackgroundProcess_Starting();
+            expect.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            expect.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            expect.ConversationController_Executing(Command1.Name);
+            expect.ConversationController_Executed(Command1.Name);
+            expect.ScopedBackgroundProcess_Started();
+            expect.ScopedBackgroundProcess_Stopping();
+        });
 
         resultTask.Should().NotBeComplete(because: "Synthesis.SayAsync is still running");
 
@@ -645,15 +655,17 @@ public class ConversationControllerTests
         tcs.SetResult();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name),
-            Expected_Started,
-            Expected_Stopping,
-            Expected_Stopped);
+        MockLogger.VerifyMessages(expect =>
+        {
+            expect.ScopedBackgroundProcess_Starting();
+            expect.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            expect.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            expect.ConversationController_Executing(Command1.Name);
+            expect.ConversationController_Executed(Command1.Name);
+            expect.ScopedBackgroundProcess_Started();
+            expect.ScopedBackgroundProcess_Stopping();
+            expect.ScopedBackgroundProcess_Stopped();
+        });
 
         resultTask.Should().BeComplete(because: "CleanupAsync should complete after the service is cleaned up");
 
@@ -685,17 +697,19 @@ public class ConversationControllerTests
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name),
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name),
-            Expected_Executing(Command1.Name),
-            Expected_Executed(Command1.Name),
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ConversationController_Executing(Command1.Name);
+            messageLogger.ConversationController_Executed(Command1.Name);
+            messageLogger.ConversationController_Executing(Command1.Name);
+            messageLogger.ConversationController_Executed(Command1.Name);
+            messageLogger.ConversationController_Executing(Command1.Name);
+            messageLogger.ConversationController_Executed(Command1.Name);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         ViewModel.IsListening.Should().Be(true);
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
@@ -721,11 +735,13 @@ public class ConversationControllerTests
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(expect =>
+        {
+            expect.ScopedBackgroundProcess_Starting();
+            expect.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            expect.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            expect.ScopedBackgroundProcess_Started();
+        });
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
@@ -751,22 +767,26 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for successful startup
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started,
-            Expected_Stopping);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+            messageLogger.ScopedBackgroundProcess_Stopping();
+        });
 
         resultTask.Should().NotBeComplete(because: "Synthesis.SayAsync is still running");
 
@@ -774,13 +794,15 @@ public class ConversationControllerTests
         tcs.SetResult();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started,
-            Expected_Stopping,
-            Expected_Stopped);
+        MockLogger.VerifyMessages(expect =>
+        {
+            expect.ScopedBackgroundProcess_Starting();
+            expect.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            expect.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            expect.ScopedBackgroundProcess_Started();
+            expect.ScopedBackgroundProcess_Stopping();
+            expect.ScopedBackgroundProcess_Stopped();
+        });
 
         resultTask.Should().BeComplete(because: "CleanupAsync should complete after the service is cleaned up");
 
@@ -809,11 +831,13 @@ public class ConversationControllerTests
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         ViewModel.IsListening.Should().Be(true);
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
@@ -847,13 +871,15 @@ public class ConversationControllerTests
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(1, exception),
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ConversationController_Executing(Command1.Name);
+            messageLogger.ConversationController_Retrying(1, exception);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
@@ -895,33 +921,35 @@ public class ConversationControllerTests
         // Act
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
 
-        MockLogger.WaitForMessageAsync(Expected_SwitchedToWorkerThread, TimeSpan.FromSeconds(10)).Wait();
+        MockLogger.WaitForMessageAsync(m => m.ScopedBackgroundProcess_SwitchedToWorkerThread(999), TimeSpan.FromSeconds(10)).Wait();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(1, exception),
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(2, exception),
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(3, exception),
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(4, exception),
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(5, exception),
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(6, exception),
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(7, exception),
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(8, exception),
-            Expected_Executing(Command1.Name),
-            Expected_Retrying(9, exception),
-            Expected_Executing(Command1.Name),
-            Expected_RetryLimitReached(10));
+        MockLogger.VerifyMessages(logger =>
+        {
+            logger.ScopedBackgroundProcess_Starting();
+            logger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            logger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(1, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(2, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(3, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(4, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(5, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(6, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(7, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(8, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_Retrying(9, exception);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ConversationController_RetryLimitReached(10);
+        });
 
         initializeTask.Should().BeFaultedWith(exception,
             because: "the exception occurred during too many retries");
@@ -943,22 +971,26 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for successful startup
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started,
-            Expected_Stopping);
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.ScopedBackgroundProcess_Starting();
+            messageLogger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            messageLogger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            messageLogger.ScopedBackgroundProcess_Started();
+            messageLogger.ScopedBackgroundProcess_Stopping();
+        });
 
         resultTask.Should().NotBeCompleteWithin(TimeSpan.FromMilliseconds(100), because: "Recognition.RecognizeAsync is still running");
 
@@ -981,23 +1013,28 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for successful startup
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started);
+        MockLogger.VerifyMessages(logger =>
+        {
+            logger.ScopedBackgroundProcess_Starting();
+            logger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            logger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            logger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Started,
-            Expected_Stopping,
-            Expected_Stopped);
+
+        MockLogger.VerifyMessages(logger =>
+        {
+            logger.ScopedBackgroundProcess_Starting();
+            logger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            logger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            logger.ScopedBackgroundProcess_Started();
+            logger.ScopedBackgroundProcess_Stopping();
+            logger.ScopedBackgroundProcess_Stopped();
+        });
 
         resultTask.Should().BeComplete(because: "CleanUpAsync should complete after cleanup is finished");
 
@@ -1031,24 +1068,29 @@ public class ConversationControllerTests
         sut.InitializeAsync(InitializeActivity, default)
             .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for successful startup
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Started);
+        MockLogger.VerifyMessages(logger =>
+        {
+            logger.ScopedBackgroundProcess_Starting();
+            logger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            logger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Started,
-            Expected_Stopping);
+
+        MockLogger.VerifyMessages(logger =>
+        {
+            logger.ScopedBackgroundProcess_Starting();
+            logger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            logger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ScopedBackgroundProcess_Started();
+            logger.ScopedBackgroundProcess_Stopping();
+        });
 
         resultTask.Should().NotBeCompleteWithin(TimeSpan.FromMilliseconds(100), because: "Command1Execute is still running");
 
@@ -1083,25 +1125,30 @@ public class ConversationControllerTests
             .Wait(1000)
             .Should().BeTrue(because: "InitializeAsync should complete synchronously");
 
-        MockLogger.VerifyMessages( // Wait for successful startup
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Started);
+        MockLogger.VerifyMessages(logger =>
+        {
+            logger.ScopedBackgroundProcess_Starting();
+            logger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            logger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ScopedBackgroundProcess_Started();
+        });
 
         // Act
         Task resultTask = sut.CleanUpAsync(CleanUpActivity, default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_Starting,
-            Expected_SwitchingToWorkerThread,
-            Expected_SwitchedToWorkerThread,
-            Expected_Executing(Command1.Name),
-            Expected_Started,
-            Expected_Stopping,
-            Expected_Stopped);
+
+        MockLogger.VerifyMessages(logger =>
+        {
+            logger.ScopedBackgroundProcess_Starting();
+            logger.ScopedBackgroundProcess_SwitchingToWorkerThread();
+            logger.ScopedBackgroundProcess_SwitchedToWorkerThread(999);
+            logger.ConversationController_Executing(Command1.Name);
+            logger.ScopedBackgroundProcess_Started();
+            logger.ScopedBackgroundProcess_Stopping();
+            logger.ScopedBackgroundProcess_Stopped();
+        });
 
         resultTask.Should().BeComplete(because: "CleanupAsync should complete after the service is cleaned up");
 

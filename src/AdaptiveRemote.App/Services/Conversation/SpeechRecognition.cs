@@ -18,7 +18,7 @@ internal class SpeechRecognition : ISpeechRecognition
     private readonly ConversationSettings _settings;
     private readonly ISpeechRecognitionEngine _engine;
     private readonly IListeningController _listeningController;
-    private readonly ILogger<SpeechRecognition> _logger;
+    private readonly MessageLogger _logger;
 
     private readonly IReadOnlyDictionary<PhraseKinds, IGrammar> _grammars;
 
@@ -27,7 +27,7 @@ internal class SpeechRecognition : ISpeechRecognition
         _settings = settings.Value;
         _engine = engine;
         _listeningController = listeningController;
-        _logger = logger;
+        _logger = new(logger);
 
         _engine.UnloadAllGrammars();
 
@@ -66,7 +66,7 @@ internal class SpeechRecognition : ISpeechRecognition
         }
         catch (KeyNotFoundException ex)
         {
-            _logger.LogWarning(Message.SpeechRecognition_CouldNotConfigureSetting, "ConfidenceThreshold", ex.Message);
+            _logger.SpeechRecognition_CouldNotConfigureSetting("ConfidenceThreshold", ex.Message);
         }
     }
 

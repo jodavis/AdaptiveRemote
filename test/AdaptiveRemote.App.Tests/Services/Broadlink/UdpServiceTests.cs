@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using AdaptiveRemote.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -97,10 +96,12 @@ public class UdpServiceTests
 
         Assert.AreEqual(inputEndPoint, result.RemoteEndPoint, nameof(result.RemoteEndPoint));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Sending(inputPacket, inputPacket.Size, inputEndPoint),
-            ExpectMessage_Sent(inputPacket),
-            ExpectMessage_ReceivedResponse(inputPacket, expectedResponse.Size, inputEndPoint));
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.UdpService_Sending(inputPacket.ToString(), inputPacket.Size, inputEndPoint);
+            messageLogger.UdpService_Sent(inputPacket.ToString());
+            messageLogger.UdpService_ReceivedResponse(inputPacket.ToString(), expectedResponse.Size, inputEndPoint);
+        });
     }
 
     private void Expect_SocketFactory_Create()
@@ -137,11 +138,4 @@ public class UdpServiceTests
             })
             .WithStandardTaskBehavior(new SocketReceiveFromResult() { ReceivedBytes = responseBytes.Length, RemoteEndPoint = responseEndPoint })
             .Verifiable(Times.Once);
-
-    private static string ExpectMessage_Sending(Payload packet, int bytesInPacket, EndPoint remoteEndPoint)
-        => $"Information[901]: {string.Format(LoggingMessages.UdpService_Sending, packet, bytesInPacket, remoteEndPoint)}";
-    private static string ExpectMessage_Sent(Payload packet)
-        => $"Information[902]: {string.Format(LoggingMessages.UdpService_Sent, packet)}";
-    private static string ExpectMessage_ReceivedResponse(Payload packet, int bytesInResponse, EndPoint remoteEndPoint)
-        => $"Information[903]: {string.Format(LoggingMessages.UdpService_ReceivedResponse, packet, bytesInResponse, remoteEndPoint)}";
 }

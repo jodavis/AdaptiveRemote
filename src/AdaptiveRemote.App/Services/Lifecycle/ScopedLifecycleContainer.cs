@@ -12,7 +12,7 @@ internal class ScopedLifecycleContainer
 {
     private readonly IEnumerable<IScopedLifecycle> _services;
     private readonly ILifecycleViewController _controller;
-    private readonly ILogger<ScopedLifecycleContainer> _logger;
+    private readonly MessageLogger _logger;
 
     private IEnumerable<IScopedLifecycle> _initializedServices = Enumerable.Empty<IScopedLifecycle>();
 
@@ -20,7 +20,7 @@ internal class ScopedLifecycleContainer
     {
         _services = services;
         _controller = controller;
-        _logger = logger;
+        _logger = new(logger);
     }
 
     public async Task InitializeAllAsync(CancellationToken cancellationToken)
@@ -62,18 +62,18 @@ internal class ScopedLifecycleContainer
 
     private async Task InitializeServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
     {
-        _logger.LogInformation(Message.ApplicationLifecycle_Initializing, scopedService.Name);
+        _logger.ApplicationLifecycle_Initializing(scopedService.Name);
         using ILifecycleActivity activity = _controller.StartTask(Phrases.Startup_Starting(scopedService.Name));
         try
         {
             await scopedService.InitializeAsync(activity, cancellationToken);
-            _logger.LogInformation(Message.ApplicationLifecycle_Initialized, scopedService.Name);
+            _logger.ApplicationLifecycle_Initialized(scopedService.Name);
         }
         catch (OperationCanceledException)
         { }
         catch (Exception error)
         {
-            _logger.LogError(Message.ApplicationLifecycle_InitializingFailed, scopedService.Name, error);
+            _logger.ApplicationLifecycle_InitializingFailed(scopedService.Name, error);
             activity.SetFatalError(error);
             throw;
         }
@@ -98,17 +98,17 @@ internal class ScopedLifecycleContainer
 
     private async Task CleanUpServiceAsync(IScopedLifecycle scopedService, CancellationToken cancellationToken)
     {
-        _logger.LogInformation(Message.ApplicationLifecycle_CleaningUp, scopedService.Name);
+        _logger.ApplicationLifecycle_CleaningUp(scopedService.Name);
         using ILifecycleActivity activity = _controller.StartTask(Phrases.Cleanup_CleaningUp(scopedService.Name));
         try
         {
             await scopedService.CleanUpAsync(activity, cancellationToken);
-            _logger.LogInformation(Message.ApplicationLifecycle_CleanedUp, scopedService.Name);
+            _logger.ApplicationLifecycle_CleanedUp(scopedService.Name);
         }
         catch (Exception error)
         {
             activity.SetFatalError(error);
-            _logger.LogError(Message.ApplicationLifecycle_CleaningUpFailed, scopedService.Name, error);
+            _logger.ApplicationLifecycle_CleaningUpFailed(scopedService.Name, error);
         }
     }
 }

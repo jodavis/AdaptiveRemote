@@ -8,12 +8,12 @@ namespace AdaptiveRemote.Services.Conversation;
 internal class SpeechSynthesizerWrapper : ISpeechSynthesizer, IDisposable
 {
     private readonly SpeechSynthesizer _speechSynthesizer = new();
-    private readonly ILogger<SpeechSynthesizer> _logger;
+    private readonly Logging.WpfHostMessageLogger _logger;
     private EventHandler? _speakCompleted;
 
     public SpeechSynthesizerWrapper(IAudioConfigurationService audioConfiguration, ILogger<SpeechSynthesizer> logger)
     {
-        _logger = logger;
+        _logger = new Logging.WpfHostMessageLogger(logger);
 
         _speechSynthesizer.BookmarkReached += OnBookmarkReached;
         _speechSynthesizer.SpeakCompleted += OnSpeakCompleted;
@@ -44,15 +44,25 @@ internal class SpeechSynthesizerWrapper : ISpeechSynthesizer, IDisposable
     }
 
     private void OnBookmarkReached(object? sender, BookmarkReachedEventArgs e)
-        => _logger.LogInformation($"Bookmark {e.Bookmark} reached in '{e.Prompt}' at {e.AudioPosition}");
-    private void OnSpeakCompleted(object? sender, SpeakCompletedEventArgs e)
-        => _logger.LogInformation($"Speaking completed (Cancelled: {e.Cancelled}, Error: {e.Error})");
+        => _logger.SpeechSynthesis_BookmarkReached(e.Bookmark, e.Prompt, e.AudioPosition);
     private void OnSpeakProcess(object? sender, SpeakProgressEventArgs e)
-        => _logger.LogInformation($"Speaking progress: '{e.Text}' at {e.AudioPosition}");
+        => _logger.SpeechSynthesis_SpeakProgress(e.Text, e.AudioPosition);
     private void OnSpeakStarted(object? sender, SpeakStartedEventArgs e)
-        => _logger.LogInformation($"Speaking started");
+        => _logger.SpeechSynthesis_SpeakStarted();
     private void OnStateChanged(object? sender, StateChangedEventArgs e)
-        => _logger.LogInformation($"State chaned to {e.State} from {e.PreviousState}");
+        => _logger.SpeechSynthesis_StateChanged(e.State, e.PreviousState);
     private void OnVoiceChange(object? sender, VoiceChangeEventArgs e)
-        => _logger.LogInformation($"Voice changed to '{e.Voice.Name}'");
+        => _logger.SpeechSynthesis_VoiceChanged(e.Voice.Name);
+
+    private void OnSpeakCompleted(object? sender, SpeakCompletedEventArgs e)
+    {
+        if (e.Error is null)
+        {
+            _logger.SpeechSynthesis_SpeakCompleted(e.Cancelled);
+        }
+        else
+        {
+            _logger.SpeechSynthesis_SpeakCompletedWithError(e.Cancelled, e.Error);
+        }
+    }
 }

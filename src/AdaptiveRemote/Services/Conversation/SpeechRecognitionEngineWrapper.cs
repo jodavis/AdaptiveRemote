@@ -11,14 +11,14 @@ namespace AdaptiveRemote.Services.Conversation;
 internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDisposable
 {
     private readonly SpeechRecognitionEngine _engine = new(new CultureInfo("en-US"));
-    private readonly ILogger<SpeechRecognitionEngine> _logger;
+    private readonly WpfHostMessageLogger _logger;
 
     private event EventHandler<RecognizedSpeechEventArgs>? _speechRecognized;
     private event EventHandler<RecognizedSpeechEventArgs>? _speechRejected;
 
     public SpeechRecognitionEngineWrapper(ILogger<SpeechRecognitionEngine> logger, IAudioConfigurationService audioConfiguration)
     {
-        _logger = logger;
+        _logger = new(logger);
 
         _engine.AudioSignalProblemOccurred += OnAudioSignalProblemOccurred;
         _engine.AudioStateChanged += OnAudioStateChanged;
@@ -34,11 +34,6 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
         _engine.SpeechRecognitionRejected += BroadcastSpeechRejected;
 
         audioConfiguration.Configure(_engine);
-
-        foreach (RecognizerInfo recognizer in SpeechRecognitionEngine.InstalledRecognizers())
-        {
-            LogRecognizerInfo(recognizer, _engine.RecognizerInfo.Id == recognizer.Id);
-        }
     }
 
     private void BroadcastSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
@@ -99,57 +94,65 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
        => Wrap(result) ?? throw new ArgumentNullException(nameof(result));
 
     private void OnSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
-        => _logger.LogInformation(Message.SpeechRecognitionEngine_Recognized, Wrap(e.Result));
+        => _logger.SpeechRecognitionEngine_Recognized(new(e.Result));
     private void OnSpeechRecognitionRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
-        => _logger.LogWarning(Message.SpeechRecognitionEngine_RecognitionRejected, Wrap(e.Result));
+        => _logger.SpeechRecognitionEngine_RecognitionRejected(new(e.Result));
     private void OnSpeechHypothesized(object? sender, SpeechHypothesizedEventArgs e)
-        => _logger.LogInformation(Message.SpeechRecognitionEngine_Hypothesized, Wrap(e.Result));
+        => _logger.SpeechRecognitionEngine_Hypothesized(new(e.Result));
     private void OnSpeechDetected(object? sender, SpeechDetectedEventArgs e)
-        => _logger.LogInformation(Message.SpeechRecognitionEngine_Detected, e.AudioPosition);
+        => _logger.SpeechRecognitionEngine_Detected(e.AudioPosition);
     private void OnRecognizerUpdateReached(object? sender, RecognizerUpdateReachedEventArgs e)
-        => _logger.LogWarning(Message.SpeechRecognitionEngine_UpdateReached, e.AudioPosition, e.UserToken);
-    private void OnRecognizeCompleted(object? sender, RecognizeCompletedEventArgs e)
-        => _logger.LogInformation(Message.SpeechRecognitionEngine_RecognizeCompleted,
-            e.InputStreamEnded, e.Cancelled, e.BabbleTimeout, e.Error, e.InitialSilenceTimeout, Wrap(e.Result));
-    private void OnLoadGrammarCompleted(object? sender, LoadGrammarCompletedEventArgs e)
-        => _logger.LogInformation(Message.SpeechRecognitionEngine_LoadGrammarCompleted, e.Error, e.Grammar.Name, e.Cancelled);
+        => _logger.SpeechRecognitionEngine_UpdateReached(e.AudioPosition, e.UserToken);
     private void OnAudioStateChanged(object? sender, AudioStateChangedEventArgs e)
-        => _logger.LogInformation(Message.SpeechRecognitionEngine_AudioStateChanged, e.AudioState);
+        => _logger.SpeechRecognitionEngine_AudioStateChanged(e.AudioState);
     private void OnAudioSignalProblemOccurred(object? sender, AudioSignalProblemOccurredEventArgs e)
-        => _logger.LogWarning(Message.SpeechRecognitionEngine_AudioSignalProblemOccurred, e.AudioSignalProblem, e.RecognizerAudioPosition, e.AudioLevel, e.AudioPosition);
+        => _logger.SpeechRecognitionEngine_AudioSignalProblemOccurred(e.AudioSignalProblem, e.RecognizerAudioPosition, e.AudioPosition, e.AudioLevel);
+
+    private void OnRecognizeCompleted(object? sender, RecognizeCompletedEventArgs e)
+    {
+        if (e.Error is null)
+        {
+            _logger.SpeechRecognitionEngine_RecognizeCompleted(e.InputStreamEnded, e.Cancelled, e.BabbleTimeout, e.InitialSilenceTimeout, new(e.Result));
+        }
+        else
+        {
+            _logger.SpeechRecognitionEngine_RecognizeCompletedWithError(e.InputStreamEnded, e.Cancelled, e.BabbleTimeout, e.InitialSilenceTimeout, new(e.Result), e.Error);
+        }
+    }
+
+    private void OnLoadGrammarCompleted(object? sender, LoadGrammarCompletedEventArgs e)
+    {
+        if (e.Error is null)
+        {
+            _logger.SpeechRecognitionEngine_LoadGrammarCompleted(e.Grammar.Name, e.Cancelled);
+        }
+        else
+        {
+            _logger.SpeechRecognitionEngine_LoadGrammarCompletedWithError(e.Grammar.Name, e.Cancelled, e.Error);
+        }
+    }
 
     public void Dispose() => _engine.Dispose();
 
-    private void LogRecognizerInfo(RecognizerInfo recognizerInfo, bool selected)
-         => _logger.LogInformation(Message.SpeechRecognitionEngine_RecognizerInfo,
-                 recognizerInfo.Name,
-                 recognizerInfo.Description,
-                 selected,
-                 recognizerInfo.Id,
-                 recognizerInfo.Culture,
-                 string.Concat(recognizerInfo.SupportedAudioFormats.Select(
-                     x => string.Format(LoggingMessages.SpeechRecognitionEngine_RecognizerInfo_AudioFormatFormat, x.EncodingFormat, x.SamplesPerSecond * x.BitsPerSample / 1000))),
-                 string.Concat(recognizerInfo.AdditionalInfo.Select(
-                     x => string.Format(LoggingMessages.SpeechRecognitionEngine_RecognizerInfo_AdditionalInfoFormat, x.Key, x.Value))));
-
-    private class ResultWrapper : IRecognizedSpeech
+    internal readonly struct ResultWrapper : IRecognizedSpeech
     {
-        private readonly RecognitionResult _result;
+        private readonly RecognitionResult? _result;
 
-        internal ResultWrapper(RecognitionResult result)
+        internal ResultWrapper(RecognitionResult? result)
         {
             _result = result;
         }
 
-        string IRecognizedSpeech.Text => _result.Text;
-        int IRecognizedSpeech.Confidence => (int)(_result.Confidence * 100);
+        string IRecognizedSpeech.Text => _result?.Text ?? "(null)";
+        int IRecognizedSpeech.Confidence => (int)((_result?.Confidence ?? 0) * 100);
 
-        bool IRecognizedSpeech.ContainsSemanticValue(string key) => _result.Semantics.ContainsKey(key);
-        void IRecognizedSpeech.WriteToWaveStream(Stream waveStream) => _result.Audio.WriteToWaveStream(waveStream);
+        bool IRecognizedSpeech.ContainsSemanticValue(string key) => _result?.Semantics.ContainsKey(key) ?? false;
+        void IRecognizedSpeech.WriteToWaveStream(Stream waveStream) => _result?.Audio.WriteToWaveStream(waveStream);
 
         bool IRecognizedSpeech.TryGetSemanticValue(string key, [NotNullWhen(true)] out string? value)
         {
-            if (_result.Semantics.ContainsKey(key) &&
+            if (_result is not null &&
+                _result.Semantics.ContainsKey(key) &&
                 _result.Semantics[key]?.Value is string v)
             {
                 value = v;
@@ -163,22 +166,16 @@ internal class SpeechRecognitionEngineWrapper : ISpeechRecognitionEngine, IDispo
         }
 
         public override string ToString()
-            => string.Format(
-                string.Join("\n   ",
-                    "Text: {0}",
-                    "Words: [{6}]",
-                    "Confidence: {4}",
-                    "Alternates: '{1}'",
-                    "Homophones: '{7}'",
-                    "Semantics: {2}",
-                    "Grammar: {5}"),
-                _result.Text,
-                string.Join("', '", _result.Alternates.Select(x => $"{x.Text}:{x.Confidence}")),
-                string.Join(", ", _result.Semantics.Select(x => $"{x.Key}:{x.Value.Value}")),
-                _result.Semantics.Value,
-                _result.Confidence,
-                _result.Grammar?.Name ?? "(null)",
-                string.Join("/", _result.Words.Select(x => $"{x.Pronunciation} {x.Confidence}")),
-                string.Join("', '", _result.Homophones.Select(x => $"{x.Text}:{x.Confidence}")));
+            => _result is null
+                ? "(null)"
+                : $"""
+                  Text: {_result.Text}
+                  Words: [{string.Join("/", _result.Words.Select(x => $"{x.Pronunciation} {x.Confidence}"))}]
+                  Confidence: {_result.Confidence}
+                  Alternates: '{string.Join("', '", _result.Alternates.Select(x => $"{x.Text}:{x.Confidence}"))}'
+                  Homophones: '{string.Join("', '", _result.Homophones.Select(x => $"{x.Text}:{x.Confidence}"))}'
+                  Semantics: {string.Join(", ", _result.Semantics.Select(x => $"{x.Key}:{x.Value.Value}"))}
+                  Grammar: {_result.Grammar?.Name ?? "(null)"}
+                  """;
     }
 }

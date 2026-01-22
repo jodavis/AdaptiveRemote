@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.Logging;
-using Moq;
+﻿using Moq;
 
 namespace AdaptiveRemote.Services.ProgrammaticSettings;
 
@@ -45,17 +44,19 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
 
         // Assert
         MockFileSystem.VerifyFileContents(InputSettingsPath, $"ExistingSetting=123{Environment.NewLine}NewSetting=abc{Environment.NewLine}");
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_LoadingExistingSettings(),
-            ExpectMessage_LoadedExistingSettings(1),
-            ExpectMessage_AddSetting("NewSetting", "abc"),
-            ExpectMessage_SavingSettings(2),
-            ExpectMessage_SavedSettings());
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_AddSetting("NewSetting", "abc");
+            log.ProgrammaticSettings_SavingSettings(2, InputSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+        });
     }
 
     [TestMethod]
@@ -74,18 +75,18 @@ public class PersistSettingsTests
         sut.Set("NewSetting2", "def");
         sut.Set("NewSetting3", "ghi");
 
-        await MockLogger.WaitForMessageAsync(ExpectMessage_SavingSettings(4));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavingSettings(4, InputSettingsPath));
 
         // Assert
         DateTime startTime = DateTime.Now;
         const int timeout = 1; // second
         while (true)
         {
-            if (MockLogger.Messages.LastOrDefault() == ExpectMessage_SavedSettings())
+            if (MockLogger.Messages.LastOrDefault()?.Contains($"Saved settings to {InputSettingsPath}") == true)
             {
                 break;
             }
-            Assert.IsTrue(DateTime.Now - startTime < TimeSpan.FromSeconds(timeout), "Timed out waiting for final message: " + ExpectMessage_SavedSettings());
+            Assert.IsTrue(DateTime.Now - startTime < TimeSpan.FromSeconds(timeout), $"Timed out waiting for final message: ProgrammaticSettings_SavedSettings({InputSettingsPath})");
             await Task.Delay(100);
         }
 
@@ -110,17 +111,19 @@ public class PersistSettingsTests
         // Act
         sut.Set("ExistingSetting", "ghi");
 
-        await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
 
         // Assert
         MockFileSystem.VerifyFileContents(InputSettingsPath, $"ExistingSetting=ghi{Environment.NewLine}");
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_LoadingExistingSettings(),
-            ExpectMessage_LoadedExistingSettings(1),
-            ExpectMessage_ReplaceSetting("ExistingSetting", "123", "ghi"),
-            ExpectMessage_SavingSettings(1),
-            ExpectMessage_SavedSettings());
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_ReplaceSetting("ExistingSetting", "123", "ghi");
+            log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+        });
     }
 
     [TestMethod]
@@ -140,12 +143,14 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessageAsync(ExpectMessage_Error("NewSetting", "abc", expectedException));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_Error("NewSetting", "abc", expectedException));
 
         // Assert
-        MockLogger.VerifyMessages(
-            ExpectMessage_LoadingExistingSettings(),
-            ExpectMessage_Error("NewSetting", "abc", expectedException));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+            log.ProgrammaticSettings_Error("NewSetting", "abc", expectedException);
+        });
     }
 
     [TestMethod]
@@ -167,15 +172,17 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessageAsync(ExpectMessage_Error("NewSetting", "abc", expectedException));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_Error("NewSetting", "abc", expectedException));
 
         // Assert
-        MockLogger.VerifyMessages(
-            ExpectMessage_LoadingExistingSettings(),
-            ExpectMessage_LoadedExistingSettings(1),
-            ExpectMessage_AddSetting("NewSetting", "abc"),
-            ExpectMessage_SavingSettings(2),
-            ExpectMessage_Error("NewSetting", "abc", expectedException));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_AddSetting("NewSetting", "abc");
+            log.ProgrammaticSettings_SavingSettings(2, InputSettingsPath);
+            log.ProgrammaticSettings_Error("NewSetting", "abc", expectedException);
+        });
     }
 
     [TestMethod]
@@ -192,15 +199,17 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
 
         // Assert
         MockFileSystem.VerifyFileContents(InputSettingsPath, $"NewSetting=abc{Environment.NewLine}");
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_AddSetting("NewSetting", "abc"),
-            ExpectMessage_SavingSettings(1),
-            ExpectMessage_SavedSettings());
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_AddSetting("NewSetting", "abc");
+            log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+        });
     }
 
     [TestMethod]
@@ -221,15 +230,17 @@ public class PersistSettingsTests
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
 
         // Assert
         MockFileSystem.VerifyFileContents(InputSettingsPath, $"NewSetting=abc{Environment.NewLine}");
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_AddSetting("NewSetting", "abc"),
-            ExpectMessage_SavingSettings(1),
-            ExpectMessage_SavedSettings());
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_AddSetting("NewSetting", "abc");
+            log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+        });
     }
 
     [DataTestMethod]
@@ -262,14 +273,16 @@ public class PersistSettingsTests
             // Assert
             Assert.IsTrue(expectedResult, "Expected ArgumentException was not thrown for input:'{0}'.", input);
 
-            await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
+            await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
 
-            MockLogger.VerifyMessages(
-                ExpectMessage_LoadingExistingSettings(),
-                ExpectMessage_LoadedExistingSettings(0),
-                ExpectMessage_AddSetting(input, "def"),
-                ExpectMessage_SavingSettings(1),
-                ExpectMessage_SavedSettings());
+            MockLogger.VerifyMessages(log =>
+            {
+                log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+                log.ProgrammaticSettings_LoadedExistingSettings(0, InputSettingsPath);
+                log.ProgrammaticSettings_AddSetting(input, "def");
+                log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
+                log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+            });
         }
         catch (ArgumentException result) when (!expectedResult)
         {
@@ -278,8 +291,10 @@ public class PersistSettingsTests
             Assert.AreEqual(expectedException.ParamName, result.ParamName, nameof(result.ParamName) + " for input:'{0}'", input);
             Assert.AreEqual(expectedException.Message, result.Message, nameof(result.Message) + " for input:'{0}'", input);
 
-            MockLogger.VerifyMessages(
-                ExpectMessage_Rejected(input, "def", expectedException.Message));
+            MockLogger.VerifyMessages(log =>
+            {
+                log.ProgrammaticSettings_Rejected(input, "def", expectedException.Message);
+            });
         }
     }
 
@@ -304,14 +319,16 @@ public class PersistSettingsTests
             // Assert
             Assert.IsTrue(expectedResult, "Expected ArgumentException was not thrown for input:'{0}'.", input);
 
-            await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
+            await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
 
-            MockLogger.VerifyMessages(
-                ExpectMessage_LoadingExistingSettings(),
-                ExpectMessage_LoadedExistingSettings(0),
-                ExpectMessage_AddSetting("TestSetting", input),
-                ExpectMessage_SavingSettings(1),
-                ExpectMessage_SavedSettings());
+            MockLogger.VerifyMessages(log =>
+            {
+                log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+                log.ProgrammaticSettings_LoadedExistingSettings(0, InputSettingsPath);
+                log.ProgrammaticSettings_AddSetting("TestSetting", input);
+                log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
+                log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+            });
         }
         catch (ArgumentException result) when (!expectedResult)
         {
@@ -320,25 +337,11 @@ public class PersistSettingsTests
             Assert.AreEqual(expectedException.ParamName, result.ParamName, nameof(result.ParamName) + " for input:'{0}'", input);
             Assert.AreEqual(expectedException.Message, result.Message, nameof(result.Message) + " for input:'{0}'", input);
 
-            MockLogger.VerifyMessages(
-                ExpectMessage_Rejected("TestSetting", input, expectedException.Message));
+            MockLogger.VerifyMessages(log =>
+            {
+                log.ProgrammaticSettings_Rejected("TestSetting", input, expectedException.Message);
+            });
         }
     }
 
-    private static string ExpectMessage_LoadingExistingSettings()
-        => $"Information[1101]: {LoggingMessages.ProgrammaticSettings_LoadingExistingSettings.AsMessageTemplate(InputSettingsPath)}";
-    private static string ExpectMessage_LoadedExistingSettings(int expectedCount)
-        => $"Information[1102]: {LoggingMessages.ProgrammaticSettings_LoadedExistingSettings.AsMessageTemplate(expectedCount, InputSettingsPath)}";
-    private static string ExpectMessage_SavingSettings(int expectedCount)
-        => $"Information[1103]: {LoggingMessages.ProgrammaticSettings_SavingSettings.AsMessageTemplate(expectedCount, InputSettingsPath)}";
-    private static string ExpectMessage_SavedSettings()
-        => $"Information[1104]: {LoggingMessages.ProgrammaticSettings_SavedSettings.AsMessageTemplate(InputSettingsPath)}";
-    private static string ExpectMessage_AddSetting(string expectedKey, string expectedValue)
-        => $"Information[1105]: {LoggingMessages.ProgrammaticSettings_AddSetting.AsMessageTemplate(expectedKey, expectedValue)}";
-    private static string ExpectMessage_ReplaceSetting(string expectedKey, string oldValue, string newValue)
-        => $"Information[1106]: {LoggingMessages.ProgrammaticSettings_ReplaceSetting.AsMessageTemplate(expectedKey, oldValue, newValue)}";
-    private static string ExpectMessage_Rejected(string key, string value, string reason)
-        => $"Error[1107]: {LoggingMessages.ProgrammaticSettings_Rejected.AsMessageTemplate(key, value, reason)}";
-    private static string ExpectMessage_Error(string key, string value, Exception expected)
-        => $"Error[1108]: {LoggingMessages.ProgrammaticSettings_Error.AsMessageTemplate(key, value, $"{expected.GetType().FullName}: {expected.Message}")}";
 }

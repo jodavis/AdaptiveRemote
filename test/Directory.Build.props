@@ -8,5 +8,7 @@
     <NoWarn>$(NoWarn);IDE0051;IDE0052;IDE0059</NoWarn>
     <!-- Suppress warnings for async usage in tests, which follow non-standard patterns to exercise async behavior -->
     <NoWarn>$(NoWarn);VSTHRD002;VSTHRD003;VSTHRD103;VSTHRD105;VSTHRD105;VSTHRD110</NoWarn>
+    <!-- Suppress warnings about expensive logging for test methods. If we are logging in tests, it means logging is enabled. -->
+    <NoWarn>$(NoWarn);CA1873</NoWarn>
   </PropertyGroup>
 </Project>

@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -70,13 +69,13 @@ internal class ConversationController : ScopedBackgroundProcess
                 errorCount++;
                 if (errorCount >= _speechSettings.ErrorRetryLimit)
                 {
-                    Logger.LogWarning(Message.ConversationController_RetryLimitReached, errorCount);
+                    Logger.ConversationController_RetryLimitReached(errorCount);
                     _viewModel.StatusMessage = Phrases.Conversation_SystemFailed;
                     throw;
                 }
                 else
                 {
-                    Logger.LogWarning(Message.ConversationController_Retrying, errorCount, ex);
+                    Logger.ConversationController_Retrying(errorCount, ex);
                 }
             }
             finally
@@ -146,11 +145,11 @@ internal class ConversationController : ScopedBackgroundProcess
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            Logger.LogInformation(Message.ConversationController_Executing, command.Name);
+            Logger.ConversationController_Executing(command.Name);
 
             await command.ExecuteAsync!(cancellationToken);
 
-            Logger.LogInformation(Message.ConversationController_Executed, command.Name);
+            Logger.ConversationController_Executed(command.Name);
         }
     }
 

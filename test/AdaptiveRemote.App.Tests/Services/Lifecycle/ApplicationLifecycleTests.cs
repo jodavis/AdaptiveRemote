@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.Logging;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
 
 namespace AdaptiveRemote.Services.Lifecycle;
@@ -124,13 +123,15 @@ public class ApplicationLifecycleTests
         Task startTask = sut.StartAsync(default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializedMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+        });
 
         startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
         sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
@@ -151,10 +152,12 @@ public class ApplicationLifecycleTests
         Task startTask = sut.StartAsync(default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+        });
 
         startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
         sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
@@ -181,15 +184,17 @@ public class ApplicationLifecycleTests
         Task startTask = sut.StartAsync(default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingFailedMessage(MockService2, expectedError1),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_InitializingFailed(MockService2.Object.Name, expectedError1);
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+        });
 
         startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
         sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
@@ -228,19 +233,21 @@ public class ApplicationLifecycleTests
         MockLogger.WaitForMessageAsync(Expect_CleanedUpMessage(MockService3), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Cleanup should complete after error");
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3),
-            Expect_InitializingFailedMessage(MockService2, expectedError1),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2),
-            Expect_CleaningUpMessage(MockService3),
-            Expect_CleanedUpMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_InitializingFailed(MockService2.Object.Name, expectedError1);
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService3.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService3.Object.Name);
+        });
 
         sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
         LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "Services are being cleaned up after failure");
@@ -266,9 +273,12 @@ public class ApplicationLifecycleTests
         // Assert
         // In .NET 10, StartAsync returns immediately
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync completes quickly");
-        MockLogger.WaitForMessageAsync(Expect_ScopeConstructionFailed, TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Error should be logged");
-        MockLogger.VerifyMessages(
-            Expect_ScopeConstructionFailed);
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_ScopeConstructionFailed(expectedError1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Error should be logged");
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_ScopeConstructionFailed(expectedError1);
+        });
     }
 
     [TestMethod]
@@ -289,16 +299,19 @@ public class ApplicationLifecycleTests
         
         // In .NET 10, StartAsync returns immediately, wait for error to be logged
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync completes quickly");
-        MockLogger.WaitForMessageAsync(Expect_ScopeConstructionFailed, TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Error should be logged");
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_ScopeConstructionFailed(expectedError1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Error should be logged");
 
         // Act
         Task stopTask = sut.StopAsync(default);
 
         // Assert
         stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StopAsync should have nothing to do");
-        MockLogger.VerifyMessages(
-            Expect_ScopeConstructionFailed,
-            Expect_ShuttingDownMessage);
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_ScopeConstructionFailed(expectedError1);
+            log.ApplicationLifecycle_ShuttingDown();
+        });
     }
 
     [TestMethod]
@@ -321,14 +334,16 @@ public class ApplicationLifecycleTests
         Task startTask = sut.StartAsync(default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingFailedMessage(MockService2, expectedError1),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_InitializingFailed(MockService2.Object.Name, expectedError1);
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+        });
 
         startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
         sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
@@ -358,20 +373,22 @@ public class ApplicationLifecycleTests
         Task stopTask = sut.StopAsync(default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializedMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3),
-            Expect_ShuttingDownMessage,
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2),
-            Expect_CleaningUpMessage(MockService3),
-            Expect_CleanedUpMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_ShuttingDown();
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService3.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService3.Object.Name);
+        });
 
         stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StopAsync should complete after all services are cleaned up");
         sut.ExecuteTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "ExecuteTask should complete after all services have stopped");
@@ -401,17 +418,19 @@ public class ApplicationLifecycleTests
         Task stopTask = sut.StopAsync(default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializedMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3),
-            Expect_ShuttingDownMessage,
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleaningUpMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_ShuttingDown();
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService3.Object.Name);
+        });
 
         stopTask.Should().NotBeComplete(because: "StopAsync should block until all services are cleaned up");
         sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
@@ -445,20 +464,22 @@ public class ApplicationLifecycleTests
         Task stopTask = sut.StopAsync(default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializedMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3),
-            Expect_ShuttingDownMessage,
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleaningUpFailedMessage(MockService1, expectedError1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleaningUpFailedMessage(MockService2, expectedError2),
-            Expect_CleaningUpMessage(MockService3),
-            Expect_CleanedUpMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_ShuttingDown();
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUpFailed(MockService1.Object.Name, expectedError1);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleaningUpFailed(MockService2.Object.Name, expectedError2);
+            log.ApplicationLifecycle_CleaningUp(MockService3.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService3.Object.Name);
+        });
 
         stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StopAsyc should complete after all services are cleaned up");
         sut.ExecuteTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "ExecuteTask should complete after all services have stopped");
@@ -488,19 +509,21 @@ public class ApplicationLifecycleTests
         Task stopTask = sut.StopAsync(default);
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3),
-            Expect_ShuttingDownMessage,
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2),
-            Expect_CleaningUpMessage(MockService3),
-            Expect_CleanedUpMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_ShuttingDown();
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService3.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService3.Object.Name);
+        });
 
         stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StopAsync should complete after all services are cleaned up");
         sut.ExecuteTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "ExecuteTask should complete after all services have stoped");
@@ -536,16 +559,18 @@ public class ApplicationLifecycleTests
         stopTask.Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
             because: "StopAsync should complete after all services are cleaned up, even if some have failed");
 
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingFailedMessage(MockService2, expectedError1),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleanedUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleanedUpMessage(MockService2),
-            Expect_ShuttingDownMessage);
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_InitializingFailed(MockService2.Object.Name, expectedError1);
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_ShuttingDown();
+        });
 
         sut.ExecuteTask.Should().BeComplete(because: "ExecuteTask should complete after all services have stopped");
         LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp, because: "we stay in this state until the application exits");
@@ -583,20 +608,4 @@ public class ApplicationLifecycleTests
             })
             .Verifiable(Times.Exactly(expectedExceptions.Length));
 
-    private static string Expect_InitializingMessage(Mock<IScopedLifecycle> service)
-        => $"Information[701]: {string.Format(LoggingMessages.ApplicationLifecycle_Initializing, service.Object.Name)}";
-    private static string Expect_InitializedMessage(Mock<IScopedLifecycle> service)
-        => $"Information[702]: {string.Format(LoggingMessages.ApplicationLifecycle_Initialized, service.Object.Name)}";
-    private static string Expect_InitializingFailedMessage(Mock<IScopedLifecycle> service, Exception error)
-        => $"Error[703]: {string.Format(LoggingMessages.ApplicationLifecycle_InitializingFailed, service.Object.Name, $"{error.GetType().FullName}: {error.Message}")}";
-    private static string Expect_CleaningUpMessage(Mock<IScopedLifecycle> service)
-        => $"Information[704]: {string.Format(LoggingMessages.ApplicationLifecycle_CleaningUp, service.Object.Name)}";
-    private static string Expect_CleanedUpMessage(Mock<IScopedLifecycle> service)
-        => $"Information[705]: {string.Format(LoggingMessages.ApplicationLifecycle_CleanedUp, service.Object.Name)}";
-    private static string Expect_CleaningUpFailedMessage(Mock<IScopedLifecycle> service, Exception error)
-        => $"Error[706]: {string.Format(LoggingMessages.ApplicationLifecycle_CleaningUpFailed, service.Object.Name, $"{error.GetType().FullName}: {error.Message}")}";
-    private static string Expect_ShuttingDownMessage
-        => $"Information[707]: {LoggingMessages.ApplicationLifecycle_ShuttingDown}";
-    private static string Expect_ScopeConstructionFailed
-        => $"Error[708]: {LoggingMessages.ApplicationLifecycle_ScopeConstructionFailed}";
 }

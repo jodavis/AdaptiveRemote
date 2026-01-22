@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Moq;
 
 namespace AdaptiveRemote.Services.Conversation;
@@ -53,19 +52,6 @@ public class SpeechSynthesisTests
         MockPauseDisposable.Verify();
     }
 
-    private static string Expected_SelectedVoice(string voiceName)
-        => $"Information[401]: {string.Format(LoggingMessages.SpeechSynthesis_SelectedVoice, voiceName)}";
-    private static string Expected_VoiceNotFound(string voiceName)
-        => $"Warning[402]: {string.Format(LoggingMessages.SpeechSynthesis_VoiceNotFound, voiceName)}";
-    private static string Expected_Saying(string phrase)
-        => $"Information[403]: {string.Format(LoggingMessages.SpeechSynthesis_Saying, phrase)}";
-    private static string Expected_CancelledSaying(string phrase)
-        => $"Information[404]: {string.Format(LoggingMessages.SpeechSynthesis_CancelledSaying, phrase)}";
-    private static string Expected_AlreadySpeaking(string phrase)
-        => $"Error[405]: {string.Format(LoggingMessages.SpeechSynthesis_AlreadySpeaking, phrase)}";
-    private static string Expected_SetSpeakingRate(int speakintRate)
-        => $"Information[406]: {string.Format(LoggingMessages.SpeechSynthesis_SetSpeakingRate, speakintRate)}";
-
     private ISpeechSynthesis CreateSut()
     {
         Mock<IOptionsSnapshot<ConversationSettings>> mockOptionsSnapshot = new();
@@ -94,8 +80,7 @@ public class SpeechSynthesisTests
         ISpeechSynthesis sut = CreateSut();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[1]));
+        MockLogger.VerifyMessages(log => log.SpeechSynthesis_SelectedVoice(InstalledVoices[1]));
     }
 
     [TestMethod]
@@ -112,8 +97,7 @@ public class SpeechSynthesisTests
         ISpeechSynthesis sut = CreateSut();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_VoiceNotFound("Missile"));
+        MockLogger.VerifyMessages(log => log.SpeechSynthesis_VoiceNotFound("Missile"));
     }
 
     [TestMethod]
@@ -133,9 +117,11 @@ public class SpeechSynthesisTests
         ISpeechSynthesis sut = CreateSut();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_VoiceNotFound("Missile"),
-            Expected_SelectedVoice(InstalledVoices[1]));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.SpeechSynthesis_VoiceNotFound("Missile");
+            log.SpeechSynthesis_SelectedVoice(InstalledVoices[1]);
+        });
     }
 
     [TestMethod]
@@ -155,8 +141,7 @@ public class SpeechSynthesisTests
         ISpeechSynthesis sut = CreateSut();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[1]));
+        MockLogger.VerifyMessages(log => log.SpeechSynthesis_SelectedVoice(InstalledVoices[1]));
     }
 
     [TestMethod]
@@ -176,8 +161,7 @@ public class SpeechSynthesisTests
         ISpeechSynthesis sut = CreateSut();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[0]));
+        MockLogger.VerifyMessages(log => log.SpeechSynthesis_SelectedVoice(InstalledVoices[0]));
     }
 
     [TestMethod]
@@ -208,9 +192,11 @@ public class SpeechSynthesisTests
         // Assert
         resultTask.Should().BeComplete(because: "SayAsync should complete after SpeakCompleted is raised");
 
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[0]),
-            Expected_Saying(input));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.SpeechSynthesis_SelectedVoice(InstalledVoices[0]);
+            log.SpeechSynthesis_Saying(input);
+        });
     }
 
     [TestMethod]
@@ -236,9 +222,11 @@ public class SpeechSynthesisTests
         // Assert
         resultTask.Should().NotBeComplete(because: "SayAsync is waiting for SpeakCompleted to be raised");
 
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[0]),
-            Expected_Saying(input));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.SpeechSynthesis_SelectedVoice(InstalledVoices[0]);
+            log.SpeechSynthesis_Saying(input);
+        });
     }
 
     [TestMethod]
@@ -269,10 +257,12 @@ public class SpeechSynthesisTests
         // Assert
         resultTask.Should().NotBeComplete(because: "SayAsync is waiting for SpeakCompleted to be raised");
 
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[0]),
-            Expected_Saying(input),
-            Expected_Saying(input));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.SpeechSynthesis_SelectedVoice(InstalledVoices[0]);
+            log.SpeechSynthesis_Saying(input);
+            log.SpeechSynthesis_Saying(input);
+        });
     }
 
     [TestMethod]
@@ -307,10 +297,12 @@ public class SpeechSynthesisTests
         // Assert
         resultTask.Should().BeCanceled(because: "SayAsync's cancellation token was triggered");
 
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[0]),
-            Expected_Saying(input),
-            Expected_CancelledSaying(input));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.SpeechSynthesis_SelectedVoice(InstalledVoices[0]);
+            log.SpeechSynthesis_Saying(input);
+            log.SpeechSynthesis_CancelledSaying(input);
+        });
     }
 
     [TestMethod]
@@ -346,10 +338,12 @@ public class SpeechSynthesisTests
         // Assert
         resultTask.Should().BeCanceled(because: "SayAsync's cancellation token was triggered");
 
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[0]),
-            Expected_Saying(input),
-            Expected_CancelledSaying(input));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.SpeechSynthesis_SelectedVoice(InstalledVoices[0]);
+            log.SpeechSynthesis_Saying(input);
+            log.SpeechSynthesis_CancelledSaying(input);
+        });
     }
 
     [TestMethod]
@@ -382,9 +376,11 @@ public class SpeechSynthesisTests
         // Assert
         resultTask.Should().BeComplete(because: "SayAsync should complete after SpeakCompleted is raised");
 
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[0]),
-            Expected_Saying(input));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.SpeechSynthesis_SelectedVoice(InstalledVoices[0]);
+            log.SpeechSynthesis_Saying(input);
+        });
     }
 
     [TestMethod]
@@ -410,8 +406,7 @@ public class SpeechSynthesisTests
 
         sut.SayAsync(input1, default);
 
-        Exception expectedError = new InvalidOperationException(
-            string.Format(LoggingMessages.SpeechSynthesis_AlreadySpeaking, input2));
+        Exception expectedError = new InvalidOperationException($"Cannot say '{input2}'; another phrase is already in progress");
 
         // Act
         Task resultTask = sut.SayAsync(input2, default);
@@ -420,9 +415,11 @@ public class SpeechSynthesisTests
         resultTask.Should().BeFaultedWith(expectedError,
             because: "SayAsync should throw if speaking is already in progress");
 
-        MockLogger.VerifyMessages(
-            Expected_SelectedVoice(InstalledVoices[0]),
-            Expected_Saying(input1),
-            Expected_AlreadySpeaking(input2));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.SpeechSynthesis_SelectedVoice(InstalledVoices[0]);
+            log.SpeechSynthesis_Saying(input1);
+            log.SpeechSynthesis_AlreadySpeaking(input2);
+        });
     }
 }

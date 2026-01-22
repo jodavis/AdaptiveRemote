@@ -8,7 +8,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
 {
     private readonly ISpeechSynthesizer _synthesizer;
     private readonly IListeningController _listeningController;
-    private readonly ILogger<SpeechSynthesis> _logger;
+    private readonly MessageLogger _logger;
 
     private int _isSpeaking = 0;
 
@@ -16,7 +16,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
     {
         _synthesizer = synthesizer;
         _listeningController = listeningController;
-        _logger = logger;
+        _logger = new(logger);
 
         SelectVoice(settings.Value.Voice);
         SetSpeakingRate(settings.Value.SpeakingRate);
@@ -31,11 +31,11 @@ internal class SpeechSynthesis : ISpeechSynthesis
                 if (installedVoice.Contains(voiceName, StringComparison.OrdinalIgnoreCase))
                 {
                     _synthesizer.SelectVoice(installedVoice);
-                    _logger.LogInformation(Message.SpeechSynthesis_SelectedVoice, installedVoice);
+                    _logger.SpeechSynthesis_SelectedVoice(installedVoice);
                     return;
                 }
             }
-            _logger.LogWarning(Message.SpeechSynthesis_VoiceNotFound, voiceName);
+            _logger.SpeechSynthesis_VoiceNotFound(voiceName);
         }
     }
 
@@ -49,14 +49,14 @@ internal class SpeechSynthesis : ISpeechSynthesis
     {
         if (Interlocked.Exchange(ref _isSpeaking, 1) == 1)
         {
-            _logger.LogAndThrowError(Message.SpeechSynthesis_AlreadySpeaking, phrase);
+            _logger.SpeechSynthesis_AlreadySpeaking(phrase);
         }
 
         using (_listeningController.Pause())
         {
             try
             {
-                _logger.LogInformation(Message.SpeechSynthesis_Saying, phrase);
+                _logger.SpeechSynthesis_Saying(phrase);
                 await SpeakAndWaitAsync(phrase, cancellationToken);
             }
             finally
@@ -89,7 +89,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
 
     private void CancelSpeaking(TaskCompletionSource tcs, string phrase)
     {
-        _logger.LogInformation(Message.SpeechSynthesis_CancelledSaying, phrase);
+        _logger.SpeechSynthesis_CancelledSaying(phrase);
         tcs.TrySetCanceled();
         _synthesizer.CancelAll();
     }

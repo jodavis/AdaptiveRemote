@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Services.Broadlink;
@@ -26,20 +25,20 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     {
         activity.Description = Phrases.Startup_ConnectingToBroadlink;
 
-        Logger.LogInformation(Message.BroadlinkCommandService_SearchingForDevice);
+        Logger.BroadlinkCommandService_SearchingForDevice();
         ScanResponsePacket found = await _deviceLocator.FindDeviceAsync(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
         _connection = _connectionFactory.Create(found.HostEndPoint, found.HostAddress, found.DeviceType);
 
-        Logger.LogInformation(Message.BroadlinkCommandService_Authenticating, found.HostEndPoint);
+        Logger.BroadlinkCommandService_Authenticating(found.HostEndPoint);
         await _connection.AuthenticateAsync(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
-        Logger.LogInformation(Message.BroadlinkCommandService_Authenticated, found.HostEndPoint);
+        Logger.BroadlinkCommandService_Authenticated(found.HostEndPoint);
 
         await base.InitializeAsync(activity, cancellationToken);
 
-        Logger.LogInformation(Message.BroadlinkCommandService_Ready);
+        Logger.BroadlinkCommandService_Ready();
     }
 
     protected override Command.ExecuteDelegate CreateHandler(IRCommand command)

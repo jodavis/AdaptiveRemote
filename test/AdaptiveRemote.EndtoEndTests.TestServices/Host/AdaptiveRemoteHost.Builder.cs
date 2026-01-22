@@ -5,7 +5,6 @@ using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Logging;
 using StreamJsonRpc;
 using AdaptiveRemote.EndtoEndTests.Logging;
-using AdaptiveRemote.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
 

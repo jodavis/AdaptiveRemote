@@ -145,3 +145,6 @@ The AdaptiveRemote.Headless host uses Playwright for cross-platform E2E testing 
 - Include a confidence score (out of 100) when your response is not 100% certain
 - If confidence is below 90%, explain why
 - Avoid giving wrong answers with certainty - it's frustrating for users
+
+## Logging Guidelines
+- When replacing `LoggerMessage.Message`, use exact text from resx including newlines and punctuation.

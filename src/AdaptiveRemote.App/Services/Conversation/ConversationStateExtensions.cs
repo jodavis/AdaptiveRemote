@@ -20,11 +20,11 @@ internal static class ConversationStateExtensions
                 WantsPhrases = PhraseKinds.WakeWord,
                 CurrentResponse = null,
                 SpeechToConfirm = default
-            }).LogUpdateTo(logger);
+            }).LogUpdateTo(logger is null ? null : new(logger));
 
     public static ConversationState RespondTo(this ConversationState state, IRecognizedSpeech speech, ILogger? logger = default)
     {
-        RespondContext context = new(state, speech, logger);
+        RespondContext context = new(state, speech, logger is null ? null : new(logger));
 
         context = context.RespondTo();
 
@@ -37,7 +37,7 @@ internal static class ConversationStateExtensions
             WantsPhrases = ComputePhraseKinds(context)
         };
 
-        return state.LogUpdateTo(logger);
+        return state.LogUpdateTo(context.Logger);
 
         static PhraseKinds ComputePhraseKinds(RespondContext context)
         {
@@ -168,7 +168,7 @@ internal static class ConversationStateExtensions
                 return context;
             }
 
-            context.Logger?.LogError(Message.ConversationState_UserReportedRecognitionError, speech);
+            context.Logger?.ConversationState_UserReportedRecognitionError(speech);
             return context with
             {
                 ResponsePhrases = context.ResponsePhrases.Add(Phrases.Conversation_ImSorry)
@@ -191,7 +191,7 @@ internal static class ConversationStateExtensions
 
                 if (!context.State.Commands.TryGetValue(commandToReverse.Reverse, out Command? reverseCommand))
                 {
-                    context.Logger?.LogError(Message.ConversationState_CouldNotFindReverseCommand, commandToReverse, commandToReverse.Reverse);
+                    context.Logger?.ConversationState_CouldNotFindReverseCommand(commandToReverse, commandToReverse.Reverse);
                     continue;
                 }
 
@@ -270,25 +270,25 @@ internal static class ConversationStateExtensions
 
     private static Func<RespondContext, bool> PhraseKindIsAccepted(PhraseKinds received)
         => context => context.State.WantsPhrases.HasFlag(received)
-            .LogErrorIf(false, context.Logger, Message.ConversationState_UnexpectedSpeechDetected, received, context.Speech);
+            .LogErrorIf(false, context.Logger, m => m.ConversationState_UnexpectedSpeechDetected(received, context.Speech));
 
     private static Func<RespondContext, RespondContext> DecodeCommandFor(string commandName)
         => context => context.State.Commands.TryGetValue(commandName, out Command? command)
             ? context with { DecodedCommand = command }
             : context;
 
-    private static ConversationState LogUpdateTo(this ConversationState state, ILogger? logger)
+    private static ConversationState LogUpdateTo(this ConversationState state, MessageLogger? logger)
     {
-        logger?.LogInformation(Message.ConversationState_Updated, state);
+        logger?.ConversationState_Updated(state);
         return state;
     }
 
-    private static TestType LogErrorIf<TestType>(this TestType checkValue, TestType equalsValue, ILogger? logger, Message message, params object?[] arguments)
+    private static TestType LogErrorIf<TestType>(this TestType checkValue, TestType equalsValue, MessageLogger? logger, Action<MessageLogger> logErrorMessage)
         where TestType : struct, IEquatable<TestType>
     {
         if (logger is not null && checkValue.Equals(equalsValue))
         {
-            logger.LogError(message, arguments);
+            logErrorMessage(logger);
         }
 
         return checkValue;
@@ -296,15 +296,15 @@ internal static class ConversationStateExtensions
 
     private static bool CommandExists(RespondContext context)
         => (context.DecodedCommand is not null)
-            .LogErrorIf(false, context.Logger, Message.ConversationController_UnknownCommand, context.Speech.Text);
+            .LogErrorIf(false, context.Logger, m => m.ConversationController_UnknownCommand(context.Speech.Text));
 
     private static bool CommandEnabled(RespondContext context)
         => (context.DecodedCommand?.IsEnabled == true)
-            .LogErrorIf(false, context.Logger, Message.ConversationController_CommandDisabled, context.DecodedCommand?.Name);
+            .LogErrorIf(false, context.Logger, m => m.ConversationController_CommandDisabled(context.DecodedCommand));
 
     private static bool CommandHasExecuted(RespondContext context)
         => (context.DecodedCommand?.ExecuteAsync is not null)
-            .LogErrorIf(false, context.Logger, Message.ConversationController_CommandMissingExecuteAction, context.DecodedCommand?.Name);
+            .LogErrorIf(false, context.Logger, m => m.ConversationController_CommandMissingExecuteAction(context.DecodedCommand));
 
     private static RespondContext RespondCommandDisabled(RespondContext context)
         => context with
@@ -321,14 +321,14 @@ internal static class ConversationStateExtensions
     {
         Command command = context.DecodedCommand ?? throw new ArgumentNullException(nameof(context), nameof(context.DecodedCommand) + " should not be null");
 
-        context.Logger?.LogInformation(Message.ConversationController_Recognized, context.Speech.Text, command.Name);
+        context.Logger?.ConversationController_Recognized(context.Speech.Text, command.Name);
 
         int repeat = 1;
         if (context.Speech.TryGetSemanticValue("repeat", out string? repeatAsString))
         {
             if (!int.TryParse(repeatAsString, out repeat))
             {
-                context.Logger?.LogWarning(Message.ConversationState_InvalidSemanticValue, "repeat", repeatAsString);
+                context.Logger?.ConversationState_InvalidSemanticValue("repeat", repeatAsString);
                 repeat = 1;
             }
         }
@@ -349,11 +349,11 @@ internal static class ConversationStateExtensions
         ImmutableList<string> ResponsePhrases,
         ImmutableList<Command> ResponseCommands,
         bool Continue,
-        ILogger? Logger,
+        MessageLogger? Logger,
         Command? DecodedCommand = default,
         bool SpeechConfirmed = false)
     {
-        internal RespondContext(ConversationState state, IRecognizedSpeech speech, ILogger? logger)
+        internal RespondContext(ConversationState state, IRecognizedSpeech speech, MessageLogger? logger)
             : this(state, speech, ImmutableList<string>.Empty, ImmutableList<Command>.Empty, true, logger)
         { }
 
