@@ -11,30 +11,12 @@ internal class ApplicationLifecycle : BackgroundService
     private readonly ILifecycleViewController _viewController;
     private readonly ILogger<ApplicationLifecycle> _logger;
     private ScopedLifecycleContainer? _currentContainer;
-    private readonly TaskCompletionSource _initializationComplete = new();
 
     public ApplicationLifecycle(IApplicationScopeProvider scopeProvider, ILifecycleViewController viewController, ILogger<ApplicationLifecycle> logger)
     {
         _scopeProvider = scopeProvider;
         _viewController = viewController;
         _logger = logger;
-    }
-
-    public override async Task StartAsync(CancellationToken cancellationToken)
-    {
-        await base.StartAsync(cancellationToken);
-        // Wait for initialization to complete before returning
-        // This maintains compatibility with .NET 8 behavior where tests expect
-        // StartAsync to complete after services are initialized
-        try
-        {
-            await _initializationComplete.Task;
-        }
-        catch
-        {
-            // Swallow exceptions from initialization - they're handled in ExecuteAsync
-            // We just need to wait for initialization to finish (successfully or not)
-        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -46,13 +28,11 @@ internal class ApplicationLifecycle : BackgroundService
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             // Do nothing, shutdown was requested
-            _initializationComplete.TrySetResult(); // Still complete initialization tracking
         }
-        catch (Exception)
+        catch
         {
             // An error occurred, so stop all the services
             _ = _scopeProvider.InvokeInScopeAsync(CleanUpLifecycleAsync, default);
-            // Note: _initializationComplete is set in InitializeLifecycleAsync
         }
 
         await stoppingToken.WaitForCancelledAsync();
@@ -65,11 +45,6 @@ internal class ApplicationLifecycle : BackgroundService
     private async Task InitializeLifecycleAsync(IServiceProvider provider, CancellationToken cancellationToken)
     {
         _currentContainer = SafeGetContainer(provider);
-
-        // Signal that StartAsync can complete now that we've started initialization
-        // This maintains compatibility with .NET 8 behavior where StartAsync completes
-        // after initialization starts (not necessarily finishes)
-        _initializationComplete.TrySetResult();
 
         if (_currentContainer is not null)
         {
