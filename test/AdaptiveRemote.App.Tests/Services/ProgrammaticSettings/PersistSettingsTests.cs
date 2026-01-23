@@ -6,7 +6,7 @@ namespace AdaptiveRemote.Services.ProgrammaticSettings;
 [TestClass]
 public class PersistSettingsTests
 {
-    private const string InputSettingsPath = @"C:\path\to\settings.ini";
+    private static readonly string InputSettingsPath = Path.Combine("path", "to", "settings.ini");
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
     private readonly MockFileSystem MockFileSystem = new();
@@ -48,7 +48,7 @@ public class PersistSettingsTests
         await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, "ExistingSetting=123\r\nNewSetting=abc\r\n");
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"ExistingSetting=123{Environment.NewLine}NewSetting=abc{Environment.NewLine}");
 
         MockLogger.VerifyMessages(
             ExpectMessage_LoadingExistingSettings(),
@@ -113,7 +113,7 @@ public class PersistSettingsTests
         await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, "ExistingSetting=ghi\r\n");
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"ExistingSetting=ghi{Environment.NewLine}");
 
         MockLogger.VerifyMessages(
             ExpectMessage_LoadingExistingSettings(),
@@ -195,7 +195,7 @@ public class PersistSettingsTests
         await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, "NewSetting=abc\r\n");
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"NewSetting=abc{Environment.NewLine}");
 
         MockLogger.VerifyMessages(
             ExpectMessage_AddSetting("NewSetting", "abc"),
@@ -209,12 +209,12 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddDirectory(Path.GetPathRoot(InputSettingsPath));
+        string rootPath = Path.GetDirectoryName(Path.GetDirectoryName(InputSettingsPath)!) ?? "path";
+        MockFileSystem.AddDirectory(rootPath);
 
         MockFileSystem.Expect_OpenRead_IsNotCalled();
 
-        MockFileSystem.Expect_CreateDirectory_ForPath(@"C:\path");
-        MockFileSystem.Expect_CreateDirectory_ForPath(@"C:\path\to");
+        MockFileSystem.Expect_CreateDirectory_ForPath(Path.Combine("path", "to"));
 
         MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
 
@@ -224,7 +224,7 @@ public class PersistSettingsTests
         await MockLogger.WaitForMessageAsync(ExpectMessage_SavedSettings());
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, "NewSetting=abc\r\n");
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"NewSetting=abc{Environment.NewLine}");
 
         MockLogger.VerifyMessages(
             ExpectMessage_AddSetting("NewSetting", "abc"),
