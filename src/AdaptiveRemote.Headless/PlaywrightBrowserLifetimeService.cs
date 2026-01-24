@@ -1,5 +1,7 @@
 using AdaptiveRemote.Services.Testing;
 using AdaptiveRemote.Utilities;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
@@ -13,6 +15,7 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
 {
     private readonly ILogger<PlaywrightBrowserLifetimeService> _logger;
     private readonly IHostApplicationLifetime _lifetime;
+    private readonly IServer _server;
     private readonly PlaywrightSettings _settings;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
@@ -27,10 +30,12 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
     public PlaywrightBrowserLifetimeService(
         ILogger<PlaywrightBrowserLifetimeService> logger,
         IOptions<PlaywrightSettings> options,
-        IHostApplicationLifetime lifetime)
+        IHostApplicationLifetime lifetime,
+        IServer server)
     {
         _logger = logger;
         _lifetime = lifetime;
+        _server = server;
         _settings = options.Value;
     }
 
@@ -43,8 +48,9 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
 
         try
         {
-            // Get the port the app is listening on (from configuration or default)
-            string appUrl = "http://localhost:5000"; // Default
+            // Get the actual URL the server is listening on
+            var serverAddressesFeature = _server.Features.Get<IServerAddressesFeature>();
+            string appUrl = serverAddressesFeature?.Addresses.FirstOrDefault() ?? "http://localhost:5000";
 
             _logger.LogInformation("Will navigate to: {AppUrl}", appUrl);
 
