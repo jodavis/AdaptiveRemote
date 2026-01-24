@@ -23,8 +23,10 @@ builder.Services
     .AddSingleton<ISpeechRecognitionEngine, StubSpeechRecognition>();
 
 // Add the minimal services for ASP.NET to serve the Blazor UI
+// Use the new .NET 8+ Razor Components API instead of the deprecated ServerSideBlazor
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 
 // Register circuit handler for logging
 builder.Services.AddSingleton<CircuitHandler, LoggingCircuitHandler>();
@@ -44,9 +46,16 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
+
+app.UseAntiforgery();
+
 app.UseRouting();
 
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
+// Map Razor pages for _Host.cshtml
+app.MapRazorPages();
+
+// Use the new Razor Components API which serves the framework JavaScript automatically
+app.MapRazorComponents<AdaptiveRemote.Components.Root>()
+    .AddInteractiveServerRenderMode();
 
 app.Run();
