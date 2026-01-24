@@ -1,4 +1,5 @@
 using AdaptiveRemote.Headless;
+using AdaptiveRemote.Headless.Components;
 using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.Testing;
@@ -22,13 +23,9 @@ builder.Services
     .AddSingleton<IGrammarProvider, StubGrammarProvider>()
     .AddSingleton<ISpeechRecognitionEngine, StubSpeechRecognition>();
 
-// Add the minimal services for ASP.NET to serve the Blazor UI
-// Use the new .NET 8+ Razor Components API
-builder.Services.AddRazorPages();
+// Add services to the container - using the .NET 10 template approach
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-// Also add ServerSideBlazor for the Hub endpoint
-builder.Services.AddServerSideBlazor();
 
 // Register circuit handler for logging
 builder.Services.AddSingleton<CircuitHandler, LoggingCircuitHandler>();
@@ -42,28 +39,16 @@ builder.Services.Configure<PlaywrightSettings>(builder.Configuration.GetSection(
 
 WebApplication app = builder.Build();
 
+// Configure the HTTP request pipeline - following .NET 10 template pattern
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
-
-app.UseStaticFiles();
 
 app.UseAntiforgery();
 
-app.UseRouting();
-
-// Map Blazor Hub for ServerSideBlazor (serves blazor.server.js)
-app.MapBlazorHub();
-
-// Use the new Razor Components API
-app.MapRazorComponents<AdaptiveRemote.Components.Root>()
+app.MapStaticAssets();
+app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
-// Map Razor pages for _Host.cshtml
-app.MapRazorPages();
-
-// Add fallback to _Host page to ensure it's served at root
-app.MapFallbackToPage("/_Host");
 
 app.Run();
