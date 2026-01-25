@@ -58,15 +58,17 @@ public partial class AdaptiveRemoteHost : IDisposable
     {
         return new Lazy<TInterface>(() =>
         {
-            try
+            using (_logger.LogTimedOperation($"Creating {typeof(TImplementation).Name} proxy"))
             {
-                _logger.LogInformation("Creating {TestServiceName} proxy...", typeof(TImplementation).Name);
-                return WaitHelpers.WaitForAsyncTask(ct => _testEndpoint.CreateTestServiceAsync<TInterface, TImplementation>(ct), _settings.RpcTimeout);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to create {TestServiceName} proxy", typeof(TImplementation).Name);
-                throw;
+                try
+                {
+                    return WaitHelpers.WaitForAsyncTask(ct => _testEndpoint.CreateTestServiceAsync<TInterface, TImplementation>(ct), _settings.RpcTimeout);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to create {TestServiceName} proxy", typeof(TImplementation).Name);
+                    throw;
+                }
             }
         });
     }
@@ -75,10 +77,19 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     public IUITestService UI => _lazyUITestService.Value;
 
-    public ILogger<CategoryType> CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
+    public ILogger CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
+
+    public ILogger CreateLogger(string category) => _loggerFactory.CreateLogger(category);
 
     public string StandardOutput => _standardOutput.ToString();
     public string StandardError => _standardError.ToString();
+
+    public bool IsRunning => !_process.HasExited;
+
+    public bool WaitForShutdown()
+    {
+        return _process.WaitForExit(_settings.ShutdownTimeout);
+    }
 
     public void Stop()
     {
@@ -88,11 +99,23 @@ public partial class AdaptiveRemoteHost : IDisposable
             {
                 if (!_process.HasExited)
                 {
+                    // Try sending a shutdown command
+                    try
+                    {
+                        _logger.LogInformation("Sending shutdown command...");
+                        Application.StopApplication(_settings.RpcTimeout);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failure from shutdown command");
+                    }
+
                     _logger.LogInformation("Waiting for host to exit...");
                     bool exited = _process.WaitForExit(_settings.ShutdownTimeout);
                     if (!exited)
                     {
                         _logger.LogWarning("Host did not exit within timeout of {ShutdownTimeout}", _settings.ShutdownTimeout);
+                        throw new OperationCanceledException();
                     }
                 }
                 _logger.LogInformation("Host exited with code: {ExitCode}", _process.ExitCode);

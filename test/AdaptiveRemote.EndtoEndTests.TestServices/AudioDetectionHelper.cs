@@ -1,8 +1,9 @@
 ﻿using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace AdaptiveRemote.EndtoEndTests;
+namespace AdaptiveRemote.EndToEndTests.TestServices;
 
-internal static class AudioDetectionHelper
+public static class AudioDetectionHelper
 {
     public static void AssertHasAudioInputAndOutput()
     {

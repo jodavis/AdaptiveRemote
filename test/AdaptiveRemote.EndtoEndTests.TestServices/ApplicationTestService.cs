@@ -1,5 +1,6 @@
 using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Testing;
+using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -12,11 +13,16 @@ public class ApplicationTestService : IApplicationTestService
 {
     private readonly Services.IRemoteDefinitionService _remoteDefinitionService;
     private readonly LifecycleView _lifecycleView;
+    private readonly IHostApplicationLifetime _applicationLifetime;
 
-    public ApplicationTestService(Services.IRemoteDefinitionService remoteDefinitionService, LifecycleView lifecycleView)
+    public ApplicationTestService(
+        Services.IRemoteDefinitionService remoteDefinitionService,
+        LifecycleView lifecycleView,
+        IHostApplicationLifetime applicationLifetime)
     {
         _remoteDefinitionService = remoteDefinitionService;
         _lifecycleView = lifecycleView;
+        _applicationLifetime = applicationLifetime;
     }
 
     public async Task InvokeCommandAsync(string commandName, CancellationToken cancellationToken)
@@ -32,6 +38,14 @@ public class ApplicationTestService : IApplicationTestService
 
         // Execute the Exit command
         await command.ExecuteAsync(CancellationToken.None);
+    }
+
+    public async Task StopApplicationAsync(CancellationToken cancellationToken)
+    {
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            _applicationLifetime.StopApplication();
+        }
     }
 
     private static Command? FindCommandByName(RemoteLayoutElement element, string name)

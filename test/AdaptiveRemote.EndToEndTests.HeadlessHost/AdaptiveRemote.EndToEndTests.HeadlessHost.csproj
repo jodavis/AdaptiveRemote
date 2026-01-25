@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AdaptiveRemote.Headless\AdaptiveRemote.Headless.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\AdaptiveRemote.EndToEndTests.Features\FeatureFiles.includeproj"/>
+
+</Project>

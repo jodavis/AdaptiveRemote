@@ -35,4 +35,14 @@ public static class IApplicationTestServiceExtensions
             throw new TimeoutException($"Invoking command '{commandName}' did not complete within {timeout.TotalSeconds}s.");
         }
     }
+
+    public static void StopApplication(this IApplicationTestService testService, TimeSpan timeout)
+    {
+        bool succeeded = WaitHelpers.WaitForAsyncTask(testService.StopApplicationAsync, timeout);
+
+        if (!succeeded)
+        {
+            throw new TimeoutException($"Timed out waiting for {nameof(testService.StopApplicationAsync)} after {timeout.TotalSeconds}s");
+        }
+    }
 }

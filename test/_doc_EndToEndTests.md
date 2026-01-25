@@ -9,6 +9,32 @@ The E2E testing subsystem validates that AdaptiveRemote host applications (WPF, 
 - **Service Validation:** Dynamically loads test services to validate DI scope and command execution
 - **Log Capture:** Application writes logs to a file for post-mortem analysis
 
+## Test Architecture
+
+Tests are divided into 3 projects, one for each host type:
+1. `AdaptiveRemote.EndToEndTests.WpfHost` tests the primary `AdaptiveRemote` project. Requires Windows OS.
+2. `AdaptiveRemote.EndToEndTests.ConsoleHost` tests the `AdaptiveRemote.Console` project. Requires Windows OS.
+3. `AdaptiveRemote.EndToEndTests.HeadlessHost` tests the `AdaptiveRemote.Headless` project. Both Windows and Linux supported.
+
+The three host projects are minimal, sharing most of their functionality from other projects.
+- `AdaptiveRemote.EndToEndTests.Features` contains Gherkin `.feature` files that define test scenarios. 
+These are compiled at build time into C# test classes that are built into the 3 assemblies, so that they all have the same tests.
+- `AdaptiveRemote.EndToEndTests.Steps` contains definitions of the steps used in the feature scenarios.
+These should also be minimal, just enough to translate steps into TestService calls and error check inputs.
+- `AdaptiveRemote.EndToEndTests.TestServices` contains test services that load in the application being tested (the "host process")
+as well as extension methods for the test service interfaces. The test services can interact directly with components in the host
+process, but should also be fairly minimal, e.g. accessing a value or invoking a command. Extension methods will run in the test
+process and can contain more complex logic, like waiting for a value to change, checking values, etc. Having this logic in the test
+process makes it easier to debug. Services include:
+	- [`ITestEndpoint`](../src/AdaptiveRemote.App/Services/Testing/ITestEndpoint.cs)
+	  is the initial JSON-RPC interface exposed by the host for dynamically loading other test services.
+	- [`ITestLogger`](../src/AdaptiveRemote.App/Services/Testing/ITestLogger.cs)
+      is used to forward log messages from the test process to be included with host logs.
+	- [`IApplicationTestService`](../src/AdaptiveRemote.App/Services/Testing/IApplicationTestService.cs)
+	  has general application lifecycle methods.
+	- [`IUITestService`](../src/AdaptiveRemote.App/Services/Testing/IUITestService.cs)
+	  has methods for interacting with the UI, e.g. getting current page, simulating navigation, etc.
+
 ## Key Abstractions
 
 ### Host Management
@@ -93,13 +119,9 @@ See `test/AdaptiveRemote.EndtoEndTests.TestServices/Logging/_doc_TestLogging.md`
 - All lifecycle phases complete successfully
 - Tests can wait for `Ready` phase
 
-### Linux Host (Electron)
+### Linux Host (Headless)
 - Executable has no .exe extension
-- Requires Xvfb virtual display (`DISPLAY=:99`)
-- GPU process fails to initialize (expected in headless)
-- Environment variables: `ELECTRON_DISABLE_SANDBOX=1`, `ELECTRON_DISABLE_GPU=1`
-- **Challenge:** UI may not render, preventing scope creation
-- Tests skip waiting for `Ready` phase in headless mode
+- UI is hosted in a headless browser with Playwright tracing to record UI states
 
 ## Environment Requirements
 
@@ -109,8 +131,8 @@ See `test/AdaptiveRemote.EndtoEndTests.TestServices/Logging/_doc_TestLogging.md`
 Xvfb :99 -screen 0 1024x768x24 &
 export DISPLAY=:99
 
-# Build Electron for Linux
-dotnet build src/AdaptiveRemote.Electron/AdaptiveRemote.Electron.csproj -r linux-x64
+# Build Headless for Linux
+dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj -r linux-x64
 
 # Run tests
 dotnet test test/AdaptiveRemote.EndtoEndTests
@@ -138,13 +160,6 @@ Test code uses synchronous wrappers (`WaitUtilities`) around async RPC calls to 
 - Include complete stdout/stderr for post-mortem debugging
 
 ## Known Issues and Limitations
-
-### Electron in Headless Environments
-- Electron UI may fail to render in headless Linux CI environments
-- BlazorAppScope creation depends on UI rendering
-- Without scope, test services cannot execute (InvokeInScopeAsync blocks)
-- **Workaround:** Tests skip waiting for `Ready` phase and use fixed delays
-- **Status:** Under investigation; works in some environments but not all
 
 ### Scope Dependency
 - Test services require application scope to exist
