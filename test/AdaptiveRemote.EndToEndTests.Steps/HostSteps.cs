@@ -10,14 +10,7 @@ namespace AdaptiveRemote.EndToEndTests.Steps;
 [Binding]
 public class HostSteps : StepsBase
 {
-    private readonly AdaptiveRemoteHostSettings _hostSettings;
-
     private string LogFilePath => Path.Combine(TestContext.TestResultsDirectory!, TestContext.TestName + ".log");
-
-    public HostSteps(AdaptiveRemoteHostSettings hostSettings)
-    {
-        _hostSettings = hostSettings;
-    }
 
     [BeforeScenario]
     public void OnBeforeScenario_SetUpHostFactory(AdaptiveRemoteHostSettings hostSettings)

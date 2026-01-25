@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 using Reqnroll.BoDi;
 
-namespace AdaptiveRemote.EndToEndTests.ConsoleHost.Hooks;
+namespace AdaptiveRemote.EndToEndTests.HeadlessHost.Hooks;
 
 [Binding]
 public static class HeadlessHostTestHooks

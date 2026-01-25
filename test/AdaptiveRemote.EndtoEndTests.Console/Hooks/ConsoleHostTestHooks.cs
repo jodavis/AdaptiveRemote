@@ -11,7 +11,7 @@ namespace AdaptiveRemote.EndToEndTests.ConsoleHost.Hooks;
 public static class ConsoleHostTestHooks
 {
     [BeforeScenario]
-    public static async Task SkipTestsOnNonWindowsAsync()
+    public static void SkipTestsOnNonWindows()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {

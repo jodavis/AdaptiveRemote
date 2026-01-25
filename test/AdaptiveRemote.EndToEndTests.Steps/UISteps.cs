@@ -17,7 +17,7 @@ public class UISteps : StepsBase
     [Then(@"I should see the {string} button is enabled")]
     public void ThenIShouldSeeTheButtonIsEnabled(string buttonLabel)
     {
-        Assert.IsNotNull(Host, "Cannot check the state of the '{0}' button. THe application is not stared.", buttonLabel);
+        Assert.IsNotNull(Host, "Cannot check the state of the '{0}' button. The application is not started.", buttonLabel);
         Assert.IsTrue(Host.UI.IsButtonEnabled(buttonLabel), "Button {0} was not enabled", buttonLabel);
     }
 

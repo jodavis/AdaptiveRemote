@@ -25,21 +25,21 @@ public abstract class StepsBase : IContainerDependentObject
     private ObjectType GetContainerObject<ObjectType>()
         where ObjectType : notnull
     {
-        Assert.IsNotNull(_container, "Attempting to access container object before IContanerDependentObject.SetObjectContainer has been called");
+        Assert.IsNotNull(_container, "Attempting to access container object before IContainerDependentObject.SetObjectContainer has been called");
         return _container.Resolve<ObjectType>();
     }
 
     protected void ProvideContainerObject<ObjectType>(ObjectType instance)
         where ObjectType : class
     {
-        Assert.IsNotNull(_container, "Attempting to provide container object before IContanerDependentObject.SetObjectContainer has been called");
+        Assert.IsNotNull(_container, "Attempting to provide container object before IContainerDependentObject.SetObjectContainer has been called");
         _container.RegisterInstanceAs(instance);
     }
 
     protected void ProvideContainerObjectFactory<ObjectType>(Func<ObjectType> factory)
         where ObjectType : class
     {
-        Assert.IsNotNull(_container, "Attempting to provide container object factory before IContanerDependentObject.SetObjectContainer has been called");
+        Assert.IsNotNull(_container, "Attempting to provide container object factory before IContainerDependentObject.SetObjectContainer has been called");
         _container.RegisterFactoryAs(factory);
     }
 }

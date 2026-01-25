@@ -5,17 +5,17 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 using Reqnroll.BoDi;
 
-namespace AdaptiveRemote.EndToEndTests.ConsoleHost.Hooks;
+namespace AdaptiveRemote.EndToEndTests.WpfHost.Hooks;
 
 [Binding]
 public static class WpfHostTestHooks
 {
     [BeforeScenario]
-    public static async Task SkipTestsOnNonWindowsAsync()
+    public static void SkipTestsOnNonWindows()
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Assert.Inconclusive("Console host test requires Windows");
+            Assert.Inconclusive("WPF host test requires Windows");
         }
 
         AudioDetectionHelper.AssertHasAudioInputAndOutput();

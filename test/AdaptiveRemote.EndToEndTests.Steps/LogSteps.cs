@@ -10,8 +10,7 @@ public class LogSteps : StepsBase
     [Then("I should not see any warning or error messages in the logs")]
     public void ThenIShouldNotSeeAnyWarningsOrErrorsInTheLogFile()
     {
-        // This step is intentionally left blank because log verification
-        // is handled in the HostTestBase.VerifyLogs method after the host stops.
+        // Verify that the captured host logs do not contain errors, and log any warnings.
         string logs = Host.StandardOutput;
         string errors = Host.StandardError;
 
