@@ -78,11 +78,11 @@ public class HostSteps : StepsBase
         if (File.Exists(LogFilePath))
         {
             TestContext.AddResultFile(LogFilePath);
-            Logger.LogInformation("Log file found and attached");
+            TestContext.WriteLine("Log file found and attached");
         }
         else
         {
-            Logger.LogWarning("No log file found at {LogFilePath}", LogFilePath);
+            TestContext.WriteLine("No log file found at {0}", LogFilePath);
         }
 
         if (IsHostRunning)
