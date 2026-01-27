@@ -61,11 +61,12 @@ public class TiVoSteps : StepsBase
         }
 
         // Poll for the message with a timeout of 5 seconds
+        // Look for the full IRCODE command format for more precise matching
         bool found = WaitHelpers.ExecuteWithRetries(
             () =>
             {
                 IReadOnlyList<RecordedMessage> messages = device!.GetRecordedMessages();
-                return messages.Any(m => m.Incoming && m.Payload.Contains(expectedCommand, StringComparison.OrdinalIgnoreCase));
+                return messages.Any(m => m.Incoming && m.Payload.Equals($"IRCODE {expectedCommand}", StringComparison.OrdinalIgnoreCase));
             },
             timeoutInSeconds: 5);
 
@@ -73,9 +74,9 @@ public class TiVoSteps : StepsBase
         {
             IReadOnlyList<RecordedMessage> messages = device!.GetRecordedMessages();
             string recordedMessages = string.Join(", ", messages.Select(m => $"[{m.Timestamp:HH:mm:ss.fff}] {(m.Incoming ? "←" : "→")} {m.Payload}"));
-            Assert.Fail($"Expected TiVo to receive a message containing '{expectedCommand}', but it was not found. Recorded messages: {recordedMessages}");
+            Assert.Fail($"Expected TiVo to receive message 'IRCODE {expectedCommand}', but it was not found. Recorded messages: {recordedMessages}");
         }
 
-        TestContext.WriteLine($"Successfully verified TiVo received message containing: {expectedCommand}");
+        TestContext.WriteLine($"Successfully verified TiVo received message: IRCODE {expectedCommand}");
     }
 }

@@ -43,7 +43,12 @@ public sealed class SimulatedTiVoDevice : ITestDevice
     /// <inheritdoc/>
     public void ClearRecordedMessages()
     {
-        _recordedMessages.Clear();
+        // Create a new bag instead of clearing the existing one for thread safety
+        while (_recordedMessages.TryTake(out _))
+        {
+            // Remove all items
+        }
+
         _logger.LogInformation("Cleared recorded messages");
     }
 
@@ -85,7 +90,8 @@ public sealed class SimulatedTiVoDevice : ITestDevice
         {
             try
             {
-                TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken);
+                // Use CancellationToken.None to explicitly indicate we handle cancellation via the while loop condition
+                TcpClient client = await _listener.AcceptTcpClientAsync(CancellationToken.None);
                 _logger.LogInformation("Accepted connection from {RemoteEndPoint}", client.Client.RemoteEndPoint);
 
                 // Handle client in background
@@ -149,11 +155,20 @@ public sealed class SimulatedTiVoDevice : ITestDevice
     private static async Task<string?> ReadLineAsync(StreamReader reader, CancellationToken cancellationToken)
     {
         StringBuilder line = new();
-        int value;
 
-        while ((value = await Task.Run(reader.Read, cancellationToken)) >= 0)
+        while (!cancellationToken.IsCancellationRequested)
         {
-            char c = (char)value;
+            // Use ReadAsync with a buffer instead of Task.Run with synchronous Read
+            char[] buffer = new char[1];
+            int bytesRead = await reader.ReadAsync(buffer, cancellationToken);
+
+            if (bytesRead == 0)
+            {
+                // End of stream reached
+                return line.Length > 0 ? line.ToString() : null;
+            }
+
+            char c = buffer[0];
 
             if (c == '\r' || c == '\n')
             {
@@ -164,7 +179,7 @@ public sealed class SimulatedTiVoDevice : ITestDevice
             line.Append(c);
         }
 
-        // End of stream reached
-        return line.Length > 0 ? line.ToString() : null;
+        // Cancelled
+        return null;
     }
 }
