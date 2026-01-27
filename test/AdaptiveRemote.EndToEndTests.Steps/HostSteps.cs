@@ -13,7 +13,7 @@ public class HostSteps : StepsBase
 {
     private string LogFilePath => Path.Combine(TestContext.TestResultsDirectory!, TestContext.TestName + ".log");
 
-    [BeforeScenario]
+    [BeforeScenario(Order = 50)]
     public void OnBeforeScenario_SetUpTestEnvironment()
     {
         ITestEnvironment testEnvironment = new TestEnvironment();

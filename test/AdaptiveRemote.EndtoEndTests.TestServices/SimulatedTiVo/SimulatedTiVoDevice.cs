@@ -113,7 +113,7 @@ public sealed class SimulatedTiVoDevice : ITestDevice
             {
                 while (!cancellationToken.IsCancellationRequested && client.Connected)
                 {
-                    string? line = await reader.ReadLineAsync(cancellationToken);
+                    string? line = await ReadLineAsync(reader, cancellationToken);
 
                     if (line is null)
                     {
@@ -144,5 +144,27 @@ public sealed class SimulatedTiVoDevice : ITestDevice
         {
             _logger.LogInformation("Client disconnected");
         }
+    }
+
+    private static async Task<string?> ReadLineAsync(StreamReader reader, CancellationToken cancellationToken)
+    {
+        StringBuilder line = new();
+        int value;
+
+        while ((value = await Task.Run(reader.Read, cancellationToken)) >= 0)
+        {
+            char c = (char)value;
+
+            if (c == '\r' || c == '\n')
+            {
+                // End of line reached
+                return line.ToString();
+            }
+
+            line.Append(c);
+        }
+
+        // End of stream reached
+        return line.Length > 0 ? line.ToString() : null;
     }
 }

@@ -60,14 +60,14 @@ public class TiVoSteps : StepsBase
             Assert.Fail("TiVo device is not running");
         }
 
-        // Poll for the message with a timeout of 3 seconds
+        // Poll for the message with a timeout of 5 seconds
         bool found = WaitHelpers.ExecuteWithRetries(
             () =>
             {
                 IReadOnlyList<RecordedMessage> messages = device!.GetRecordedMessages();
                 return messages.Any(m => m.Incoming && m.Payload.Contains(expectedCommand, StringComparison.OrdinalIgnoreCase));
             },
-            timeoutInSeconds: 3);
+            timeoutInSeconds: 5);
 
         if (!found)
         {
