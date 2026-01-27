@@ -22,11 +22,29 @@ public abstract class StepsBase : IContainerDependentObject
 
     public ILogger Logger => _logger ??= Host.CreateLogger(GetType().Name);
 
-    private ObjectType GetContainerObject<ObjectType>()
+    protected ObjectType GetContainerObject<ObjectType>()
         where ObjectType : notnull
     {
         Assert.IsNotNull(_container, "Attempting to access container object before IContainerDependentObject.SetObjectContainer has been called");
         return _container.Resolve<ObjectType>();
+    }
+
+    protected ObjectType? GetContainerObjectOrDefault<ObjectType>()
+        where ObjectType : class
+    {
+        if (_container == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return _container.Resolve<ObjectType>();
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     protected void ProvideContainerObject<ObjectType>(ObjectType instance)

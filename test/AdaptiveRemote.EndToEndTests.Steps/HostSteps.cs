@@ -1,6 +1,7 @@
 ﻿using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.EndtoEndTests.Host;
 using AdaptiveRemote.EndtoEndTests.Logging;
+using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
@@ -13,6 +14,13 @@ public class HostSteps : StepsBase
     private string LogFilePath => Path.Combine(TestContext.TestResultsDirectory!, TestContext.TestName + ".log");
 
     [BeforeScenario]
+    public void OnBeforeScenario_SetUpTestEnvironment()
+    {
+        ITestEnvironment testEnvironment = new TestEnvironment();
+        ProvideContainerObject(testEnvironment);
+    }
+
+    [BeforeScenario(Order = 200)]
     public void OnBeforeScenario_SetUpHostFactory(AdaptiveRemoteHostSettings hostSettings)
     {
         if (!File.Exists(hostSettings.ExePath))
@@ -25,7 +33,17 @@ public class HostSteps : StepsBase
             Assert.Inconclusive($"Working directory not found: {hostSettings.WorkingDirectory}");
         }
 
-        hostSettings = hostSettings.AddCommandLineArgs($"--tivo:Fake=True --broadlink:Fake=True --log:FilePath=\"{LogFilePath}\"");
+        // Check if we have a simulated TiVo device running
+        ITestEnvironment testEnvironment = GetContainerObject<ITestEnvironment>();
+        string tivoArgs = "--tivo:Fake=True";
+
+        if (testEnvironment.TryGetDevice("TiVo", out ITestDevice? tivoDevice) && tivoDevice != null)
+        {
+            // Use the simulated device instead of fake
+            tivoArgs = $"--tivo:IP=127.0.0.1:{tivoDevice.Port}";
+        }
+
+        hostSettings = hostSettings.AddCommandLineArgs($"{tivoArgs} --broadlink:Fake=True --log:FilePath=\"{LogFilePath}\"");
 
         ProvideContainerObjectFactory(() => AdaptiveRemoteHost.CreateBuilder(hostSettings)
             .ConfigureLogging(builder =>
@@ -89,5 +107,9 @@ public class HostSteps : StepsBase
         {
             Host.Stop();
         }
+
+        // Clean up test environment
+        ITestEnvironment? testEnvironment = GetContainerObjectOrDefault<ITestEnvironment>();
+        testEnvironment?.Dispose();
     }
 }
