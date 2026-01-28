@@ -50,7 +50,7 @@ public class HostSteps : StepsBase
 
         // Use the simulated TiVo device
         string tivoArgs = "--tivo:Fake=True";
-        if (SimulatedEnvironment.TryGetDevice(TiVoDeviceName, out ISimulatedDevice? tivoDevice) && tivoDevice != null)
+        if (Environment.TryGetDevice(TiVoDeviceName, out ISimulatedDevice? tivoDevice) && tivoDevice != null)
         {
             tivoArgs = $"--tivo:IP=127.0.0.1:{tivoDevice.Port}";
         }
@@ -133,6 +133,6 @@ public class HostSteps : StepsBase
         }
 
         // Clean up simulated environment
-        SimulatedEnvironment?.Dispose();
+        Environment?.Dispose();
     }
 }

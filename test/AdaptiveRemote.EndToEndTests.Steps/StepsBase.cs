@@ -22,11 +22,11 @@ public abstract class StepsBase : IContainerDependentObject
 
     public TestContext TestContext => GetContainerObject<TestContext>();
 
-    public ISimulatedEnvironment SimulatedEnvironment => _simulatedEnvironment ??= GetContainerObject<ISimulatedEnvironment>();
+    public ISimulatedEnvironment Environment => _simulatedEnvironment ??= GetContainerObject<ISimulatedEnvironment>();
 
     public ILogger Logger => _logger ??= Host.CreateLogger(GetType().Name);
 
-    protected ObjectType GetContainerObject<ObjectType>()
+    private ObjectType GetContainerObject<ObjectType>()
         where ObjectType : notnull
     {
         Assert.IsNotNull(_container, "Attempting to access container object before IContainerDependentObject.SetObjectContainer has been called");

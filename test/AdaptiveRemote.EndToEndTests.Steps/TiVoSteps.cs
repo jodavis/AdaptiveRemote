@@ -13,7 +13,7 @@ public class TiVoSteps : StepsBase
     [Then(@"I should see the TiVo receives a {string} message")]
     public void ThenIShouldSeeTheTiVoReceivesAMessage(string expectedCommand)
     {
-        if (!SimulatedEnvironment.TryGetDevice(TiVoDeviceName, out ISimulatedDevice? device))
+        if (!Environment.TryGetDevice(TiVoDeviceName, out ISimulatedDevice? device))
         {
             Assert.Fail("TiVo device is not running");
         }
