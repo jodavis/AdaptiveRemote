@@ -68,10 +68,17 @@ public static class IUITestServiceExtensions
     /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
     public static void ClickButton(this IUITestService service, string label, TimeSpan timeout)
     {
-        bool succeeded = WaitHelpers.WaitForAsyncTask(ct => service.ClickButtonAsync(label, ct));
-        if (!succeeded)
+        try
         {
-            throw new TimeoutException($"Clicking button '{label}' did not complete within timeout.");
+            bool succeeded = WaitHelpers.WaitForAsyncTask(ct => service.ClickButtonAsync(label, ct), timeout);
+            if (!succeeded)
+            {
+                throw new TimeoutException($"Clicking button '{label}' did not complete within timeout.");
+            }
+        }
+        catch (AggregateException ex) when (label.Equals("Exit", StringComparison.OrdinalIgnoreCase) && ex.InnerException is StreamJsonRpc.ConnectionLostException)
+        {
+            // This exception occurs sometimes when clicking the "Exit" button if the application shuts down to fast
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.EndtoEndTests.Host;
+using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll.BoDi;
@@ -10,6 +11,7 @@ public abstract class StepsBase : IContainerDependentObject
 {
     private IObjectContainer? _container;
     private AdaptiveRemoteHost? _host;
+    private ISimulatedEnvironment? _simulatedEnvironment;
     private ILogger? _logger;
 
     public void SetObjectContainer(IObjectContainer container) => _container = container;
@@ -19,6 +21,8 @@ public abstract class StepsBase : IContainerDependentObject
     public bool IsHostRunning => _host?.IsRunning == true;
 
     public TestContext TestContext => GetContainerObject<TestContext>();
+
+    public ISimulatedEnvironment Environment => _simulatedEnvironment ??= GetContainerObject<ISimulatedEnvironment>();
 
     public ILogger Logger => _logger ??= Host.CreateLogger(GetType().Name);
 
