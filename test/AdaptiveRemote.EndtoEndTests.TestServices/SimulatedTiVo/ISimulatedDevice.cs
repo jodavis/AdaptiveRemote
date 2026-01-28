@@ -1,10 +1,10 @@
 namespace AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 
 /// <summary>
-/// Represents a running simulated test device.
+/// Represents a running simulated device.
 /// All methods are synchronous for ease of use in test scenarios.
 /// </summary>
-public interface ITestDevice : IDisposable
+public interface ISimulatedDevice : IDisposable
 {
     /// <summary>
     /// Stops the device and releases resources. Safe to call multiple times.

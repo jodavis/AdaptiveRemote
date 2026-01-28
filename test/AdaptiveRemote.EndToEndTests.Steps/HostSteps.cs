@@ -11,13 +11,28 @@ namespace AdaptiveRemote.EndToEndTests.Steps;
 [Binding]
 public class HostSteps : StepsBase
 {
+    private const string TiVoDeviceName = "TiVo";
     private string LogFilePath => Path.Combine(TestContext.TestResultsDirectory!, TestContext.TestName + ".log");
 
     [BeforeScenario(Order = 50)]
-    public void OnBeforeScenario_SetUpTestEnvironment()
+    public void OnBeforeScenario_SetUpSimulatedEnvironment()
     {
-        ITestEnvironment testEnvironment = new TestEnvironment();
-        ProvideContainerObject(testEnvironment);
+        SimulatedEnvironment simulatedEnvironment = new SimulatedEnvironment();
+        ProvideContainerObject<ISimulatedEnvironment>(simulatedEnvironment);
+
+        // Register and start the simulated TiVo device for all tests
+        // Create a simple logger that writes to TestContext
+        ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddProvider(new TestContextLoggerProvider(TestContext));
+        });
+        ILogger logger = loggerFactory.CreateLogger("SimulatedTiVoDevice");
+
+        ISimulatedDeviceBuilder builder = new SimulatedTiVoDeviceBuilder(logger);
+        simulatedEnvironment.RegisterDevice(TiVoDeviceName, builder);
+        ISimulatedDevice device = simulatedEnvironment.StartDevice(TiVoDeviceName);
+
+        TestContext.WriteLine($"Simulated TiVo device started on port {device.Port}");
     }
 
     [BeforeScenario(Order = 200)]
@@ -33,13 +48,10 @@ public class HostSteps : StepsBase
             Assert.Inconclusive($"Working directory not found: {hostSettings.WorkingDirectory}");
         }
 
-        // Check if we have a simulated TiVo device running
-        ITestEnvironment testEnvironment = GetContainerObject<ITestEnvironment>();
+        // Use the simulated TiVo device
         string tivoArgs = "--tivo:Fake=True";
-
-        if (testEnvironment.TryGetDevice("TiVo", out ITestDevice? tivoDevice) && tivoDevice != null)
+        if (SimulatedEnvironment.TryGetDevice(TiVoDeviceName, out ISimulatedDevice? tivoDevice) && tivoDevice != null)
         {
-            // Use the simulated device instead of fake
             tivoArgs = $"--tivo:IP=127.0.0.1:{tivoDevice.Port}";
         }
 
@@ -67,6 +79,18 @@ public class HostSteps : StepsBase
         {
             Host.Stop();
         }
+    }
+
+    [Given(@"the application is in the Ready state")]
+    public void GivenTheApplicationIsInTheReadyState()
+    {
+        if (!IsHostRunning)
+        {
+            Assert.Fail("Cannot check application state. The application is not started.");
+        }
+
+        // Wait for the application to be in Ready state
+        Host.Application.WaitForPhase(LifecyclePhase.Ready, timeout: TimeSpan.FromSeconds(60));
     }
 
     [When(@"I start the application")]
@@ -108,8 +132,7 @@ public class HostSteps : StepsBase
             Host.Stop();
         }
 
-        // Clean up test environment
-        ITestEnvironment? testEnvironment = GetContainerObjectOrDefault<ITestEnvironment>();
-        testEnvironment?.Dispose();
+        // Clean up simulated environment
+        SimulatedEnvironment?.Dispose();
     }
 }

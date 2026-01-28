@@ -3,16 +3,16 @@ using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 namespace AdaptiveRemote.EndtoEndTests.Host;
 
 /// <summary>
-/// Default implementation of <see cref="ITestEnvironment"/>.
+/// Default implementation of <see cref="ISimulatedEnvironment"/>.
 /// </summary>
-public sealed class TestEnvironment : ITestEnvironment
+public sealed class SimulatedEnvironment : ISimulatedEnvironment
 {
-    private readonly Dictionary<string, ITestDeviceBuilder> _builders = new();
-    private readonly Dictionary<string, ITestDevice> _devices = new();
+    private readonly Dictionary<string, ISimulatedDeviceBuilder> _builders = new();
+    private readonly Dictionary<string, ISimulatedDevice> _devices = new();
     private bool _disposed;
 
     /// <inheritdoc/>
-    public void RegisterDevice(string name, ITestDeviceBuilder builder)
+    public void RegisterDevice(string name, ISimulatedDeviceBuilder builder)
     {
         if (_builders.ContainsKey(name))
         {
@@ -23,9 +23,9 @@ public sealed class TestEnvironment : ITestEnvironment
     }
 
     /// <inheritdoc/>
-    public ITestDevice StartDevice(string name)
+    public ISimulatedDevice StartDevice(string name)
     {
-        if (!_builders.TryGetValue(name, out ITestDeviceBuilder? builder))
+        if (!_builders.TryGetValue(name, out ISimulatedDeviceBuilder? builder))
         {
             throw new InvalidOperationException($"No device builder registered with name '{name}'.");
         }
@@ -35,13 +35,13 @@ public sealed class TestEnvironment : ITestEnvironment
             throw new InvalidOperationException($"Device with name '{name}' is already started.");
         }
 
-        ITestDevice device = builder.Start();
+        ISimulatedDevice device = builder.Start();
         _devices[name] = device;
         return device;
     }
 
     /// <inheritdoc/>
-    public bool TryGetDevice(string name, out ITestDevice? device)
+    public bool TryGetDevice(string name, out ISimulatedDevice? device)
     {
         return _devices.TryGetValue(name, out device);
     }
@@ -54,7 +54,7 @@ public sealed class TestEnvironment : ITestEnvironment
             return;
         }
 
-        foreach (ITestDevice device in _devices.Values)
+        foreach (ISimulatedDevice device in _devices.Values)
         {
             try
             {
@@ -68,7 +68,7 @@ public sealed class TestEnvironment : ITestEnvironment
 
         _devices.Clear();
 
-        foreach (ITestDeviceBuilder builder in _builders.Values)
+        foreach (ISimulatedDeviceBuilder builder in _builders.Values)
         {
             try
             {

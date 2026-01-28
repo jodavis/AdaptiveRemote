@@ -1,5 +1,4 @@
 using AdaptiveRemote.EndtoEndTests;
-using AdaptiveRemote.EndtoEndTests.Logging;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
@@ -11,51 +10,10 @@ public class TiVoSteps : StepsBase
 {
     private const string TiVoDeviceName = "TiVo";
 
-    [BeforeScenario("@tivo", Order = 100)]
-    public void OnBeforeScenario_StartSimulatedTiVoDevice()
-    {
-        ITestEnvironment testEnvironment = GetContainerObject<ITestEnvironment>();
-        Microsoft.Extensions.Logging.ILogger logger = TestContext.GetLogger("SimulatedTiVoDevice");
-
-        ITestDeviceBuilder builder = new SimulatedTiVoDeviceBuilder(logger);
-        testEnvironment.RegisterDevice(TiVoDeviceName, builder);
-
-        ITestDevice device = testEnvironment.StartDevice(TiVoDeviceName);
-
-        TestContext.WriteLine($"Simulated TiVo device started on port {device.Port}");
-    }
-
-    [Given(@"there is a simulated TiVo device")]
-    public void GivenThereIsASimulatedTiVoDevice()
-    {
-        ITestEnvironment testEnvironment = GetContainerObject<ITestEnvironment>();
-
-        if (!testEnvironment.TryGetDevice(TiVoDeviceName, out ITestDevice? _))
-        {
-            Assert.Fail("Simulated TiVo device is not running. Ensure the test scenario is tagged with @tivo.");
-        }
-
-        TestContext.WriteLine("Simulated TiVo device is running");
-    }
-
-    [Given(@"the application is in the Ready state")]
-    public void GivenTheApplicationIsInTheReadyState()
-    {
-        if (!IsHostRunning)
-        {
-            Assert.Fail("Cannot check application state. The application is not started.");
-        }
-
-        // Wait for the application to be in Ready state
-        Host.Application.WaitForPhase(LifecyclePhase.Ready, timeout: TimeSpan.FromSeconds(60));
-    }
-
     [Then(@"I should see the TiVo receives a {string} message")]
     public void ThenIShouldSeeTheTiVoReceivesAMessage(string expectedCommand)
     {
-        ITestEnvironment testEnvironment = GetContainerObject<ITestEnvironment>();
-
-        if (!testEnvironment.TryGetDevice(TiVoDeviceName, out ITestDevice? device))
+        if (!SimulatedEnvironment.TryGetDevice(TiVoDeviceName, out ISimulatedDevice? device))
         {
             Assert.Fail("TiVo device is not running");
         }

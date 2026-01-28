@@ -5,7 +5,7 @@ namespace AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 /// <summary>
 /// Builder for creating and starting a SimulatedTiVoDevice.
 /// </summary>
-public sealed class SimulatedTiVoDeviceBuilder : ITestDeviceBuilder
+public sealed class SimulatedTiVoDeviceBuilder : ISimulatedDeviceBuilder
 {
     private readonly ILogger _logger;
     private int _port = 0; // Default to ephemeral port
@@ -20,14 +20,14 @@ public sealed class SimulatedTiVoDeviceBuilder : ITestDeviceBuilder
     }
 
     /// <inheritdoc/>
-    public ITestDeviceBuilder WithPort(int port)
+    public ISimulatedDeviceBuilder WithPort(int port)
     {
         _port = port;
         return this;
     }
 
     /// <inheritdoc/>
-    public ITestDevice Start()
+    public ISimulatedDevice Start()
     {
         return new SimulatedTiVoDevice(_port, _logger);
     }

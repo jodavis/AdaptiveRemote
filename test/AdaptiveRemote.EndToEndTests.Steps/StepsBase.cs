@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.EndtoEndTests.Host;
+using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll.BoDi;
@@ -10,6 +11,7 @@ public abstract class StepsBase : IContainerDependentObject
 {
     private IObjectContainer? _container;
     private AdaptiveRemoteHost? _host;
+    private ISimulatedEnvironment? _simulatedEnvironment;
     private ILogger? _logger;
 
     public void SetObjectContainer(IObjectContainer container) => _container = container;
@@ -20,6 +22,8 @@ public abstract class StepsBase : IContainerDependentObject
 
     public TestContext TestContext => GetContainerObject<TestContext>();
 
+    public ISimulatedEnvironment SimulatedEnvironment => _simulatedEnvironment ??= GetContainerObject<ISimulatedEnvironment>();
+
     public ILogger Logger => _logger ??= Host.CreateLogger(GetType().Name);
 
     protected ObjectType GetContainerObject<ObjectType>()
@@ -27,24 +31,6 @@ public abstract class StepsBase : IContainerDependentObject
     {
         Assert.IsNotNull(_container, "Attempting to access container object before IContainerDependentObject.SetObjectContainer has been called");
         return _container.Resolve<ObjectType>();
-    }
-
-    protected ObjectType? GetContainerObjectOrDefault<ObjectType>()
-        where ObjectType : class
-    {
-        if (_container == null)
-        {
-            return null;
-        }
-
-        try
-        {
-            return _container.Resolve<ObjectType>();
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     protected void ProvideContainerObject<ObjectType>(ObjectType instance)
