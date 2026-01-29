@@ -54,9 +54,10 @@ internal static class BroadlinkPacketDecoder
 
         // Verify packet checksum
         int calculatedChecksum = ComputeChecksum(data);
-        if (calculatedChecksum != packetChecksum)
+        int expectedChecksum = packetChecksum & 0xFFFF; // Convert signed short to unsigned comparison
+        if (calculatedChecksum != expectedChecksum)
         {
-            error = $"Checksum mismatch: expected 0x{packetChecksum:X4}, calculated 0x{calculatedChecksum:X4}";
+            error = $"Checksum mismatch: expected 0x{expectedChecksum:X4}, calculated 0x{calculatedChecksum:X4}";
             return false;
         }
 

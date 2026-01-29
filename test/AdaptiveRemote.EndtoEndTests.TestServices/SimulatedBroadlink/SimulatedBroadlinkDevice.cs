@@ -177,18 +177,37 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
 
     private async Task HandleDiscoveryRequestAsync(DecodedScanRequest request, IPEndPoint remoteEndPoint)
     {
-        // Build discovery response
-        byte[] response = BroadlinkPacketEncoder.EncodeScanResponse(
-            new IPEndPoint(IPAddress.Loopback, Port),
-            DefaultDeviceType,
-            _macAddress,
-            isLocked: false);
+        try
+        {
+            // Build discovery response
+            byte[] response = BroadlinkPacketEncoder.EncodeScanResponse(
+                new IPEndPoint(IPAddress.Loopback, Port),
+                DefaultDeviceType,
+                _macAddress,
+                isLocked: false);
 
-        // Send response to the port specified in the request
-        IPEndPoint responseEndPoint = new IPEndPoint(remoteEndPoint.Address, request.LocalPort);
-        int bytesSent = await _udpClient.SendAsync(response, responseEndPoint);
+            // Send response to the port specified in the request
+            // Convert signed short to unsigned port number (handles ports > 32767)
+            int localPort = request.LocalPort & 0xFFFF;
+            IPEndPoint responseEndPoint = new IPEndPoint(remoteEndPoint.Address, localPort);
 
-        _logger.LogInformation("Sent discovery response ({BytesSent} bytes) to {EndPoint}", bytesSent, responseEndPoint);
+            int bytesSent = await _udpClient.SendAsync(response, response.Length, responseEndPoint);
+
+            _logger.LogInformation(
+                "Sent discovery response ({BytesSent} bytes) to {EndPoint}",
+                bytesSent,
+                responseEndPoint);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error sending discovery response to {RemoteEndPoint}: {ExceptionType} - {Message}",
+                remoteEndPoint,
+                ex.GetType().Name,
+                ex.Message);
+            throw;
+        }
     }
 
     private async Task HandleCommandPacketAsync(DecodedPacket packet, IPEndPoint remoteEndPoint)
@@ -241,7 +260,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
             errorCode: 0);
 
         // Send response
-        await _udpClient.SendAsync(response, remoteEndPoint);
+        await _udpClient.SendAsync(response, response.Length, remoteEndPoint);
 
         // Switch to the new encryption key
         _encryption?.Dispose();
@@ -315,7 +334,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
             errorCode: 0);
 
         // Send response
-        await _udpClient.SendAsync(response, remoteEndPoint);
+        await _udpClient.SendAsync(response, response.Length, remoteEndPoint);
 
         _logger.LogInformation("Send data command complete, IR payload: {PayloadSize} bytes", irData?.Length ?? 0);
     }

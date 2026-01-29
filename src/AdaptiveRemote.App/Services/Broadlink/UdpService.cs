@@ -49,6 +49,13 @@ internal class UdpService : IUdpService
             {
                 using ISocket socket = _socketFactory.CreateForBroadcast();
 
+                // Populate LocalPort and LocalIPAddress in the scan packet
+                if (socket.LocalEndPoint is IPEndPoint localEndPoint)
+                {
+                    packet.LocalPort = (short)localEndPoint.Port;
+                    packet.LocalIPAddress = localEndPoint.Address.GetAddressBytes();
+                }
+
                 while (DateTime.Now - startTime < timeout)
                 {
                     TimeSpan timeLeft = timeout - (DateTime.Now - startTime);
