@@ -11,8 +11,10 @@ The AdaptiveRemote test suite includes in-process simulated devices that enable 
 Simulates a TiVo DVR device for testing TiVo command integration.
 
 **Protocol:** TCP-based ASCII protocol with carriage return (`\r`) line terminators  
-**Port:** Configurable (ephemeral port for tests, default 31339 for real devices)  
-**Location:** `test/AdaptiveRemote.EndtoEndTests.TestServices/SimulatedTiVo/`
+**Port:** Always uses ephemeral port (0) for test isolation  
+**Location:** [`test/AdaptiveRemote.EndtoEndTests.TestServices/SimulatedTiVo/`](./SimulatedTiVo/)
+
+**Implementation:** See [`SimulatedTiVoDevice.cs`](./SimulatedTiVo/SimulatedTiVoDevice.cs)
 
 **Key Features:**
 - TCP server accepting commands in TiVo IRCODE format (e.g., `IRCODE PLAY\r`)
@@ -25,8 +27,10 @@ Simulates a TiVo DVR device for testing TiVo command integration.
 Simulates a Broadlink IR controller for testing IR command transmission to TVs and AV equipment.
 
 **Protocol:** UDP-based binary protocol with authentication, encryption, and checksums  
-**Port:** Configurable (ephemeral port for tests, port 80 for discovery on real devices)  
-**Location:** `test/AdaptiveRemote.EndtoEndTests.TestServices/SimulatedBroadlink/`
+**Port:** Always uses ephemeral port (0) for test isolation  
+**Location:** [`test/AdaptiveRemote.EndtoEndTests.TestServices/SimulatedBroadlink/`](./SimulatedBroadlink/)
+
+**Implementation:** See [`SimulatedBroadlinkDevice.cs`](./SimulatedBroadlink/SimulatedBroadlinkDevice.cs)
 
 **Key Features:**
 - UDP server handling discovery, authentication, and command packets
@@ -40,178 +44,54 @@ Simulates a Broadlink IR controller for testing IR command transmission to TVs a
 
 ### Core Interfaces
 
-```csharp
-/// <summary>
-/// Base interface for all simulated devices.
-/// </summary>
-public interface ISimulatedDevice : IDisposable
-{
-    void Stop();
-    int Port { get; }
-    IReadOnlyList<RecordedMessage> GetRecordedMessages();
-    void ClearRecordedMessages();
-}
+The simulated device system is built around a hierarchy of interfaces:
 
-/// <summary>
-/// Builder pattern for creating simulated devices.
-/// </summary>
-public interface ISimulatedDeviceBuilder : IDisposable
-{
-    ISimulatedDeviceBuilder WithPort(int port);
-    ISimulatedDevice Start();
-}
+- **[`ISimulatedTiVoDevice`](./SimulatedTiVo/ISimulatedDevice.cs)** - Base interface for simulated devices
+- **[`ISimulatedBroadlinkDevice`](./SimulatedBroadlink/ISimulatedBroadlinkDevice.cs)** - Extends base with Broadlink-specific packet recording
+- **[`ISimulatedDeviceBuilder`](./SimulatedTiVo/ISimulatedDeviceBuilder.cs)** - Builder pattern for device creation
+- **[`ISimulatedEnvironment`](./Host/ISimulatedEnvironment.cs)** - Container managing device lifecycle
 
-/// <summary>
-/// Test environment managing simulated devices.
-/// </summary>
-public interface ISimulatedEnvironment : IDisposable
-{
-    ISimulatedDevice? TiVo { get; }
-    ISimulatedBroadlinkDevice? Broadlink { get; }
-    void RegisterDevice(string name, ISimulatedDeviceBuilder builder);
-    ISimulatedDevice StartDevice(string name);
-    bool TryGetDevice(string name, out ISimulatedDevice? device);
-}
-```
+### Test Environment Setup
 
-### Device-Specific Interfaces
+The [`SimulatedEnvironment`](./Host/SimulatedEnvironment.cs) class manages device lifecycle:
 
-#### ISimulatedBroadlinkDevice
+1. Accepts `ILoggerFactory` in constructor
+2. Creates device builders internally
+3. Starts both TiVo and Broadlink devices
+4. Exposes devices via `TiVo` and `Broadlink` properties
+5. Handles cleanup on disposal
 
-Extends `ISimulatedDevice` with Broadlink-specific capabilities:
-
-```csharp
-public interface ISimulatedBroadlinkDevice : ISimulatedDevice
-{
-    int BoundPort { get; }
-    IReadOnlyList<RecordedPacket> GetRecordedPackets();
-    void ClearRecordedPackets();
-}
-
-public sealed record RecordedPacket
-{
-    public DateTimeOffset ReceivedAt { get; init; }
-    public bool IsInbound { get; init; }
-    public short PacketType { get; init; }
-    public byte[]? RawPayload { get; init; }  // IR data
-    public bool IsMalformed { get; init; }
-    public string DebugDescription { get; init; }
-}
-```
+See [`HostSteps.cs`](../../AdaptiveRemote.EndToEndTests.Steps/HostSteps.cs) for test setup implementation.
 
 ## Test Integration
 
 ### Lifecycle Management
 
-Simulated devices are automatically managed by the test framework:
+Simulated devices are automatically managed by the test framework via Reqnroll hooks in [`HostSteps.cs`](../../AdaptiveRemote.EndToEndTests.Steps/HostSteps.cs):
 
-1. **BeforeScenario (Order=50):** `ISimulatedEnvironment` is created
-2. **BeforeScenario (Order=50):** Simulated devices are registered and started
-3. **BeforeScenario (Order=200):** Host application is started with device configuration
-4. **AfterScenario:** Devices and host are cleaned up
-
-### Configuration
-
-#### TiVo Device Configuration
-
-```csharp
-ISimulatedDeviceBuilder tivoBuilder = new SimulatedTiVoDeviceBuilder(logger);
-simulatedEnvironment.RegisterDevice("TiVo", tivoBuilder);
-ISimulatedDevice tivoDevice = simulatedEnvironment.StartDevice("TiVo");
-
-// Configure host to connect to simulated device
-string args = $"--tivo:IP=127.0.0.1:{tivoDevice.Port}";
-```
-
-#### Broadlink Device Configuration
-
-```csharp
-ISimulatedDeviceBuilder broadlinkBuilder = new SimulatedBroadlinkDeviceBuilder(logger);
-simulatedEnvironment.RegisterDevice("Broadlink", broadlinkBuilder);
-ISimulatedDevice broadlinkDevice = simulatedEnvironment.StartDevice("Broadlink");
-
-// Configure host for discovery on loopback
-string args = $"--broadlink:DiscoveryAddress=127.0.0.1 --broadlink:DiscoveryPort={broadlinkDevice.Port}";
-```
+1. **BeforeScenario (Order=50):** Creates `SimulatedEnvironment` with `ILoggerFactory`, which internally starts both devices
+2. **BeforeScenario (Order=200):** Starts host application with device configuration (IP:Port)
+3. **AfterScenario:** Disposes environment, which stops and cleans up devices
 
 ### Step Definitions
 
-#### TiVo Steps
+Test logic is implemented as extension methods for reusability:
 
-```csharp
-[Then(@"I should see the TiVo receives a {string} message")]
-public void ThenIShouldSeeTheTiVoReceivesAMessage(string expectedCommand)
-{
-    ISimulatedDevice? device = Environment.TiVo;
-    Assert.IsNotNull(device, "TiVo device is not running");
-    
-    bool found = WaitHelpers.ExecuteWithRetries(() => 
-    {
-        IReadOnlyList<RecordedMessage> messages = device.GetRecordedMessages();
-        return messages.Any(m => m.Incoming && 
-            m.Payload.Equals($"IRCODE {expectedCommand}", StringComparison.OrdinalIgnoreCase));
-    }, timeoutInSeconds: 5);
-    
-    Assert.IsTrue(found, $"Expected TiVo to receive message 'IRCODE {expectedCommand}'");
-}
-```
-
-#### Broadlink Steps
-
-```csharp
-[Then(@"I should see the Broadlink device recorded at least one outbound packet")]
-public void ThenIShouldSeeTheBroadlinkDeviceRecordedAtLeastOneOutboundPacket()
-{
-    ISimulatedBroadlinkDevice? device = Environment.Broadlink;
-    Assert.IsNotNull(device, "Broadlink device is not running");
-    
-    bool found = WaitHelpers.ExecuteWithRetries(() => 
-    {
-        IReadOnlyList<RecordedPacket> packets = device.GetRecordedPackets();
-        return packets.Any(p => p.IsInbound && p.RawPayload != null && p.RawPayload.Length > 0);
-    }, timeoutInSeconds: 10);
-    
-    Assert.IsTrue(found, "Expected Broadlink device to record at least one packet with IR data");
-}
-
-[Then(@"no Broadlink packets should be marked as malformed")]
-public void ThenNoBroadlinkPacketsShouldBeMarkedAsMalformed()
-{
-    ISimulatedBroadlinkDevice? device = Environment.Broadlink;
-    IReadOnlyList<RecordedPacket> packets = device!.GetRecordedPackets();
-    RecordedPacket? malformedPacket = packets.FirstOrDefault(p => p.IsMalformed);
-    
-    Assert.IsNull(malformedPacket, $"Found malformed packet: {malformedPacket?.DebugDescription}");
-}
-```
+- **TiVo Steps:** See [`TiVoSteps.cs`](../../AdaptiveRemote.EndToEndTests.Steps/TiVoSteps.cs)
+- **Broadlink Steps:** See [`BroadlinkSteps.cs`](../../AdaptiveRemote.EndToEndTests.Steps/BroadlinkSteps.cs)
+- **Broadlink Extensions:** See [`ISimulatedBroadlinkDeviceExtensions.cs`](./SimulatedBroadlink/ISimulatedBroadlinkDeviceExtensions.cs)
 
 ### Gherkin Features
 
-#### TiVo Device Feature
+Test scenarios use Gherkin syntax:
 
-```gherkin
-Feature: TiVo Device Integration
-    Scenario: TiVo receives Play command
-        Given the application is not running
-        When I start the application
-        Then I should see the application in the Ready phase
-        When I click on the 'Play' button
-        Then I should see the TiVo receives a "PLAY" message
-```
+- **TiVo:** [`TiVoDevice.feature`](../../AdaptiveRemote.EndToEndTests.Features/TiVoDevice.feature)
+- **Broadlink:** [`BroadlinkDevice.feature`](../../AdaptiveRemote.EndToEndTests.Features/BroadlinkDevice.feature)
+- **Startup:** [`ApplicationStartupAndShutdown.feature`](../../AdaptiveRemote.EndToEndTests.Features/ApplicationStartupAndShutdown.feature)
 
 #### Broadlink Device Feature
 
-```gherkin
-Feature: Broadlink Device Integration
-    Scenario: Broadlink receives Power command
-        Given the application is not running
-        When I start the application
-        Then I should see the application in the Ready phase
-        When I click on the 'Power' button
-        Then I should see the Broadlink device recorded at least one outbound packet
-        And the recorded Broadlink packet's raw payload should not be empty
-        And no Broadlink packets should be marked as malformed
-```
+Example test scenario - see [`BroadlinkDevice.feature`](../../AdaptiveRemote.EndToEndTests.Features/BroadlinkDevice.feature) for full implementation.
 
 ## Protocol Implementation Details
 
@@ -225,14 +105,18 @@ Feature: Broadlink Device Integration
 - Messages recorded without line terminator
 - Connection handling supports sequential connections (not simultaneous)
 
+See [`SimulatedTiVoDevice.cs`](./SimulatedTiVo/SimulatedTiVoDevice.cs) for complete implementation.
+
 ### Broadlink Protocol
 
 **Message Format:** Binary packets with headers, checksums, and encrypted payloads
 
-**Packet Structure:**
-```
-[Preamble: 8 bytes] [Header: 0x38 bytes] [Payload: variable]
-```
+**Packet Structure:** `[Preamble: 8 bytes] [Header: 0x38 bytes] [Payload: variable]`
+
+For protocol details, see:
+- [`BroadlinkPacketDecoder.cs`](./SimulatedBroadlink/BroadlinkPacketDecoder.cs) - Packet parsing
+- [`BroadlinkPacketEncoder.cs`](./SimulatedBroadlink/BroadlinkPacketEncoder.cs) - Response building
+- [`BroadlinkEncryption.cs`](./SimulatedBroadlink/BroadlinkEncryption.cs) - AES encryption
 
 **Discovery Protocol:**
 1. App broadcasts `ScanRequestPacket` to configured address/port
