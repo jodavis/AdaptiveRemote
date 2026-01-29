@@ -34,7 +34,12 @@ internal class UdpService : IUdpService
 
         _ = Task.Run(async () =>
         {
-            IPEndPoint discoverEndPoint = new(IPAddress.Broadcast, 80);
+            // Use configured discovery endpoint or default to broadcast on port 80
+            IPAddress discoveryIp = _settings.DiscoveryAddress != null
+                ? IPAddress.Parse(_settings.DiscoveryAddress)
+                : IPAddress.Broadcast;
+            int discoveryPort = _settings.DiscoveryPort ?? 80;
+            IPEndPoint discoverEndPoint = new(discoveryIp, discoveryPort);
 
             DateTime startTime = DateTime.Now;
             TimeSpan timeout = TimeSpan.FromSeconds(_settings.ScanTimeout);

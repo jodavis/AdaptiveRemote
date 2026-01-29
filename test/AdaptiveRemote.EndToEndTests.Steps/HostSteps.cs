@@ -70,8 +70,8 @@ public class HostSteps : StepsBase
         string broadlinkArgs = string.Empty;
         if (Environment.TryGetDevice(BroadlinkDeviceName, out ISimulatedDevice? broadlinkDevice) && broadlinkDevice != null)
         {
-            // Configure the app to use the simulated device's discovery port
-            broadlinkArgs = $"--broadlink:DiscoveryPort={broadlinkDevice.Port}";
+            // Configure the app to discover the simulated device on loopback at its port
+            broadlinkArgs = $"--broadlink:DiscoveryAddress=127.0.0.1 --broadlink:DiscoveryPort={broadlinkDevice.Port}";
         }
 
         hostSettings = hostSettings.AddCommandLineArgs($"{tivoArgs} {broadlinkArgs} --log:FilePath=\"{LogFilePath}\"");

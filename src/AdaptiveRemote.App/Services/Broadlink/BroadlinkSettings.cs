@@ -18,4 +18,14 @@ public class BroadlinkSettings
     /// for devices.
     /// </summary>
     public double ScanTimeout { get; set; } = 3;
+
+    /// <summary>
+    /// Optional discovery port override for testing. If not set, uses port 80.
+    /// </summary>
+    public int? DiscoveryPort { get; set; }
+
+    /// <summary>
+    /// Optional discovery address override for testing. If not set, uses broadcast address.
+    /// </summary>
+    public string? DiscoveryAddress { get; set; }
 }
