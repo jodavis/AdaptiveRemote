@@ -9,24 +9,23 @@ namespace AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 public sealed class SimulatedBroadlinkDeviceBuilder : ISimulatedDeviceBuilder
 {
     private readonly ILogger _logger;
-    private int _port;
 
-    public SimulatedBroadlinkDeviceBuilder(ILogger logger)
+    public SimulatedBroadlinkDeviceBuilder(ILoggerFactory loggerFactory)
     {
-        _logger = logger;
+        _logger = loggerFactory.CreateLogger<SimulatedBroadlinkDevice>();
     }
 
     /// <inheritdoc/>
     public ISimulatedDeviceBuilder WithPort(int port)
     {
-        _port = port;
+        // Port configuration is not supported - always use ephemeral port
         return this;
     }
 
     /// <inheritdoc/>
-    public ISimulatedDevice Start()
+    public ISimulatedTiVoDevice Start()
     {
-        return new SimulatedBroadlinkDevice(_port, _logger);
+        return new SimulatedBroadlinkDevice(0, _logger); // Always use port 0 for ephemeral
     }
 
     /// <inheritdoc/>

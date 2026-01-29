@@ -18,19 +18,11 @@ public class BroadlinkSteps : StepsBase
         }
 
         // Poll for packets with a timeout of 10 seconds
-        bool found = WaitHelpers.ExecuteWithRetries(
-            () =>
-            {
-                IReadOnlyList<RecordedPacket> packets = device.GetRecordedPackets();
-                return packets.Any(p => p.IsInbound && p.RawPayload != null && p.RawPayload.Length > 0);
-            },
-            timeoutInSeconds: 10);
+        bool found = WaitHelpers.ExecuteWithRetries(device.HasRecordedInboundPacketWithIrData, timeoutInSeconds: 10);
 
         if (!found)
         {
-            IReadOnlyList<RecordedPacket> packets = device.GetRecordedPackets();
-            string recordedPackets = string.Join(", ", packets.Select(p =>
-                $"[{p.ReceivedAt:HH:mm:ss.fff}] {(p.IsInbound ? "←" : "→")} {p.DebugDescription}"));
+            string recordedPackets = device.GetRecordedPacketsDebugString();
             Assert.Fail($"Expected Broadlink device to record at least one inbound packet with IR data, but none were found. Recorded packets: {recordedPackets}");
         }
 
@@ -46,8 +38,7 @@ public class BroadlinkSteps : StepsBase
             Assert.Fail("Broadlink device is not running");
         }
 
-        IReadOnlyList<RecordedPacket> packets = device.GetRecordedPackets();
-        RecordedPacket? irPacket = packets.FirstOrDefault(p => p.IsInbound && p.RawPayload != null);
+        RecordedPacket? irPacket = device.GetFirstPacketWithIrData();
 
         if (irPacket == null)
         {
@@ -67,8 +58,7 @@ public class BroadlinkSteps : StepsBase
             Assert.Fail("Broadlink device is not running");
         }
 
-        IReadOnlyList<RecordedPacket> packets = device.GetRecordedPackets();
-        RecordedPacket? malformedPacket = packets.FirstOrDefault(p => p.IsMalformed);
+        RecordedPacket? malformedPacket = device.GetFirstMalformedPacket();
 
         if (malformedPacket != null)
         {

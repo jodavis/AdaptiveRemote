@@ -13,10 +13,10 @@ public sealed class SimulatedTiVoDeviceBuilder : ISimulatedDeviceBuilder
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulatedTiVoDeviceBuilder"/> class.
     /// </summary>
-    /// <param name="logger">Logger for the simulated device.</param>
-    public SimulatedTiVoDeviceBuilder(ILogger logger)
+    /// <param name="loggerFactory">Logger factory for creating the device logger.</param>
+    public SimulatedTiVoDeviceBuilder(ILoggerFactory loggerFactory)
     {
-        _logger = logger;
+        _logger = loggerFactory.CreateLogger<SimulatedTiVoDevice>();
     }
 
     /// <inheritdoc/>
@@ -27,7 +27,7 @@ public sealed class SimulatedTiVoDeviceBuilder : ISimulatedDeviceBuilder
     }
 
     /// <inheritdoc/>
-    public ISimulatedDevice Start()
+    public ISimulatedTiVoDevice Start()
     {
         return new SimulatedTiVoDevice(_port, _logger);
     }

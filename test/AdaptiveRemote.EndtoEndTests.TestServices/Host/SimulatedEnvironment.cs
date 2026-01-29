@@ -1,5 +1,6 @@
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
 
@@ -8,53 +9,24 @@ namespace AdaptiveRemote.EndtoEndTests.Host;
 /// </summary>
 public sealed class SimulatedEnvironment : ISimulatedEnvironment
 {
-    private const string TiVoDeviceName = "TiVo";
-    private const string BroadlinkDeviceName = "Broadlink";
-
-    private readonly Dictionary<string, ISimulatedDeviceBuilder> _builders = new();
-    private readonly Dictionary<string, ISimulatedDevice> _devices = new();
+    private ISimulatedTiVoDevice? _tivo;
+    private ISimulatedBroadlinkDevice? _broadlink;
     private bool _disposed;
 
-    /// <inheritdoc/>
-    public ISimulatedDevice? TiVo => _devices.TryGetValue(TiVoDeviceName, out ISimulatedDevice? device) ? device : null;
-
-    /// <inheritdoc/>
-    public ISimulatedBroadlinkDevice? Broadlink => _devices.TryGetValue(BroadlinkDeviceName, out ISimulatedDevice? device) ? device as ISimulatedBroadlinkDevice : null;
-
-    /// <inheritdoc/>
-    public void RegisterDevice(string name, ISimulatedDeviceBuilder builder)
+    public SimulatedEnvironment(ILoggerFactory loggerFactory)
     {
-        if (_builders.ContainsKey(name))
-        {
-            throw new InvalidOperationException($"Device with name '{name}' is already registered.");
-        }
+        SimulatedTiVoDeviceBuilder tivoBuilder = new SimulatedTiVoDeviceBuilder(loggerFactory);
+        SimulatedBroadlinkDeviceBuilder broadlinkBuilder = new SimulatedBroadlinkDeviceBuilder(loggerFactory);
 
-        _builders[name] = builder;
+        _tivo = tivoBuilder.Start() as ISimulatedTiVoDevice;
+        _broadlink = broadlinkBuilder.Start() as ISimulatedBroadlinkDevice;
     }
 
     /// <inheritdoc/>
-    public ISimulatedDevice StartDevice(string name)
-    {
-        if (!_builders.TryGetValue(name, out ISimulatedDeviceBuilder? builder))
-        {
-            throw new InvalidOperationException($"No device builder registered with name '{name}'.");
-        }
-
-        if (_devices.ContainsKey(name))
-        {
-            throw new InvalidOperationException($"Device with name '{name}' is already started.");
-        }
-
-        ISimulatedDevice device = builder.Start();
-        _devices[name] = device;
-        return device;
-    }
+    public ISimulatedTiVoDevice? TiVo => _tivo;
 
     /// <inheritdoc/>
-    public bool TryGetDevice(string name, out ISimulatedDevice? device)
-    {
-        return _devices.TryGetValue(name, out device);
-    }
+    public ISimulatedBroadlinkDevice? Broadlink => _broadlink;
 
     /// <inheritdoc/>
     public void Dispose()
@@ -64,33 +36,26 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             return;
         }
 
-        foreach (ISimulatedDevice device in _devices.Values)
+        try
         {
-            try
-            {
-                device.Dispose();
-            }
-            catch
-            {
-                // Ignore disposal errors
-            }
+            _tivo?.Dispose();
+        }
+        catch
+        {
+            // Ignore disposal errors
         }
 
-        _devices.Clear();
-
-        foreach (ISimulatedDeviceBuilder builder in _builders.Values)
+        try
         {
-            try
-            {
-                builder.Dispose();
-            }
-            catch
-            {
-                // Ignore disposal errors
-            }
+            _broadlink?.Dispose();
+        }
+        catch
+        {
+            // Ignore disposal errors
         }
 
-        _builders.Clear();
+        _tivo = null;
+        _broadlink = null;
         _disposed = true;
     }
 }

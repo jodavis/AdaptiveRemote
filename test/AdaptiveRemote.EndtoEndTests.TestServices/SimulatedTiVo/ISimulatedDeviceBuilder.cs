@@ -15,6 +15,6 @@ public interface ISimulatedDeviceBuilder : IDisposable
     /// <summary>
     /// Starts the device synchronously and returns the running device.
     /// </summary>
-    /// <returns>A running simulated device instance.</returns>
-    ISimulatedDevice Start();
+    /// <returns>A running simulated TiVo device instance.</returns>
+    ISimulatedTiVoDevice Start();
 }

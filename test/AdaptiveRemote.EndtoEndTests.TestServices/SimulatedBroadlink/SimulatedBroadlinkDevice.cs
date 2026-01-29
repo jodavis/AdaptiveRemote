@@ -33,7 +33,6 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         _logger = logger;
         _udpClient = new UdpClient(new IPEndPoint(IPAddress.Loopback, port));
         Port = ((IPEndPoint)_udpClient.Client.LocalEndPoint!).Port;
-        BoundPort = Port;
 
         // Generate a random MAC address for testing
         byte[] macBytes = new byte[6];
@@ -51,9 +50,6 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
 
     /// <inheritdoc/>
     public int Port { get; }
-
-    /// <inheritdoc/>
-    public int BoundPort { get; }
 
     /// <inheritdoc/>
     public IReadOnlyList<RecordedMessage> GetRecordedMessages()
