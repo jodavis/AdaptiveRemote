@@ -31,7 +31,7 @@ internal sealed class BroadlinkEncryption : IDisposable
         using CryptoStream cryptoStream = new CryptoStream(output, encryptor, CryptoStreamMode.Write);
 
         cryptoStream.Write(data);
-        
+
         // Add padding if needed
         int padding = (8192 - data.Length) % 16;
         if (padding > 0)

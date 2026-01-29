@@ -29,7 +29,7 @@ public class BroadlinkSteps : StepsBase
         if (!found)
         {
             IReadOnlyList<RecordedPacket> packets = device.GetRecordedPackets();
-            string recordedPackets = string.Join(", ", packets.Select(p => 
+            string recordedPackets = string.Join(", ", packets.Select(p =>
                 $"[{p.ReceivedAt:HH:mm:ss.fff}] {(p.IsInbound ? "←" : "→")} {p.DebugDescription}"));
             Assert.Fail($"Expected Broadlink device to record at least one outbound packet with IR data, but none were found. Recorded packets: {recordedPackets}");
         }

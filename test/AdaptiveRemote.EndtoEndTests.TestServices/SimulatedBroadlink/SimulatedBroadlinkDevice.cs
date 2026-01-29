@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
@@ -23,7 +24,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
     private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly ConcurrentBag<RecordedPacket> _recordedPackets = new();
     private readonly Task _listenerTask;
-    
+
     private short _deviceId;
     private BroadlinkEncryption? _encryption;
     private bool _disposed;
@@ -174,7 +175,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         }
     }
 
-    private async Task HandleDiscoveryRequestAsync(DecodedScanRequest request, IPEndPoint remoteEndPoint, CancellationToken cancellationToken)
+    private async Task HandleDiscoveryRequestAsync(DecodedScanRequest request, IPEndPoint remoteEndPoint, CancellationToken _)
     {
         // Build discovery response
         byte[] response = BroadlinkPacketEncoder.EncodeScanResponse(
@@ -210,7 +211,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         }
     }
 
-    private async Task HandleAuthenticateAsync(DecodedPacket packet, IPEndPoint remoteEndPoint, CancellationToken cancellationToken)
+    private async Task HandleAuthenticateAsync(DecodedPacket packet, IPEndPoint remoteEndPoint, CancellationToken _)
     {
         _logger.LogInformation("Handling authentication request");
 
@@ -258,7 +259,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         });
     }
 
-    private async Task HandleSendDataAsync(DecodedPacket packet, IPEndPoint remoteEndPoint, CancellationToken cancellationToken)
+    private async Task HandleSendDataAsync(DecodedPacket packet, IPEndPoint remoteEndPoint, CancellationToken _)
     {
         _logger.LogInformation("Handling send data command");
 
@@ -281,8 +282,10 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         if (decryptedPayload.Length >= 6)
         {
             short dataLength = BitConverter.ToInt16(decryptedPayload, 0);
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
             int command = BitConverter.ToInt32(decryptedPayload, 2);
-            
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
+
             if (decryptedPayload.Length >= 6 + (dataLength - 4))
             {
                 irData = new byte[dataLength - 4];
@@ -301,7 +304,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         });
 
         // Build response
-        byte[] responsePayload = _encryption!.Encrypt(new byte[0]);
+        byte[] responsePayload = _encryption!.Encrypt(Array.Empty<byte>());
         byte[] response = BroadlinkPacketEncoder.EncodeResponse(
             DefaultDeviceType,
             SendDataCommand,
@@ -323,7 +326,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         _logger.LogInformation("Recorded packet: {Description}", packet.DebugDescription);
     }
 
-    private void RecordMalformedPacket(EndPoint remoteEndPoint, byte[] data, string error)
+    private void RecordMalformedPacket(EndPoint remoteEndPoint, byte[] _, string error)
     {
         RecordPacket(new RecordedPacket
         {

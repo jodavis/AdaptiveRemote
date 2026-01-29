@@ -12,7 +12,7 @@ internal static class BroadlinkPacketEncoder
     private const int HeaderSize = 0x38;
     private static readonly byte[] Preamble = [0x5a, 0xa5, 0xaa, 0x55, 0x5a, 0xa5, 0xaa, 0x55];
 
-    public static byte[] EncodeScanResponse(IPEndPoint localEndPoint, short deviceType, PhysicalAddress macAddress, bool isLocked)
+    public static byte[] EncodeScanResponse(IPEndPoint _, short deviceType, PhysicalAddress macAddress, bool isLocked)
     {
         byte[] response = new byte[0x80];
 
@@ -40,15 +40,15 @@ internal static class BroadlinkPacketEncoder
         WriteInt16(packet, 0x24, deviceType);
         WriteInt16(packet, 0x26, packetType);
         WriteInt16(packet, 0x28, messageCount);
-        
+
         byte[] macBytes = hostAddress.GetAddressBytes();
         Array.Copy(macBytes, 0, packet, 0x2A, 6);
-        
+
         WriteInt16(packet, 0x30, deviceId);
-        
+
         // Write error code at 0x22
         WriteInt16(packet, 0x22, errorCode);
-        
+
         // Write payload checksum at 0x34
         short payloadChecksum = ComputePayloadChecksum(payload);
         WriteInt16(packet, 0x34, payloadChecksum);
