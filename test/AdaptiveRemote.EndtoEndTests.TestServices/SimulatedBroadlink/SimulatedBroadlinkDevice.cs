@@ -146,22 +146,22 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         }
     }
 
-    private async Task HandlePacketAsync(byte[] data, IPEndPoint remoteEndPoint, CancellationToken cancellationToken)
+    private async Task HandlePacketAsync(byte[] data, IPEndPoint remoteEndPoint, CancellationToken _)
     {
         try
         {
             // Try to decode as a scan (discovery) request first
-            if (BroadlinkPacketDecoder.TryDecodeScanRequest(data, out DecodedScanRequest? scanRequest, out _))
+            if (BroadlinkPacketDecoder.TryDecodeScanRequest(data, out DecodedScanRequest? scanRequest, out string? scanError))
             {
                 _logger.LogInformation("Received discovery request from {RemoteEndPoint}", remoteEndPoint);
-                await HandleDiscoveryRequestAsync(scanRequest!, remoteEndPoint, cancellationToken);
+                await HandleDiscoveryRequestAsync(scanRequest!, remoteEndPoint);
                 return;
             }
 
             // Try to decode as a regular packet
             if (BroadlinkPacketDecoder.TryDecodePacket(data, remoteEndPoint, out DecodedPacket? packet, out string? error))
             {
-                await HandleCommandPacketAsync(packet!, remoteEndPoint, cancellationToken);
+                await HandleCommandPacketAsync(packet!, remoteEndPoint);
             }
             else
             {
@@ -175,7 +175,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         }
     }
 
-    private async Task HandleDiscoveryRequestAsync(DecodedScanRequest request, IPEndPoint remoteEndPoint, CancellationToken _)
+    private async Task HandleDiscoveryRequestAsync(DecodedScanRequest request, IPEndPoint remoteEndPoint)
     {
         // Build discovery response
         byte[] response = BroadlinkPacketEncoder.EncodeScanResponse(
@@ -186,23 +186,23 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
 
         // Send response to the port specified in the request
         IPEndPoint responseEndPoint = new IPEndPoint(remoteEndPoint.Address, request.LocalPort);
-        await _udpClient.SendAsync(response, response.Length, responseEndPoint);
+        int bytesSent = await _udpClient.SendAsync(response, responseEndPoint);
 
-        _logger.LogInformation("Sent discovery response to {EndPoint}", responseEndPoint);
+        _logger.LogInformation("Sent discovery response ({BytesSent} bytes) to {EndPoint}", bytesSent, responseEndPoint);
     }
 
-    private async Task HandleCommandPacketAsync(DecodedPacket packet, IPEndPoint remoteEndPoint, CancellationToken cancellationToken)
+    private async Task HandleCommandPacketAsync(DecodedPacket packet, IPEndPoint remoteEndPoint)
     {
         _logger.LogInformation("Received packet type 0x{PacketType:X2} from {RemoteEndPoint}", packet.PacketType, remoteEndPoint);
 
         switch (packet.PacketType)
         {
             case AuthenticateCommand:
-                await HandleAuthenticateAsync(packet, remoteEndPoint, cancellationToken);
+                await HandleAuthenticateAsync(packet, remoteEndPoint);
                 break;
 
             case SendDataCommand:
-                await HandleSendDataAsync(packet, remoteEndPoint, cancellationToken);
+                await HandleSendDataAsync(packet, remoteEndPoint);
                 break;
 
             default:
@@ -211,7 +211,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         }
     }
 
-    private async Task HandleAuthenticateAsync(DecodedPacket packet, IPEndPoint remoteEndPoint, CancellationToken _)
+    private async Task HandleAuthenticateAsync(DecodedPacket packet, IPEndPoint remoteEndPoint)
     {
         _logger.LogInformation("Handling authentication request");
 
@@ -241,7 +241,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
             errorCode: 0);
 
         // Send response
-        await _udpClient.SendAsync(response, response.Length, remoteEndPoint);
+        await _udpClient.SendAsync(response, remoteEndPoint);
 
         // Switch to the new encryption key
         _encryption?.Dispose();
@@ -259,7 +259,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         });
     }
 
-    private async Task HandleSendDataAsync(DecodedPacket packet, IPEndPoint remoteEndPoint, CancellationToken _)
+    private async Task HandleSendDataAsync(DecodedPacket packet, IPEndPoint remoteEndPoint)
     {
         _logger.LogInformation("Handling send data command");
 
@@ -315,7 +315,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
             errorCode: 0);
 
         // Send response
-        await _udpClient.SendAsync(response, response.Length, remoteEndPoint);
+        await _udpClient.SendAsync(response, remoteEndPoint);
 
         _logger.LogInformation("Send data command complete, IR payload: {PayloadSize} bytes", irData?.Length ?? 0);
     }
