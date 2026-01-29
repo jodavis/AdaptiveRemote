@@ -1,6 +1,7 @@
 ﻿using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.EndtoEndTests.Host;
 using AdaptiveRemote.EndtoEndTests.Logging;
+using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -12,6 +13,7 @@ namespace AdaptiveRemote.EndToEndTests.Steps;
 public class HostSteps : StepsBase
 {
     private const string TiVoDeviceName = "TiVo";
+    private const string BroadlinkDeviceName = "Broadlink";
     private string LogFilePath => Path.Combine(TestContext.TestResultsDirectory!, TestContext.TestName + ".log");
 
     [BeforeScenario(Order = 50)]
@@ -26,13 +28,22 @@ public class HostSteps : StepsBase
         {
             builder.AddProvider(new TestContextLoggerProvider(TestContext));
         });
-        ILogger logger = loggerFactory.CreateLogger("SimulatedTiVoDevice");
+        ILogger tivoLogger = loggerFactory.CreateLogger("SimulatedTiVoDevice");
+        ILogger broadlinkLogger = loggerFactory.CreateLogger("SimulatedBroadlinkDevice");
 
-        ISimulatedDeviceBuilder builder = new SimulatedTiVoDeviceBuilder(logger);
-        simulatedEnvironment.RegisterDevice(TiVoDeviceName, builder);
-        ISimulatedDevice device = simulatedEnvironment.StartDevice(TiVoDeviceName);
+        // Register and start TiVo device
+        ISimulatedDeviceBuilder tivoBuilder = new SimulatedTiVoDeviceBuilder(tivoLogger);
+        simulatedEnvironment.RegisterDevice(TiVoDeviceName, tivoBuilder);
+        ISimulatedDevice tivoDevice = simulatedEnvironment.StartDevice(TiVoDeviceName);
 
-        TestContext.WriteLine($"Simulated TiVo device started on port {device.Port}");
+        TestContext.WriteLine($"Simulated TiVo device started on port {tivoDevice.Port}");
+
+        // Register and start Broadlink device
+        ISimulatedDeviceBuilder broadlinkBuilder = new SimulatedBroadlinkDeviceBuilder(broadlinkLogger);
+        simulatedEnvironment.RegisterDevice(BroadlinkDeviceName, broadlinkBuilder);
+        ISimulatedDevice broadlinkDevice = simulatedEnvironment.StartDevice(BroadlinkDeviceName);
+
+        TestContext.WriteLine($"Simulated Broadlink device started on port {broadlinkDevice.Port}");
     }
 
     [BeforeScenario(Order = 200)]
@@ -55,7 +66,15 @@ public class HostSteps : StepsBase
             tivoArgs = $"--tivo:IP=127.0.0.1:{tivoDevice.Port}";
         }
 
-        hostSettings = hostSettings.AddCommandLineArgs($"{tivoArgs} --broadlink:Fake=True --log:FilePath=\"{LogFilePath}\"");
+        // Use the simulated Broadlink device
+        string broadlinkArgs = string.Empty;
+        if (Environment.TryGetDevice(BroadlinkDeviceName, out ISimulatedDevice? broadlinkDevice) && broadlinkDevice != null)
+        {
+            // Configure the app to use the simulated device's discovery port
+            broadlinkArgs = $"--broadlink:DiscoveryPort={broadlinkDevice.Port}";
+        }
+
+        hostSettings = hostSettings.AddCommandLineArgs($"{tivoArgs} {broadlinkArgs} --log:FilePath=\"{LogFilePath}\"");
 
         ProvideContainerObjectFactory(() => AdaptiveRemoteHost.CreateBuilder(hostSettings)
             .ConfigureLogging(builder =>

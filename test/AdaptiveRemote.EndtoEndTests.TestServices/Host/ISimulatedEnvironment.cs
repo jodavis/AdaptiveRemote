@@ -1,3 +1,5 @@
+using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
+
 namespace AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 
 /// <summary>
@@ -5,6 +7,16 @@ namespace AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 /// </summary>
 public interface ISimulatedEnvironment : IDisposable
 {
+    /// <summary>
+    /// Gets the simulated TiVo device, if started.
+    /// </summary>
+    ISimulatedDevice? TiVo { get; }
+
+    /// <summary>
+    /// Gets the simulated Broadlink device, if started.
+    /// </summary>
+    ISimulatedBroadlinkDevice? Broadlink { get; }
+
     /// <summary>
     /// Registers a device builder with the given name.
     /// </summary>

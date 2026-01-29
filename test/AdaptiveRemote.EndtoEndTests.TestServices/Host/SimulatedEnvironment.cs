@@ -1,3 +1,4 @@
+using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
@@ -7,9 +8,18 @@ namespace AdaptiveRemote.EndtoEndTests.Host;
 /// </summary>
 public sealed class SimulatedEnvironment : ISimulatedEnvironment
 {
+    private const string TiVoDeviceName = "TiVo";
+    private const string BroadlinkDeviceName = "Broadlink";
+
     private readonly Dictionary<string, ISimulatedDeviceBuilder> _builders = new();
     private readonly Dictionary<string, ISimulatedDevice> _devices = new();
     private bool _disposed;
+
+    /// <inheritdoc/>
+    public ISimulatedDevice? TiVo => _devices.TryGetValue(TiVoDeviceName, out ISimulatedDevice? device) ? device : null;
+
+    /// <inheritdoc/>
+    public ISimulatedBroadlinkDevice? Broadlink => _devices.TryGetValue(BroadlinkDeviceName, out ISimulatedDevice? device) ? device as ISimulatedBroadlinkDevice : null;
 
     /// <inheritdoc/>
     public void RegisterDevice(string name, ISimulatedDeviceBuilder builder)
