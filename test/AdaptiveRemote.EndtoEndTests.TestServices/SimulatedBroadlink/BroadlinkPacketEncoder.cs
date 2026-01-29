@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.NetworkInformation;
 
 namespace AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
@@ -12,7 +11,7 @@ internal static class BroadlinkPacketEncoder
     private const int HeaderSize = 0x38;
     private static readonly byte[] Preamble = [0x5a, 0xa5, 0xaa, 0x55, 0x5a, 0xa5, 0xaa, 0x55];
 
-    public static byte[] EncodeScanResponse(IPEndPoint _, short deviceType, PhysicalAddress macAddress, bool isLocked)
+    public static byte[] EncodeScanResponse(short deviceType, PhysicalAddress macAddress, bool isLocked)
     {
         byte[] response = new byte[0x80];
 

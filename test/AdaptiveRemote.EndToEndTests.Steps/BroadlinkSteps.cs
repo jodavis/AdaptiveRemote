@@ -8,8 +8,8 @@ namespace AdaptiveRemote.EndToEndTests.Steps;
 [Binding]
 public class BroadlinkSteps : StepsBase
 {
-    [Then(@"I should see the Broadlink device recorded at least one outbound packet")]
-    public void ThenIShouldSeeTheBroadlinkDeviceRecordedAtLeastOneOutboundPacket()
+    [Then(@"I should see the Broadlink device recorded at least one inbound packet")]
+    public void ThenIShouldSeeTheBroadlinkDeviceRecordedAtLeastOneInboundPacket()
     {
         ISimulatedBroadlinkDevice? device = Environment.Broadlink;
         if (device == null)
@@ -31,10 +31,10 @@ public class BroadlinkSteps : StepsBase
             IReadOnlyList<RecordedPacket> packets = device.GetRecordedPackets();
             string recordedPackets = string.Join(", ", packets.Select(p =>
                 $"[{p.ReceivedAt:HH:mm:ss.fff}] {(p.IsInbound ? "←" : "→")} {p.DebugDescription}"));
-            Assert.Fail($"Expected Broadlink device to record at least one outbound packet with IR data, but none were found. Recorded packets: {recordedPackets}");
+            Assert.Fail($"Expected Broadlink device to record at least one inbound packet with IR data, but none were found. Recorded packets: {recordedPackets}");
         }
 
-        TestContext.WriteLine("Successfully verified Broadlink device recorded outbound packet with IR data");
+        TestContext.WriteLine("Successfully verified Broadlink device recorded inbound packet with IR data");
     }
 
     [Then(@"the recorded Broadlink packet's raw payload should not be empty")]

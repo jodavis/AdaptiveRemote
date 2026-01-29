@@ -9,7 +9,7 @@ Scenario: Broadlink receives Power command
 	Then I should see the application in the Ready phase
 	And I should not see any warning or error messages in the logs
 	When I click on the 'Power' button
-	Then I should see the Broadlink device recorded at least one outbound packet
+	Then I should see the Broadlink device recorded at least one inbound packet
 	And the recorded Broadlink packet's raw payload should not be empty
 	And no Broadlink packets should be marked as malformed
 	When I click on the 'Exit' button

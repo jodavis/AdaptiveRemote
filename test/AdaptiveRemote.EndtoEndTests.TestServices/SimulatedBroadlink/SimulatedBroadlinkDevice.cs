@@ -16,7 +16,6 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
     private const short DefaultDeviceType = 0x2737; // RM Mini 3
     private const int AuthenticateCommand = 0x65;
     private const int SendDataCommand = 0x6A;
-    private const int DiscoveryResponsePort = 80; // Real devices respond on port 80
 
     private readonly ILogger _logger;
     private readonly UdpClient _udpClient;
@@ -166,7 +165,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
             else
             {
                 _logger.LogWarning("Failed to decode packet from {RemoteEndPoint}: {Error}", remoteEndPoint, error);
-                RecordMalformedPacket(remoteEndPoint, data, error ?? "Unknown error");
+                RecordMalformedPacket(remoteEndPoint, error ?? "Unknown error");
             }
         }
         catch (Exception ex)
@@ -181,7 +180,6 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         {
             // Build discovery response
             byte[] response = BroadlinkPacketEncoder.EncodeScanResponse(
-                new IPEndPoint(IPAddress.Loopback, Port),
                 DefaultDeviceType,
                 _macAddress,
                 isLocked: false);
@@ -291,7 +289,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to decrypt payload");
-            RecordMalformedPacket(remoteEndPoint, packet.Payload, "Decryption failed");
+            RecordMalformedPacket(remoteEndPoint, "Decryption failed");
             return;
         }
 
@@ -301,9 +299,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         if (decryptedPayload.Length >= 6)
         {
             short dataLength = BitConverter.ToInt16(decryptedPayload, 0);
-#pragma warning disable IDE0059 // Unnecessary assignment of a value
-            int command = BitConverter.ToInt32(decryptedPayload, 2);
-#pragma warning restore IDE0059 // Unnecessary assignment of a value
+            // Command type at offset 2 (not currently validated)
 
             if (decryptedPayload.Length >= 6 + (dataLength - 4))
             {
@@ -345,7 +341,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         _logger.LogInformation("Recorded packet: {Description}", packet.DebugDescription);
     }
 
-    private void RecordMalformedPacket(EndPoint remoteEndPoint, byte[] _, string error)
+    private void RecordMalformedPacket(EndPoint remoteEndPoint, string error)
     {
         RecordPacket(new RecordedPacket
         {

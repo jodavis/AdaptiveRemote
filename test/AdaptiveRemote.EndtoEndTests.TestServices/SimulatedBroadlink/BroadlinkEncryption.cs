@@ -16,7 +16,7 @@ internal sealed class BroadlinkEncryption : IDisposable
     public BroadlinkEncryption(byte[]? key = null)
     {
         _aes = Aes.Create();
-        _aes.KeySize = 256;
+        _aes.KeySize = 128; // 128-bit AES (key is 16 bytes)
         _aes.BlockSize = 128;
         _aes.Mode = CipherMode.CBC;
         _aes.IV = InitialVector;
@@ -32,7 +32,9 @@ internal sealed class BroadlinkEncryption : IDisposable
 
         cryptoStream.Write(data);
 
-        // Add padding if needed
+        // Add padding to make data length a multiple of 16 bytes (AES block size)
+        // Broadlink uses a non-standard padding: fill to next 16-byte boundary using (8192 - length) % 16
+        // This matches the protocol implementation used by real devices
         int padding = (8192 - data.Length) % 16;
         if (padding > 0)
         {
