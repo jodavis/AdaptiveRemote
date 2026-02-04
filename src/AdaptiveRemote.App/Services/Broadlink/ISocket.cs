@@ -10,6 +10,11 @@ namespace AdaptiveRemote.Services.Broadlink;
 public interface ISocket : IDisposable
 {
     /// <summary>
+    /// Gets the local endpoint of the socket.
+    /// </summary>
+    EndPoint? LocalEndPoint { get; }
+
+    /// <summary>
     /// Sends data to the specified remote host.
     /// </summary>
     /// <param name="packet">The buffer for the data to send.</param>

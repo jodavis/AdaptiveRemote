@@ -14,6 +14,8 @@ internal class SocketWrapper : ISocket
         _socket = socket;
     }
 
+    EndPoint? ISocket.LocalEndPoint => _socket.LocalEndPoint;
+
     ValueTask<int> ISocket.SendToAsync(ReadOnlyMemory<byte> packet, EndPoint endPoint, CancellationToken cancellationToken)
         => _socket.SendToAsync(packet, endPoint, cancellationToken);
     ValueTask<SocketReceiveFromResult> ISocket.ReceiveFromAsync(Memory<byte> buffer, EndPoint remoteEP, CancellationToken cancellationToken)

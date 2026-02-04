@@ -10,7 +10,7 @@ namespace AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 /// Simulates a TiVo device for E2E testing.
 /// Accepts TCP connections and records messages according to the TiVo protocol.
 /// </summary>
-public sealed class SimulatedTiVoDevice : ISimulatedDevice
+public sealed class SimulatedTiVoDevice : ISimulatedTiVoDevice
 {
     private readonly ILogger _logger;
     private readonly TcpListener _listener;
