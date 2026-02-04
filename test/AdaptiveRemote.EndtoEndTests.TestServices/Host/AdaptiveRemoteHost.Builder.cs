@@ -66,7 +66,7 @@ public partial class AdaptiveRemoteHost
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = false
             };
 
             foreach (KeyValuePair<string, string> kvp in _settings.EnvironmentVariables)

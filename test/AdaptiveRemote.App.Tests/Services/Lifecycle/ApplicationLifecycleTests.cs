@@ -224,13 +224,15 @@ public class ApplicationLifecycleTests
 
         // In .NET 10, StartAsync returns immediately, so we need to wait for services to start initializing
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync should complete quickly");
-        MockLogger.WaitForMessageAsync(Expect_InitializingMessage(MockService3), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Services should start initializing");
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_Initializing(MockService3.Object.Name), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Services should start initializing");
 
         // Act
         tcs.SetException(expectedError1);
 
         // Wait for cleanup to complete
-        MockLogger.WaitForMessageAsync(Expect_CleanedUpMessage(MockService3), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Cleanup should complete after error");
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_CleanedUp(MockService3.Object.Name), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Cleanup should complete after error");
 
         // Assert
         MockLogger.VerifyMessages(log =>
@@ -296,7 +298,7 @@ public class ApplicationLifecycleTests
         Expect_SetFatalErrorOn(MockLifecycleViewController, expectedError1);
 
         Task startTask = sut.StartAsync(default);
-        
+
         // In .NET 10, StartAsync returns immediately, wait for error to be logged
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync completes quickly");
         MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_ScopeConstructionFailed(expectedError1))
@@ -367,7 +369,8 @@ public class ApplicationLifecycleTests
 
         // In .NET 10, StartAsync returns immediately, so we need to wait for initialization to complete
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync should complete quickly");
-        MockLogger.WaitForMessageAsync(Expect_InitializedMessage(MockService3), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "All services should initialize");
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_Initialized(MockService3.Object.Name), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "All services should initialize");
 
         // Act
         Task stopTask = sut.StopAsync(default);
@@ -412,7 +415,8 @@ public class ApplicationLifecycleTests
 
         // In .NET 10, StartAsync returns immediately, so we need to wait for initialization to complete
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync should complete quickly");
-        MockLogger.WaitForMessageAsync(Expect_InitializedMessage(MockService3), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "All services should initialize");
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_Initialized(MockService3.Object.Name), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "All services should initialize");
 
         // Act
         Task stopTask = sut.StopAsync(default);
@@ -458,7 +462,8 @@ public class ApplicationLifecycleTests
 
         // In .NET 10, StartAsync returns immediately, so we need to wait for initialization to complete
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync should complete quickly");
-        MockLogger.WaitForMessageAsync(Expect_InitializedMessage(MockService3), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "All services should initialize");
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_Initialized(MockService3.Object.Name), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "All services should initialize");
 
         // Act
         Task stopTask = sut.StopAsync(default);
@@ -503,7 +508,8 @@ public class ApplicationLifecycleTests
 
         // In .NET 10, StartAsync returns immediately, so we need to wait for initialization to start
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync should complete quickly");
-        MockLogger.WaitForMessageAsync(Expect_InitializingMessage(MockService2), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "MockService2 should start initializing");
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_Initializing(MockService2.Object.Name), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "MockService2 should start initializing");
 
         // Act
         Task stopTask = sut.StopAsync(default);
@@ -547,10 +553,10 @@ public class ApplicationLifecycleTests
         Expect_CleanupAsyncOn(MockService2);
 
         Task startTask = sut.StartAsync(default);
-        
+
         // In .NET 10, StartAsync returns immediately, so we need to wait for initialization to complete
         startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StartAsync should complete quickly");
-        MockLogger.WaitForMessageAsync(Expect_CleanedUpMessage(MockService2), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Cleanup should complete after initialization failure");
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name), TimeSpan.FromSeconds(1)).Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Cleanup should complete after initialization failure");
 
         // Act
         Task stopTask = sut.StopAsync(default);

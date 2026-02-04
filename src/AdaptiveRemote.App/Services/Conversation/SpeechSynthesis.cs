@@ -50,6 +50,7 @@ internal class SpeechSynthesis : ISpeechSynthesis
         if (Interlocked.Exchange(ref _isSpeaking, 1) == 1)
         {
             _logger.SpeechSynthesis_AlreadySpeaking(phrase);
+            throw new InvalidOperationException($"Cannot say '{phrase}'; another phrase is already in progress");
         }
 
         using (_listeningController.Pause())
