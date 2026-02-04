@@ -1,12 +1,20 @@
 {
   "profiles": {
-    "AdaptiveRemote.Headless": {
-      "commandName": "Project",
-      "launchBrowser": true,
+    "FakeConversation": {
+      "applicationUrl": "http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://localhost:60162;http://localhost:60163"
+      "commandName": "Project",
+      "commandLineArgs": "--conversation:Fake=true --telemetry:Publish=False --tivo:Fake=True --broadlink:Fake=True"
+    },
+    "FakeDevices": {
+      "applicationUrl": "http://localhost:5000",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "commandName": "Project",
+      "commandLineArgs": "--tivo:Fake=True --broadlink:Fake=True --playwright:Headless=False"
     }
   }
 }

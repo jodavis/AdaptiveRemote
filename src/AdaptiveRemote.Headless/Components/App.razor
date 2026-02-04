@@ -1,5 +1,3 @@
-@using AdaptiveRemote.Components
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,14 +5,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="stylesheet" href="css/app.min.css" />
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["css/app.min.css"]" />
+    <ImportMap />
     <HeadOutlet />
 </head>
 
 <body>
     <Routes />
-    <script src="_framework/blazor.web.js"></script>
+    <script src="@Assets["/_framework/blazor.web.js"]"></script>
 </body>
 
 </html>
