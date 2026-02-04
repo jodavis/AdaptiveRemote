@@ -6,7 +6,6 @@ This script generates training data variations from the 01_input_phrases.csv fil
 for fine-tuning an LLM to handle remote control commands as a fallback.
 """
 
-import xml.etree.ElementTree as ET
 import csv
 import random
 import re
@@ -95,7 +94,7 @@ class VariationGenerator:
         self.target_samples = target_samples
         (self.generated, self.existing_variations) = self.load_existing_variations(OUTPUT_FILE)
 
-    def load_existing_variations(self, filepath: Path) -> (set | List[Dict[str, str]]):
+    def load_existing_variations(self, filepath: Path) -> Tuple[set, List[Dict[str, str]]]:
         """Load existing variations from a CSV file to avoid duplicates."""
         variations = []
         generated_keys = set()

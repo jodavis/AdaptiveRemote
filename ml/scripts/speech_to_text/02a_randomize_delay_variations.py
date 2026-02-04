@@ -3,9 +3,6 @@ from pathlib import Path
 import pandas as pd
 import random
 import os
-import asyncio
-import edge_tts
-from tqdm import tqdm
 
 # Settings
 # Delay frequency

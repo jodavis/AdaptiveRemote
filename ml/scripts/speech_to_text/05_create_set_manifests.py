@@ -3,7 +3,6 @@ import argparse
 import os
 from pathlib import Path
 import random
-import zipfile
 import csv
 import re
 
@@ -37,7 +36,8 @@ for input_dir in [paths.clean_dir, paths.noisy_dir]:
             file_path = Path(root) / file
             all_files.append(str(file_path.resolve()))
 
-# Shuffle the list
+# Shuffle the list (seeded for reproducibility)
+random.seed(42)
 random.shuffle(all_files)
 
 total_files = len(all_files)

@@ -1,5 +1,4 @@
 import argparse
-import csv
 from pathlib import Path
 import os
 import numpy as np
@@ -36,7 +35,8 @@ print(f"Loaded {len(training_set)} training samples from manifest.")
 with open(paths.vocab, 'r', encoding='utf-8') as vocabfile:
     vocab_list = [line.strip() for line in vocabfile if line.strip()]
     num_classes = len(vocab_list) + 1  # +1 for CTC blank token
-    print(f"Vocabulary size: {len(vocab_list)}, Number of classes (with CTC blank): {num_classes}")
+    ctc_blank_idx = len(vocab_list)  # CTC blank token is at the last index
+    print(f"Vocabulary size: {len(vocab_list)}, Number of classes (with CTC blank): {num_classes}, CTC blank index: {ctc_blank_idx}")
 
 input_layer = Input(shape=(n_mels, time_steps), name='input')
 x = layers.Reshape((n_mels, time_steps, 1))(input_layer)
@@ -58,15 +58,10 @@ model.summary()
 model.compile(optimizer='adam', loss='categorical_crossentropy')  # placeholder
 print("Model compiled.")
 
-# Custom CTC loss layer for Keras functional API
-def ctc_loss_fn(y_true, y_pred, input_length, label_length):
-    return tf.keras.backend.ctc_batch_cost(y_true, y_pred, input_length, label_length)
-
 x_train = []
 y_train = []
 
 # Prepare input/output pairs for training
-input_output_pairs = []
 for _, row in tqdm(training_set.iterrows(), total=len(training_set), desc="Loading training data"):
     wav_path = row['filepath']
     # Get the corresponding spectrogram/tokens NPY file path
@@ -91,7 +86,9 @@ for epoch in range(epochs):
             y_pred = model(x_batch, training=True)
             # Compute prediction lengths (time steps of y_pred)
             pred_len = tf.fill([tf.shape(y_pred)[0], 1], tf.shape(y_pred)[1])
-            lbl_len_reshaped = tf.fill([tf.shape(y_batch)[0], 1], tf.shape(y_batch)[1])
+            # Compute true label lengths by counting non-padding tokens (assumes 0 is padding)
+            lbl_len = tf.math.count_nonzero(y_batch, axis=1, dtype=tf.int32)
+            lbl_len_reshaped = tf.expand_dims(lbl_len, axis=1)
             loss = tf.keras.backend.ctc_batch_cost(y_batch, y_pred, pred_len, lbl_len_reshaped)
         grads = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(grads, model.trainable_variables))

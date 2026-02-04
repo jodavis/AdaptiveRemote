@@ -1,12 +1,9 @@
 import argparse
-import csv
 from pathlib import Path
 import os
 import numpy as np
 import pandas as pd
-from tensorflow.keras import layers, Model, Input
 from tqdm import tqdm
-from jiwer import wer
 from zipfile import ZipFile
 
 print("Initializing TensorFlow...")
@@ -19,7 +16,7 @@ time_steps = 360 # number of time steps in spectrogram input
 batch_size = 32 # evaluation batch size
 
 # Parse command-line arguments
-parser = argparse.ArgumentParser(description="Train speech-to-text model.")
+parser = argparse.ArgumentParser(description="Evaluate test samples and create ZIP of successfully recognized files.")
 parser.add_argument('--manifest', type=Path, required=True, help='Path to test_manifest.csv')
 parser.add_argument('--model', type=Path, required=True, help='Path to model file (speech_to_text_model.keras)')
 parser.add_argument('--vocab', type=Path, required=True, help='Path to vocab_list.txt')
@@ -37,7 +34,6 @@ print(f"Loaded {len(eval_set)} evaluation samples from manifest.")
 # Prepare input/output pairs for evaluation
 x_eval = []
 y_eval = []
-input_output_pairs = []
 for _, row in tqdm(eval_set.iterrows(), total=len(eval_set), desc="Loading evaluation data"):
     wav_path = row['filepath']
     # Get the corresponding spectrogram/tokens NPY file path
@@ -56,8 +52,8 @@ print(f"Loaded {paths.model}")
 # Load the vocabulary list from vocab file
 with open(paths.vocab, 'r', encoding='utf-8') as vocabfile:
     vocab_list = [line.strip() for line in vocabfile if line.strip()]
-    ctc_blank_idx = len(vocab_list) + 1  # +1 for CTC blank token
-    print(f"Vocabulary size: {len(vocab_list)}, Number of classes (with CTC blank): {ctc_blank_idx}")
+    ctc_blank_idx = len(vocab_list)  # CTC blank token is conventionally at the last index
+    print(f"Vocabulary size: {len(vocab_list)}, Number of classes (with CTC blank): {len(vocab_list) + 1}")
 
 def ctc_greedy_decode(pred, blank=ctc_blank_idx):
     pred_ids = np.argmax(pred, axis=-1)

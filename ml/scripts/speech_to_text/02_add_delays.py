@@ -1,7 +1,6 @@
 import argparse
 import os
 from pathlib import Path
-import random
 import pandas as pd
 import soundfile as sf
 import numpy as np
