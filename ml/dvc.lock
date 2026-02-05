@@ -411,3 +411,44 @@ stages:
       hash: md5
       md5: 6a24997521d72c2fcd29156b5913db28
       size: 30496252
+  download_phoneme_dictionary:
+    cmd: python scripts/intent_prediction/02a_download_phoneme_dictionary.py 
+      --output-dir data/intent_prediction/02a_download_phoneme_dictionary
+    deps:
+    - path: scripts/intent_prediction/02a_download_phoneme_dictionary.py
+      hash: md5
+      md5: 9139babb2ed1d7e20e9d872ad4e489fa
+      size: 1294
+    outs:
+    - path: data/intent_prediction/02a_download_phoneme_dictionary
+      hash: md5
+      md5: 7f611dbd557e8d9909fb2b433972e7f7.dir
+      size: 3717096
+      nfiles: 2
+  compute_intent_vocab:
+    cmd: python scripts/intent_prediction/02_compute_vocab.py 
+      --phoneme-dictionary-dir 
+      data/intent_prediction/02a_download_phoneme_dictionary 
+      --training-data-file 
+      data/intent_prediction/01_generate_phrases/training_data.csv --output-dir 
+      data/intent_prediction/02_compute_vocab
+    deps:
+    - path: data/intent_prediction/01_generate_phrases/training_data.csv
+      hash: md5
+      md5: b2389396a57cb3e1743a90d440f1f3f0
+      size: 1109671
+    - path: data/intent_prediction/02a_download_phoneme_dictionary
+      hash: md5
+      md5: 7f611dbd557e8d9909fb2b433972e7f7.dir
+      size: 3717096
+      nfiles: 2
+    - path: scripts/intent_prediction/02_compute_vocab.py
+      hash: md5
+      md5: 01080d1e71c108ff25c87d73291e4db3
+      size: 4539
+    outs:
+    - path: data/intent_prediction/02_compute_vocab
+      hash: md5
+      md5: 7980382ea2c6ff94e890ec91376028a2.dir
+      size: 11488
+      nfiles: 3

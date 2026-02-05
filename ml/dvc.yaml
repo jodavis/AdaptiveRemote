@@ -4,6 +4,14 @@ vars:
       script: "scripts/intent_prediction/01_generate_phrases.py"
       phrasefile: "scripts/intent_prediction/01_input_phrases.csv"
       outputfile: "data/intent_prediction/01_generate_phrases/training_data.csv"
+  - intent02a:
+      name: "02a_download_phoneme_dictionary"
+      script: "scripts/intent_prediction/02a_download_phoneme_dictionary.py"
+      phoneme_dictionary_dir: "data/intent_prediction/02a_download_phoneme_dictionary"
+  - intent02:
+      name: "02_compute_vocab"
+      script: "scripts/intent_prediction/02_compute_vocab.py"
+      vocab_directory: "data/intent_prediction/02_compute_vocab"
 
   - tts01a: 
       name: "01a_generate_speech_sample_variations"
@@ -68,7 +76,23 @@ stages:
     outs:
     - ${intent01.outputfile}:
         persist: true
-
+  download_phoneme_dictionary:
+    cmd: python ${intent02a.script} --output-dir ${intent02a.phoneme_dictionary_dir}
+    deps:
+    - ${intent02a.script}
+    outs:
+    - ${intent02a.phoneme_dictionary_dir}
+  compute_intent_vocab:
+    cmd: python ${intent02.script} --phoneme-dictionary-dir ${intent02a.phoneme_dictionary_dir}
+                                   --training-data-file ${intent01.outputfile}
+                                   --output-dir ${intent02.vocab_directory}
+    deps:
+    - ${intent02.script}
+    - ${intent01.outputfile}
+    - ${intent02a.phoneme_dictionary_dir}
+    outs:
+    - ${intent02.vocab_directory}
+    
   # Speech-to-Text Data Preparation and Model Training Stages
   generate_speech_sample_variations:
     cmd: python ${tts01a.script} --input-file ${intent01.outputfile}
