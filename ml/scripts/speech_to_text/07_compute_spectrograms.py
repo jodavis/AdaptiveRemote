@@ -17,17 +17,10 @@ parser = argparse.ArgumentParser(description="Compute log-mel spectrograms for a
 parser.add_argument('--train-manifest', type=Path, required=True, help='Path to train_manifest.csv')
 parser.add_argument('--eval-manifest', type=Path, required=True, help='Path to eval_manifest.csv')
 parser.add_argument('--test-manifest', type=Path, required=True, help='Path to test_manifest.csv')
-parser.add_argument('--vocab', type=Path, required=True, help='Path to vocab_list.txt')
 parser.add_argument('--output-dir', type=Path, required=True, help='Directory for output spectrogram npy files')
 paths = parser.parse_args()
 
 os.makedirs(paths.output_dir, exist_ok=True)
-
-# Read the vocabulary list from vocab file
-with open(paths.vocab, 'r', encoding='utf-8') as vocabfile:
-    vocab_list = [line.strip() for line in vocabfile if line.strip()]
-print(f"Loaded vocabulary list with {len(vocab_list)} entries.")
-pad_value = len(vocab_list)  # Padding token index
 
 def compute_melspectrogram(time_steps, wav_path):
     y, sr = sf.read(str(wav_path))
@@ -44,12 +37,6 @@ def compute_melspectrogram(time_steps, wav_path):
         log_S = log_S[:, :time_steps]
     return log_S
 
-def compute_tokens(vocab_list, transcription):
-    transcription = transcription.lower().replace(',', ' ')
-    tokens = [vocab_list.index(word) for word in transcription.split() if word in vocab_list]
-    tokens = tokens + [pad_value]*(input_token_length-len(tokens)) if len(tokens)<input_token_length else tokens[:input_token_length]
-    return tokens
-
 def load_rows_from_manifest(manifest_path):
     loaded_rows = pd.read_csv(manifest_path, encoding='utf-8')
     print(f"Loaded {len(loaded_rows)} samples from {manifest_path}.")
@@ -63,12 +50,9 @@ for wav_path, transcription in tqdm(manifest_rows, desc="Computing spectrograms 
     wav_path = Path(wav_path)
     try:
         log_S = compute_melspectrogram(time_steps, wav_path)
-        tokens = compute_tokens(vocab_list, transcription)
 
         out_path = paths.output_dir / (wav_path.stem + '.npy')
         np.save(out_path, log_S)
-        out_path = paths.output_dir / (wav_path.stem + '_tokens.npy')
-        np.save(out_path, np.array(tokens, dtype=np.int32))
     except Exception as e:
         print(f'Error processing {wav_path}: {e}')
 

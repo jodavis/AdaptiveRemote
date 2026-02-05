@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 import os
+import json
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -21,6 +22,7 @@ parser.add_argument('--manifest', type=Path, required=True, help='Path to test_m
 parser.add_argument('--model', type=Path, required=True, help='Path to model file (speech_to_text_model.keras)')
 parser.add_argument('--vocab', type=Path, required=True, help='Path to vocab_list.txt')
 parser.add_argument('--spectrogram-dir', type=Path, required=True, help='Directory with spectrogram npy files')
+parser.add_argument('--token-list-dir', type=Path, required=True, help='Directory with token list JSON files')
 parser.add_argument('--output-zip', type=Path, required=True, help='Path for output zip file')
 paths = parser.parse_args()
 
@@ -39,10 +41,11 @@ for _, row in tqdm(eval_set.iterrows(), total=len(eval_set), desc="Loading evalu
     # Get the corresponding spectrogram/tokens NPY file path
     wav_filename = Path(wav_path).stem
     spectrogram_file = paths.spectrogram_dir / f"{wav_filename}.npy"
-    tokens_file = paths.spectrogram_dir / f"{wav_filename}_tokens.npy"
-    # Load the numpy array from the npy file
+    tokens_file = paths.token_list_dir / f"{wav_filename}_tokens.json"
+    # Load the spectrogram and tokens
     x_eval.append(np.load(spectrogram_file))
-    y_eval.append(np.load(tokens_file))
+    with open(tokens_file, 'r', encoding='utf-8') as f:
+        y_eval.append(np.array(json.load(f)['tokens'], dtype=np.int32))
 
 # Load the trained model
 print("Loading speech-to-text model...")

@@ -46,9 +46,9 @@ vars:
       script: "scripts/speech_to_text/05_create_set_manifests.py"
       speech_sample_manifests: "data/speech_to_text/05_create_set_manifests"
   - tts06:
-      name: "06_create_vocab_list"
-      script: "scripts/speech_to_text/06_create_vocab_list.py"
-      vocab_list: "data/speech_to_text/06_create_vocab_list/vocab_list.txt"
+      name: "06_compute_token_lists"
+      script: "scripts/speech_to_text/06_compute_token_lists.py"
+      token_lists: "data/speech_to_text/06_compute_token_lists"
   - tts07:
       name: "07_compute_spectrograms"
       script: "scripts/speech_to_text/07_compute_spectrograms.py"
@@ -160,25 +160,32 @@ stages:
     - ${tts05.script}
     outs:
     - ${tts05.speech_sample_manifests}
-  create_vocab_list:
-    cmd: python ${tts06.script} --input-file ${intent01.outputfile} 
-                                --output-file ${tts06.vocab_list}
+  compute_token_lists:
+    cmd: python ${tts06.script} --train-manifest ${tts05.speech_sample_manifests}/train_manifest.csv
+                                --eval-manifest ${tts05.speech_sample_manifests}/val_manifest.csv
+                                --test-manifest ${tts05.speech_sample_manifests}/test_manifest.csv
+                                --phoneme-list ${intent02.vocab_directory}/phoneme_list.txt
+                                --words-to-phonemes ${intent02.vocab_directory}/words_to_phonemes.json
+                                --output-dir ${tts06.token_lists}
     deps:
-    - ${intent01.outputfile}
     - ${tts06.script}
+    - ${tts05.speech_sample_manifests}/train_manifest.csv
+    - ${tts05.speech_sample_manifests}/val_manifest.csv
+    - ${tts05.speech_sample_manifests}/test_manifest.csv
+    - ${intent02.vocab_directory}/phoneme_list.txt
+    - ${intent02.vocab_directory}/words_to_phonemes.json
     outs:
-    - ${tts06.vocab_list}
+    - ${tts06.token_lists}
   compute_spectrograms:
     cmd: python ${tts07.script} --train-manifest ${tts05.speech_sample_manifests}/train_manifest.csv
                                 --eval-manifest ${tts05.speech_sample_manifests}/val_manifest.csv
                                 --test-manifest ${tts05.speech_sample_manifests}/test_manifest.csv
-                                --vocab ${tts06.vocab_list}
                                 --output-dir ${tts07.speech_sample_spectrograms}
     deps:
     - ${tts01.clean_speech_samples}
     - ${tts04.noisy_speech_samples}
     - ${tts05.speech_sample_manifests}
-    - ${tts06.vocab_list}
+    - ${intent02.vocab_directory}/phoneme_list.txt
     - ${tts07.script}
     outs:
     - ${tts07.speech_sample_spectrograms}
@@ -190,41 +197,46 @@ stages:
     - ${tts03a.background_noise_samples}
   train_model:
     cmd: python ${tts08.script} --manifest ${tts05.speech_sample_manifests}/train_manifest.csv 
-                                --vocab ${tts06.vocab_list}
+                                --vocab ${intent02.vocab_directory}/phoneme_list.txt
                                 --spectrogram-dir ${tts07.speech_sample_spectrograms}
+                                --token-list-dir ${tts06.token_lists}
                                 --output-dir ${tts08.speech_to_text_model}
     deps:
     - ${tts05.speech_sample_manifests}/train_manifest.csv
-    - ${tts06.vocab_list}
+    - ${intent02.vocab_directory}/phoneme_list.txt
     - ${tts07.speech_sample_spectrograms}
     - ${tts08.script}
     outs:
     - ${tts08.speech_to_text_model}
   evaluate_model:
     cmd: python ${tts09.script} --manifest ${tts05.speech_sample_manifests}/val_manifest.csv 
-                                --vocab ${tts06.vocab_list}
+                                --vocab ${intent02.vocab_directory}/phoneme_list.txt
                                 --model ${tts08.speech_to_text_model}/speech_to_text_model.keras
                                 --spectrogram-dir ${tts07.speech_sample_spectrograms}
+                                --token-list-dir ${tts06.token_lists}
                                 --output-dir ${tts09.evaluation_results}
     deps:
     - ${tts05.speech_sample_manifests}/val_manifest.csv
-    - ${tts06.vocab_list}
+    - ${intent02.vocab_directory}/phoneme_list.txt
     - ${tts07.speech_sample_spectrograms}
     - ${tts08.speech_to_text_model}/speech_to_text_model.keras
+    - ${tts06.token_lists}
     - ${tts09.script}
     outs:
     - ${tts09.evaluation_results}
   evaluate_test_samples:
     cmd: python ${tts10.script} --manifest ${tts05.speech_sample_manifests}/test_manifest.csv
-                                --vocab ${tts06.vocab_list}
+                                --vocab ${intent02.vocab_directory}/phoneme_list.txt
                                 --model ${tts08.speech_to_text_model}/speech_to_text_model.keras
                                 --spectrogram-dir ${tts07.speech_sample_spectrograms}
+                                --token-list-dir ${tts06.token_lists}
                                 --output-zip ${tts10.test_samples_zip}
     deps:
     - ${tts05.speech_sample_manifests}/test_manifest.csv
-    - ${tts06.vocab_list}
+    - ${intent02.vocab_directory}/phoneme_list.txt
     - ${tts07.speech_sample_spectrograms}
     - ${tts08.speech_to_text_model}/speech_to_text_model.keras
+    - ${tts06.token_lists}
     - ${tts10.script}
     outs:
     - ${tts10.test_samples_zip}
