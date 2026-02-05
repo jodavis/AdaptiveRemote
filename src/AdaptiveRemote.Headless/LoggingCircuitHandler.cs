@@ -1,3 +1,4 @@
+using AdaptiveRemote.Headless.Logging;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 
 namespace AdaptiveRemote.Headless;
@@ -7,34 +8,34 @@ namespace AdaptiveRemote.Headless;
 /// </summary>
 internal class LoggingCircuitHandler : CircuitHandler
 {
-    private readonly ILogger<LoggingCircuitHandler> _logger;
+    private readonly HeadlessHostMessageLogger _logger;
 
     public LoggingCircuitHandler(ILogger<LoggingCircuitHandler> logger)
     {
-        _logger = logger;
+        _logger = new(logger);
     }
 
     public override Task OnCircuitOpenedAsync(Circuit circuit, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Circuit opened: {CircuitId}", circuit.Id);
+        _logger.CircuitHandler_Opened(circuit.Id);
         return Task.CompletedTask;
     }
 
     public override Task OnCircuitClosedAsync(Circuit circuit, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Circuit closed: {CircuitId}", circuit.Id);
+        _logger.CircuitHandler_Closed(circuit.Id);
         return Task.CompletedTask;
     }
 
     public override Task OnConnectionUpAsync(Circuit circuit, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Connection up: {CircuitId}", circuit.Id);
+        _logger.CircuitHandler_ConnectionUp(circuit.Id);
         return Task.CompletedTask;
     }
 
     public override Task OnConnectionDownAsync(Circuit circuit, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Connection down: {CircuitId}", circuit.Id);
+        _logger.CircuitHandler_ConnectionDown(circuit.Id);
         return Task.CompletedTask;
     }
 }
