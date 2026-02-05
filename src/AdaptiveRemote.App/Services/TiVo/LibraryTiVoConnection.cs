@@ -11,13 +11,13 @@ internal class LibraryTiVoConnection : ITiVoConnection
 {
     private Client? _client;
     private readonly string _description;
-    private readonly ILogger _logger;
+    private readonly MessageLogger _logger;
 
     private LibraryTiVoConnection(string host, int port, ILogger logger)
     {
         _client = new Client(host, port);
         _description = $"{host}:{port}";
-        _logger = logger;
+        _logger = new(logger);
 
         _client.Error += OnError;
         _client.EventReceived += OnEventReceived;
@@ -25,7 +25,7 @@ internal class LibraryTiVoConnection : ITiVoConnection
         _client.MessageSent += OnMessageSent;
 
         _client.Connect();
-        _logger.LogInformation(Message.TiVoConnection_Connected, _description);
+        _logger.TiVoConnection_Connected(_description);
     }
 
     Task ITiVoConnection.DisposeAsync(CancellationToken cancellationToken)
@@ -34,7 +34,7 @@ internal class LibraryTiVoConnection : ITiVoConnection
 
         if (client is not null)
         {
-            _logger.LogInformation(Message.TiVoConnection_Disconnecting, _description);
+            _logger.TiVoConnection_Disconnecting(_description);
 
             client.Close();
             client.Dispose();
@@ -60,13 +60,13 @@ internal class LibraryTiVoConnection : ITiVoConnection
     }
 
     private void OnMessageSent(object? sender, MessageSentEventArgs e)
-        => _logger.LogInformation(Message.TiVoConnection_MessageSent, e.Message);
+        => _logger.TiVoConnection_MessageSent(e.Message);
     private void OnMessageReceived(object? sender, MessageReceivedEventArgs e)
-        => _logger.LogInformation(Message.TiVoConnection_MessageReceived, e.Message);
+        => _logger.TiVoConnection_MessageReceived(e.Message);
     private void OnEventReceived(object? sender, ResponseEventArgs e)
-        => _logger.LogInformation(Message.TiVoConnection_EventReceived, e.Response.Code, e.Response.InResponseToCode, e.Response.Value);
+        => _logger.TiVoConnection_EventReceived(e.Response.Code, e.Response.InResponseToCode, e.Response.Value);
     private void OnError(object? sender, ErrorEventArgs e)
-        => _logger.LogInformation(Message.TiVoConnection_Error, e.GetException());
+        => _logger.TiVoConnection_Error(e.GetException());
 
     internal class Factory : ITiVoConnection.Factory
     {

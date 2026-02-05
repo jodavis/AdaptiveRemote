@@ -6,7 +6,7 @@ namespace AdaptiveRemote.Services.Conversation;
 internal class ListeningController : IListeningController
 {
     private readonly ISpeechRecognitionEngine _engine;
-    private readonly ILogger<ListeningController> _logger;
+    private readonly MessageLogger _logger;
     private readonly object _lockObject = new();
 
     private int _listenCount = 0;
@@ -16,7 +16,7 @@ internal class ListeningController : IListeningController
     public ListeningController(ISpeechRecognitionEngine engine, ILogger<ListeningController> logger)
     {
         _engine = engine;
-        _logger = logger;
+        _logger = new(logger);
     }
 
     IDisposable IListeningController.Listen() => new Listener(this);
@@ -27,8 +27,6 @@ internal class ListeningController : IListeningController
     {
         lock (_lockObject)
         {
-            Message errorMessage = Message.ListeningController_RecognizeAsyncError;
-
             _listenCount += listenDelta;
             _pauseCount += pauseDelta;
 
@@ -38,8 +36,6 @@ internal class ListeningController : IListeningController
                 {
                     if (_listenCount == 0 || _pauseCount > 0)
                     {
-                        errorMessage = Message.ListeningController_RecognizeAsyncCancelError;
-
                         _engine.RecognizeAsyncCancel();
                         _isListening = false;
                     }
@@ -48,8 +44,6 @@ internal class ListeningController : IListeningController
                 {
                     if (_listenCount > 0 && _pauseCount == 0)
                     {
-                        errorMessage = Message.ListeningController_RecognizeAsyncError;
-
                         _engine.Recognize();
                         _isListening = true;
                     }
@@ -57,7 +51,14 @@ internal class ListeningController : IListeningController
             }
             catch (Exception ex)
             {
-                _logger.LogError(errorMessage, ex);
+                if (_isListening)
+                {
+                    _logger.ListeningController_RecognizeAsyncCancelError(ex);
+                }
+                else
+                {
+                    _logger.ListeningController_RecognizeAsyncError(ex);
+                }
 
                 if (undoOnError)
                 {
@@ -69,7 +70,7 @@ internal class ListeningController : IListeningController
             }
             finally
             {
-                _logger.LogInformation(Message.ListeningController_State, _isListening, _listenCount, _pauseCount);
+                _logger.ListeningController_State(_isListening, _listenCount, _pauseCount);
             }
         }
     }

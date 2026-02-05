@@ -26,7 +26,10 @@ public static class HeadlessHostTestHooks
         objectContainer.RegisterInstanceAs(new AdaptiveRemoteHostSettings(
             UIService: UIServiceType.Playwright,
             ExePath: exePath,
-            CommandLineArgs: $"--playwright:TracesDir=\"{tracesDir}\""));
+            CommandLineArgs: $"--playwright:TracesDir=\"{tracesDir}\"",
+            EnvironmentVariables: System.Collections.Immutable.ImmutableDictionary<string, string>.Empty
+                .Add("ASPNETCORE_ENVIRONMENT", "Development")
+            ));
     }
 
     [AfterScenario]

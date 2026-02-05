@@ -21,7 +21,7 @@ internal class PersistSettings : IPersistSettings
 
     private readonly IFileSystem _fileSystem;
     private readonly string _filePath;
-    private readonly ILogger<PersistSettings> _logger;
+    private readonly MessageLogger _logger;
 
     private readonly AsyncLazy<ConcurrentDictionary<string, string>> _lazyValues;
     private readonly object _lockObject = new();
@@ -33,7 +33,7 @@ internal class PersistSettings : IPersistSettings
     {
         _fileSystem = fileSystem;
         _filePath = settings.Value.ProgrammaticSettingsPath;
-        _logger = logger;
+        _logger = new(logger);
 
         _lazyValues = new(LoadExistingSettingsAsync);
     }
@@ -60,7 +60,7 @@ internal class PersistSettings : IPersistSettings
         }
         catch (ArgumentException error)
         {
-            _logger.LogError(Message.ProgrammaticSettings_Rejected, name, value, error.Message);
+            _logger.ProgrammaticSettings_Rejected(name, value, error.Message);
             throw;
         }
     }
@@ -73,11 +73,11 @@ internal class PersistSettings : IPersistSettings
 
             if (values.TryGetValue(name, out string? oldValue))
             {
-                _logger.LogInformation(Message.ProgrammaticSettings_ReplaceSetting, name, oldValue, name, value);
+                _logger.ProgrammaticSettings_ReplaceSetting(name, oldValue, value);
             }
             else
             {
-                _logger.LogInformation(Message.ProgrammaticSettings_AddSetting, name, value);
+                _logger.ProgrammaticSettings_AddSetting(name, value);
             }
             values[name] = value;
 
@@ -85,7 +85,7 @@ internal class PersistSettings : IPersistSettings
         }
         catch (Exception error)
         {
-            _logger.LogError(Message.ProgrammaticSettings_Error, name, value, error);
+            _logger.ProgrammaticSettings_Error(name, value, error);
         }
     }
 
@@ -95,7 +95,7 @@ internal class PersistSettings : IPersistSettings
 
         if (_fileSystem.FileExists(_filePath))
         {
-            _logger.LogInformation(Message.ProgrammaticSettings_LoadingExistingSettings, _filePath);
+            _logger.ProgrammaticSettings_LoadingExistingSettings(_filePath);
 
             using Stream readStream = _fileSystem.OpenRead(_filePath);
             using StreamReader reader = new(readStream);
@@ -107,7 +107,7 @@ internal class PersistSettings : IPersistSettings
                 values.TryAdd(match.Groups[NameKey].Value, match.Groups[ValueKey].Value);
             }
 
-            _logger.LogInformation(Message.ProgrammaticSettings_LoadedExistingSettings, values.Count, _filePath);
+            _logger.ProgrammaticSettings_LoadedExistingSettings(values.Count, _filePath);
         }
 
         return values;
@@ -131,7 +131,7 @@ internal class PersistSettings : IPersistSettings
             {
                 if (!_needsSave)
                 {
-                    _logger.LogInformation(Message.ProgrammaticSettings_SavedSettings, _filePath);
+                    _logger.ProgrammaticSettings_SavedSettings(_filePath);
 
                     _isSaving = false;
                     return;
@@ -144,7 +144,7 @@ internal class PersistSettings : IPersistSettings
 
         async Task DoSaveAsync(ConcurrentDictionary<string, string> values)
         {
-            _logger.LogInformation(Message.ProgrammaticSettings_SavingSettings, values.Count, _filePath);
+            _logger.ProgrammaticSettings_SavingSettings(values.Count, _filePath);
 
             _fileSystem.CreateDirectory(Path.GetDirectoryName(_filePath)!, recursive: true);
 

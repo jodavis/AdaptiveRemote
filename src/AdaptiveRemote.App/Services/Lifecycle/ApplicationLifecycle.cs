@@ -9,14 +9,14 @@ internal class ApplicationLifecycle : BackgroundService
 {
     private readonly IApplicationScopeProvider _scopeProvider;
     private readonly ILifecycleViewController _viewController;
-    private readonly ILogger<ApplicationLifecycle> _logger;
+    private readonly MessageLogger _logger;
     private ScopedLifecycleContainer? _currentContainer;
 
     public ApplicationLifecycle(IApplicationScopeProvider scopeProvider, ILifecycleViewController viewController, ILogger<ApplicationLifecycle> logger)
     {
         _scopeProvider = scopeProvider;
         _viewController = viewController;
-        _logger = logger;
+        _logger = new(logger);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -37,7 +37,7 @@ internal class ApplicationLifecycle : BackgroundService
 
         await stoppingToken.WaitForCancelledAsync();
 
-        _logger.LogInformation(Message.ApplicationLifecycle_ShuttingDown);
+        _logger.ApplicationLifecycle_ShuttingDown();
 
         await _scopeProvider.InvokeInScopeAsync(CleanUpLifecycleAsync, default);
     }
@@ -59,7 +59,7 @@ internal class ApplicationLifecycle : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(Message.ApplicationLifecycle_ScopeConstructionFailed, ex);
+                _logger.ApplicationLifecycle_ScopeConstructionFailed(ex);
                 _viewController.SetFatalError(ex);
                 return null;
             }

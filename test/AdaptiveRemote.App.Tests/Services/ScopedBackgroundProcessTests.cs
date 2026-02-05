@@ -12,22 +12,7 @@ public class ScopedBackgroundProcessTests
     private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
     private ILifecycleActivity CleanupActivity => MockCleanupActivity.Object;
 
-    private static TestBackgroundProcess CreateSut() => new();
-
-    private static string Expect_Starting
-        => $"Information[1201]: {LoggingMessages.ScopedBackgroundProcess_Starting}";
-    private static string Expect_Started
-        => $"Information[1202]: {LoggingMessages.ScopedBackgroundProcess_Started}";
-    private static string Expect_Stopping
-        => $"Information[1203]: {LoggingMessages.ScopedBackgroundProcess_Stopping}";
-    private static string Expect_Stopped
-        => $"Information[1204]: {LoggingMessages.ScopedBackgroundProcess_Stopped}";
-    private static string Expect_StoppedEarly
-        => $"Warning[1205]: {LoggingMessages.ScopedBackgroundProcess_StoppedEarly}";
-    private static string Expect_Error(Exception error)
-        => $"Error[1206]: {string.Format(LoggingMessages.ScopedBackgroundProcess_Error, error)}";
-    private static string Expect_CanceledBeforeStarted
-        => $"Warning[1207]: {LoggingMessages.ScopedBackgroundProcess_CanceledBeforeStarted}";
+    private static TestBackgroundProcess CreateSut() => new(new MockLogger<TestBackgroundProcess>());
 
     [TestMethod]
     public void ScopedBackgroundProcess_InitializeAsync_CallsExecute()
@@ -35,8 +20,8 @@ public class ScopedBackgroundProcessTests
         // Arrange
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started()
             );
 
         // Act
@@ -58,7 +43,7 @@ public class ScopedBackgroundProcessTests
             .Expect_ExecuteAsync_IsNotCalled()
             .Expect_MoveToWorkerThreadAsync_IsNotCalled()
             .Expect_LogMessages(
-                Expect_CanceledBeforeStarted
+                l => l.ScopedBackgroundProcess_CanceledBeforeStarted()
             );
 
         CancellationTokenSource cancelled = new();
@@ -82,8 +67,8 @@ public class ScopedBackgroundProcessTests
         TestBackgroundProcess sut = CreateSut()
             .Expect_ExecuteAsync_IsNotCalled()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_CanceledBeforeStarted);
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_CanceledBeforeStarted());
 
         CancellationTokenSource cts = new();
         sut.BeforeMoveToWorkerThreadAsyncCallback = cts.Cancel;
@@ -106,8 +91,8 @@ public class ScopedBackgroundProcessTests
         TestBackgroundProcess sut = CreateSut()
             .Expect_ExecuteAsync_IsNotCalled()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_CanceledBeforeStarted);
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_CanceledBeforeStarted());
 
         CancellationTokenSource cts = new();
         sut.AfterMoveToWorkerThreadAsyncCallback = cts.Cancel;
@@ -129,8 +114,8 @@ public class ScopedBackgroundProcessTests
         // Arrange
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_CanceledBeforeStarted);
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_CanceledBeforeStarted());
 
         CancellationTokenSource cts = new();
         sut.ExecuteAsyncCallback = cts.Cancel;
@@ -152,8 +137,8 @@ public class ScopedBackgroundProcessTests
         // Arrange
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started);
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started());
 
         CancellationTokenSource cts = new();
 
@@ -179,7 +164,7 @@ public class ScopedBackgroundProcessTests
         // No error logged here because lifecycle should report it
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting
+                l => l.ScopedBackgroundProcess_Starting()
             );
 
         sut.ExecuteCompletionSource.SetException(expectedException);
@@ -205,9 +190,9 @@ public class ScopedBackgroundProcessTests
 
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_Error(expectedException)
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_Error(expectedException)
             );
 
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
@@ -232,9 +217,9 @@ public class ScopedBackgroundProcessTests
 
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_StoppedEarly
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_StoppedEarly()
             );
 
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
@@ -256,9 +241,9 @@ public class ScopedBackgroundProcessTests
         // Arrange
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_StoppedEarly
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_StoppedEarly()
             );
 
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
@@ -282,9 +267,9 @@ public class ScopedBackgroundProcessTests
 
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_StoppedEarly
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_StoppedEarly()
             );
 
         Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
@@ -306,10 +291,10 @@ public class ScopedBackgroundProcessTests
         // Arrange
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_Stopping,
-                Expect_Stopped
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_Stopping(),
+                l => l.ScopedBackgroundProcess_Stopped()
             );
 
         sut.InitializeAsync(InitializeActivity, default)
@@ -334,9 +319,9 @@ public class ScopedBackgroundProcessTests
         // Arrange
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_Stopping
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_Stopping()
             )
             .Expect_ExecuteAsync_DoesNotComplete();
 
@@ -364,11 +349,11 @@ public class ScopedBackgroundProcessTests
 
         TestBackgroundProcess sut = CreateSut()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_Stopping,
-                Expect_Error(expectedError),
-                Expect_Stopped
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_Stopping(),
+                l => l.ScopedBackgroundProcess_Error(expectedError),
+                l => l.ScopedBackgroundProcess_Stopped()
             )
             .Expect_ExecuteAsync_IgnoresCancellationToken();
 
@@ -415,9 +400,9 @@ public class ScopedBackgroundProcessTests
         TestBackgroundProcess sut = CreateSut()
             .Expect_ExecuteAsync_IgnoresCancellationToken()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_StoppedEarly
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_StoppedEarly()
             );
 
         sut.InitializeAsync(InitializeActivity, default)
@@ -445,9 +430,9 @@ public class ScopedBackgroundProcessTests
         TestBackgroundProcess sut = CreateSut()
             .Expect_ExecuteAsync_IgnoresCancellationToken()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_StoppedEarly
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_StoppedEarly()
             );
 
         sut.InitializeAsync(InitializeActivity, default)
@@ -478,9 +463,9 @@ public class ScopedBackgroundProcessTests
         TestBackgroundProcess sut = CreateSut()
             .Expect_ExecuteAsync_IgnoresCancellationToken()
             .Expect_LogMessages(
-                Expect_Starting,
-                Expect_Started,
-                Expect_Error(expectedException)
+                l => l.ScopedBackgroundProcess_Starting(),
+                l => l.ScopedBackgroundProcess_Started(),
+                l => l.ScopedBackgroundProcess_Error(expectedException)
             );
 
         sut.InitializeAsync(InitializeActivity, default)
@@ -505,6 +490,7 @@ public class ScopedBackgroundProcessTests
         private readonly Mock<IMockMethods> _mockMethods = new();
         private readonly List<string> _expectedLogMessages = new();
         private readonly TaskCompletionSource _moveToWorkerThreadTcs = new();
+        private readonly MockLogger<TestBackgroundProcess> _mockLogger;
         private Task? _initializeTask = null;
 
         public TaskCompletionSource ExecuteCompletionSource { get; } = new();
@@ -513,9 +499,11 @@ public class ScopedBackgroundProcessTests
         public Action? AfterMoveToWorkerThreadAsyncCallback { get; set; }
         public Action? ExecuteAsyncCallback { get; set; }
 
-        public TestBackgroundProcess()
-            : base(nameof(TestBackgroundProcess), new MockLogger<TestBackgroundProcess>())
+        public TestBackgroundProcess(MockLogger<TestBackgroundProcess> mockLogger)
+            : base(nameof(TestBackgroundProcess), mockLogger)
         {
+            _mockLogger = mockLogger;
+
             _mockMethods
                 .Setup(x => x.ExecuteAsync(It.IsAny<CancellationToken>()))
                 .WithStandardTaskBehavior(ExecuteCompletionSource.Task)
@@ -556,7 +544,7 @@ public class ScopedBackgroundProcessTests
             => _mockMethods.Object.MoveToWorkerThreadAsync(task, cancellationToken);
 
         public void VerifyMethodCalls() => _mockMethods.Verify();
-        public void VerifyLogMessages() => ((MockLogger<TestBackgroundProcess>)Logger).VerifyMessages(_expectedLogMessages.ToArray());
+        public void VerifyLogMessages() => _mockLogger.VerifyMessages(_expectedLogMessages.ToArray());
 
         public TestBackgroundProcess Expect_ExecuteAsync_IsNotCalled()
         {
@@ -574,9 +562,15 @@ public class ScopedBackgroundProcessTests
             return this;
         }
 
-        internal TestBackgroundProcess Expect_LogMessages(params string[] expectedMessages)
+        internal TestBackgroundProcess Expect_LogMessages(params Action<MessageLogger>[] expectedLoggers)
         {
-            _expectedLogMessages.AddRange(expectedMessages);
+            foreach (Action<MessageLogger> logAction in expectedLoggers)
+            {
+                MockLogger<TestBackgroundProcess> mockLogger = new MockLogger<TestBackgroundProcess>();
+                MessageLogger tempLogger = new MessageLogger(mockLogger);
+                logAction(tempLogger);
+                _expectedLogMessages.Add(mockLogger.Messages.Last());
+            }
             return this;
         }
 

@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.Logging;
-using Moq;
+﻿using Moq;
 
 namespace AdaptiveRemote.Services.Conversation;
 
@@ -10,13 +9,6 @@ public class ListeningControllerTests
     private readonly MockLogger<ListeningController> MockLogger = new();
 
     private IListeningController CreateSut() => new ListeningController(MockEngine.Object, MockLogger);
-
-    private static string Expect_State(bool listening, int listenCount, int pauseCount = 0)
-        => $"Information[501]: {string.Format(LoggingMessages.ListeningController_State, listening, listenCount, pauseCount)}";
-    private static string Expect_RecognizeAsyncError(Exception expectedException)
-        => $"Error[502]: {string.Format(LoggingMessages.ListeningController_RecognizeAsyncError, $"{expectedException.GetType().FullName}: {expectedException.Message}")}";
-    private static string Expect_RecognizeAsyncCancelError(Exception expectedException)
-        => $"Error[503]: {string.Format(LoggingMessages.ListeningController_RecognizeAsyncCancelError, $"{expectedException.GetType().FullName}: {expectedException.Message}")}";
 
     [TestInitialize]
     public void SetupMocks()
@@ -51,8 +43,10 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(disposable, nameof(disposable));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+        });
     }
 
     [TestMethod]
@@ -73,9 +67,11 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(disposable, nameof(disposable));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1),
-            Expect_State(true, 2));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(true, 2, 0);
+        });
     }
 
     [TestMethod]
@@ -97,9 +93,11 @@ public class ListeningControllerTests
         disposable.Dispose();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1),
-            Expect_State(false, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 0, 0);
+        });
     }
 
     [TestMethod]
@@ -119,10 +117,12 @@ public class ListeningControllerTests
         disposable.Dispose();
 
         // Assert
-        MockLogger.VerifyMessages(
-          Expect_State(true, 1),
-          Expect_State(true, 2),
-          Expect_State(true, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(true, 2, 0);
+            log.ListeningController_State(true, 1, 0);
+        });
     }
 
     [TestMethod]
@@ -146,11 +146,13 @@ public class ListeningControllerTests
         disposable2.Dispose();
 
         // Assert
-        MockLogger.VerifyMessages(
-          Expect_State(true, 1),
-          Expect_State(true, 2),
-          Expect_State(true, 1),
-          Expect_State(false, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(true, 2, 0);
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 0, 0);
+        });
     }
 
     [TestMethod]
@@ -174,11 +176,13 @@ public class ListeningControllerTests
         disposable1.Dispose();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1),
-            Expect_State(true, 2),
-            Expect_State(true, 1),
-            Expect_State(false, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(true, 2, 0);
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 0, 0);
+        });
     }
 
     [TestMethod]
@@ -199,10 +203,12 @@ public class ListeningControllerTests
         disposable.Dispose();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1),
-            Expect_State(true, 2),
-            Expect_State(true, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(true, 2, 0);
+            log.ListeningController_State(true, 1, 0);
+        });
     }
 
     [TestMethod]
@@ -217,8 +223,10 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(pause, nameof(pause));
 
-        MockLogger.VerifyMessages(
-            Expect_State(false, 0, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(false, 0, 1);
+        });
     }
 
     [TestMethod]
@@ -233,9 +241,11 @@ public class ListeningControllerTests
         pause.Dispose();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_State(false, 0, 1),
-            Expect_State(false, 0, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(false, 0, 1);
+            log.ListeningController_State(false, 0, 0);
+        });
     }
 
     [TestMethod]
@@ -259,9 +269,11 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(pause, nameof(pause));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1, 0),
-            Expect_State(false, 1, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+        });
     }
 
     [TestMethod]
@@ -286,10 +298,12 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(pause, nameof(pause));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1, 0),
-            Expect_State(false, 1, 1),
-            Expect_State(false, 1, 2));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(false, 1, 2);
+        });
     }
 
     [TestMethod]
@@ -314,10 +328,12 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(pause, nameof(pause));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1, 0),
-            Expect_State(false, 1, 1),
-            Expect_State(true, 1, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(true, 1, 0);
+        });
     }
 
     [TestMethod]
@@ -343,10 +359,12 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(pause, nameof(pause));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1, 0),
-            Expect_State(false, 1, 1),
-            Expect_State(true, 1, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(true, 1, 0);
+        });
     }
 
     [TestMethod]
@@ -372,11 +390,13 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(pause, nameof(pause));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1, 0),
-            Expect_State(false, 1, 1),
-            Expect_State(false, 1, 2),
-            Expect_State(false, 1, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(false, 1, 2);
+            log.ListeningController_State(false, 1, 1);
+        });
     }
 
     [TestMethod]
@@ -404,12 +424,14 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(pause2, nameof(pause2));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1, 0),
-            Expect_State(false, 1, 1),
-            Expect_State(false, 1, 2),
-            Expect_State(false, 1, 1),
-            Expect_State(true, 1, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(false, 1, 2);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(true, 1, 0);
+        });
     }
 
     [TestMethod]
@@ -437,11 +459,13 @@ public class ListeningControllerTests
         // Assert
         Assert.IsNotNull(pause2, nameof(pause2));
 
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1, 0),
-            Expect_State(false, 1, 1),
-            Expect_State(false, 1, 2),
-            Expect_State(false, 1, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(false, 1, 2);
+            log.ListeningController_State(false, 1, 1);
+        });
     }
 
     [TestMethod]
@@ -464,11 +488,13 @@ public class ListeningControllerTests
         pause.Dispose();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_State(true, 1, 0),
-            Expect_State(false, 1, 1),
-            Expect_State(false, 0, 1),
-            Expect_State(false, 0, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(false, 0, 1);
+            log.ListeningController_State(false, 0, 0);
+        });
     }
 
     [TestMethod]
@@ -489,9 +515,11 @@ public class ListeningControllerTests
         IDisposable listen = sut.Listen();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_State(false, 0, 1),
-            Expect_State(false, 1, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(false, 0, 1);
+            log.ListeningController_State(false, 1, 1);
+        });
     }
 
     [TestMethod]
@@ -513,10 +541,12 @@ public class ListeningControllerTests
         pause.Dispose();
 
         // Assert
-        MockLogger.VerifyMessages(
-            Expect_State(false, 0, 1),
-            Expect_State(false, 1, 1),
-            Expect_State(true, 1, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(false, 0, 1);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_State(true, 1, 0);
+        });
     }
 
     [TestMethod]
@@ -545,10 +575,11 @@ public class ListeningControllerTests
             Assert.AreEqual(expectedException.Message, result.Message, nameof(result) + ".Message");
         }
 
-        MockLogger
-            .VerifyMessages(
-                Expect_RecognizeAsyncError(expectedException),
-                Expect_State(false, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_RecognizeAsyncError(expectedException);
+            log.ListeningController_State(false, 0, 0);
+        });
     }
 
     [TestMethod]
@@ -572,11 +603,12 @@ public class ListeningControllerTests
         // Act
         listen.Dispose();
 
-        MockLogger
-            .VerifyMessages(
-                Expect_State(true, 1),
-                Expect_RecognizeAsyncCancelError(expectedException),
-                Expect_State(true, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_RecognizeAsyncCancelError(expectedException);
+            log.ListeningController_State(true, 0, 0);
+        });
     }
 
     [TestMethod]
@@ -610,11 +642,12 @@ public class ListeningControllerTests
             Assert.AreEqual(expectedException.Message, result.Message, nameof(result) + ".Message");
         }
 
-        MockLogger
-            .VerifyMessages(
-                Expect_State(true, 1),
-                Expect_RecognizeAsyncCancelError(expectedException),
-                Expect_State(true, 1));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_RecognizeAsyncCancelError(expectedException);
+            log.ListeningController_State(true, 1, 0);
+        });
     }
 
     [TestMethod]
@@ -644,11 +677,12 @@ public class ListeningControllerTests
         pause.Dispose();
 
         // Assert
-        MockLogger
-            .VerifyMessages(
-                Expect_State(true, 1, 0),
-                Expect_State(false, 1, 1),
-                Expect_RecognizeAsyncError(expectedException),
-                Expect_State(false, 1, 0));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ListeningController_State(true, 1, 0);
+            log.ListeningController_State(false, 1, 1);
+            log.ListeningController_RecognizeAsyncError(expectedException);
+            log.ListeningController_State(false, 1, 0);
+        });
     }
 }

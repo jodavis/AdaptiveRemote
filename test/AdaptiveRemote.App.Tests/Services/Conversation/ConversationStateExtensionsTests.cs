@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Models;
 using Moq;
 
 namespace AdaptiveRemote.Services.Conversation;
@@ -57,26 +56,6 @@ public class ConversationStateExtensionsTests
         return mockSpeech.Object;
     }
 
-    // Logging Messages
-    private static string ExpectMessage_Updated(ConversationState state)
-        => $"Information[1301]: {LoggingMessages.ConversationState_Updated.AsMessageTemplate(state)}";
-    private static string ExpectMessage_UnexpectedSpeechDetected(PhraseKinds unexpected, IRecognizedSpeech speech)
-        => $"Error[1302]: {LoggingMessages.ConversationState_UnexpectedSpeechDetected.AsMessageTemplate(unexpected, speech)}";
-    private static string ExpectMessage_Recognized(string text, string semantics)
-        => $"Information[207]: {string.Format(LoggingMessages.ConversationController_Recognized, text, semantics)}";
-    private static string ExpectMessage_UnknownCommand(string command)
-        => $"Error[208]: {string.Format(LoggingMessages.ConversationController_UnknownCommand, command)}";
-    private static string ExpectMessage_CommandMissingExecuteAction(string command)
-        => $"Error[213]: {string.Format(LoggingMessages.ConversationController_CommandMissingExecuteAction, command)}";
-    private static string ExpectMessage_CommandDisabled(string command)
-        => $"Error[214]: {string.Format(LoggingMessages.ConversationController_CommandDisabled, command)}";
-    private static string ExpectMessage_InvalidSemanticValue(string semanticKey, string invalidValue)
-        => $"Warning[1303]: {LoggingMessages.ConversationState_InvalidSemanticValue.AsMessageTemplate(semanticKey, invalidValue)}";
-    private static string ExpectMessage_UserReportedRecognitionError(IRecognizedSpeech speech)
-        => $"Error[1304]: {LoggingMessages.ConversationState_UserReportedRecognitionError.AsMessageTemplate(speech)}";
-    private static string ExpectMessage_CouldNotFindReverseCommand(Command command)
-        => $"Error[1305]: {LoggingMessages.ConversationState_CouldNotFindReverseCommand.AsMessageTemplate(command, command.Reverse)}";
-
     [TestMethod]
     public void ConversationStateExtensions_RespondTo_WakeWords_EntersListeningMode()
     {
@@ -104,8 +83,10 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -135,8 +116,10 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -165,8 +148,10 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -197,8 +182,10 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -227,9 +214,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Recognized(input.Text, "Play"),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationController_Recognized(input.Text, "Play");
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -260,9 +249,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Recognized(input.Text, "Play"),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationController_Recognized(input.Text, "Play");
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -292,10 +283,12 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Recognized(input.Text, "Play"),
-            ExpectMessage_InvalidSemanticValue("repeat", "The United States of America"),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationController_Recognized(input.Text, "Play");
+            log.ConversationState_InvalidSemanticValue("repeat", "The United States of America");
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -326,9 +319,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_CommandDisabled(expectedCommand.Name),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationController_CommandDisabled(expectedCommand);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -359,9 +354,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_CommandMissingExecuteAction(expectedCommand.Name),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationController_CommandMissingExecuteAction(expectedCommand);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -387,9 +384,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UnexpectedSpeechDetected(PhraseKinds.Commands, input),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UnexpectedSpeechDetected(PhraseKinds.Commands, input);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -420,9 +419,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UserReportedRecognitionError(previous),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UserReportedRecognitionError(previous);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -448,9 +449,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UnexpectedSpeechDetected(PhraseKinds.Correction, input),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UnexpectedSpeechDetected(PhraseKinds.Correction, input);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -481,10 +484,12 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UserReportedRecognitionError(previous),
-            ExpectMessage_CouldNotFindReverseCommand(commandWithInvalidReverse),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UserReportedRecognitionError(previous);
+            log.ConversationState_CouldNotFindReverseCommand(commandWithInvalidReverse, commandWithInvalidReverse.Reverse);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -525,9 +530,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UserReportedRecognitionError(previous),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UserReportedRecognitionError(previous);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -568,9 +575,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UserReportedRecognitionError(previous),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UserReportedRecognitionError(previous);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -604,8 +613,10 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -632,8 +643,10 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -665,9 +678,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UnexpectedSpeechDetected(PhraseKinds.Confirmation, input),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UnexpectedSpeechDetected(PhraseKinds.Confirmation, input);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -700,9 +715,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Recognized("Play", "Play"),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationController_Recognized("Play", "Play");
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -734,9 +751,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UserReportedRecognitionError(command),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UserReportedRecognitionError(command);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -780,9 +799,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UserReportedRecognitionError(command),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UserReportedRecognitionError(command);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -814,9 +835,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UserReportedRecognitionError(command),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UserReportedRecognitionError(command);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -851,8 +874,10 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -884,9 +909,11 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_UserReportedRecognitionError(command),
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_UserReportedRecognitionError(command);
+            log.ConversationState_Updated(expected);
+        });
     }
 
     // TODO: Low confidence for other phrases
@@ -911,8 +938,10 @@ public class ConversationStateExtensionsTests
         // Assert
         Assert.AreEqual(expected, result, nameof(result));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Updated(expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ConversationState_Updated(expected);
+        });
     }
 
     [TestMethod]
@@ -941,8 +970,10 @@ public class ConversationStateExtensionsTests
             // Assert
             Assert.AreEqual(expected, result, nameof(result) + " when WantsPhrases started as {0}", (PhraseKinds)i);
 
-            MockLogger.VerifyMessages(
-                ExpectMessage_Updated(expected));
+            MockLogger.VerifyMessages(log =>
+            {
+                log.ConversationState_Updated(expected);
+            });
             MockLogger.ClearMessages();
         }
     }

@@ -1,4 +1,5 @@
 using AdaptiveRemote.Headless;
+using AdaptiveRemote.Headless.Components;
 using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.Testing;
@@ -10,43 +11,62 @@ WebApplicationOptions options = new()
     Args = args
 };
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(options);
+WebApplication.CreateBuilder(options)
+    .ConfigureAppServices(args)
+    .ConfigureStubSpeechServices()
+    .ConfigureBlazorServices()
+    .ConfigurePlaywrightBrowser()
+    .Build()
+    .AddHostingRoutes()
+    .Run();
 
-// Use existing AcceleratedServices pattern to configure host builder
-AcceleratedServices accelerated = new(args);
-accelerated.ConfigureHost(builder.Host);
-
-// Stub speech services to satisfy DI for headless operation
-builder.Services
-    .AddSingleton<ISpeechSynthesizer, StubSpeechSynthesizer>()
-    .AddSingleton<IGrammarProvider, StubGrammarProvider>()
-    .AddSingleton<ISpeechRecognitionEngine, StubSpeechRecognition>();
-
-// Add the minimal services for ASP.NET to serve the Blazor UI
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
-
-// Register circuit handler for logging
-builder.Services.AddSingleton<CircuitHandler, LoggingCircuitHandler>();
-
-// Register Playwright hosted service to manage browser lifecycle
-// Register as singleton first so it can be injected into test services
-builder.Services.AddSingleton<PlaywrightBrowserLifetimeService>();
-builder.Services.AddSingleton<IBrowserUIAccess>(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
-builder.Services.AddHostedService(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
-builder.Services.Configure<PlaywrightSettings>(builder.Configuration.GetSection("playwright"));
-
-WebApplication app = builder.Build();
-
-if (!app.Environment.IsDevelopment())
+internal static class Configuration
 {
-    app.UseExceptionHandler("/Error");
+    internal static WebApplicationBuilder ConfigureAppServices(this WebApplicationBuilder builder, string[] args)
+    {
+        AcceleratedServices accelerated = new(args);
+        accelerated.ConfigureHost(builder.Host);
+        return builder;
+    }
+
+    internal static WebApplicationBuilder ConfigureStubSpeechServices(this WebApplicationBuilder builder)
+    {
+        builder.Services
+            .AddSingleton<ISpeechSynthesizer, StubSpeechSynthesizer>()
+            .AddSingleton<IGrammarProvider, StubGrammarProvider>()
+            .AddSingleton<ISpeechRecognitionEngine, StubSpeechRecognition>();
+        return builder;
+    }
+
+    internal static WebApplicationBuilder ConfigureBlazorServices(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddRazorComponents()
+            .AddInteractiveServerComponents();
+
+        // Register circuit handler for logging
+        builder.Services.AddSingleton<CircuitHandler, LoggingCircuitHandler>();
+
+        return builder;
+    }
+
+    internal static WebApplicationBuilder ConfigurePlaywrightBrowser(this WebApplicationBuilder builder)
+    {
+        // Register Playwright hosted service to manage browser lifecycle
+        // Register as singleton first so it can be injected into test services
+        builder.Services.AddSingleton<PlaywrightBrowserLifetimeService>();
+        builder.Services.AddSingleton<IBrowserUIAccess>(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
+        builder.Services.AddHostedService(sp => sp.GetRequiredService<PlaywrightBrowserLifetimeService>());
+        builder.Services.Configure<PlaywrightSettings>(builder.Configuration.GetSection("playwright"));
+
+        return builder;
+    }
+
+    internal static WebApplication AddHostingRoutes(this WebApplication app)
+    {
+        app.UseAntiforgery();
+        app.MapStaticAssets();
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode();
+        return app;
+    }
 }
-
-app.UseStaticFiles();
-app.UseRouting();
-
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
-
-app.Run();

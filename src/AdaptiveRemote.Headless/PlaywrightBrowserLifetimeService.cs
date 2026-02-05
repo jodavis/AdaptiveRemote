@@ -1,5 +1,8 @@
+using AdaptiveRemote.Headless.Logging;
 using AdaptiveRemote.Services.Testing;
 using AdaptiveRemote.Utilities;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Options;
 using Microsoft.Playwright;
 
@@ -11,8 +14,9 @@ namespace AdaptiveRemote.Headless;
 /// </summary>
 internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIAccess
 {
-    private readonly ILogger<PlaywrightBrowserLifetimeService> _logger;
+    private readonly HeadlessHostMessageLogger _logger;
     private readonly IHostApplicationLifetime _lifetime;
+    private readonly IServer _server;
     private readonly PlaywrightSettings _settings;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
@@ -27,10 +31,12 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
     public PlaywrightBrowserLifetimeService(
         ILogger<PlaywrightBrowserLifetimeService> logger,
         IOptions<PlaywrightSettings> options,
-        IHostApplicationLifetime lifetime)
+        IHostApplicationLifetime lifetime,
+        IServer server)
     {
-        _logger = logger;
+        _logger = new(logger);
         _lifetime = lifetime;
+        _server = server;
         _settings = options.Value;
     }
 
@@ -39,14 +45,13 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
         // Wait for the application to start
         await _lifetime.ApplicationStarted.WaitForCancelledAsync();
 
-        _logger.LogInformation("Starting Playwright hosted service");
+        _logger.Playwright_StartingHostedService();
 
         try
         {
-            // Get the port the app is listening on (from configuration or default)
-            string appUrl = "http://localhost:5000"; // Default
-
-            _logger.LogInformation("Will navigate to: {AppUrl}", appUrl);
+            // Get the actual URL the server is listening on
+            IServerAddressesFeature? serverAddressesFeature = _server.Features.Get<IServerAddressesFeature>();
+            string appUrl = serverAddressesFeature?.Addresses.FirstOrDefault() ?? "http://localhost:5000";
 
             // Initialize Playwright (browsers should be installed during build or first run)
             _playwright = await Playwright.CreateAsync();
@@ -61,7 +66,7 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
 
             _browser = await _playwright.Chromium.LaunchAsync(launchOptions);
 
-            _logger.LogInformation("Playwright browser launched");
+            _logger.Playwright_BrowserLaunched();
 
             _browserContext = await _browser.NewContextAsync();
             if (_settings.TracesDir is not null)
@@ -72,23 +77,23 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
                     Snapshots = true,
                     Sources = true,
                 });
-                _logger.LogInformation("Playwright traces will be saved to {TracesDir}", _settings.TracesDir);
+                _logger.Playwright_TraceDirectoryConfigured(_settings.TracesDir);
             }
 
             // Create a page
             _page = await _browserContext.NewPageAsync();
 
-            _logger.LogInformation("Playwright page created");
+            _logger.Playwright_PageCreated();
 
             // Navigate to the Blazor app
-            _logger.LogInformation("Navigating to {AppUrl}", appUrl);
+            _logger.Playwright_Navigating(appUrl);
             await _page.GotoAsync(appUrl, new()
             {
                 WaitUntil = WaitUntilState.NetworkIdle,
                 Timeout = _settings.NavigationTimeout,
             });
 
-            _logger.LogInformation("Playwright browser navigated to Blazor app");
+            _logger.Playwright_Navigated();
 
             // Keep running until cancellation is requested
             await stoppingToken.WaitForCancelledAsync();
@@ -96,11 +101,11 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
         catch (OperationCanceledException)
         {
             // Normal shutdown
-            _logger.LogInformation("Playwright service shutting down");
+            _logger.Playwright_StoppingHostedService();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to start Playwright browser");
+            _logger.Playwright_ErrorStartingBrowser(ex);
             throw;
         }
         finally
@@ -111,8 +116,7 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
                 {
                     Path = Path.Combine(_settings.TracesDir, "traces.zip"),
                 });
-                _logger.LogInformation("Playwright tracing stopped and saved to {TraceFilePath}", _settings.TracesDir);
-                _logger.LogInformation("Go to https://traces.playwright.dev/ to open and view the trace");
+                _logger.Playwright_TracesSaved(_settings.TracesDir);
             }
 
             await CleanupAsync();
@@ -121,7 +125,7 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
 
     private async Task CleanupAsync()
     {
-        _logger.LogInformation("Cleaning up Playwright resources");
+        _logger.Playwright_CleaningUp();
 
         try
         {
@@ -146,11 +150,11 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
             _playwright?.Dispose();
             _playwright = null;
 
-            _logger.LogInformation("Playwright resources cleaned up");
+            _logger.Playwright_CleanedUp();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while cleaning up Playwright");
+            _logger.Playwright_ErrorWhileCleaningUp(ex);
         }
     }
 }

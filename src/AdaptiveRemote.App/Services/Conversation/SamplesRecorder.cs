@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AdaptiveRemote.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -9,14 +10,14 @@ internal class SamplesRecorder : IHostedService
 {
     private readonly ConversationSettings _settings;
     private readonly ISpeechRecognitionEngine _engine;
-    private readonly ILogger<SamplesRecorder> _logger;
+    private readonly MessageLogger _logger;
     private List<string> _logLines = new();
 
     public SamplesRecorder(ISpeechRecognitionEngine engine, IOptions<ConversationSettings> settings, ILogger<SamplesRecorder> logger)
     {
         _settings = settings.Value;
         _engine = engine;
-        _logger = logger;
+        _logger = new(logger);
     }
 
     Task IHostedService.StartAsync(CancellationToken cancellationToken)
@@ -27,7 +28,7 @@ internal class SamplesRecorder : IHostedService
             _engine.SpeechRejected += OnSpeechRejected;
         }
 
-        _logger.LogInformation("Started listening for speech samples");
+        _logger.SamplesRecorder_StartListening();
 
         return Task.CompletedTask;
     }
@@ -37,7 +38,7 @@ internal class SamplesRecorder : IHostedService
         _engine.SpeechRecognized -= OnSpeechRecognized;
         _engine.SpeechRejected -= OnSpeechRejected;
 
-        _logger.LogInformation("Stopped listening for speech samples");
+        _logger.SamplesRecorder_StopListening();
 
         return Task.CompletedTask;
     }
@@ -66,7 +67,7 @@ internal class SamplesRecorder : IHostedService
             waveStream.Flush();
         }
 
-        _logger.LogInformation("Saved {WaveFileName}", wavPath);
+        _logger.SamplesRecorder_SavedWaveFile(wavPath);
 
         string logPath = $"{outputPath}\\{fileName}_log.txt";
         using (Stream logStream = File.OpenWrite(logPath))
@@ -81,7 +82,7 @@ internal class SamplesRecorder : IHostedService
             writer.Flush();
         }
 
-        _logger.LogInformation("Saved {LogFileName}", logPath);
+        _logger.SamplesRecorder_SavedLogFile(logPath);
     }
 
     internal class LoggerProvider : ILoggerProvider, ILogger

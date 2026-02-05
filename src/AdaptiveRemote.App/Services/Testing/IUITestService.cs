@@ -1,3 +1,4 @@
+using PolyType;
 using StreamJsonRpc;
 
 namespace AdaptiveRemote.Services.Testing;
@@ -7,7 +8,9 @@ namespace AdaptiveRemote.Services.Testing;
 /// This service allows E2E tests to query UI state and perform interactions.
 /// </summary>
 [RpcMarshalable]
-public interface IUITestService : IDisposable
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface IUITestService : IDisposable
 {
     /// <summary>
     /// Checks if a button with the specified label is visible in the UI.

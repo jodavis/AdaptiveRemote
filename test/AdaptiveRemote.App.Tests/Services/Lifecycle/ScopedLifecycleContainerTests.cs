@@ -1,4 +1,3 @@
-using AdaptiveRemote.Logging;
 using FluentAssertions;
 using Moq;
 
@@ -52,13 +51,15 @@ public class ScopedLifecycleContainerTests
 
         await sut.InitializeAllAsync(default);
 
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializedMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+        });
 
         LatestLifecyclePhase.Should().Be(LifecyclePhase.Ready);
     }
@@ -74,10 +75,12 @@ public class ScopedLifecycleContainerTests
 
         Task t = sut.InitializeAllAsync(default);
 
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+        });
 
         t.Should().NotBeComplete();
         LatestLifecyclePhase.Should().Be(LifecyclePhase.SettingUp);
@@ -101,11 +104,13 @@ public class ScopedLifecycleContainerTests
 
         await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => sut.InitializeAllAsync(default));
 
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingFailedMessage(MockService2, expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_InitializingFailed(MockService2.Object.Name, expected);
+        });
 
         LatestLifecyclePhase.Should().Be(LifecyclePhase.SettingUp);
     }
@@ -134,13 +139,15 @@ public class ScopedLifecycleContainerTests
 
         await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => initTask);
 
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3),
-            Expect_InitializingFailedMessage(MockService2, expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_InitializingFailed(MockService2.Object.Name, expected);
+        });
 
         LatestLifecyclePhase.Should().Be(LifecyclePhase.SettingUp);
     }
@@ -163,10 +170,12 @@ public class ScopedLifecycleContainerTests
 
         await Assert.ThrowsExceptionAsync<InvalidOperationException>(() => sut.InitializeAllAsync(default));
 
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializingFailedMessage(MockService2, expected));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_InitializingFailed(MockService2.Object.Name, expected);
+        });
 
         LatestLifecyclePhase.Should().Be(LifecyclePhase.SettingUp);
     }
@@ -189,16 +198,18 @@ public class ScopedLifecycleContainerTests
 
         Task cleanupTask = sut.CleanUpInitializedServicesAsync(default);
 
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializedMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleaningUpMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService3.Object.Name);
+        });
 
         cleanupTask.Should().NotBeComplete();
         LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp);
@@ -227,19 +238,21 @@ public class ScopedLifecycleContainerTests
 
         await sut.CleanUpInitializedServicesAsync(default);
 
-        MockLogger.VerifyMessages(
-            Expect_InitializingMessage(MockService1),
-            Expect_InitializedMessage(MockService1),
-            Expect_InitializingMessage(MockService2),
-            Expect_InitializedMessage(MockService2),
-            Expect_InitializingMessage(MockService3),
-            Expect_InitializedMessage(MockService3),
-            Expect_CleaningUpMessage(MockService1),
-            Expect_CleaningUpFailedMessage(MockService1, expected1),
-            Expect_CleaningUpMessage(MockService2),
-            Expect_CleaningUpFailedMessage(MockService2, expected2),
-            Expect_CleaningUpMessage(MockService3),
-            Expect_CleanedUpMessage(MockService3));
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
+            log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
+            log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
+            log.ApplicationLifecycle_CleaningUpFailed(MockService1.Object.Name, expected1);
+            log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_CleaningUpFailed(MockService2.Object.Name, expected2);
+            log.ApplicationLifecycle_CleaningUp(MockService3.Object.Name);
+            log.ApplicationLifecycle_CleanedUp(MockService3.Object.Name);
+        });
 
         LatestLifecyclePhase.Should().Be(LifecyclePhase.CleaningUp);
     }
@@ -269,16 +282,4 @@ public class ScopedLifecycleContainerTests
             })
             .Verifiable(Times.Exactly(expectedExceptions.Length));
 
-    private static string Expect_InitializingMessage(Mock<IScopedLifecycle> service)
-        => $"Information[701]: {string.Format(LoggingMessages.ApplicationLifecycle_Initializing, service.Object.Name)}";
-    private static string Expect_InitializedMessage(Mock<IScopedLifecycle> service)
-        => $"Information[702]: {string.Format(LoggingMessages.ApplicationLifecycle_Initialized, service.Object.Name)}";
-    private static string Expect_InitializingFailedMessage(Mock<IScopedLifecycle> service, Exception error)
-        => $"Error[703]: {string.Format(LoggingMessages.ApplicationLifecycle_InitializingFailed, service.Object.Name, $"{error.GetType().FullName}: {error.Message}")}";
-    private static string Expect_CleaningUpMessage(Mock<IScopedLifecycle> service)
-        => $"Information[704]: {string.Format(LoggingMessages.ApplicationLifecycle_CleaningUp, service.Object.Name)}";
-    private static string Expect_CleanedUpMessage(Mock<IScopedLifecycle> service)
-        => $"Information[705]: {string.Format(LoggingMessages.ApplicationLifecycle_CleanedUp, service.Object.Name)}";
-    private static string Expect_CleaningUpFailedMessage(Mock<IScopedLifecycle> service, Exception error)
-        => $"Error[706]: {string.Format(LoggingMessages.ApplicationLifecycle_CleaningUpFailed, service.Object.Name, $"{error.GetType().FullName}: {error.Message}")}";
 }

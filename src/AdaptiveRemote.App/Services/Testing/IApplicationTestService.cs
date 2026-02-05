@@ -1,3 +1,4 @@
+using PolyType;
 using StreamJsonRpc;
 
 namespace AdaptiveRemote.Services.Testing;
@@ -6,7 +7,9 @@ namespace AdaptiveRemote.Services.Testing;
 /// Interface for test services that can be loaded dynamically by the host during E2E testing.
 /// </summary>
 [RpcMarshalable]
-public interface IApplicationTestService : IDisposable
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface IApplicationTestService : IDisposable
 {
     /// <summary>
     /// Gets the current lifecycle phase of the application.

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AdaptiveRemote.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.TestUtilities;
 
@@ -15,8 +16,10 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
     public IEnumerable<string> Messages => _messages;
     public TestContext? OutputWriter { get; set; }
 
+    public List<(string find, string replace)> ReplaceStrings = new();
+
     IDisposable? ILogger.BeginScope<TState>(TState state) => throw new NotImplementedException();
-    bool ILogger.IsEnabled(LogLevel logLevel) => throw new NotImplementedException();
+    bool ILogger.IsEnabled(LogLevel logLevel) => true;
     void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         if (exception is AssertFailedException ||
@@ -28,11 +31,25 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         }
 
         string message = $"{logLevel}[{eventId.Id}]: {formatter(state, exception)}";
+        foreach ((string find, string replace) in ReplaceStrings)
+        {
+            message = message.Replace(find, replace);
+        }
         lock (_lock)
         {
             _messages.Add(message);
         }
         OutputWriter?.WriteLine(message);
+    }
+
+    public void VerifyMessages(Action<MessageLogger> expected)
+    {
+        MockLogger<LoggerType> expectedLog = new();
+        expectedLog.ReplaceStrings.AddRange(ReplaceStrings);
+        MessageLogger messageLogger = new(expectedLog);
+        expected(messageLogger);
+
+        VerifyMessages(expectedLog._messages.ToArray());
     }
 
     public void VerifyMessages(params string[] expected)
@@ -96,6 +113,18 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         } while (iter.MoveNext());
 
         return remaining;
+    }
+
+    internal Task WaitForMessageAsync(Action<MessageLogger> expected)
+        => WaitForMessageAsync(expected, TimeSpan.FromSeconds(5));
+    internal Task WaitForMessageAsync(Action<MessageLogger> expected, TimeSpan timeout)
+    {
+        MockLogger<LoggerType> expectedLog = new();
+        expectedLog.ReplaceStrings.AddRange(ReplaceStrings);
+        MessageLogger messageLogger = new(expectedLog);
+        expected(messageLogger);
+        Assert.AreEqual(1, expectedLog.Messages.Count(), "Expected exactly one message to wait for");
+        return WaitForMessageAsync(expectedLog.Messages.First(), timeout);
     }
 
     internal Task WaitForMessageAsync(string expectedMessage)

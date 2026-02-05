@@ -1,3 +1,4 @@
+using PolyType;
 using StreamJsonRpc;
 
 namespace AdaptiveRemote.Services.Testing;
@@ -7,7 +8,9 @@ namespace AdaptiveRemote.Services.Testing;
 /// Used for bootstrapping test services via JSON-RPC.
 /// </summary>
 [RpcMarshalable]
-public interface ITestEndpoint
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface ITestEndpoint
 {
     /// <summary>
     /// Dynamically loads a test service from the specified assembly and type.

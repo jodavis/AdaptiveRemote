@@ -1,0 +1,15 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using AdaptiveRemote.Components
+
+@if (RendererInfo.IsInteractive)
+{
+    <Root />
+}
+else
+{
+    <div id="app">
+        <div id="LifecycleTitle"><div>[ Adaptive Remote ]</div></div>
+        <div id="LifecycleTaskDescription">Prerendered...</div>
+    </div>
+}

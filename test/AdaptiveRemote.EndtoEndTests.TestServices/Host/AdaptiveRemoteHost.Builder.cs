@@ -5,7 +5,6 @@ using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Logging;
 using StreamJsonRpc;
 using AdaptiveRemote.EndtoEndTests.Logging;
-using AdaptiveRemote.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
 
@@ -67,7 +66,7 @@ public partial class AdaptiveRemoteHost
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = false
             };
 
             foreach (KeyValuePair<string, string> kvp in _settings.EnvironmentVariables)

@@ -28,15 +28,23 @@ internal class MockFileSystem : Mock<IFileSystem>
         => AddFile(path, $"Test File Content for {path}");
     public void AddFile(string path, string content)
     {
-        AddDirectory(Path.GetDirectoryName(path));
+        string? directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            AddDirectory(directory);
+        }
         _files.Add(path, new MemoryStream(Encoding.UTF8.GetBytes(content)));
     }
 
     public void AddDirectory(string? path)
     {
-        if (path is not null && _directories.Add(path))
+        if (!string.IsNullOrEmpty(path) && _directories.Add(path))
         {
-            AddDirectory(Path.GetDirectoryName(path));
+            string? parentDirectory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(parentDirectory))
+            {
+                AddDirectory(parentDirectory);
+            }
         }
     }
 
@@ -52,8 +60,10 @@ internal class MockFileSystem : Mock<IFileSystem>
         Assert.IsFalse(_directories.Contains(path), "Attempted to create a directory that already exists: {0}", path);
 
         string? parent = Path.GetDirectoryName(path);
-        Assert.IsNotNull(parent, "Could not compute the parent path for '{0}'", path);
-        Assert.IsTrue(_directories.Contains(parent), "Parent path '{0}' does not exist when attempting to create '{1}'", parent, path);
+        if (!string.IsNullOrEmpty(parent))
+        {
+            Assert.IsTrue(_directories.Contains(parent), "Parent path '{0}' does not exist when attempting to create '{1}'", parent, path);
+        }
 
         _directories.Add(path);
     }
@@ -104,8 +114,10 @@ internal class MockFileSystem : Mock<IFileSystem>
     private Stream Returns_OpenWrite(string path)
     {
         string? parentDirectory = Path.GetDirectoryName(path);
-        Assert.IsNotNull(parentDirectory, "Could not compute the parent path for '{0}'", path);
-        Assert.IsTrue(_directories.Contains(parentDirectory), "Attempted to open a file for writing in directory that does not exist: {0}", path);
+        if (!string.IsNullOrEmpty(parentDirectory))
+        {
+            Assert.IsTrue(_directories.Contains(parentDirectory), "Attempted to open a file for writing in directory that does not exist: {0}", path);
+        }
 
         if (_files.TryGetValue(path, out Stream? existingStream) &&
             existingStream is DoNotDisposeStream writeStream)

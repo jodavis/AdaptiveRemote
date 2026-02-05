@@ -7,7 +7,7 @@ AdaptiveRemote is a remote control application for TV and AV equipment designed 
 - Support for both touch/mouse and specialized input devices
 
 ## Technology Stack
-- **Platform:** Windows OS only (.NET 8 / net8.0-windows)
+- **Platform:** Windows OS only (.NET 10 / net10.0-windows)
 - **UI Framework:** WPF with Blazor WebView components (Microsoft.AspNetCore.Components.WebView.Wpf)
 - **Language:** C# with nullable reference types enabled
 - **Build System:** .NET SDK, MSBuild
@@ -60,7 +60,7 @@ The AdaptiveRemote.Headless host uses Playwright for cross-platform E2E testing 
   ```
 - **Install Playwright Browsers (one-time):**
   ```bash
-  pwsh src/AdaptiveRemote.Headless/bin/Debug/net8.0/playwright.ps1 install chromium
+  pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium
   ```
 - **Run Tests:** No special environment needed - fully headless
   ```bash
@@ -145,3 +145,6 @@ The AdaptiveRemote.Headless host uses Playwright for cross-platform E2E testing 
 - Include a confidence score (out of 100) when your response is not 100% certain
 - If confidence is below 90%, explain why
 - Avoid giving wrong answers with certainty - it's frustrating for users
+
+## Logging Guidelines
+- When replacing `LoggerMessage.Message`, use exact text from resx including newlines and punctuation.

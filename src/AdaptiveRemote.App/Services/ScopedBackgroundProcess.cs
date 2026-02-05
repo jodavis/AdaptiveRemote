@@ -10,21 +10,21 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
     protected ScopedBackgroundProcess(string name, ILogger logger)
     {
         Name = name;
-        Logger = logger;
+        Logger = new(logger);
     }
 
     public string Name { get; }
-    protected ILogger Logger { get; }
+    protected MessageLogger Logger { get; }
     public Task? ExecuteTask { get; private set; }
 
     protected abstract Task ExecuteAsync(CancellationToken stopToken);
 
     protected virtual Task MoveToWorkerThreadAsync(Func<Task> task, CancellationToken cancellationToken)
     {
-        Logger.LogDebug(Message.ScopedBackgroundProcess_SwitchingToWorkerThread);
+        Logger.ScopedBackgroundProcess_SwitchingToWorkerThread();
         return Task.Run(() =>
         {
-            Logger.LogDebug(Message.ScopedBackgroundProcess_SwitchedToWorkerThread, Environment.CurrentManagedThreadId);
+            Logger.ScopedBackgroundProcess_SwitchedToWorkerThread(Environment.CurrentManagedThreadId);
             return task();
         }, cancellationToken);
     }
@@ -44,20 +44,20 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
         {
             initializationToken.ThrowIfCancellationRequested();
 
-            Logger.LogInformation(Message.ScopedBackgroundProcess_Starting);
+            Logger.ScopedBackgroundProcess_Starting();
 
             await MoveToWorkerThreadAsync(() => StartExecutingOnWorkerThreadAsync(startTcs, stopToken, initializationToken), initializationToken);
 
             if (!stopToken.IsCancellationRequested)
             {
-                Logger.LogWarning(Message.ScopedBackgroundProcess_StoppedEarly);
+                Logger.ScopedBackgroundProcess_StoppedEarly();
             }
         }
         catch (OperationCanceledException)
         {
             if (startTcs.TrySetCanceled(CancellationToken.None))
             {
-                Logger.LogWarning(Message.ScopedBackgroundProcess_CanceledBeforeStarted);
+                Logger.ScopedBackgroundProcess_CanceledBeforeStarted();
             }
             else if (stopToken.IsCancellationRequested)
             {
@@ -66,7 +66,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
             }
             else
             {
-                Logger.LogWarning(Message.ScopedBackgroundProcess_StoppedEarly);
+                Logger.ScopedBackgroundProcess_StoppedEarly();
             }
             throw;
         }
@@ -74,7 +74,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
         {
             if (!startTcs.TrySetException(error))
             {
-                Logger.LogError(Message.ScopedBackgroundProcess_Error, error);
+                Logger.ScopedBackgroundProcess_Error(error);
             }
             throw;
         }
@@ -88,7 +88,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
 
         if (!task.IsCompleted && startTcs.TrySetResult())
         {
-            Logger.LogInformation(Message.ScopedBackgroundProcess_Started);
+            Logger.ScopedBackgroundProcess_Started();
         }
 
         return task;
@@ -108,7 +108,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
     {
         if (ExecuteTask?.IsCompleted == false)
         {
-            Logger.LogInformation(Message.ScopedBackgroundProcess_Stopping);
+            Logger.ScopedBackgroundProcess_Stopping();
 
             await _stopToken.CancelAsync();
 
@@ -119,7 +119,7 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
 #pragma warning restore VSTHRD003 // Avoid awaiting foreign tasks
             }, cancellationToken).ConfigureAwait(false);
 
-            Logger.LogInformation(Message.ScopedBackgroundProcess_Stopped);
+            Logger.ScopedBackgroundProcess_Stopped();
         }
     }
 }

@@ -13,7 +13,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     protected CommandServiceBase(string name, IRemoteDefinitionService remoteDefinition, ILogger logger)
     {
         Name = name;
-        Logger = logger;
+        Logger = new(logger);
 
         _commands = remoteDefinition.GetCommands<CommandType>().ToList();
 
@@ -26,7 +26,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     }
 
     public string Name { get; }
-    protected ILogger Logger { get; }
+    protected MessageLogger Logger { get; }
 
     protected abstract Command.ExecuteDelegate CreateHandler(CommandType command);
 
@@ -63,18 +63,18 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
             {
                 command.IsActive = true;
 
-                Logger.LogInformation(Message.CommandService_Executing, command);
+                Logger.CommandService_Executing(command);
                 await callback(linked.Token);
-                Logger.LogInformation(Message.CommandService_Executed, command);
+                Logger.CommandService_Executed(command);
             }
             catch (OperationCanceledException)
             {
-                Logger.LogWarning(Message.CommandService_Cancelled, command);
+                Logger.CommandService_Cancelled(command);
                 throw;
             }
             catch (Exception error)
             {
-                Logger.LogError(Message.CommandService_Error, command, error);
+                Logger.CommandService_Error(command, error);
                 throw;
             }
             finally
@@ -88,7 +88,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     {
         return delegate (CancellationToken _)
         {
-            Logger.LogError(Message.CommandService_NotStarted, command);
+            Logger.CommandService_NotStarted(command);
             return Task.FromException(Errors.CommandService_NotStarted(command));
         };
     }
@@ -97,7 +97,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     {
         return delegate (CancellationToken _)
         {
-            Logger.LogError(Message.CommandService_WasShutDown, command);
+            Logger.CommandService_WasShutDown(command);
             return Task.FromException(Errors.CommandService_WasShutDown(command));
         };
     }

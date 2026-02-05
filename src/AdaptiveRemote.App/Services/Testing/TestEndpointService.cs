@@ -1,3 +1,4 @@
+using AdaptiveRemote.Logging;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,7 +19,7 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
 {
     private readonly TestingSettings _settings;
     private readonly IApplicationScopeProvider _scopeProvider;
-    private readonly ILogger<TestEndpointService> _logger;
+    private readonly MessageLogger _logger;
     private TcpListener? _listener;
 
     public TestEndpointService(
@@ -28,7 +29,7 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
     {
         _settings = settings.Value;
         _scopeProvider = scopeProvider;
-        _logger = logger;
+        _logger = new(logger);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -39,7 +40,7 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
             return;
         }
 
-        _logger.LogInformation("Starting test control endpoint on port {Port}", _settings.ControlPort.Value);
+        _logger.TestEndpointService_StartingTestControlEndpoint(_settings.ControlPort.Value);
 
         _listener = new TcpListener(IPAddress.Loopback, _settings.ControlPort.Value);
         _listener.Start();
@@ -65,13 +66,13 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error accepting test control connection");
+                    _logger.TestEndpointService_StartingTestControlEndpointFailed(ex);
                 }
             }
         }
         finally
         {
-            _logger.LogInformation("Stopping test control endpoint");
+            _logger.TestEndpointService_StopTestControlEndpoint();
             _listener.Stop();
         }
     }
@@ -87,14 +88,14 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
 
                 stoppingToken.Register(rpc.Dispose);
 
-                _logger.LogInformation("Test control client connected");
+                _logger.TestEndpointService_ClientConnected();
 
                 await rpc.Completion;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling test control client");
+            _logger.TestEndpointService_ClientConnectionFailed(ex);
         }
     }
 
@@ -110,7 +111,7 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
     private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
         where ServiceType : class
     {
-        _logger.LogInformation("Loading test service: {TypeName} from {AssemblyPath}", typeName, assemblyPath);
+        _logger.TestEndpointService_LoadingTestService(typeName, assemblyPath);
 
         Assembly assembly = Assembly.LoadFrom(assemblyPath);
 
@@ -119,12 +120,12 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
 
         if (!typeof(ServiceType).IsAssignableFrom(serviceType))
         {
-            _logger.LogError("Type {TypeName} does not implement {ServiceType}", typeName, typeof(ServiceType).FullName);
+            _logger.TestEndpointService_ServiceTypeIncompatible(typeName, typeof(ServiceType).FullName);
             throw new ArgumentException($"Type {typeName} does not implement {typeof(ServiceType).FullName}", nameof(typeName));
         }
 
         // Store the type to instantiate later within each scoped invocation
-        _logger.LogInformation("Test service type loaded successfully");
+        _logger.TestEndpointService_LoadingTestServiceSucceeded();
 
         // Create the test service within the application scope so it gets access to scoped services
         ServiceType? testService = null;

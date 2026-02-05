@@ -14,13 +14,13 @@ internal class UdpService : IUdpService
 
     private readonly ISocket.Factory _socketFactory;
     private readonly BroadlinkSettings _settings;
-    private readonly ILogger<UdpService> _logger;
+    private readonly MessageLogger _logger;
 
     public UdpService(ISocket.Factory socketFactory, IOptions<BroadlinkSettings> settings, ILogger<UdpService> logger)
     {
         _socketFactory = socketFactory;
         _settings = settings.Value;
-        _logger = logger;
+        _logger = new(logger);
     }
 
     IAsyncEnumerable<ScanResponsePacket> IUdpService.BroadcastAsync(ScanRequestPacket packet, CancellationToken cancellationToken)
@@ -63,12 +63,12 @@ internal class UdpService : IUdpService
                     using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(
                         cancellationToken, timeoutCancellation.Token);
 
-                    _logger.LogInformation(Message.UdpService_Sending, packet, packet.Size, discoverEndPoint);
+                    _logger.UdpService_Sending(packet, packet.Size, discoverEndPoint);
 
                     await socket.SendToAsync(packet.GetBuffer(), discoverEndPoint, combinedCancel.Token);
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    _logger.LogInformation(Message.UdpService_Sent, packet);
+                    _logger.UdpService_Sent(packet);
 
                     while (true)
                     {
@@ -80,7 +80,7 @@ internal class UdpService : IUdpService
                             cancellationToken.ThrowIfCancellationRequested();
                             buffer = buffer.Slice(0, result.ReceivedBytes);
 
-                            _logger.LogInformation(Message.UdpService_ReceivedResponse, packet, result.ReceivedBytes, result.RemoteEndPoint);
+                            _logger.UdpService_ReceivedResponse(packet, result.ReceivedBytes, result.RemoteEndPoint);
                         }
                         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                         {
@@ -103,17 +103,17 @@ internal class UdpService : IUdpService
             }
             catch (OperationCanceledException error)
             {
-                _logger.LogInformation(Message.UdpService_Cancelled, packet);
+                _logger.UdpService_Cancelled(packet);
                 responseChannel.Writer.TryComplete(error);
             }
             catch (UdpException error)
             {
-                _logger.LogError(Message.UdpService_Failed, packet, error.Message);
+                _logger.UdpService_Failed(packet, error);
                 responseChannel.Writer.TryComplete(error);
             }
             catch (Exception error)
             {
-                _logger.LogError(Message.UdpService_UnexpectedError, packet, error.Message);
+                _logger.UdpService_UnexpectedError(packet, error);
                 responseChannel.Writer.TryComplete(error);
             }
         }, cancellationToken);
@@ -139,20 +139,20 @@ internal class UdpService : IUdpService
                 using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(
                     cancellationToken, timeoutCancellation.Token);
 
-                _logger.LogInformation(Message.UdpService_Sending, packet, packet.Size, packet.RemoteEndPoint);
+                _logger.UdpService_Sending(packet, packet.Size, packet.RemoteEndPoint);
 
                 try
                 {
                     await socket.SendToAsync(packet.GetBuffer(), packet.RemoteEndPoint, combinedCancel.Token);
                     combinedCancel.Token.ThrowIfCancellationRequested();
 
-                    _logger.LogInformation(Message.UdpService_Sent, packet);
+                    _logger.UdpService_Sent(packet);
 
                     SocketReceiveFromResult result = await socket.ReceiveFromAsync(responseBuffer, packet.RemoteEndPoint, combinedCancel.Token);
                     combinedCancel.Token.ThrowIfCancellationRequested();
                     responseBuffer = responseBuffer.Slice(0, result.ReceivedBytes);
 
-                    _logger.LogInformation(Message.UdpService_ReceivedResponse, packet, responseBuffer.Length, result.RemoteEndPoint);
+                    _logger.UdpService_ReceivedResponse(packet, responseBuffer.Length, result.RemoteEndPoint);
                     break;
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -181,17 +181,17 @@ internal class UdpService : IUdpService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation(Message.UdpService_Cancelled, packet);
+            _logger.UdpService_Cancelled(packet);
             throw;
         }
         catch (UdpException error)
         {
-            _logger.LogError(Message.UdpService_Failed, packet, error.Message);
+            _logger.UdpService_Failed(packet, error);
             throw;
         }
         catch (Exception error)
         {
-            _logger.LogError(Message.UdpService_UnexpectedError, packet, error.Message);
+            _logger.UdpService_UnexpectedError(packet, error);
             throw;
         }
     }

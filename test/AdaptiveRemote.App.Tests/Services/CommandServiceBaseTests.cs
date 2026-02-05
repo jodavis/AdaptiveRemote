@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.Logging;
-using AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Models;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -65,18 +64,8 @@ public class CommandServiceBaseTests
         MockRemoteDefinition.Verify();
     }
 
-    private static string ExpectMessage_Executing(string commandName)
-        => $"Information[601]: {string.Format(LoggingMessages.CommandService_Executing, commandName)}";
-    private static string ExpectMessage_Executed(string commandName)
-        => $"Information[602]: {string.Format(LoggingMessages.CommandService_Executed, commandName)}";
-    private static string ExpectMessage_Error(string commandName, Exception error)
-        => $"Error[603]: {string.Format(LoggingMessages.CommandService_Error, commandName, error)}";
-    private static string ExpectMessage_Cancelled(string commandName)
-        => $"Warning[604]: {string.Format(LoggingMessages.CommandService_Cancelled, commandName)}";
-    private static string ExpectMessage_NotStarted(string commandName)
-        => $"Error[605]: {string.Format(LoggingMessages.CommandService_NotStarted, commandName)}";
-    private static string ExpectMessage_WasShutDown(string commandName)
-        => $"Error[606]: {string.Format(LoggingMessages.CommandService_WasShutDown, commandName)}";
+    // Previous helper methods that composed expected log message strings were removed.
+    // Tests now verify log calls via the MockLogger messageLogger callback API.
 
     [TestMethod]
     public void CommandServiceBase_Name_ReturnsName()
@@ -95,7 +84,6 @@ public class CommandServiceBaseTests
     public void CommandServiceBase_Constructor_SetsNotStartedActionsOnCommandsOfCorrectType()
     {
         // Arrange
-        List<string> expectedMessages = new();
 
         // Act
         _ = CreateSut();
@@ -113,8 +101,11 @@ public class CommandServiceBaseTests
                 executeTask.Should().BeFaultedWith(Errors.CommandService_NotStarted(command),
                     because: "the service has not initialized {0} yet", command);
 
-                expectedMessages.Add(ExpectMessage_NotStarted(command.ToString()));
-                MockLogger.VerifyMessages(expectedMessages.ToArray());
+                MockLogger.VerifyMessages(messageLogger =>
+                {
+                    messageLogger.CommandService_NotStarted(command);
+                });
+                MockLogger.ClearMessages();
             }
             else
             {
@@ -154,14 +145,13 @@ public class CommandServiceBaseTests
             }
         }
 
-        MockLogger.VerifyMessages();
+        MockLogger.VerifyMessages(messageLogger => { });
     }
 
     [TestMethod]
     public void CommandServiceBase_ExecuteAsync_ExecutesCommandFromDerivedClass()
     {
         // Arrange
-        List<string> expectedMessages = new();
         MockCommandService sut = CreateSut();
         _ = sut.InitializeAsync(InitializeActivity, default);
 
@@ -181,9 +171,12 @@ public class CommandServiceBaseTests
             sut.ExecutedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was executed");
             commandCount++;
 
-            expectedMessages.Add(ExpectMessage_Executing(command.ToString()));
-            expectedMessages.Add(ExpectMessage_Executed(command.ToString()));
-            MockLogger.VerifyMessages(expectedMessages.ToArray());
+            MockLogger.VerifyMessages(messageLogger =>
+            {
+                messageLogger.CommandService_Executing(command);
+                messageLogger.CommandService_Executed(command);
+            });
+            MockLogger.ClearMessages();
         }
     }
 
@@ -211,8 +204,12 @@ public class CommandServiceBaseTests
             sut.ExecutedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was executed");
             commandCount++;
 
-            expectedMessages.Add(ExpectMessage_Executing(command.ToString()));
-            MockLogger.VerifyMessages(expectedMessages.ToArray());
+            // Verify cumulative executing messages up to the current command
+            MockLogger.VerifyMessages(messageLogger =>
+            {
+                messageLogger.CommandService_Executing(command);
+            });
+            MockLogger.ClearMessages();
         }
     }
 
@@ -242,9 +239,12 @@ public class CommandServiceBaseTests
             sut.ExecutedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was executed");
             commandCount++;
 
-            expectedMessages.Add(ExpectMessage_Executing(command.ToString()));
-            expectedMessages.Add(ExpectMessage_Error(command.ToString(), expectedException));
-            MockLogger.VerifyMessages(expectedMessages.ToArray());
+            MockLogger.VerifyMessages(messageLogger =>
+            {
+                messageLogger.CommandService_Executing(command);
+                messageLogger.CommandService_Error(command, expectedException);
+            });
+            MockLogger.ClearMessages();
         }
     }
 
@@ -275,9 +275,12 @@ public class CommandServiceBaseTests
             sut.ExecutedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was executed");
             commandCount++;
 
-            expectedMessages.Add(ExpectMessage_Executing(command.ToString()));
-            expectedMessages.Add(ExpectMessage_Cancelled(command.ToString()));
-            MockLogger.VerifyMessages(expectedMessages.ToArray());
+            MockLogger.VerifyMessages(messageLogger =>
+            {
+                messageLogger.CommandService_Executing(command);
+                messageLogger.CommandService_Cancelled(command);
+            });
+            MockLogger.ClearMessages();
         }
     }
 
@@ -304,10 +307,13 @@ public class CommandServiceBaseTests
         // Assert
         sut.CancelTokens.ForEach(x => x.IsCancellationRequested.Should().Be(true, because: "all executing commands were cancelled"));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(0).ToString()),
-            ExpectMessage_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(1).ToString()),
-            ExpectMessage_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(2).ToString()));
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            List<MockCommand> list = RemoteDefinition.Elements.OfType<MockCommand>().ToList();
+            messageLogger.CommandService_Executing(list[0]);
+            messageLogger.CommandService_Executing(list[1]);
+            messageLogger.CommandService_Executing(list[2]);
+        });
     }
 
     [TestMethod]
@@ -336,8 +342,11 @@ public class CommandServiceBaseTests
                 resultTask.Should().BeFaultedWith(Errors.CommandService_WasShutDown(command),
                     because: "the service has uninitialized {0}", command);
 
-                expectedMessages.Add(ExpectMessage_WasShutDown(command.ToString()));
-                MockLogger.VerifyMessages(expectedMessages.ToArray());
+                MockLogger.VerifyMessages(messageLogger =>
+                {
+                    messageLogger.CommandService_WasShutDown(command);
+                });
+                MockLogger.ClearMessages();
             }
             else
             {
@@ -372,10 +381,12 @@ public class CommandServiceBaseTests
         sut.CancelTokens.ForEach(x => x.WaitForCancelledAsync().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
             because: "all executing commands were cancelled"));
 
-        MockLogger.VerifyMessages(
-            ExpectMessage_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(0).ToString()),
-            ExpectMessage_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(1).ToString()),
-            ExpectMessage_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(2).ToString()));
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.CommandService_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(0));
+            messageLogger.CommandService_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(1));
+            messageLogger.CommandService_Executing(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(2));
+        });
     }
 
     private class MockCommandService : CommandServiceBase<MockCommand>
