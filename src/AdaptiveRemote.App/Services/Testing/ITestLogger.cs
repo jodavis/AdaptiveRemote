@@ -1,9 +1,12 @@
-﻿using StreamJsonRpc;
+﻿using PolyType;
+using StreamJsonRpc;
 
 namespace AdaptiveRemote.Services.Testing;
 
 [RpcMarshalable]
-public interface ITestLogger : IDisposable
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface ITestLogger : IDisposable
 {
     /// <summary>
     /// Logs a formatted message on the host side using the host application's logging infrastructure.

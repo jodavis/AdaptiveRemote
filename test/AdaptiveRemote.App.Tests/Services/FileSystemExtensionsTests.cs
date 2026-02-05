@@ -77,7 +77,7 @@ public class FileSystemExtensionsTests
         // Arrange - This test verifies that root-level directories can be created
         // (which replaces the old test that expected this to fail on Windows)
         string rootDir = "users";
-        
+
         IFileSystem fileSystem = MockFileSystem.Object;
 
         // Act

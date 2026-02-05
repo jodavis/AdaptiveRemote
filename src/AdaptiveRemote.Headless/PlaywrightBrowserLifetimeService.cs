@@ -49,7 +49,7 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
         try
         {
             // Get the actual URL the server is listening on
-            var serverAddressesFeature = _server.Features.Get<IServerAddressesFeature>();
+            IServerAddressesFeature? serverAddressesFeature = _server.Features.Get<IServerAddressesFeature>();
             string appUrl = serverAddressesFeature?.Addresses.FirstOrDefault() ?? "http://localhost:5000";
 
             _logger.LogInformation("Will navigate to: {AppUrl}", appUrl);
