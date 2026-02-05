@@ -25,7 +25,8 @@ subsampled_indices = list(range(0, len(phrases_df), subsample_rate))
 
 # Functions
 async def generate_samples():
-    for count, idx in enumerate(tqdm(subsampled_indices, desc="Generating speech samples")):
+    count = 0
+    for idx in tqdm(subsampled_indices, desc="Generating speech samples"):
         output_path = paths.output_dir / phrases_df.iloc[idx]['sample_file_name']
         if output_path.exists():
             continue  # Skip if samples already exist for this phrase index
@@ -39,6 +40,7 @@ async def generate_samples():
                 rate=speech_rate_str,
             )
             await communicate.save(str(output_path))
+            count += 1
         except Exception as e:
             print(f"Error generating sample for index {idx} with voice {voice}: {e}")
             continue
@@ -47,7 +49,7 @@ async def generate_samples():
 async def main():
     print("Starting sample generation...")
     total_generated = await generate_samples()
-    print(f"Sample generation completed. Total samples generated: {total_generated + 1}")
+    print(f"Sample generation completed. Total samples generated: {total_generated}")
 
 if __name__ == "__main__":
     asyncio.run(main())

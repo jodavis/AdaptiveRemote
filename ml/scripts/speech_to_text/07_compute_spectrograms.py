@@ -31,7 +31,7 @@ pad_value = len(vocab_list)  # Padding token index
 
 def compute_melspectrogram(time_steps, wav_path):
     y, sr = sf.read(str(wav_path))
-            # If stereo, convert to mono (average channels)
+    # If stereo, convert to mono (average channels)
     if y.ndim > 1:
         y = np.mean(y, axis=1)
     S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=80)
@@ -45,7 +45,7 @@ def compute_melspectrogram(time_steps, wav_path):
     return log_S
 
 def compute_tokens(vocab_list, transcription):
-    transcription = re.sub(r"[^a-z0-9\s]", " ", transcription.lower())
+    transcription = transcription.lower().replace(',', ' ')
     tokens = [vocab_list.index(word) for word in transcription.split() if word in vocab_list]
     tokens = tokens + [pad_value]*(input_token_length-len(tokens)) if len(tokens)<input_token_length else tokens[:input_token_length]
     return tokens

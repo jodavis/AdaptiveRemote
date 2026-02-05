@@ -62,7 +62,7 @@ async def generate_variation_records(voices: list):
         try:
             existing_idx = existing_phrases.index(phrase)
             records.append(existing_records[existing_idx])
-            existing_phrases.remove(existing_idx)
+            existing_phrases.pop(existing_idx)
             continue
         except ValueError:
             pass  # Phrase not found in existing records, proceed to create new variations
