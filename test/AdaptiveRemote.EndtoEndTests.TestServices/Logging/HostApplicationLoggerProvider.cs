@@ -12,19 +12,14 @@ namespace AdaptiveRemote.EndtoEndTests.Logging;
 /// This class runs in the test process and relays log messages to <see cref="HostApplicationTestLogger" />
 /// in the host application process.
 /// </remarks>
-internal sealed class HostApplicationLoggerProvider : ILoggerProvider
+public sealed class HostApplicationLoggerProvider : ILoggerProvider
 {
     private readonly ConcurrentDictionary<string, ILogger> _loggers = new();
     private readonly HostRpcLoggerState _state = new();
 
-    public void AttachTestLoggerProxy(ITestLogger proxy)
+    internal void AttachTestLoggerProxy(ITestLogger proxy)
     {
         ArgumentNullException.ThrowIfNull(proxy, nameof(proxy));
-
-        if (Interlocked.Exchange(ref _state.HasProxy, 1) == 1)
-        {
-            return;
-        }
 
         _state.LoggerProxy = proxy;
     }
@@ -124,6 +119,5 @@ internal sealed class HostApplicationLoggerProvider : ILoggerProvider
     private sealed class HostRpcLoggerState
     {
         public ITestLogger? LoggerProxy;
-        public int HasProxy = 0;
     }
 }

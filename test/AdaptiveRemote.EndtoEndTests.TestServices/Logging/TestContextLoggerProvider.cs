@@ -9,12 +9,9 @@ public sealed class TestContextLoggerProvider : ILoggerProvider
     private readonly ConcurrentDictionary<string, ILogger> _loggers = new();
     private readonly LoggerState _state;
 
-    public TestContextLoggerProvider(TestContext testContext)
+    public TestContextLoggerProvider()
     {
-        _state = new()
-        {
-            TestContext = testContext
-        };
+        _state = new();
     }
 
     ILogger ILoggerProvider.CreateLogger(string categoryName)
@@ -24,13 +21,17 @@ public sealed class TestContextLoggerProvider : ILoggerProvider
         => _loggers.Clear();
 
     // Expose TestContext so callers (tests) can attach result files
-    internal TestContext TestContext => _state.TestContext;
+    public TestContext? TestContext
+    {
+        get => _state.TestContext;
+        set => _state.TestContext = value;
+    }
 
     private sealed class LoggerState
     {
         private const int ScopeIndentLevel = 2;
 
-        internal required TestContext TestContext { get; init; }
+        internal TestContext? TestContext { get; set; }
         internal DateTime StartTime { get; } = DateTime.Now;
         internal Stack<string?> Scopes { get; } = new();
         internal string ScopeIndent => new string(' ', Scopes.Count << ScopeIndentLevel);
@@ -54,19 +55,27 @@ public sealed class TestContextLoggerProvider : ILoggerProvider
 
         void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            string logLevelPrefix = logLevel switch
+            if (_state.TestContext is TestContext context)
             {
-                LogLevel.Critical => "crit: ",
-                LogLevel.Error => "err: ",
-                LogLevel.Warning => "warn: ",
-                LogLevel.Debug => "dbug: ",
-                LogLevel.Trace => "trce: ",
-                _ => "",
-            };
+                string logLevelPrefix = logLevel switch
+                {
+                    LogLevel.Critical => "crit: ",
+                    LogLevel.Error => "err: ",
+                    LogLevel.Warning => "warn: ",
+                    LogLevel.Debug => "dbug: ",
+                    LogLevel.Trace => "trce: ",
+                    _ => "",
+                };
 
-            _state.TestContext.Write(_state.ScopeIndent);
-            _state.TestContext.Write(_state.TimePrefix);
-            _state.TestContext.WriteLine($"{logLevelPrefix}[{_categoryName}] {formatter(state, exception)}");
+                context.Write(_state.ScopeIndent);
+                context.Write(_state.TimePrefix);
+                context.WriteLine($"{logLevelPrefix}[{_categoryName}] {formatter(state, exception)}");
+
+                if (exception is not null)
+                {
+                    context.WriteLine(exception.ToString());
+                }
+            }
         }
     }
 
@@ -79,11 +88,14 @@ public sealed class TestContextLoggerProvider : ILoggerProvider
         {
             _state = state;
 
-            _state.TestContext.Write(_state.ScopeIndent);
-            _state.TestContext.WriteLine(
-                scopeName is null ? "Begin Scope" : "Begin Scope: {0}",
-                scopeName);
-            _state.Scopes.Push(scopeName);
+            if (_state.TestContext is TestContext context)
+            {
+                context.Write(_state.ScopeIndent);
+                context.WriteLine(
+                    scopeName is null ? "Begin Scope" : "Begin Scope: {0}",
+                    scopeName);
+                _state.Scopes.Push(scopeName);
+            }
         }
 
         public void Dispose()
@@ -91,10 +103,13 @@ public sealed class TestContextLoggerProvider : ILoggerProvider
             if (Interlocked.Increment(ref _disposed) == 1)
             {
                 string? scopeName = _state.Scopes.Pop();
-                _state.TestContext.Write(_state.ScopeIndent);
-                _state.TestContext.WriteLine(
-                    scopeName is null ? "End Scope" : "End Scope: {0}",
-                    scopeName);
+                if (_state.TestContext is TestContext context)
+                {
+                    context.Write(_state.ScopeIndent);
+                    context.WriteLine(
+                        scopeName is null ? "End Scope" : "End Scope: {0}",
+                        scopeName);
+                }
             }
         }
     }

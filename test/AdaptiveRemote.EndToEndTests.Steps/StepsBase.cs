@@ -10,15 +10,12 @@ namespace AdaptiveRemote.EndToEndTests.Steps;
 public abstract class StepsBase : IContainerDependentObject
 {
     private IObjectContainer? _container;
-    private AdaptiveRemoteHost? _host;
     private ISimulatedEnvironment? _simulatedEnvironment;
     private ILogger? _logger;
 
     public void SetObjectContainer(IObjectContainer container) => _container = container;
 
-    public AdaptiveRemoteHost Host => _host ??= GetContainerObject<AdaptiveRemoteHost>();
-
-    public bool IsHostRunning => _host?.IsRunning == true;
+    public AdaptiveRemoteHost Host => Environment.Host;
 
     public TestContext TestContext => GetContainerObject<TestContext>();
 

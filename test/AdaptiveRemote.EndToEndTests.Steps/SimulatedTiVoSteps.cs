@@ -1,12 +1,13 @@
 using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 
 namespace AdaptiveRemote.EndToEndTests.Steps;
 
 [Binding]
-public class TiVoSteps : StepsBase
+public class SimulatedTiVoSteps : StepsBase
 {
     [Then(@"I should see the TiVo receives a {string} message")]
     public void ThenIShouldSeeTheTiVoReceivesAMessage(string expectedCommand)
@@ -34,6 +35,6 @@ public class TiVoSteps : StepsBase
             Assert.Fail($"Expected TiVo to receive message 'IRCODE {expectedCommand}', but it was not found. Recorded messages: {recordedMessages}");
         }
 
-        TestContext.WriteLine($"Successfully verified TiVo received message: IRCODE {expectedCommand}");
+        Logger.LogInformation("Successfully verified TiVo received message: IRCODE {expectedCommand}", expectedCommand);
     }
 }
