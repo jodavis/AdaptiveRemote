@@ -74,32 +74,6 @@ public class AcceleratedServices
         _testCoordinator?.ApplyServiceRegistrations(services);
     }
 
-    /// <summary>
-    /// Creates a TestEndpointService for early initialization (before DI is fully configured).
-    /// </summary>
-    public ITestEndpoint? CreateEarlyTestEndpoint(IConfiguration configuration, ILoggerFactory loggerFactory)
-    {
-        if (_testCoordinator == null)
-        {
-            return null;
-        }
-
-        int? controlPort = configuration.GetValue<int?>("test:ControlPort");
-        if (!controlPort.HasValue)
-        {
-            return null;
-        }
-
-        TestingSettings settings = new() { ControlPort = controlPort.Value };
-        ILogger<TestEndpointService> logger = loggerFactory.CreateLogger<TestEndpointService>();
-
-        return new TestEndpointService(
-            Microsoft.Extensions.Options.Options.Create(settings),
-            null, // ScopeProvider will be null initially, but service creation happens later when DI is ready
-            logger,
-            _testCoordinator);
-    }
-
     protected virtual void AddPrecreatedServices(IServiceCollection services)
     {
         // Apply test service registrations first

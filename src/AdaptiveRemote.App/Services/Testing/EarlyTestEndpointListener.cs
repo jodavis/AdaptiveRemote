@@ -20,6 +20,7 @@ public class EarlyTestEndpointListener : IDisposable
     private TcpClient? _client;
     private bool _disposed;
     private ITestEndpoint? _forwardTarget;
+    private ForwardingTestEndpoint? _forwardingEndpoint;
 
     public EarlyTestEndpointListener(
         IConfiguration configuration,
@@ -58,7 +59,7 @@ public class EarlyTestEndpointListener : IDisposable
     /// Waits for and accepts the first test connection, then sets up RPC with a forwarding target.
     /// Returns true if connection established, false if timeout.
     /// </summary>
-    public bool WaitForConnection(TimeSpan timeout, ITestEndpoint forwardTarget)
+    public bool WaitForConnection(TimeSpan timeout)
     {
         if (_listener == null)
         {
@@ -70,7 +71,6 @@ public class EarlyTestEndpointListener : IDisposable
             return true; // Already connected
         }
 
-        _forwardTarget = forwardTarget;
         _logger?.LogInformation("Waiting for test connection (timeout: {Timeout})", timeout);
 
         try
@@ -86,9 +86,10 @@ public class EarlyTestEndpointListener : IDisposable
             _logger?.LogInformation("Test client connected");
 
             // Set up JSON-RPC on the connection with a forwarding wrapper
+            // Target will be set later via SetForwardTarget
             NetworkStream stream = _client.GetStream();
-            ForwardingTestEndpoint forwarder = new(_coordinator, _forwardTarget, _logger);
-            JsonRpc rpc = JsonRpc.Attach(stream, forwarder);
+            _forwardingEndpoint = new ForwardingTestEndpoint(_coordinator, _logger);
+            JsonRpc rpc = JsonRpc.Attach(stream, _forwardingEndpoint);
 
             _logger?.LogInformation("RPC endpoint ready");
             return true;
@@ -97,6 +98,18 @@ public class EarlyTestEndpointListener : IDisposable
         {
             _logger?.LogError(ex, "Failed to accept test connection");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Sets the forward target for service creation calls.
+    /// Should be called after the host is built and TestEndpointService is available.
+    /// </summary>
+    public void SetForwardTarget(ITestEndpoint target)
+    {
+        if (_forwardingEndpoint != null)
+        {
+            _forwardingEndpoint.SetTarget(target);
         }
     }
 
@@ -131,14 +144,18 @@ public class EarlyTestEndpointListener : IDisposable
     private class ForwardingTestEndpoint : ITestEndpoint
     {
         private readonly TestEndpointCoordinator _coordinator;
-        private readonly ITestEndpoint _target;
+        private ITestEndpoint? _target;
         private readonly ILogger? _logger;
 
-        public ForwardingTestEndpoint(TestEndpointCoordinator coordinator, ITestEndpoint target, ILogger? logger)
+        public ForwardingTestEndpoint(TestEndpointCoordinator coordinator, ILogger? logger)
         {
             _coordinator = coordinator;
-            _target = target;
             _logger = logger;
+        }
+
+        public void SetTarget(ITestEndpoint target)
+        {
+            _target = target;
         }
 
         // Early initialization methods - handle locally
@@ -156,15 +173,39 @@ public class EarlyTestEndpointListener : IDisposable
 
         // Service creation methods - forward to TestEndpointService (which has scope provider)
         public Task<IApplicationTestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-            => _target.CreateTestServiceAsync(assemblyPath, typeName, cancellationToken);
+        {
+            if (_target == null)
+            {
+                throw new InvalidOperationException("Forward target not set. Call SetForwardTarget after host is built.");
+            }
+            return _target.CreateTestServiceAsync(assemblyPath, typeName, cancellationToken);
+        }
 
         public Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-            => _target.CreateTestLoggerAsync(assemblyPath, typeName, cancellationToken);
+        {
+            if (_target == null)
+            {
+                throw new InvalidOperationException("Forward target not set. Call SetForwardTarget after host is built.");
+            }
+            return _target.CreateTestLoggerAsync(assemblyPath, typeName, cancellationToken);
+        }
 
         public Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-            => _target.CreateUITestServiceAsync(assemblyPath, typeName, cancellationToken);
+        {
+            if (_target == null)
+            {
+                throw new InvalidOperationException("Forward target not set. Call SetForwardTarget after host is built.");
+            }
+            return _target.CreateUITestServiceAsync(assemblyPath, typeName, cancellationToken);
+        }
 
         public Task<ITestSpeechRecognitionService> CreateTestSpeechServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-            => _target.CreateTestSpeechServiceAsync(assemblyPath, typeName, cancellationToken);
+        {
+            if (_target == null)
+            {
+                throw new InvalidOperationException("Forward target not set. Call SetForwardTarget after host is built.");
+            }
+            return _target.CreateTestSpeechServiceAsync(assemblyPath, typeName, cancellationToken);
+        }
     }
 }
