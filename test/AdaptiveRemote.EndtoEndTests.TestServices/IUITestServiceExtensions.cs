@@ -145,4 +145,30 @@ public static class IUITestServiceExtensions
     /// <returns>The speaking message text if visible, otherwise null.</returns>
     public static string? GetSpeakingMessage(this IUITestService service, TimeSpan timeout)
         => WaitHelpers.WaitForAsyncTask(service.GetSpeakingMessageAsync, timeout);
+
+    /// <summary>
+    /// Waits for the speaking message to match the expected text.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="expectedMessage">The expected message text.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>True if the message appears within the timeout, false otherwise.</returns>
+    public static bool WaitForSpeakingMessage(this IUITestService service, string expectedMessage, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.WaitForSpeakingMessage(expectedMessage, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Waits for the speaking message to match the expected text.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="expectedMessage">The expected message text.</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>True if the message appears within the timeout, false otherwise.</returns>
+    public static bool WaitForSpeakingMessage(this IUITestService service, string expectedMessage, TimeSpan timeout)
+    {
+        return WaitHelpers.ExecuteWithRetries(async ct =>
+        {
+            string? actualMessage = await service.GetSpeakingMessageAsync(ct);
+            return actualMessage == expectedMessage;
+        }, timeout);
+    }
 }

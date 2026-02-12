@@ -21,19 +21,13 @@ public class ConversationSteps : StepsBase
     {
         Assert.IsNotNull(Host, "Cannot check speaking message. The application is not started.");
 
-        // Wait a bit for the UI to update and speech processing
-        string? actualMessage = null;
-        for (int i = 0; i < 50; i++) // Try for up to 5 seconds
+        bool found = Host.UI.WaitForSpeakingMessage(expectedMessage, timeoutInSeconds: 5);
+        if (!found)
         {
-            actualMessage = Host.UI.GetSpeakingMessage();
-            if (actualMessage == expectedMessage)
-            {
-                Logger.LogInformation("Speaking message verified: {Message}", actualMessage);
-                return;
-            }
-            Thread.Sleep(100);
+            string? actualMessage = Host.UI.GetSpeakingMessage(timeoutInSeconds: 1);
+            Assert.Fail($"Expected speaking message '{expectedMessage}' but got '{actualMessage}'");
         }
 
-        Assert.Fail($"Expected speaking message '{expectedMessage}' but got '{actualMessage}'");
+        Logger.LogInformation("Speaking message verified: {Message}", expectedMessage);
     }
 }
