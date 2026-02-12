@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
+using AdaptiveRemote.EndtoEndTests.Logging;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Logging;
 using StreamJsonRpc;
-using AdaptiveRemote.EndtoEndTests.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
 
