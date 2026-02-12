@@ -43,4 +43,14 @@ public partial interface ITestEndpoint
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A proxy to the UI test service that can be used to interact with the UI.</returns>
     Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Dynamically loads a test speech recognition service from the specified assembly and type.
+    /// The service is instantiated within the application's DI scope so it can access the speech recognition engine.
+    /// </summary>
+    /// <param name="assemblyPath">Full path to the assembly containing the test speech service type.</param>
+    /// <param name="typeName">Fully qualified name of the test speech service type to instantiate.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A proxy to the test speech service that can be used to simulate speech.</returns>
+    Task<ITestSpeechRecognitionService> CreateTestSpeechServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
 }

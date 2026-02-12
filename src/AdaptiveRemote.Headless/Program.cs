@@ -33,8 +33,19 @@ internal static class Configuration
     {
         builder.Services
             .AddSingleton<ISpeechSynthesizer, StubSpeechSynthesizer>()
-            .AddSingleton<IGrammarProvider, StubGrammarProvider>()
-            .AddSingleton<ISpeechRecognitionEngine, StubSpeechRecognition>();
+            .AddSingleton<IGrammarProvider, StubGrammarProvider>();
+
+        // Use TestSpeechRecognitionEngine if test control port is specified, otherwise use stub
+        bool isTestMode = builder.Configuration.GetValue<int?>("test:ControlPort").HasValue;
+        if (isTestMode)
+        {
+            builder.Services.AddSingleton<ISpeechRecognitionEngine, TestSpeechRecognitionEngine>();
+        }
+        else
+        {
+            builder.Services.AddSingleton<ISpeechRecognitionEngine, StubSpeechRecognition>();
+        }
+
         return builder;
     }
 

@@ -18,6 +18,7 @@ public static class ITestEndpointExtensions
             nameof(IApplicationTestService) => controlService.CreateTestServiceAsync,
             nameof(IUITestService) => controlService.CreateUITestServiceAsync,
             nameof(ITestLogger) => controlService.CreateTestLoggerAsync,
+            nameof(ITestSpeechRecognitionService) => controlService.CreateTestSpeechServiceAsync,
             _ => throw new InvalidOperationException($"There is no method on ITestEndpoint to create a service of type {typeof(ContractType).AssemblyQualifiedName}")
         };
 

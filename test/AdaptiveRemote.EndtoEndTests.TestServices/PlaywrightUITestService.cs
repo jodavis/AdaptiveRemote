@@ -117,6 +117,27 @@ public class PlaywrightUITestService : IUITestService
         });
     }
 
+    public async Task<string?> GetSpeakingMessageAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            ILocator locator = CurrentPage.Locator("div.conversation-speaking-message span");
+            bool isVisible = await locator.IsVisibleAsync();
+            if (!isVisible)
+            {
+                return null;
+            }
+
+            string text = await locator.TextContentAsync() ?? string.Empty;
+            // Remove surrounding quotes if present
+            return text.Trim('"');
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private ILocator GetButtonLocatorByLabel(string label)
     {
         // Use Playwright's getByRole with exact match - it will throw meaningful errors

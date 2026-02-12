@@ -108,6 +108,9 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
     public Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
         => CreateRemotableServiceAsync<IUITestService>(assemblyPath, typeName, cancellationToken);
 
+    public Task<ITestSpeechRecognitionService> CreateTestSpeechServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+        => CreateRemotableServiceAsync<ITestSpeechRecognitionService>(assemblyPath, typeName, cancellationToken);
+
     private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
         where ServiceType : class
     {

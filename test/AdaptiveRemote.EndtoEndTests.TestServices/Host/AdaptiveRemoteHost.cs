@@ -14,6 +14,7 @@ public partial class AdaptiveRemoteHost : IDisposable
     private readonly ILogger<AdaptiveRemoteHost> _logger;
     private readonly Lazy<IApplicationTestService> _lazyTestService;
     private readonly Lazy<IUITestService> _lazyUITestService;
+    private readonly Lazy<ITestSpeechRecognitionService> _lazySpeechTestService;
     private readonly ITestEndpoint _testEndpoint;
 
     private readonly StringBuilder _standardOutput;
@@ -51,6 +52,9 @@ public partial class AdaptiveRemoteHost : IDisposable
             UIServiceType.BlazorWebView => CreateLazyTestService<BlazorWebViewUITestService, IUITestService>(),
             _ => throw new InvalidOperationException($"Unsupported UIServiceType '{_settings.UIService}'")
         };
+
+        // Create speech test service
+        _lazySpeechTestService = CreateLazyTestService<TestSpeechRecognitionService, ITestSpeechRecognitionService>();
     }
 
     private Lazy<TInterface> CreateLazyTestService<TImplementation, TInterface>()
@@ -76,6 +80,8 @@ public partial class AdaptiveRemoteHost : IDisposable
     public IApplicationTestService Application => _lazyTestService.Value;
 
     public IUITestService UI => _lazyUITestService.Value;
+
+    public ITestSpeechRecognitionService Speech => _lazySpeechTestService.Value;
 
     public ILogger CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
 

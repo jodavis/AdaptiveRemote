@@ -55,4 +55,11 @@ public partial interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <exception cref="InvalidOperationException">Thrown if the text is not found or not clickable.</exception>
     Task ClickTextAsync(string text, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets the text content from the conversation speaking message div, if visible.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The speaking message text if visible, otherwise null.</returns>
+    Task<string?> GetSpeakingMessageAsync(CancellationToken cancellationToken);
 }

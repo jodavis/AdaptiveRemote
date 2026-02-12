@@ -127,4 +127,22 @@ public static class IUITestServiceExtensions
             throw new TimeoutException($"Clicking text '{text}' did not complete within timeout.");
         }
     }
+
+    /// <summary>
+    /// Gets the text content from the conversation speaking message div (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>The speaking message text if visible, otherwise null.</returns>
+    public static string? GetSpeakingMessage(this IUITestService service, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.GetSpeakingMessage(TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Gets the text content from the conversation speaking message div (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>The speaking message text if visible, otherwise null.</returns>
+    public static string? GetSpeakingMessage(this IUITestService service, TimeSpan timeout)
+        => WaitHelpers.WaitForAsyncTask(service.GetSpeakingMessageAsync, timeout);
 }
