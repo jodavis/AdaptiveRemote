@@ -14,18 +14,20 @@ namespace AdaptiveRemote.Services.Testing;
 /// <summary>
 /// Provides a test control endpoint via TCP/JSON-RPC for E2E testing.
 /// Enabled when --test:ControlPort argument is provided.
+/// In test mode with early listener, this service doesn't create its own listener -
+/// the RPC calls are forwarded from EarlyTestEndpointListener.
 /// </summary>
 internal class TestEndpointService : BackgroundService, ITestEndpoint
 {
     private readonly TestingSettings _settings;
-    private readonly IApplicationScopeProvider _scopeProvider;
+    private readonly IApplicationScopeProvider? _scopeProvider;
     private readonly TestEndpointCoordinator? _coordinator;
     private readonly MessageLogger _logger;
     private TcpListener? _listener;
 
     public TestEndpointService(
         IOptions<TestingSettings> settings,
-        IApplicationScopeProvider scopeProvider,
+        IApplicationScopeProvider? scopeProvider,
         ILogger<TestEndpointService> logger,
         TestEndpointCoordinator? coordinator = null)
     {
@@ -43,6 +45,31 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
             return;
         }
 
+        // In test mode with EarlyTestEndpointListener, we don't need to do anything here
+        // The RPC calls are being forwarded from the early listener
+        // Just wait to be cancelled
+        if (_coordinator != null)
+        {
+            _logger.TestEndpointService_StartingTestControlEndpoint(_settings.ControlPort.Value);
+
+            try
+            {
+                // Just wait for cancellation
+                await Task.Delay(Timeout.Infinite, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Normal shutdown
+            }
+            finally
+            {
+                _logger.TestEndpointService_StopTestControlEndpoint();
+            }
+
+            return;
+        }
+
+        // No coordinator - start our own listener (non-test-mode or fallback)
         _logger.TestEndpointService_StartingTestControlEndpoint(_settings.ControlPort.Value);
 
         _listener = new TcpListener(IPAddress.Loopback, _settings.ControlPort.Value);
@@ -139,6 +166,11 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
     private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
         where ServiceType : class
     {
+        if (_scopeProvider == null)
+        {
+            throw new InvalidOperationException("Cannot create test services: IApplicationScopeProvider not available. This should not happen in normal operation.");
+        }
+
         _logger.TestEndpointService_LoadingTestService(typeName, assemblyPath);
 
         Assembly assembly = Assembly.LoadFrom(assemblyPath);

@@ -52,12 +52,21 @@ public class TestEndpointCoordinator
     /// <summary>
     /// Blocks until test initialization is complete or timeout occurs.
     /// Returns true if successful, false if timeout.
+    /// If no services are registered, continues immediately without waiting.
     /// </summary>
     public bool WaitForTestInitialization()
     {
         if (!IsTestModeEnabled)
         {
             return true; // Not in test mode, continue immediately
+        }
+
+        // If no services pending registration, don't wait - continue immediately
+        // This maintains backward compatibility with tests that don't use service injection
+        if (_pendingRegistrations.IsEmpty)
+        {
+            _logger?.LogInformation("No test services to register, continuing startup immediately");
+            return true;
         }
 
         _logger?.LogInformation("Waiting for test initialization (timeout: {Timeout})", _connectionTimeout);
