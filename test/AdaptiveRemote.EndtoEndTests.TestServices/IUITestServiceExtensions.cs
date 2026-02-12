@@ -81,4 +81,50 @@ public static class IUITestServiceExtensions
             // This exception occurs sometimes when clicking the "Exit" button if the application shuts down to fast
         }
     }
+
+    /// <summary>
+    /// Checks if text content is visible in the UI (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="text">The text to search for (case-sensitive).</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>True if the text is visible anywhere in the UI, false otherwise.</returns>
+    public static bool IsTextVisible(this IUITestService service, string text, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.IsTextVisible(text, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Checks if text content is visible in the UI (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="text">The text to search for (case-sensitive).</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>True if the text is visible anywhere in the UI, false otherwise.</returns>
+    public static bool IsTextVisible(this IUITestService service, string text, TimeSpan timeout)
+        => WaitHelpers.ExecuteWithRetries(ct => service.IsTextVisibleAsync(text, ct), timeout);
+
+    /// <summary>
+    /// Clicks on an element containing the specified text in the UI (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="text">The exact text content to find and click (case-sensitive).</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
+    public static void ClickText(this IUITestService service, string text, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.ClickText(text, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Clicks on an element containing the specified text in the UI (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="text">The exact text content to find and click (case-sensitive).</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
+    public static void ClickText(this IUITestService service, string text, TimeSpan timeout)
+    {
+        bool succeeded = WaitHelpers.WaitForAsyncTask(ct => service.ClickTextAsync(text, ct), timeout);
+        if (!succeeded)
+        {
+            throw new TimeoutException($"Clicking text '{text}' did not complete within timeout.");
+        }
+    }
 }

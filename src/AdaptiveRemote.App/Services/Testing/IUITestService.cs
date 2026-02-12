@@ -38,4 +38,21 @@ public partial interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <exception cref="InvalidOperationException">Thrown if multiple buttons match the label or if the button is not visible/enabled.</exception>
     Task ClickButtonAsync(string label, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Checks if text content is visible in the UI.
+    /// </summary>
+    /// <param name="text">The text to search for (case-sensitive).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>True if the text is visible anywhere in the UI, false otherwise.</returns>
+    Task<bool> IsTextVisibleAsync(string text, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Clicks on an element containing the specified text in the UI.
+    /// The element must be visible and clickable.
+    /// </summary>
+    /// <param name="text">The exact text content to find and click (case-sensitive).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <exception cref="InvalidOperationException">Thrown if the text is not found or not clickable.</exception>
+    Task ClickTextAsync(string text, CancellationToken cancellationToken);
 }

@@ -86,6 +86,37 @@ public class PlaywrightUITestService : IUITestService
         return hasDisabledAttribute || isAriaDisabled;
     }
 
+    public async Task<bool> IsTextVisibleAsync(string text, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            ILocator locator = CurrentPage.GetByText(text, new() { Exact = true });
+            return await locator.IsVisibleAsync();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task ClickTextAsync(string text, CancellationToken cancellationToken = default)
+    {
+        ILocator locator = CurrentPage.GetByText(text, new() { Exact = true });
+
+        // Verify the text is visible
+        bool isVisible = await locator.IsVisibleAsync();
+        if (!isVisible)
+        {
+            throw new InvalidOperationException($"Text '{text}' is not visible.");
+        }
+
+        // Click the element containing the text
+        await locator.ClickAsync(new LocatorClickOptions
+        {
+            Timeout = DefaultTimeoutMs
+        });
+    }
+
     private ILocator GetButtonLocatorByLabel(string label)
     {
         // Use Playwright's getByRole with exact match - it will throw meaningful errors
