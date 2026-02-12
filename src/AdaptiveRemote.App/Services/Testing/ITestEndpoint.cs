@@ -53,4 +53,20 @@ public partial interface ITestEndpoint
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A proxy to the test speech service that can be used to simulate speech.</returns>
     Task<ITestSpeechRecognitionService> CreateTestSpeechServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Registers a service implementation to be added to the host's DI container before startup.
+    /// Must be called before ContinueStartup().
+    /// </summary>
+    /// <param name="serviceTypeName">Fully qualified name of the service interface or abstract type.</param>
+    /// <param name="implementationTypeName">Fully qualified name of the implementation type.</param>
+    /// <param name="assemblyPath">Full path to the assembly containing the implementation type.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    Task RegisterServiceAsync(string serviceTypeName, string implementationTypeName, string assemblyPath, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Signals that test initialization is complete and the host can continue with its startup sequence.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    Task ContinueStartupAsync(CancellationToken cancellationToken);
 }

@@ -11,40 +11,32 @@ WebApplicationOptions options = new()
     Args = args
 };
 
-WebApplication.CreateBuilder(options)
-    .ConfigureAppServices(args)
+WebApplicationBuilder builder = WebApplication.CreateBuilder(options);
+
+// Configure accelerated services
+AcceleratedServices accelerated = new(args);
+accelerated.ConfigureHost(builder.Host);
+
+// Configure other services
+builder
     .ConfigureStubSpeechServices()
     .ConfigureBlazorServices()
-    .ConfigurePlaywrightBrowser()
+    .ConfigurePlaywrightBrowser();
+
+// Build and run
+builder
     .Build()
     .AddHostingRoutes()
     .Run();
 
 internal static class Configuration
 {
-    internal static WebApplicationBuilder ConfigureAppServices(this WebApplicationBuilder builder, string[] args)
-    {
-        AcceleratedServices accelerated = new(args);
-        accelerated.ConfigureHost(builder.Host);
-        return builder;
-    }
-
     internal static WebApplicationBuilder ConfigureStubSpeechServices(this WebApplicationBuilder builder)
     {
         builder.Services
             .AddSingleton<ISpeechSynthesizer, StubSpeechSynthesizer>()
-            .AddSingleton<IGrammarProvider, StubGrammarProvider>();
-
-        // Use TestSpeechRecognitionEngine if test control port is specified, otherwise use stub
-        bool isTestMode = builder.Configuration.GetValue<int?>("test:ControlPort").HasValue;
-        if (isTestMode)
-        {
-            builder.Services.AddSingleton<ISpeechRecognitionEngine, TestSpeechRecognitionEngine>();
-        }
-        else
-        {
-            builder.Services.AddSingleton<ISpeechRecognitionEngine, StubSpeechRecognition>();
-        }
+            .AddSingleton<IGrammarProvider, StubGrammarProvider>()
+            .AddSingleton<ISpeechRecognitionEngine, StubSpeechRecognition>();
 
         return builder;
     }

@@ -19,16 +19,19 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
 {
     private readonly TestingSettings _settings;
     private readonly IApplicationScopeProvider _scopeProvider;
+    private readonly TestEndpointCoordinator? _coordinator;
     private readonly MessageLogger _logger;
     private TcpListener? _listener;
 
     public TestEndpointService(
         IOptions<TestingSettings> settings,
         IApplicationScopeProvider scopeProvider,
-        ILogger<TestEndpointService> logger)
+        ILogger<TestEndpointService> logger,
+        TestEndpointCoordinator? coordinator = null)
     {
         _settings = settings.Value;
         _scopeProvider = scopeProvider;
+        _coordinator = coordinator;
         _logger = new(logger);
     }
 
@@ -110,6 +113,28 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
 
     public Task<ITestSpeechRecognitionService> CreateTestSpeechServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
         => CreateRemotableServiceAsync<ITestSpeechRecognitionService>(assemblyPath, typeName, cancellationToken);
+
+    public Task RegisterServiceAsync(string serviceTypeName, string implementationTypeName, string assemblyPath, CancellationToken cancellationToken)
+    {
+        if (_coordinator == null)
+        {
+            throw new InvalidOperationException("Test coordinator not available. Service registration is only supported in test mode.");
+        }
+
+        _coordinator.RegisterService(serviceTypeName, implementationTypeName, assemblyPath);
+        return Task.CompletedTask;
+    }
+
+    public Task ContinueStartupAsync(CancellationToken cancellationToken)
+    {
+        if (_coordinator == null)
+        {
+            throw new InvalidOperationException("Test coordinator not available. Startup continuation is only supported in test mode.");
+        }
+
+        _coordinator.ContinueStartup();
+        return Task.CompletedTask;
+    }
 
     private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
         where ServiceType : class
