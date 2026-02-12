@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
 using AdaptiveRemote.Logging;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
@@ -5,9 +8,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StreamJsonRpc;
-using System.Net;
-using System.Net.Sockets;
-using System.Reflection;
 
 namespace AdaptiveRemote.Services.Testing;
 
