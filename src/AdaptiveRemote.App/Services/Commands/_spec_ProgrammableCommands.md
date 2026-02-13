@@ -77,14 +77,14 @@ See `_doc_EndToEndTests.md` for details on writing integration tests.
   - Click on the text 'I'm listening...' to deactivate listening mode, make sure the modal message is dismissed
 - **Exit Criteria:** Test passes and covers a basic modal message scenario.
 
-### [ADR-142](https://jodasoft.atlassian.net/browse/ADR-142) Refactor Modal Message System for Conversation and Programming
+### [ADR-142](https://jodasoft.atlassian.net/browse/ADR-142): Refactor Modal Message System for Conversation and Programming
 - Refactor the modal message system to support both conversation and programming messages, with markdown formatting and message queuing.
 - Update the conversation system to use the new message system and ensure no regression in existing behavior.
 - **Exit Criteria:**
   - Unit tests for the message system (covering queueing, markdown rendering, and message replacement).
   - All existing conversation modal message integration tests pass.
 
-### 3. Move Hard-Coded IR Payloads to ProgrammaticSettings with Migration
+### [ADR-148](https://jodasoft.atlassian.net/browse/ADR-148): Move Hard-Coded IR Payloads to ProgrammaticSettings with Migration
 - Update IR command loading to use ProgrammaticSettings for IR payloads, disabling commands not present in the settings.
 - Implement a migration/bootstrap mechanism to populate ProgrammaticSettings with current hard-coded values if missing.
 - **Exit Criteria:**
@@ -93,34 +93,34 @@ See `_doc_EndToEndTests.md` for details on writing integration tests.
 	- Only programmed commands are enabled.
 	- The correct IR payloads from the settings file are sent to the simulated device.
 
-### [ADR-146](https://jodasoft.atlassian.net/browse/ADR-146) Refactor UI Components for Programming Mode
+### [ADR-146](https://jodasoft.atlassian.net/browse/ADR-146): Refactor UI Components for Programming Mode
 - Create a new `ProgramButton` component and integrate it into the UI, replacing `CommandButton` when the application is in Programming mode.
 - Implement UI state management for programming mode, including enabling/disabling and visual distinction for programmed/unprogrammed commands.
 - Add the "Prog" button to the UI and ensure it toggles programming mode.
 - **Exit Criteria:**
   - Integration test verifies correct UI state in and out of programming mode.
 
-### [ADR-147](https://jodasoft.atlassian.net/browse/ADR-147) CommandServiceBase Support for ProgramDelegate
+### [ADR-147](https://jodasoft.atlassian.net/browse/ADR-147): CommandServiceBase Support for ProgramDelegate
 - Extend [`CommandServiceBase`](../../Services/CommandServiceBase.cs) to support a `ProgramDelegate` action, with error handling, logging, and UI state management similar to `ExecuteDelegate`.
 - The exception is that `ProgramDelegate` is only available for command services that support programming (initially, Broadlink), so the base class should handle the case where the subclasses do not provide a `ProgramDelegate`.
 - **Exit Criteria:**
   - Unit tests for new logic in `CommandServiceBase`.
 
-### [ADR-144](https://jodasoft.atlassian.net/browse/ADR-144) BroadlinkCommandService Support for ProgramDelegate
+### [ADR-144](https://jodasoft.atlassian.net/browse/ADR-144): BroadlinkCommandService Support for ProgramDelegate
 - Implement the `ProgramDelegate` action in [`BroadlinkCommandService`](../../Services/Broadlink/BroadlinkCommandService.cs), including IR learning protocol, display message, and error handling.
 - `ProgramDelegate` will use new methods on [`IUdpService`](../../Services/Broadlink/IUdpService.cs) and other services. Implement necessary methods and Packet types to support the learning protocol.
 - **Exit Criteria:**
   - Unit tests for Broadlink programming logic, including error and edge cases. (Cancellation, timeout, protocol errors, internal errors)
   - Unit tests for all new packet types and service methods, including error and edge cases.
 
-### [ADR-145](https://jodasoft.atlassian.net/browse/ADR-145) End-to-End Programming Feature with Integration Tests
+### [ADR-145](https://jodasoft.atlassian.net/browse/ADR-145): End-to-End Programming Feature with Integration Tests
 - Implement the full programming workflow: entering programming mode, programming a command, verifying execution, and handling errors/edge cases (e.g., device not found, user cancels, timeout, mode toggled off mid-sequence).
 - SimulatedBroadlinkDevice implements the learning protocol for tests.
 - **Exit Criteria:**
   - Integration tests cover the happy path and all major error/edge cases.
   - All tests pass in both Windows and Headless (Linux) test environments.
 
-### [ADR-143](https://jodasoft.atlassian.net/browse/ADR-143) Update documentation for Programmable IR Commands
+### [ADR-143](https://jodasoft.atlassian.net/browse/ADR-143): Update documentation for Programmable IR Commands
 - Rename `_spec_ProgrammableCommands.md` to `_doc_ProgrammableCommands.md` and update its content with the final design of the feature
 - Update any other `_doc_*.md` files in this repo with relevant changes to the systems they describe.
 - Update `README.md` with links to all new documentation in the repo.
