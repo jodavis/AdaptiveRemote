@@ -17,6 +17,6 @@ internal class Program : App
         new Program(args).Run();
     }
 
-    protected override WpfAcceleratedServices CreateAcceleratedServices(string[] args)
-        => base.CreateAcceleratedServices(_args);
+    protected override WpfAppHostRunner CreateAppHostRunner(string[] args) 
+        => base.CreateAppHostRunner(_args);
 }
