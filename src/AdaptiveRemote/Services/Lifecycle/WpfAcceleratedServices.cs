@@ -27,7 +27,7 @@ public class WpfAcceleratedServices : AcceleratedServices
 
     public MainWindow MainWindow { get; }
 
-    protected override void AddPrecreatedServices(IServiceCollection services)
+    public override void AddPrecreatedServices(IServiceCollection services)
     {
         base.AddPrecreatedServices(services);
 
