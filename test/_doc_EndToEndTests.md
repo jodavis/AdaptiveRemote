@@ -33,7 +33,7 @@ process makes it easier to debug. Services include:
 	- [`IApplicationTestService`](../src/AdaptiveRemote.App/Services/Testing/IApplicationTestService.cs)
 	  has general application lifecycle methods.
 	- [`IUITestService`](../src/AdaptiveRemote.App/Services/Testing/IUITestService.cs)
-	  has methods for interacting with the UI, e.g. getting current page, simulating navigation, etc.
+	  has methods for interacting with the UI, including button interactions and accessibility checking via axe-core.
 
 ## Key Abstractions
 
@@ -48,6 +48,30 @@ process makes it easier to debug. Services include:
 ### Test Services
 - `IApplicationTestService` (`test/AdaptiveRemote.EndtoEndTests.TestServices/IApplicationTestService.cs`): Interface for the main test service that can be loaded dynamically by the host. Provides methods to wait for lifecycle phases and invoke commands.
 - `ApplicationTestService` (`test/AdaptiveRemote.EndtoEndTests.TestServices/ApplicationTestService.cs`): Implementation that uses `IRemoteDefinitionService` to find and invoke commands, demonstrating proper DI scope access.
+
+### Accessibility Testing
+- **Accessibility Contrast Checker:** Automated UI accessibility testing using [Deque axe-core](https://github.com/dequelabs/axe-core) via Playwright to validate WCAG 2 AA contrast requirements
+- **Technology:** 
+  - `Deque.AxeCore.Playwright` package integrates axe-core with Playwright's IPage API
+  - Tests run via `IUITestService.CheckAccessibilityAsync()` which returns a list of violations
+- **Test Coverage:**
+  - Color contrast ratios (text and backgrounds)
+  - WCAG 2 AA compliance (4.5:1 for normal text, 3:1 for large text)
+  - Buttons use 36pt font, qualifying as "large text"
+- **Implementation:**
+  - Feature file: `AdaptiveRemote.EndToEndTests.Features/Accessibility.feature`
+  - Step definitions: `AdaptiveRemote.EndToEndTests.Steps/AccessibilitySteps.cs`
+  - Service method: `PlaywrightUITestService.CheckAccessibilityAsync()`
+- **Running Tests:**
+  ```bash
+  dotnet test test/AdaptiveRemote.EndToEndTests.HeadlessHost \
+      --filter "FullyQualifiedName~AccessibilityCompliance"
+  ```
+- **Notes:**
+  - Tests work with all host types (WPF, Console, Headless)
+  - Headless host is recommended for CI/CD as it requires no graphical environment
+  - Violations include rule ID, impact level, description, help text, and HTML snippet
+  - Tests protect against accessibility regressions in future development
 
 ### Control Endpoint
 - `ITestEndpoint` (`src/AdaptiveRemote.App/Services/Testing/ITestEndpoint.cs`): JSON-RPC interface exposed by the host for test control operations. It exposes `CreateTestServiceAsync(...)` and `CreateTestLoggerAsync(...)` to load test-side services and logger targets into the host process.
