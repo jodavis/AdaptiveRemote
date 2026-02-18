@@ -10,7 +10,7 @@ namespace AdaptiveRemote.Services.Testing;
 [RpcMarshalable]
 [JsonRpcContract]
 [GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
-public partial interface ITestServiceProvider
+public partial interface ITestServiceProvider : IDisposable
 {
     /// <summary>
     /// Dynamically loads a test service from the specified assembly and type.

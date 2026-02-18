@@ -171,6 +171,11 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
         public Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
             => CreateRemotableServiceAsync<IUITestService>(assemblyPath, typeName, cancellationToken);
 
+        public void Dispose()
+        {
+            // No resources to dispose
+        }
+
         private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
             where ServiceType : class
         {

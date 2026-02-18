@@ -16,6 +16,7 @@ internal class TestEndpointHooksService : ITestEndpointHooks
     private readonly TaskCompletionSource<bool> _buildHostSignal = new();
     private readonly TaskCompletionSource<IServiceProvider> _servicesReadySignal = new();
     private readonly List<ServiceRegistration> _testServices = new();
+    private readonly TimeSpan _startupTimeout = TimeSpan.FromMinutes(5);
 
     public TestEndpointHooksService(ILogger<TestEndpointHooksService> logger)
     {
@@ -59,9 +60,21 @@ internal class TestEndpointHooksService : ITestEndpointHooks
     {
         _logger.TestEndpointHooksService_WaitingForTestServices();
 
-        // Wait for tests to signal that they're done registering services
-        using CancellationTokenRegistration ctRegistration = cancellationToken.Register(() => _buildHostSignal.TrySetCanceled());
-        await _buildHostSignal.Task;
+        // Wait for tests to signal that they're done registering services, or timeout
+        using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_startupTimeout);
+
+        try
+        {
+            using CancellationTokenRegistration ctRegistration = timeoutCts.Token.Register(() => _buildHostSignal.TrySetCanceled());
+            await _buildHostSignal.Task;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Timeout occurred - proceed with startup without injected services
+            _logger.TestEndpointHooksService_TestServicesRegistered(0);
+            return;
+        }
 
         // Register all test services
         foreach (ServiceRegistration registration in _testServices)
