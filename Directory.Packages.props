@@ -36,7 +36,7 @@
     <PackageVersion Include="Reqnroll" Version="3.3.2" />
     <PackageVersion Include="Reqnroll.MSTest" Version="3.3.2" />
     <!-- Test Utilities -->
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="coverlet.collector" Version="8.0.0" />
     <PackageVersion Include="FluentAssertions" Version="8.8.0" />
     <PackageVersion Include="Moq" Version="4.20.70" />
   </ItemGroup>
