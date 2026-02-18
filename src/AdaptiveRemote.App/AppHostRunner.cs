@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.Services.Lifecycle;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote;
@@ -23,7 +24,15 @@ public abstract class AppHostRunner
                 .ConfigureAppSettings(CommandLineArguments)
                 .ConfigureApp();
 
-            await acceleratedServices.TestEndpoint.InjectHostServiceAsync(hostBuilder, cancellationToken);
+            // Capture the service collection so we can pass it to test hooks
+            IServiceCollection? serviceCollection = null;
+            hostBuilder.ConfigureServices(services => serviceCollection = services);
+
+            // Allow tests to inject services before the host is built
+            if (serviceCollection is not null)
+            {
+                await acceleratedServices.TestEndpoint.InjectHostServiceAsync(hostBuilder, serviceCollection, cancellationToken);
+            }
 
             IHost host = BuildHost(hostBuilder);
 

@@ -19,17 +19,23 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
 {
     private readonly TestingSettings _settings;
     private readonly IApplicationScopeProvider _scopeProvider;
+    private readonly IHostApplicationLifetime _lifetime;
     private readonly MessageLogger _logger;
+    private readonly TestEndpointHooksService? _hooksService;
     private TcpListener? _listener;
 
     public TestEndpointService(
         IOptions<TestingSettings> settings,
         IApplicationScopeProvider scopeProvider,
-        ILogger<TestEndpointService> logger)
+        IHostApplicationLifetime lifetime,
+        ILogger<TestEndpointService> logger,
+        TestEndpointHooksService? hooksService = null)
     {
         _settings = settings.Value;
         _scopeProvider = scopeProvider;
+        _lifetime = lifetime;
         _logger = new(logger);
+        _hooksService = hooksService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -99,42 +105,100 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
         }
     }
 
-    public Task<IApplicationTestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        => CreateRemotableServiceAsync<IApplicationTestService>(assemblyPath, typeName, cancellationToken);
-
-    public Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        => CreateRemotableServiceAsync<ITestLogger>(assemblyPath, typeName, cancellationToken);
-
-    public Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        => CreateRemotableServiceAsync<IUITestService>(assemblyPath, typeName, cancellationToken);
-
-    private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        where ServiceType : class
+    // ITestEndpoint implementation
+    public Task AddTestServiceAsync(string contractType, string serviceName, string serviceAssembly, CancellationToken cancellationToken)
     {
-        _logger.TestEndpointService_LoadingTestService(typeName, assemblyPath);
-
-        Assembly assembly = Assembly.LoadFrom(assemblyPath);
-
-        Type? serviceType = assembly.GetType(typeName)
-            ?? throw new ArgumentException($"Type not found: {typeName}", nameof(typeName));
-
-        if (!typeof(ServiceType).IsAssignableFrom(serviceType))
+        if (_hooksService is null)
         {
-            _logger.TestEndpointService_ServiceTypeIncompatible(typeName, typeof(ServiceType).FullName);
-            throw new ArgumentException($"Type {typeName} does not implement {typeof(ServiceType).FullName}", nameof(typeName));
+            throw new InvalidOperationException("Test hooks service is not available. Ensure the test endpoint is properly configured.");
         }
 
-        // Store the type to instantiate later within each scoped invocation
-        _logger.TestEndpointService_LoadingTestServiceSucceeded();
+        _hooksService.AddTestService(contractType, serviceName, serviceAssembly);
+        return Task.CompletedTask;
+    }
 
-        // Create the test service within the application scope so it gets access to scoped services
-        ServiceType? testService = null;
-        await _scopeProvider.InvokeInScopeAsync((scopedProvider, ct) =>
+    public Task BuildAndRunHostAsync(CancellationToken cancellationToken)
+    {
+        if (_hooksService is null)
         {
-            testService = (ServiceType)ActivatorUtilities.CreateInstance(scopedProvider, serviceType);
-            return Task.CompletedTask;
-        }, cancellationToken);
+            throw new InvalidOperationException("Test hooks service is not available. Ensure the test endpoint is properly configured.");
+        }
 
-        return testService ?? throw new InvalidOperationException("Failed to create test service instance");
+        _hooksService.SignalBuildHost();
+        return Task.CompletedTask;
+    }
+
+    public Task StopApplicationAsync(CancellationToken cancellationToken)
+    {
+        _hooksService?.SignalAbort();
+
+        _lifetime.StopApplication();
+        return Task.CompletedTask;
+    }
+
+    public async Task<ITestServiceProvider> GetTestServiceProviderAsync(CancellationToken cancellationToken)
+    {
+        if (_hooksService is null)
+        {
+            throw new InvalidOperationException("Test hooks service is not available. Ensure the test endpoint is properly configured.");
+        }
+
+        // Wait for the host to be built and services to be available
+        await _hooksService.WaitForServicesAsync().WaitAsync(cancellationToken);
+
+        // Return self as the test service provider
+        return new TestServiceProviderImpl(_scopeProvider, _logger);
+    }
+
+    // Inner class that implements ITestServiceProvider
+    private class TestServiceProviderImpl : ITestServiceProvider
+    {
+        private readonly IApplicationScopeProvider _scopeProvider;
+        private readonly MessageLogger _logger;
+
+        public TestServiceProviderImpl(IApplicationScopeProvider scopeProvider, MessageLogger logger)
+        {
+            _scopeProvider = scopeProvider;
+            _logger = logger;
+        }
+
+        public Task<IApplicationTestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+            => CreateRemotableServiceAsync<IApplicationTestService>(assemblyPath, typeName, cancellationToken);
+
+        public Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+            => CreateRemotableServiceAsync<ITestLogger>(assemblyPath, typeName, cancellationToken);
+
+        public Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
+            => CreateRemotableServiceAsync<IUITestService>(assemblyPath, typeName, cancellationToken);
+
+        private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
+            where ServiceType : class
+        {
+            _logger.TestEndpointService_LoadingTestService(typeName, assemblyPath);
+
+            Assembly assembly = Assembly.LoadFrom(assemblyPath);
+
+            Type? serviceType = assembly.GetType(typeName)
+                ?? throw new ArgumentException($"Type not found: {typeName}", nameof(typeName));
+
+            if (!typeof(ServiceType).IsAssignableFrom(serviceType))
+            {
+                _logger.TestEndpointService_ServiceTypeIncompatible(typeName, typeof(ServiceType).FullName);
+                throw new ArgumentException($"Type {typeName} does not implement {typeof(ServiceType).FullName}", nameof(typeName));
+            }
+
+            // Store the type to instantiate later within each scoped invocation
+            _logger.TestEndpointService_LoadingTestServiceSucceeded();
+
+            // Create the test service within the application scope so it gets access to scoped services
+            ServiceType? testService = null;
+            await _scopeProvider.InvokeInScopeAsync((scopedProvider, ct) =>
+            {
+                testService = (ServiceType)ActivatorUtilities.CreateInstance(scopedProvider, serviceType);
+                return Task.CompletedTask;
+            }, cancellationToken);
+
+            return testService ?? throw new InvalidOperationException("Failed to create test service instance");
+        }
     }
 }
