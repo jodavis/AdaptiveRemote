@@ -25,7 +25,7 @@
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.9.50" />
     <!-- Code Analysis -->
     <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.102" />
-    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="17.10.48" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="17.14.15" />
   </ItemGroup>
   <ItemGroup Label="Test-Only Packages">
     <!-- Test Frameworks -->

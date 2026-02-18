@@ -32,6 +32,6 @@
 
     <!-- This warning is about using a JoinableTaskFactory, which is intended to solve a specific
          class of issues that this application does not have. -->
-    <NoWarn>$(NoWarn);VSTHRD012</NoWarn>
+    <NoWarn>$(NoWarn);VSTHRD001;VSTHRD012</NoWarn>
   </PropertyGroup>
 </Project>
