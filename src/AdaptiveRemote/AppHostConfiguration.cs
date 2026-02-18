@@ -7,12 +7,6 @@ namespace AdaptiveRemote;
 
 internal static class AppHostConfiguration
 {
-    internal static IHostBuilder AddAcceleratedServices(this IHostBuilder builder, AcceleratedServices acceleratedServices)
-    {
-        acceleratedServices.ConfigureHost(builder);
-        return builder;
-    }
-
     internal static IHostBuilder AddWindowsUIServices(this IHostBuilder builder)
         => builder.ConfigureServices(services => services.AddWindowsUIServices());
 
