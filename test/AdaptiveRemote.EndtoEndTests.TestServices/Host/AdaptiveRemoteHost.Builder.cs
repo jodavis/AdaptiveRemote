@@ -168,8 +168,16 @@ public partial class AdaptiveRemoteHost
                 // Create control proxy for bootstrapping
                 ITestEndpoint testEndpoint = rpc.Attach<ITestEndpoint>();
 
+                // Signal the host to build and run
+                logger.LogInformation("Signaling host to build and run");
+                WaitHelpers.WaitForAsyncTask(testEndpoint.BuildAndRunHostAsync, _settings.StartupTimeout);
+
+                // Get the test service provider
+                logger.LogInformation("Getting test service provider");
+                ITestServiceProvider serviceProvider = WaitHelpers.WaitForAsyncTask(testEndpoint.GetTestServiceProviderAsync, _settings.StartupTimeout);
+
                 // Attach the RPC proxy to our HostRpcLoggerProvider so test-side logs are forwarded to the host
-                ITestLogger testLogger = testEndpoint.CreateTestService<ITestLogger, HostApplicationTestLogger>(_settings.StartupTimeout);
+                ITestLogger testLogger = serviceProvider.CreateTestService<ITestLogger, HostApplicationTestLogger>(_settings.StartupTimeout);
                 rpcProvider.AttachTestLoggerProxy(testLogger);
                 logger.LogInformation("Attached RPC test logger");
 
