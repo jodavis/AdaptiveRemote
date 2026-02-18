@@ -36,6 +36,13 @@ internal class TestSpeechRecognitionEngine : ISpeechRecognitionEngine, ITestSpee
     void ISpeechRecognitionEngine.Recognize()
     {
         // In test mode, recognition is controlled by test calls, not automatic
+        // Verify that at least one grammar is loaded and enabled
+        if (!_grammars.Values.Any(g => g.Enabled))
+        {
+            throw new InvalidOperationException(
+                "Cannot start recognition: No enabled grammars are loaded. " +
+                "Load and enable a grammar before calling Recognize().");
+        }
     }
 
     void ISpeechRecognitionEngine.RecognizeAsyncCancel()

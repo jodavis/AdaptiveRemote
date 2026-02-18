@@ -12,60 +12,67 @@ public class AcceleratedServices
     public ILifecycleViewController Controller { get; }
     internal DiagnosticAdapter DiagnosticAdapter { get; }
     internal ITestEndpointHooks TestEndpoint { get; }
+    
+    /// <summary>
+    /// Command line configuration parsed from arguments.
+    /// Available for any startup services that need command line settings.
+    /// </summary>
+    public IConfigurationRoot CommandLineConfig { get; }
+    
+    /// <summary>
+    /// Logger factory for startup processes.
+    /// Available for any startup services that need logging.
+    /// </summary>
+    public ILoggerFactory LoggerFactory { get; }
 
     public AcceleratedServices(string[] args)
     {
+        // Parse command line configuration early
+        ConfigurationBuilder configBuilder = new();
+        CommandLineConfig = configBuilder
+            .AddCommandLine(args)
+            .Build();
+
+        // Create logger factory for startup processes
+        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole());
+
         ViewModel = new();
         Controller = new LifecycleViewController(ViewModel);
         DiagnosticAdapter = new(Controller);
 
         // Check if test control port is configured
-        int? controlPort = ParseControlPort(args);
+        int? controlPort = ParseControlPort();
         if (controlPort.HasValue)
         {
-            // Create a logger for the hooks service
-            using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            ILogger<TestEndpointHooksService> logger = loggerFactory.CreateLogger<TestEndpointHooksService>();
+            // Create TestingSettings from command line config
+            TestingSettings testSettings = new()
+            {
+                ControlPort = controlPort
+            };
 
-            TestEndpointHooksService hooksService = new(logger);
-            TestEndpoint = hooksService;
-
-            // Store the hooks service so it can be injected into TestEndpointService
-            _testEndpointHooksService = hooksService;
+            // Create and start the test endpoint service
+            TestEndpointService testEndpointService = new(testSettings, LoggerFactory);
+            testEndpointService.StartListening();
+            TestEndpoint = testEndpointService;
         }
         else
         {
             TestEndpoint = new DisabledTestEndpointHooks();
-            _testEndpointHooksService = null;
         }
 
         Controller.SetPhase(LifecyclePhase.Waiting);
     }
-
-    private readonly TestEndpointHooksService? _testEndpointHooksService;
 
     public virtual void AddPrecreatedServices(IServiceCollection services)
     {
         services
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);
-
-        // If we have a test endpoint hooks service, register it so TestEndpointService can use it
-        if (_testEndpointHooksService is not null)
-        {
-            services.AddSingleton(_testEndpointHooksService);
-        }
     }
 
-    private static int? ParseControlPort(string[] args)
+    private int? ParseControlPort()
     {
-        // Build a minimal configuration to parse the test:ControlPort setting
-        ConfigurationBuilder configBuilder = new();
-        IConfigurationRoot config = configBuilder
-            .AddCommandLine(args)
-            .Build();
-
-        string? portString = config["test:ControlPort"];
+        string? portString = CommandLineConfig["test:ControlPort"];
         if (int.TryParse(portString, out int port))
         {
             return port;

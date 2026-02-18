@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote.Services.Testing;
 
@@ -10,9 +9,8 @@ internal interface ITestEndpointHooks
     /// This method should block until the test has finished adding services via AddTestServiceAsync.
     /// </summary>
     /// <param name="hostBuilder">The host builder to configure.</param>
-    /// <param name="services">The service collection to add test services to.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    Task InjectHostServiceAsync(IHostBuilder hostBuilder, IServiceCollection services, CancellationToken cancellationToken);
+    Task InjectHostServiceAsync(IHostBuilder hostBuilder, CancellationToken cancellationToken);
 
     /// <summary>
     /// Called after the host has been built to provide the service provider to tests.
