@@ -1,34 +1,56 @@
+using AdaptiveRemote;
 using AdaptiveRemote.Headless;
 using AdaptiveRemote.Headless.Components;
 using AdaptiveRemote.Services.Conversation;
-using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 
-WebApplicationOptions options = new()
-{
-    ContentRootPath = AppContext.BaseDirectory,
-    Args = args
-};
+await new HeadlessAppHostRunner(args)
+    .RunAsync(CancellationToken.None);
 
-WebApplication.CreateBuilder(options)
-    .ConfigureAppServices(args)
-    .ConfigureStubSpeechServices()
-    .ConfigureBlazorServices()
-    .ConfigurePlaywrightBrowser()
-    .Build()
-    .AddHostingRoutes()
-    .Run();
+internal class HeadlessAppHostRunner : AppHostRunner
+{
+    private readonly WebApplicationBuilder _applicationBuilder;
+
+    public HeadlessAppHostRunner(string[] args)
+        : base(args)
+    {
+        WebApplicationOptions options = new()
+        {
+            ContentRootPath = AppContext.BaseDirectory,
+            Args = args
+        };
+
+        _applicationBuilder = WebApplication.CreateBuilder(options);
+    }
+
+    protected override IHostBuilder ConfigureHostBuilder()
+    {
+        return _applicationBuilder
+            .ConfigureStubSpeechServices()
+            .ConfigureBlazorServices()
+            .ConfigurePlaywrightBrowser()
+            .Host;
+    }
+
+    protected override IHost BuildHost(IHostBuilder hostBuilder) =>
+        _applicationBuilder
+            .Build()
+            .AddHostingRoutes();
+
+    protected override Task RunHostAsync(IHost host, CancellationToken cancellationToken)
+    {
+        if (host is not WebApplication webApp)
+        {
+            throw new InvalidOperationException("Expected host to be a WebApplication");
+        }
+
+        return webApp.RunAsync(cancellationToken);
+    }
+}
 
 internal static class Configuration
 {
-    internal static WebApplicationBuilder ConfigureAppServices(this WebApplicationBuilder builder, string[] args)
-    {
-        AcceleratedServices accelerated = new(args);
-        accelerated.ConfigureHost(builder.Host);
-        return builder;
-    }
-
     internal static WebApplicationBuilder ConfigureStubSpeechServices(this WebApplicationBuilder builder)
     {
         builder.Services
