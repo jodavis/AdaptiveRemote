@@ -1,4 +1,6 @@
 using AdaptiveRemote.Services.Testing;
+using Deque.AxeCore.Commons;
+using Deque.AxeCore.Playwright;
 using Microsoft.Playwright;
 
 namespace AdaptiveRemote.EndtoEndTests;
@@ -74,6 +76,33 @@ public class PlaywrightUITestService : IUITestService
         {
             Timeout = DefaultTimeoutMs
         });
+    }
+
+    public async Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken = default)
+    {
+        // Run axe on the current page
+        AxeResult axeResults = await CurrentPage.RunAxe();
+
+        // Convert axe violations to our AccessibilityViolation format
+        List<AccessibilityViolation> violations = new();
+
+        foreach (AxeResultItem violation in axeResults.Violations)
+        {
+            foreach (AxeResultNode node in violation.Nodes)
+            {
+                violations.Add(new AccessibilityViolation
+                {
+                    RuleId = violation.Id,
+                    Impact = violation.Impact ?? "unknown",
+                    Description = violation.Description,
+                    HtmlSnippet = node.Html,
+                    HelpText = violation.Help,
+                    HelpUrl = violation.HelpUrl
+                });
+            }
+        }
+
+        return violations;
     }
 
     private static async Task<bool> IsButtonDisabledAsync(ILocator locator)
