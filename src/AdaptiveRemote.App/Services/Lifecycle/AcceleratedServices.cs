@@ -21,7 +21,7 @@ public class AcceleratedServices
 
     /// <summary>
     /// Logger factory for startup processes.
-    /// Available for any startup services that need logging.
+    /// Should only be used for startup services that log messages before the host is configured.
     /// </summary>
     public ILoggerFactory LoggerFactory { get; }
 
@@ -41,15 +41,9 @@ public class AcceleratedServices
         DiagnosticAdapter = new(Controller);
 
         // Check if test control port is configured
-        int? controlPort = ParseControlPort();
-        if (controlPort.HasValue)
+        TestingSettings? testSettings = CommandLineConfig.GetSection("test").Get<TestingSettings>();
+        if (testSettings?.ControlPort is not null)
         {
-            // Create TestingSettings from command line config
-            TestingSettings testSettings = new()
-            {
-                ControlPort = controlPort
-            };
-
             // Create and start the test endpoint service
             TestEndpointService testEndpointService = new(testSettings, LoggerFactory);
             testEndpointService.StartListening();
@@ -63,21 +57,8 @@ public class AcceleratedServices
         Controller.SetPhase(LifecyclePhase.Waiting);
     }
 
-    public virtual void AddPrecreatedServices(IServiceCollection services)
-    {
+    public virtual void AddPrecreatedServices(IServiceCollection services) =>
         services
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);
-    }
-
-    private int? ParseControlPort()
-    {
-        string? portString = CommandLineConfig["test:ControlPort"];
-        if (int.TryParse(portString, out int port))
-        {
-            return port;
-        }
-
-        return null;
-    }
 }

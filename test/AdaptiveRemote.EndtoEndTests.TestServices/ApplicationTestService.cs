@@ -1,5 +1,4 @@
 using AdaptiveRemote.Models;
-using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Hosting;
 
@@ -15,18 +14,15 @@ public class ApplicationTestService : IApplicationTestService
     private readonly Services.IRemoteDefinitionService _remoteDefinitionService;
     private readonly LifecycleView _lifecycleView;
     private readonly IHostApplicationLifetime _applicationLifetime;
-    private readonly ISpeechRecognitionEngine? _speechRecognitionEngine;
 
     public ApplicationTestService(
         Services.IRemoteDefinitionService remoteDefinitionService,
         LifecycleView lifecycleView,
-        IHostApplicationLifetime applicationLifetime,
-        ISpeechRecognitionEngine? speechRecognitionEngine = null)
+        IHostApplicationLifetime applicationLifetime)
     {
         _remoteDefinitionService = remoteDefinitionService;
         _lifecycleView = lifecycleView;
         _applicationLifetime = applicationLifetime;
-        _speechRecognitionEngine = speechRecognitionEngine;
     }
 
     public async Task InvokeCommandAsync(string commandName, CancellationToken cancellationToken)
@@ -64,13 +60,6 @@ public class ApplicationTestService : IApplicationTestService
         // Use GetValue to access the internal property
         bool isListening = conversationView.GetValue(ConversationView.IsListeningProperty);
         return Task.FromResult(isListening);
-    }
-
-    public Task<ITestSpeechRecognitionEngine?> GetTestSpeechEngineAsync(CancellationToken cancellationToken)
-    {
-        // Check if the speech recognition engine is a test engine
-        ITestSpeechRecognitionEngine? testEngine = _speechRecognitionEngine as ITestSpeechRecognitionEngine;
-        return Task.FromResult(testEngine);
     }
 
     private static Command? FindCommandByName(RemoteLayoutElement element, string name)

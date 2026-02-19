@@ -43,4 +43,12 @@ public partial interface ITestServiceProvider : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A proxy to the UI test service that can be used to interact with the UI.</returns>
     Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets a proxy to the test speech recognition engine, if one is installed.
+    /// This allows tests to programmatically trigger speech recognition events.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A proxy to the test speech engine, or null if not using test speech recognition.</returns>
+    Task<ITestSpeechRecognitionEngine?> GetTestSpeechEngineAsync(CancellationToken cancellationToken = default);
 }

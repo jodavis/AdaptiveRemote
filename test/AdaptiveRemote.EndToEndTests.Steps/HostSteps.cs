@@ -2,6 +2,7 @@
 using AdaptiveRemote.EndtoEndTests.Host;
 using AdaptiveRemote.EndtoEndTests.Logging;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using AdaptiveRemote.Services.Conversation;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
@@ -31,14 +32,8 @@ public class HostSteps : StepsBase
     }
 
     [BeforeScenario(Order = 200)]
-    public void OnBeforeScenario_SetUpHostFactory(AdaptiveRemoteHostSettings hostSettings, ScenarioContext scenarioContext)
+    public void OnBeforeScenario_SetUpHostFactory(AdaptiveRemoteHostSettings hostSettings)
     {
-        // Skip if this is a speech test - SpeechSteps will set up its own factory with service injection
-        if (scenarioContext.ScenarioInfo.Tags.Contains("speech"))
-        {
-            return;
-        }
-
         if (!File.Exists(hostSettings.ExePath))
         {
             Assert.Inconclusive($"Host not found at: {hostSettings.ExePath}");
@@ -71,6 +66,11 @@ public class HostSteps : StepsBase
             {
                 builder.AddDebug();
                 builder.AddTestContext(TestContext);
+            })
+            .ConfigureTestServices(async (testEndpoint, ct) =>
+            {
+                // Always inject TestSpeechRecognitionEngine so tests can share the same host instance
+                await testEndpoint.InjectTestServiceAsync<ISpeechRecognitionEngine, TestSpeechRecognitionEngine>(ct);
             })
             .Start());
     }

@@ -1,4 +1,5 @@
 using AdaptiveRemote.Logging;
+using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,11 +15,16 @@ internal class TestServiceProvider : ITestServiceProvider
 {
     private readonly IApplicationScopeProvider _scopeProvider;
     private readonly MessageLogger _logger;
+    private readonly ISpeechRecognitionEngine? _speechRecognitionEngine;
 
-    public TestServiceProvider(IApplicationScopeProvider scopeProvider, ILogger<TestServiceProvider> logger)
+    public TestServiceProvider(
+        IApplicationScopeProvider scopeProvider,
+        ILogger<TestServiceProvider> logger,
+        ISpeechRecognitionEngine? speechRecognitionEngine = null)
     {
         _scopeProvider = scopeProvider;
         _logger = new(logger);
+        _speechRecognitionEngine = speechRecognitionEngine;
     }
 
     public Task<IApplicationTestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
@@ -29,6 +35,13 @@ internal class TestServiceProvider : ITestServiceProvider
 
     public Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
         => CreateRemotableServiceAsync<IUITestService>(assemblyPath, typeName, cancellationToken);
+
+    public Task<ITestSpeechRecognitionEngine?> GetTestSpeechEngineAsync(CancellationToken cancellationToken = default)
+    {
+        // Check if the speech recognition engine is a test engine
+        ITestSpeechRecognitionEngine? testEngine = _speechRecognitionEngine as ITestSpeechRecognitionEngine;
+        return Task.FromResult(testEngine);
+    }
 
     public void Dispose()
     {

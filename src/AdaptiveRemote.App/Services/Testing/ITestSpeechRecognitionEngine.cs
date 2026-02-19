@@ -1,7 +1,7 @@
 using PolyType;
 using StreamJsonRpc;
 
-namespace AdaptiveRemote.Services.Conversation;
+namespace AdaptiveRemote.Services.Testing;
 
 /// <summary>
 /// Interface for test-only control of speech recognition.
@@ -26,11 +26,4 @@ public partial interface ITestSpeechRecognitionEngine : IDisposable
     /// <param name="text">The rejected text.</param>
     /// <param name="confidence">Confidence level (0-100).</param>
     Task RaiseRejectedAsync(string text, int confidence);
-
-    /// <summary>
-    /// Convenience method to speak a phrase with known semantics.
-    /// Recognizes wake words ("Hey Remote"), stop listening ("Thank you"), and standard commands.
-    /// </summary>
-    /// <param name="phrase">The phrase to speak.</param>
-    Task SpeakAsync(string phrase);
 }
