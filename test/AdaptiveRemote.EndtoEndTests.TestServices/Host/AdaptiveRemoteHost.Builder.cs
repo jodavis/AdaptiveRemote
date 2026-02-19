@@ -16,6 +16,7 @@ public partial class AdaptiveRemoteHost
     {
         private readonly AdaptiveRemoteHostSettings _settings;
         private readonly List<Action<ILoggingBuilder>> _configureLogging = new();
+        private readonly List<Func<ITestEndpoint, CancellationToken, Task>> _configureServices = new();
 
         internal Builder(AdaptiveRemoteHostSettings settings)
         {
@@ -25,6 +26,16 @@ public partial class AdaptiveRemoteHost
         public Builder ConfigureLogging(Action<ILoggingBuilder> configureLogging)
         {
             _configureLogging.Add(configureLogging);
+            return this;
+        }
+
+        /// <summary>
+        /// Registers a callback to inject test services before the host is built.
+        /// The callback is invoked after connecting to the test endpoint but before BuildAndRunHostAsync is called.
+        /// </summary>
+        public Builder ConfigureTestServices(Func<ITestEndpoint, CancellationToken, Task> configureServices)
+        {
+            _configureServices.Add(configureServices);
             return this;
         }
 
@@ -167,6 +178,17 @@ public partial class AdaptiveRemoteHost
 
                 // Create control proxy for bootstrapping
                 ITestEndpoint testEndpoint = rpc.Attach<ITestEndpoint>();
+
+                // Allow test configuration to inject services before building
+                if (_configureServices.Count > 0)
+                {
+                    logger.LogInformation("Injecting test services...");
+                    foreach (Func<ITestEndpoint, CancellationToken, Task> configureService in _configureServices)
+                    {
+                        WaitHelpers.WaitForAsyncTask(ct => configureService(testEndpoint, ct), _settings.StartupTimeout);
+                    }
+                    logger.LogInformation("Test services injected");
+                }
 
                 // Signal the host to build and run
                 logger.LogInformation("Signaling host to build and run");

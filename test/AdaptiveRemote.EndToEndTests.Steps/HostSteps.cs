@@ -31,8 +31,14 @@ public class HostSteps : StepsBase
     }
 
     [BeforeScenario(Order = 200)]
-    public void OnBeforeScenario_SetUpHostFactory(AdaptiveRemoteHostSettings hostSettings)
+    public void OnBeforeScenario_SetUpHostFactory(AdaptiveRemoteHostSettings hostSettings, ScenarioContext scenarioContext)
     {
+        // Skip if this is a speech test - SpeechSteps will set up its own factory with service injection
+        if (scenarioContext.ScenarioInfo.Tags.Contains("speech"))
+        {
+            return;
+        }
+
         if (!File.Exists(hostSettings.ExePath))
         {
             Assert.Inconclusive($"Host not found at: {hostSettings.ExePath}");
