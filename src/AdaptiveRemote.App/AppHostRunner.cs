@@ -23,6 +23,7 @@ public abstract class AppHostRunner
                 .ConfigureAppSettings(CommandLineArguments)
                 .ConfigureApp();
 
+            // Allow tests to inject services before the host is built
             await acceleratedServices.TestEndpoint.InjectHostServiceAsync(hostBuilder, cancellationToken);
 
             IHost host = BuildHost(hostBuilder);

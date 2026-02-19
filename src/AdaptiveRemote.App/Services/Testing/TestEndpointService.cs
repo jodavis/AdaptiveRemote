@@ -1,42 +1,44 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
 using AdaptiveRemote.Logging;
-using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using StreamJsonRpc;
 
 namespace AdaptiveRemote.Services.Testing;
 
 /// <summary>
-/// Provides a test control endpoint via TCP/JSON-RPC for E2E testing.
-/// Enabled when --test:ControlPort argument is provided.
+/// Coordinates test communication and service injection during host startup.
+/// Implements both ITestEndpoint (for JSON-RPC communication with tests) and 
+/// ITestEndpointHooks (for coordinating with the host startup sequence).
 /// </summary>
-internal class TestEndpointService : BackgroundService, ITestEndpoint
+internal class TestEndpointService : ITestEndpoint, ITestEndpointHooks
 {
     private readonly TestingSettings _settings;
-    private readonly IApplicationScopeProvider _scopeProvider;
     private readonly MessageLogger _logger;
-    private TcpListener? _listener;
+    private readonly TaskCompletionSource<bool> _buildHostSignal = new();
+    private readonly TaskCompletionSource<IServiceProvider> _servicesReadySignal = new();
+    private readonly List<ServiceRegistration> _testServices = new();
+    private readonly TimeSpan _startupTimeout = TimeSpan.FromMinutes(5);
 
-    public TestEndpointService(
-        IOptions<TestingSettings> settings,
-        IApplicationScopeProvider scopeProvider,
-        ILogger<TestEndpointService> logger)
+    private TcpListener? _listener;
+    private IHostApplicationLifetime? _lifetime;
+
+    public TestEndpointService(TestingSettings settings, ILoggerFactory loggerFactory)
     {
-        _settings = settings.Value;
-        _scopeProvider = scopeProvider;
-        _logger = new(logger);
+        _settings = settings;
+        _logger = new MessageLogger(loggerFactory.CreateLogger<TestEndpointService>());
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    /// <summary>
+    /// Starts the TCP listener for test connections.
+    /// This should be called early in startup, before the host is built.
+    /// </summary>
+    public void StartListening()
     {
         if (_settings.ControlPort is null)
         {
-            // Test control endpoint not requested
             return;
         }
 
@@ -45,19 +47,25 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
         _listener = new TcpListener(IPAddress.Loopback, _settings.ControlPort.Value);
         _listener.Start();
 
+        // Start accepting connections in background
+        _ = AcceptConnectionsAsync();
+    }
+
+    private async Task AcceptConnectionsAsync()
+    {
+        if (_listener is null)
+        {
+            return;
+        }
+
         try
         {
-            while (!stoppingToken.IsCancellationRequested)
+            while (true)
             {
                 try
                 {
-                    TcpClient client = await _listener.AcceptTcpClientAsync(stoppingToken);
-                    _ = HandleClientAsync(client, stoppingToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Listener was stopped
-                    break;
+                    TcpClient client = await _listener.AcceptTcpClientAsync();
+                    _ = HandleClientAsync(client);
                 }
                 catch (ObjectDisposedException)
                 {
@@ -67,17 +75,17 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
                 catch (Exception ex)
                 {
                     _logger.TestEndpointService_StartingTestControlEndpointFailed(ex);
+                    break;
                 }
             }
         }
         finally
         {
             _logger.TestEndpointService_StopTestControlEndpoint();
-            _listener.Stop();
         }
     }
 
-    private async Task HandleClientAsync(TcpClient client, CancellationToken stoppingToken)
+    private async Task HandleClientAsync(TcpClient client)
     {
         try
         {
@@ -85,8 +93,6 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
             {
                 NetworkStream stream = client.GetStream();
                 JsonRpc rpc = JsonRpc.Attach(stream, this);
-
-                stoppingToken.Register(rpc.Dispose);
 
                 _logger.TestEndpointService_ClientConnected();
 
@@ -99,42 +105,118 @@ internal class TestEndpointService : BackgroundService, ITestEndpoint
         }
     }
 
-    public Task<IApplicationTestService> CreateTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        => CreateRemotableServiceAsync<IApplicationTestService>(assemblyPath, typeName, cancellationToken);
-
-    public Task<ITestLogger> CreateTestLoggerAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        => CreateRemotableServiceAsync<ITestLogger>(assemblyPath, typeName, cancellationToken);
-
-    public Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        => CreateRemotableServiceAsync<IUITestService>(assemblyPath, typeName, cancellationToken);
-
-    private async Task<ServiceType> CreateRemotableServiceAsync<ServiceType>(string assemblyPath, string typeName, CancellationToken cancellationToken)
-        where ServiceType : class
+    // ITestEndpoint implementation
+    public Task AddTestServiceAsync(string contractType, string serviceName, string serviceAssembly, CancellationToken cancellationToken)
     {
-        _logger.TestEndpointService_LoadingTestService(typeName, assemblyPath);
+        _logger.TestEndpointHooksService_RegisteringTestService(serviceName, contractType);
+        _testServices.Add(new ServiceRegistration(contractType, serviceName, serviceAssembly));
+        return Task.CompletedTask;
+    }
 
-        Assembly assembly = Assembly.LoadFrom(assemblyPath);
+    public Task BuildAndRunHostAsync(CancellationToken cancellationToken)
+    {
+        _logger.TestEndpointHooksService_SignalingBuildHost();
+        _buildHostSignal.TrySetResult(true);
+        return Task.CompletedTask;
+    }
 
-        Type? serviceType = assembly.GetType(typeName)
-            ?? throw new ArgumentException($"Type not found: {typeName}", nameof(typeName));
+    public Task StopApplicationAsync(CancellationToken cancellationToken)
+    {
+        _logger.TestEndpointHooksService_SignalingAbort();
+        _buildHostSignal.TrySetCanceled(CancellationToken.None);
+        _servicesReadySignal.TrySetCanceled(CancellationToken.None);
 
-        if (!typeof(ServiceType).IsAssignableFrom(serviceType))
+        _lifetime?.StopApplication();
+
+        return Task.CompletedTask;
+    }
+
+    public async Task<ITestServiceProvider> GetTestServiceProviderAsync(CancellationToken cancellationToken)
+    {
+        // Wait for the host to be built and services to be available
+        IServiceProvider serviceProvider = await _servicesReadySignal.Task.WaitAsync(cancellationToken);
+
+        // Get the TestServiceProvider from DI
+        return serviceProvider.GetRequiredService<ITestServiceProvider>();
+    }
+
+    // ITestEndpointHooks implementation
+    public async Task InjectHostServiceAsync(IHostBuilder hostBuilder, CancellationToken cancellationToken)
+    {
+        _logger.TestEndpointHooksService_WaitingForTestServices();
+
+        // Wait for tests to signal that they're done registering services, or timeout
+        using CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(_startupTimeout);
+
+        try
         {
-            _logger.TestEndpointService_ServiceTypeIncompatible(typeName, typeof(ServiceType).FullName);
-            throw new ArgumentException($"Type {typeName} does not implement {typeof(ServiceType).FullName}", nameof(typeName));
+            using CancellationTokenRegistration ctRegistration = timeoutCts.Token.Register(() => _buildHostSignal.TrySetCanceled());
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks - this will not cause a deadlock because there are no requirements on the main thread
+            await _buildHostSignal.Task;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Timeout occurred - proceed with startup without injected services
+            _logger.TestEndpointHooksService_TestServicesRegistered(0);
+            return;
         }
 
-        // Store the type to instantiate later within each scoped invocation
-        _logger.TestEndpointService_LoadingTestServiceSucceeded();
-
-        // Create the test service within the application scope so it gets access to scoped services
-        ServiceType? testService = null;
-        await _scopeProvider.InvokeInScopeAsync((scopedProvider, ct) =>
+        // Register all test services using hostBuilder.ConfigureServices
+        hostBuilder.ConfigureServices(services =>
         {
-            testService = (ServiceType)ActivatorUtilities.CreateInstance(scopedProvider, serviceType);
-            return Task.CompletedTask;
-        }, cancellationToken);
+            foreach (ServiceRegistration registration in _testServices)
+            {
+                RegisterTestService(services, registration);
+            }
+        });
 
-        return testService ?? throw new InvalidOperationException("Failed to create test service instance");
+        _logger.TestEndpointHooksService_TestServicesRegistered(_testServices.Count);
     }
+
+    public Task ProvideServicesToTestAsync(IServiceProvider services, CancellationToken cancellationToken)
+    {
+        _logger.TestEndpointHooksService_ProvidingServicesToTest();
+
+        // Store the lifetime for potential shutdown requests
+        _lifetime = services.GetService<IHostApplicationLifetime>();
+
+        _servicesReadySignal.TrySetResult(services);
+        return Task.CompletedTask;
+    }
+
+    private void RegisterTestService(IServiceCollection services, ServiceRegistration registration)
+    {
+        _logger.TestEndpointHooksService_LoadingTestServiceType(registration.ServiceName, registration.ServiceAssembly);
+
+        // Load the service assembly
+        System.Reflection.Assembly serviceAssembly = System.Reflection.Assembly.LoadFrom(registration.ServiceAssembly);
+
+        // Find the contract type by name (may be in a different assembly than the service)
+        Type? contractType = Type.GetType(registration.ContractType)
+            ?? throw new ArgumentException($"Contract type not found: {registration.ContractType}");
+
+        // Find the service type in the service assembly
+        Type? serviceType = serviceAssembly.GetType(registration.ServiceName)
+            ?? throw new ArgumentException($"Service type not found: {registration.ServiceName}");
+
+        if (!contractType.IsAssignableFrom(serviceType))
+        {
+            throw new ArgumentException(
+                $"Service type {registration.ServiceName} does not implement contract {registration.ContractType}");
+        }
+
+        _logger.TestEndpointHooksService_RegisteringTestServiceInDI(registration.ServiceName, registration.ContractType);
+
+        // Register as singleton to ensure the same instance is used throughout the application
+        services.AddSingleton(contractType, serviceType);
+    }
+
+    public void Stop()
+    {
+        _listener?.Stop();
+    }
+
+    private record ServiceRegistration(string ContractType, string ServiceName, string ServiceAssembly);
 }
