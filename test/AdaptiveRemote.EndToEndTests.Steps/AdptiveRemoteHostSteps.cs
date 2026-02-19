@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.EndtoEndTests;
+using FluentAssertions;
 using Reqnroll;
 
 namespace AdaptiveRemote.EndToEndTests.Steps;
@@ -36,7 +37,8 @@ public class AdptiveRemoteHostSteps : StepsBase
     [When(@"I wait for the application to shut down")]
     public void WhenIWaitForTheApplicationToShutDown()
     {
-        Host.WaitForShutdown();
+        Host.WaitForShutdown()
+            .Should().BeTrue(because: "Process should have exited within the shutdown timeout");
     }
 
     [Then(@"I should see the application in the {LifecyclePhase} phase")]

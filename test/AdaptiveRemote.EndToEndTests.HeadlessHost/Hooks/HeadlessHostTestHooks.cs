@@ -29,7 +29,7 @@ public static class HeadlessHostTestHooks
             CommandLineArgs: $"--playwright:TracesDir=\"{tracesDir}\"",
             EnvironmentVariables: System.Collections.Immutable.ImmutableDictionary<string, string>.Empty
                 .Add("ASPNETCORE_ENVIRONMENT", "Development")
-            ));
+            ) with { ShutdownTimeout = TimeSpan.FromSeconds(120) });
     }
 
     [AfterScenario]
