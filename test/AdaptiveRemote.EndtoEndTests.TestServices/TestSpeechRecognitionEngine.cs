@@ -8,7 +8,7 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// Test implementation of ISpeechRecognitionEngine that allows tests to programmatically
 /// trigger speech recognition events.
 /// </summary>
-public class TestSpeechRecognitionEngine : ISpeechRecognitionEngine, ITestSpeechRecognitionEngine
+public class TestSpeechRecognitionEngine : ISpeechRecognitionEngine
 {
     private readonly Dictionary<string, IGrammar> _grammars = new();
     private event EventHandler<RecognizedSpeechEventArgs>? _recognized;
@@ -93,11 +93,5 @@ public class TestSpeechRecognitionEngine : ISpeechRecognitionEngine, ITestSpeech
 
         void IRecognizedSpeech.WriteToWaveStream(Stream waveStream)
             => throw new NotSupportedException("Test recognition results do not have audio data");
-    }
-
-    public void Dispose()
-    {
-        // No resources to dispose
-        GC.SuppressFinalize(this);
     }
 }

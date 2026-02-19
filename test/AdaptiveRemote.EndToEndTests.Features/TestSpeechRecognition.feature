@@ -4,7 +4,9 @@ Feature: Test Speech Recognition Service
 	So that I can test the conversation UI
 
 Scenario: Test speech recognition engine can trigger wake word and stop listening
-	Given the application is running
+	Given the application is not running
+	When I start the application
+	Then I should see the application in the Ready phase
 	When I say "Hey Remote"
 	Then the application should enter listening mode
 	When I say "Thank you"

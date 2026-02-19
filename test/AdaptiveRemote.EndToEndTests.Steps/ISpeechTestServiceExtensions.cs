@@ -1,12 +1,18 @@
+﻿using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.Services.Testing;
 
-namespace AdaptiveRemote.EndtoEndTests;
+namespace AdaptiveRemote.EndToEndTests.Steps;
 
-/// <summary>
-/// Extension methods for ITestSpeechRecognitionEngine.
-/// </summary>
-public static class ITestSpeechRecognitionEngineExtensions
+internal static class ISpeechTestServiceExtensions
 {
+    private const int DefaultTimeoutInSeconds = 10;
+
+    public static void Speak(this ISpeechTestService speechTestService, string text, int timeoutInSeconds = DefaultTimeoutInSeconds)
+        => speechTestService.Speak(text, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    public static void Speak(this ISpeechTestService speechTestService, string text, TimeSpan timeout)
+        => WaitHelpers.WaitForAsyncTask(ct => speechTestService.SpeakAsync(text, ct), timeout);
+
     /// <summary>
     /// Convenience method to speak a phrase with known semantics.
     /// Recognizes wake words ("Hey Remote"), stop listening ("Thank you"), and standard commands.
@@ -14,7 +20,7 @@ public static class ITestSpeechRecognitionEngineExtensions
     /// </summary>
     /// <param name="engine">The test speech recognition engine.</param>
     /// <param name="phrase">The phrase to speak.</param>
-    public static Task SpeakAsync(this ITestSpeechRecognitionEngine engine, string phrase)
+    public static Task SpeakAsync(this ISpeechTestService engine, string phrase, CancellationToken cancellationToken)
     {
         // Map common phrases to their semantic meanings
         Dictionary<string, string> semantics = phrase.ToLowerInvariant() switch
@@ -28,7 +34,7 @@ public static class ITestSpeechRecognitionEngineExtensions
             _ => ParseCommand(phrase)
         };
 
-        return engine.RaiseRecognizedAsync(phrase, 80, semantics);
+        return engine.RaiseRecognizedAsync(phrase, 80, semantics, cancellationToken);
     }
 
     private static Dictionary<string, string> ParseCommand(string phrase)

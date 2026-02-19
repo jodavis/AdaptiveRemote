@@ -12,7 +12,7 @@ public static class ITestEndpointExtensions
         where ServiceType : ContractType
     {
         return WaitHelpers.WaitForAsyncTask(
-            ct => controlService.CreateTestServiceAsync<ContractType, ServiceType>(ct),
+            controlService.CreateTestServiceAsync<ContractType, ServiceType>,
             timeout);
     }
 
@@ -51,6 +51,7 @@ public static class ITestEndpointExtensions
             nameof(IApplicationTestService) => serviceProvider.CreateTestServiceAsync,
             nameof(IUITestService) => serviceProvider.CreateUITestServiceAsync,
             nameof(ITestLogger) => serviceProvider.CreateTestLoggerAsync,
+            nameof(ISpeechTestService) => serviceProvider.CreateSpeechTestServiceAsync,
             _ => throw new InvalidOperationException($"There is no method on ITestServiceProvider to create a service of type {typeof(ContractType).AssemblyQualifiedName}")
         };
 

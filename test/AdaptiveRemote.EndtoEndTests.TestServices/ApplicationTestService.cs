@@ -51,11 +51,8 @@ public class ApplicationTestService : IApplicationTestService
     public Task<bool> GetIsListeningAsync(CancellationToken cancellationToken)
     {
         // Find the ConversationView by walking the remote tree
-        ConversationView? conversationView = FindConversationView(_remoteDefinitionService.RemoteRoot);
-        if (conversationView is null)
-        {
-            throw new InvalidOperationException("ConversationView not found in remote definition service");
-        }
+        ConversationView? conversationView = FindConversationView(_remoteDefinitionService.RemoteRoot)
+            ?? throw new InvalidOperationException("ConversationView not found in remote definition service");
 
         // Use GetValue to access the internal property
         bool isListening = conversationView.GetValue(ConversationView.IsListeningProperty);

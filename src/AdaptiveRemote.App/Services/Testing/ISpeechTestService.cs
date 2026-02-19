@@ -10,7 +10,7 @@ namespace AdaptiveRemote.Services.Testing;
 [RpcMarshalable]
 [JsonRpcContract]
 [GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
-public partial interface ITestSpeechRecognitionEngine : IDisposable
+public partial interface ISpeechTestService : IDisposable
 {
     /// <summary>
     /// Raises a SpeechRecognized event with the specified text and semantics.
@@ -18,12 +18,12 @@ public partial interface ITestSpeechRecognitionEngine : IDisposable
     /// <param name="text">The recognized text.</param>
     /// <param name="confidence">Confidence level (0-100).</param>
     /// <param name="semantics">Optional semantic key-value pairs.</param>
-    Task RaiseRecognizedAsync(string text, int confidence, Dictionary<string, string>? semantics = null);
+    Task RaiseRecognizedAsync(string text, int confidence, Dictionary<string, string>? semantics = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Raises a SpeechRejected event with the specified text.
     /// </summary>
     /// <param name="text">The rejected text.</param>
     /// <param name="confidence">Confidence level (0-100).</param>
-    Task RaiseRejectedAsync(string text, int confidence);
+    Task RaiseRejectedAsync(string text, int confidence, CancellationToken cancellationToken = default);
 }

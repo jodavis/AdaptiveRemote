@@ -45,10 +45,13 @@ public partial interface ITestServiceProvider : IDisposable
     Task<IUITestService> CreateUITestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Gets a proxy to the test speech recognition engine, if one is installed.
-    /// This allows tests to programmatically trigger speech recognition events.
+    /// Dynamically loads a Speech test service from the specified assembly and type.
+    /// The UI test service is instantiated within the application's DI scope so it can access
+    /// Playwright/WebView2 objects and interact with the UI.
     /// </summary>
+    /// <param name="assemblyPath">Full path to the assembly containing the UI test service type.</param>
+    /// <param name="typeName">Fully qualified name of the UI test service type to instantiate.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>A proxy to the test speech engine, or null if not using test speech recognition.</returns>
-    Task<ITestSpeechRecognitionEngine?> GetTestSpeechEngineAsync(CancellationToken cancellationToken = default);
+    /// <returns>A proxy to the UI test service that can be used to interact with the UI.</returns>
+    Task<ISpeechTestService> CreateSpeechTestServiceAsync(string assemblyPath, string typeName, CancellationToken cancellationToken);
 }
