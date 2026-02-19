@@ -30,4 +30,11 @@ public partial interface IApplicationTestService : IDisposable
     /// Tells the application host to shut down
     /// </summary>
     Task StopApplicationAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets whether the conversation system is currently in listening mode.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>True if the conversation system is listening, false otherwise.</returns>
+    Task<bool> GetIsListeningAsync(CancellationToken cancellationToken = default);
 }
