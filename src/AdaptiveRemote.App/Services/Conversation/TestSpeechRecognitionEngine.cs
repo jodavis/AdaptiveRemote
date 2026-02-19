@@ -226,4 +226,10 @@ public class TestSpeechRecognitionEngine : ISpeechRecognitionEngine, ITestSpeech
         void IRecognizedSpeech.WriteToWaveStream(Stream waveStream)
             => throw new NotSupportedException("Test recognition results do not have audio data");
     }
+
+    public void Dispose()
+    {
+        // No resources to dispose
+        GC.SuppressFinalize(this);
+    }
 }

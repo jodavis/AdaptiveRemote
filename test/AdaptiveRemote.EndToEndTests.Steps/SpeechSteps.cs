@@ -21,6 +21,8 @@ public class SpeechSteps : StepsBase
     [BeforeScenario("@speech", Order = 100)]
     public void OnBeforeScenario_SetUpSpeechTestHost(AdaptiveRemoteHostSettings hostSettings)
     {
+        TestContext.WriteLine("[SpeechSteps] Setting up custom host factory with TestSpeechRecognitionEngine injection");
+
         // Check if host factory is already set up (from HostSteps)
         // If so, skip this - we'll just use the normal host
         // This scenario setup runs at Order 100, before HostSteps Order 200
@@ -42,9 +44,13 @@ public class SpeechSteps : StepsBase
         string logFilePath = Path.Combine(TestContext.TestResultsDirectory!, TestContext.TestName + ".log");
         hostSettings = hostSettings.AddCommandLineArgs($"{tivoArgs} {broadlinkArgs} --log:FilePath=\"{logFilePath}\"");
 
+        TestContext.WriteLine("[SpeechSteps] Creating host factory with service injection callback");
+
         // Provide a custom host factory that injects TestSpeechRecognitionEngine
         ProvideContainerObjectFactory(() =>
-            AdaptiveRemoteHost.CreateBuilder(hostSettings)
+        {
+            TestContext.WriteLine("[SpeechSteps] Host factory invoked, creating builder");
+            return AdaptiveRemoteHost.CreateBuilder(hostSettings)
                 .ConfigureLogging(builder =>
                 {
                     builder.AddDebug();
@@ -53,9 +59,14 @@ public class SpeechSteps : StepsBase
                 .ConfigureTestServices(async (testEndpoint, ct) =>
                 {
                     // Inject TestSpeechRecognitionEngine before the host builds
+                    TestContext.WriteLine("[SpeechSteps] Injecting TestSpeechRecognitionEngine");
                     await testEndpoint.InjectTestServiceAsync<ISpeechRecognitionEngine, TestSpeechRecognitionEngine>(ct);
+                    TestContext.WriteLine("[SpeechSteps] TestSpeechRecognitionEngine injected");
                 })
-                .Start());
+                .Start();
+        });
+
+        TestContext.WriteLine("[SpeechSteps] Custom host factory registered");
     }
 
     [Given(@"the application is running with test speech recognition")]

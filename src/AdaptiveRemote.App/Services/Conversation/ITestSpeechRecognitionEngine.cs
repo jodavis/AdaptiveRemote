@@ -10,7 +10,7 @@ namespace AdaptiveRemote.Services.Conversation;
 [RpcMarshalable]
 [JsonRpcContract]
 [GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
-public partial interface ITestSpeechRecognitionEngine
+public partial interface ITestSpeechRecognitionEngine : IDisposable
 {
     /// <summary>
     /// Raises a SpeechRecognized event with the specified text and semantics.
