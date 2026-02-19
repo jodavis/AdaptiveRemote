@@ -1,5 +1,6 @@
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using AdaptiveRemote.Services.Conversation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
@@ -33,7 +34,13 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             $"--broadlink:DiscoveryPort={_broadlink.Port}",
         ];
 
-        hostBuilder.ConfigureSettings(hostSettings => hostSettings.AddCommandLineArgs(string.Join(" ", args)));
+        hostBuilder
+            .ConfigureSettings(hostSettings => hostSettings.AddCommandLineArgs(string.Join(" ", args)))
+            .ConfigureTestServices(async (testEndpoint, ct) =>
+            {
+                // Always inject TestSpeechRecognitionEngine so tests can share the same host instance
+                await testEndpoint.InjectTestServiceAsync<ISpeechRecognitionEngine, TestSpeechRecognitionEngine>(ct);
+            });
     }
 
     /// <inheritdoc/>

@@ -292,4 +292,28 @@ internal partial class MessageLogger
 
     [LoggerMessage(EventId = 1508, Level = LogLevel.Error, Message = "Test service {TypeName} does not implement {ServiceContract}")]
     public partial void TestEndpointService_ServiceTypeIncompatible(string typeName, string? serviceContract);
+
+    [LoggerMessage(EventId = 1509, Level = LogLevel.Information, Message = "Registering test service {ServiceName} for contract {ContractType}")]
+    public partial void TestEndpointHooksService_RegisteringTestService(string serviceName, string contractType);
+
+    [LoggerMessage(EventId = 1510, Level = LogLevel.Information, Message = "Signaling host to build")]
+    public partial void TestEndpointHooksService_SignalingBuildHost();
+
+    [LoggerMessage(EventId = 1511, Level = LogLevel.Information, Message = "Signaling host to abort startup")]
+    public partial void TestEndpointHooksService_SignalingAbort();
+
+    [LoggerMessage(EventId = 1512, Level = LogLevel.Information, Message = "Waiting for test services to be registered")]
+    public partial void TestEndpointHooksService_WaitingForTestServices();
+
+    [LoggerMessage(EventId = 1513, Level = LogLevel.Information, Message = "Registered {Count} test service(s)")]
+    public partial void TestEndpointHooksService_TestServicesRegistered(int count);
+
+    [LoggerMessage(EventId = 1514, Level = LogLevel.Information, Message = "Providing services to test")]
+    public partial void TestEndpointHooksService_ProvidingServicesToTest();
+
+    [LoggerMessage(EventId = 1515, Level = LogLevel.Information, Message = "Loading test service type {ServiceName} from {AssemblyPath}")]
+    public partial void TestEndpointHooksService_LoadingTestServiceType(string serviceName, string assemblyPath);
+
+    [LoggerMessage(EventId = 1516, Level = LogLevel.Information, Message = "Registering test service {ServiceName} implementing {ContractType} in DI container")]
+    public partial void TestEndpointHooksService_RegisteringTestServiceInDI(string serviceName, string contractType);
 }

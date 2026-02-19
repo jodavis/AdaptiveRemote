@@ -13,6 +13,7 @@ public partial class AdaptiveRemoteHost : IDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<AdaptiveRemoteHost> _logger;
     private readonly Lazy<IApplicationTestService> _lazyTestService;
+    private readonly Lazy<ISpeechTestService> _lazySpeechTestService;
     private readonly Lazy<IUITestService> _lazyUITestService;
     private readonly ITestEndpoint _testEndpoint;
 
@@ -43,6 +44,7 @@ public partial class AdaptiveRemoteHost : IDisposable
         _standardError = standardError;
 
         _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>();
+        _lazySpeechTestService = CreateLazyTestService<SpeechTestService, ISpeechTestService>();
 
         // Choose UI test service based on settings
         _lazyUITestService = _settings.UIService switch
@@ -77,6 +79,10 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     public IUITestService UI => _lazyUITestService.Value;
 
+    public ISpeechTestService Speech => _lazySpeechTestService.Value;
+
+    public ITestEndpoint TestEndpoint => _testEndpoint;
+
     public ILogger CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
 
     public ILogger CreateLogger(string category) => _loggerFactory.CreateLogger(category);
@@ -86,6 +92,7 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     public bool IsRunning => !_process.HasExited;
 
+    
     public bool WaitForShutdown()
     {
         return _process.WaitForExit(_settings.ShutdownTimeout);
