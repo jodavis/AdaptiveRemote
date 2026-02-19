@@ -188,12 +188,15 @@ internal class TestEndpointService : ITestEndpoint, ITestEndpointHooks
     {
         _logger.TestEndpointHooksService_LoadingTestServiceType(registration.ServiceName, registration.ServiceAssembly);
 
-        System.Reflection.Assembly assembly = System.Reflection.Assembly.LoadFrom(registration.ServiceAssembly);
+        // Load the service assembly
+        System.Reflection.Assembly serviceAssembly = System.Reflection.Assembly.LoadFrom(registration.ServiceAssembly);
 
-        Type? contractType = assembly.GetType(registration.ContractType)
+        // Find the contract type by name (may be in a different assembly than the service)
+        Type? contractType = Type.GetType(registration.ContractType)
             ?? throw new ArgumentException($"Contract type not found: {registration.ContractType}");
 
-        Type? serviceType = assembly.GetType(registration.ServiceName)
+        // Find the service type in the service assembly
+        Type? serviceType = serviceAssembly.GetType(registration.ServiceName)
             ?? throw new ArgumentException($"Service type not found: {registration.ServiceName}");
 
         if (!contractType.IsAssignableFrom(serviceType))
