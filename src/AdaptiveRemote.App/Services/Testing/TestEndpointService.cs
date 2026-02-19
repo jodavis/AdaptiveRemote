@@ -21,7 +21,7 @@ internal class TestEndpointService : ITestEndpoint, ITestEndpointHooks
     private readonly TaskCompletionSource<IServiceProvider> _servicesReadySignal = new();
     private readonly List<ServiceRegistration> _testServices = new();
     private readonly TimeSpan _startupTimeout = TimeSpan.FromMinutes(5);
-    
+
     private TcpListener? _listener;
     private IHostApplicationLifetime? _lifetime;
 
@@ -176,10 +176,10 @@ internal class TestEndpointService : ITestEndpoint, ITestEndpointHooks
     public Task ProvideServicesToTestAsync(IServiceProvider services, CancellationToken cancellationToken)
     {
         _logger.TestEndpointHooksService_ProvidingServicesToTest();
-        
+
         // Store the lifetime for potential shutdown requests
         _lifetime = services.GetService<IHostApplicationLifetime>();
-        
+
         _servicesReadySignal.TrySetResult(services);
         return Task.CompletedTask;
     }

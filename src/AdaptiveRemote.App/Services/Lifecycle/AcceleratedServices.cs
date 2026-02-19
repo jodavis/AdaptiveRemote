@@ -12,13 +12,13 @@ public class AcceleratedServices
     public ILifecycleViewController Controller { get; }
     internal DiagnosticAdapter DiagnosticAdapter { get; }
     internal ITestEndpointHooks TestEndpoint { get; }
-    
+
     /// <summary>
     /// Command line configuration parsed from arguments.
     /// Available for any startup services that need command line settings.
     /// </summary>
     public IConfigurationRoot CommandLineConfig { get; }
-    
+
     /// <summary>
     /// Logger factory for startup processes.
     /// Available for any startup services that need logging.
