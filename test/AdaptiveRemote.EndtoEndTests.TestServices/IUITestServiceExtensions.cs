@@ -127,4 +127,26 @@ public static class IUITestServiceExtensions
             throw new TimeoutException($"Clicking text '{text}' did not complete within timeout.");
         }
     }
+
+    /// <summary>
+    /// Checks if an element with the specified CSS class and optional text content is visible (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="cssClass">The CSS class name to search for.</param>
+    /// <param name="textContent">Optional text content to match within elements with the CSS class.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>True if a matching element is visible, false otherwise.</returns>
+    public static bool IsElementWithClassVisible(this IUITestService service, string cssClass, string? textContent = null, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.IsElementWithClassVisible(cssClass, textContent, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Checks if an element with the specified CSS class and optional text content is visible (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="cssClass">The CSS class name to search for.</param>
+    /// <param name="textContent">Optional text content to match within elements with the CSS class.</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>True if a matching element is visible, false otherwise.</returns>
+    public static bool IsElementWithClassVisible(this IUITestService service, string cssClass, string? textContent, TimeSpan timeout)
+        => WaitHelpers.ExecuteWithRetries(ct => service.IsElementWithClassVisibleAsync(cssClass, textContent, ct), timeout);
 }

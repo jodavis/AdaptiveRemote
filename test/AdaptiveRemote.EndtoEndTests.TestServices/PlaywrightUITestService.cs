@@ -131,6 +131,28 @@ public class PlaywrightUITestService : IUITestService
         return CurrentPage.GetByText(text, new() { Exact = false });
     }
 
+    public async Task<bool> IsElementWithClassVisibleAsync(string cssClass, string? textContent = null, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Find elements with the specified CSS class
+            ILocator locator = CurrentPage.Locator($".{cssClass}");
+
+            // If text content is specified, filter by text
+            if (!string.IsNullOrEmpty(textContent))
+            {
+                locator = locator.Filter(new() { HasText = textContent });
+            }
+
+            // Check if at least one matching element is visible
+            return await locator.First.IsVisibleAsync();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public void Dispose()
     {
         if (_browserProvider is IDisposable disposable)

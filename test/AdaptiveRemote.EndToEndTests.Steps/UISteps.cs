@@ -42,4 +42,20 @@ public class UISteps : StepsBase
         Assert.IsFalse(Host.UI.IsTextVisible(text), "Text '{0}' was visible but should not have been", text);
     }
 
+    [Then(@"I should see a modal with class {string} containing {string}")]
+    public void ThenIShouldSeeAModalWithClassContaining(string cssClass, string textContent)
+    {
+        Assert.IsNotNull(Host, "Cannot check for modal with class '{0}'. The application is not started.", cssClass);
+        Assert.IsTrue(Host.UI.IsElementWithClassVisible(cssClass, textContent), 
+            "Modal with class '{0}' containing text '{1}' was not visible", cssClass, textContent);
+    }
+
+    [Then(@"I should not see a modal with class {string}")]
+    public void ThenIShouldNotSeeAModalWithClass(string cssClass)
+    {
+        Assert.IsNotNull(Host, "Cannot check for modal with class '{0}'. The application is not started.", cssClass);
+        Assert.IsFalse(Host.UI.IsElementWithClassVisible(cssClass, null), 
+            "Modal with class '{0}' was visible but should not have been", cssClass);
+    }
+
 }

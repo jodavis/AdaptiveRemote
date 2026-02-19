@@ -55,4 +55,13 @@ public partial interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <exception cref="InvalidOperationException">Thrown if the text is not visible or not clickable.</exception>
     Task ClickTextAsync(string text, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Checks if an element with the specified CSS class and text content is visible in the UI.
+    /// </summary>
+    /// <param name="cssClass">The CSS class name to search for.</param>
+    /// <param name="textContent">Optional text content to match within elements with the CSS class.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>True if a matching element is visible, false otherwise.</returns>
+    Task<bool> IsElementWithClassVisibleAsync(string cssClass, string? textContent, CancellationToken cancellationToken);
 }
