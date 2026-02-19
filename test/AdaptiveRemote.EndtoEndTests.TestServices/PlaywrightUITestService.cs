@@ -93,6 +93,44 @@ public class PlaywrightUITestService : IUITestService
         return CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
     }
 
+    public async Task<bool> IsTextVisibleAsync(string text, CancellationToken cancellationToken = default)
+    {
+        ILocator locator = GetTextLocator(text);
+
+        try
+        {
+            return await locator.IsVisibleAsync();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task ClickTextAsync(string text, CancellationToken cancellationToken = default)
+    {
+        ILocator locator = GetTextLocator(text);
+
+        // Verify the text is visible
+        bool isVisible = await locator.IsVisibleAsync();
+        if (!isVisible)
+        {
+            throw new InvalidOperationException($"Text '{text}' is not visible.");
+        }
+
+        // Click the text element
+        await locator.ClickAsync(new LocatorClickOptions
+        {
+            Timeout = DefaultTimeoutMs
+        });
+    }
+
+    private ILocator GetTextLocator(string text)
+    {
+        // Use Playwright's getByText with partial match (contains)
+        return CurrentPage.GetByText(text, new() { Exact = false });
+    }
+
     public void Dispose()
     {
         if (_browserProvider is IDisposable disposable)
