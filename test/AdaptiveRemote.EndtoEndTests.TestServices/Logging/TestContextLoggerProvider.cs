@@ -88,13 +88,14 @@ public sealed class TestContextLoggerProvider : ILoggerProvider
         {
             _state = state;
 
+            _state.Scopes.Push(scopeName);
+
             if (_state.TestContext is TestContext context)
             {
                 context.Write(_state.ScopeIndent);
                 context.WriteLine(
                     scopeName is null ? "Begin Scope" : "Begin Scope: {0}",
                     scopeName);
-                _state.Scopes.Push(scopeName);
             }
         }
 

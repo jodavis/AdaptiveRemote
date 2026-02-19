@@ -5,7 +5,7 @@ using Reqnroll;
 namespace AdaptiveRemote.EndToEndTests.Steps;
 
 [Binding]
-public class AdptiveRemoteHostSteps : StepsBase
+public class AdaptiveRemoteHostSteps : StepsBase
 {
     [Given(@"the application is running")]
     public void GivenTheApplicationIsRunning()
