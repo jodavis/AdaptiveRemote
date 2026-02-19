@@ -45,4 +45,24 @@ public static class IApplicationTestServiceExtensions
             throw new TimeoutException($"Timed out waiting for {nameof(testService.StopApplicationAsync)} after {timeout.TotalSeconds}s");
         }
     }
+
+    /// <summary>
+    /// Waits for the conversation system to reach the expected listening state.
+    /// Polls the listening state until it matches the expected value or the timeout is reached.
+    /// </summary>
+    /// <param name="testService">The test service to query.</param>
+    /// <param name="expected">The expected listening state (true for listening, false for not listening).</param>
+    /// <param name="timeoutInSeconds">Maximum time to wait in seconds.</param>
+    public static void WaitForIsListening(this IApplicationTestService testService, bool expected, int timeoutInSeconds)
+    {
+        bool? currentState = null;
+        bool result = WaitHelpers.ExecuteWithRetries(() =>
+        {
+            currentState = WaitHelpers.WaitForAsyncTask(testService.GetIsListeningAsync);
+            return currentState == expected;
+        }, TimeSpan.FromSeconds(timeoutInSeconds));
+
+        currentState.Should().Be(expected,
+            because: $"the conversation system should be {(expected ? "listening" : "not listening")} within {timeoutInSeconds}s.");
+    }
 }

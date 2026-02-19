@@ -2,6 +2,7 @@
 using AdaptiveRemote.EndtoEndTests.Host;
 using AdaptiveRemote.EndtoEndTests.Logging;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using AdaptiveRemote.Services.Conversation;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
@@ -65,6 +66,11 @@ public class HostSteps : StepsBase
             {
                 builder.AddDebug();
                 builder.AddTestContext(TestContext);
+            })
+            .ConfigureTestServices(async (testEndpoint, ct) =>
+            {
+                // Always inject TestSpeechRecognitionEngine so tests can share the same host instance
+                await testEndpoint.InjectTestServiceAsync<ISpeechRecognitionEngine, TestSpeechRecognitionEngine>(ct);
             })
             .Start());
     }

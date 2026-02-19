@@ -183,3 +183,79 @@ Update this document when:
 - Known issues are resolved or new limitations discovered
 
 For implementation details, refer to source code and inline comments.
+
+## Step Definition Implementation Patterns
+
+### Synchronous Execution
+**Always make step definitions synchronous** - Use `WaitHelpers` to wrap async operations rather than making steps async. This makes tests easier to debug since they run synchronously in the test process, not the host.
+
+```csharp
+// ❌ WRONG - Async step definition
+[When("I say {string}")]
+public async Task WhenISayAsync(string phrase)
+{
+    await _testSpeechEngine.SpeakAsync(phrase);
+}
+
+// ✅ CORRECT - Synchronous step with WaitHelpers
+[When("I say {string}")]
+public void WhenISay(string phrase)
+{
+    WaitHelpers.WaitForAsyncTask(ct => _testSpeechEngine.SpeakAsync(phrase), TimeSpan.FromSeconds(5));
+}
+```
+
+### Gherkin Bindings
+**Use Gherkin type bindings** (`{string}`, `{int}`, etc.) instead of regex groups for cleaner, more maintainable code.
+
+```csharp
+// ❌ WRONG - Regex groups
+[When(@"I say ""(.*)""")]
+public void WhenISay(string phrase) { }
+
+// ✅ CORRECT - Gherkin type binding
+[When("I say {string}")]
+public void WhenISay(string phrase) { }
+```
+
+### Polling for State Changes
+**Use `WaitHelpers.ExecuteWithRetries` to poll** for expected state changes rather than using fixed delays. This makes tests faster (no unnecessary waiting) and more reliable (will wait as long as needed up to timeout).
+
+```csharp
+// ❌ WRONG - Fixed delay
+[Then(@"the application should enter listening mode")]
+public async Task ThenTheApplicationShouldEnterListeningMode()
+{
+    await Task.Delay(500); // Arbitrary wait
+    bool isListening = await Host.Application.GetIsListeningAsync();
+    Assert.IsTrue(isListening);
+}
+
+// ✅ CORRECT - Polling with retry helper
+[Then(@"the application should enter listening mode")]
+public void ThenTheApplicationShouldEnterListeningMode()
+{
+    Host.Application.WaitForIsListening(expected: true, timeoutInSeconds: 10);
+}
+```
+
+### Extension Methods for Complex Logic
+**Put complex logic in extension methods** that run in the test process rather than in test services that run in the host. This makes debugging easier and keeps test services minimal.
+
+```csharp
+// Extension method in test process (easier to debug)
+public static void WaitForIsListening(this IApplicationTestService testService, bool expected, int timeoutInSeconds)
+{
+    bool? currentState = null;
+    bool result = WaitHelpers.ExecuteWithRetries(() =>
+    {
+        currentState = WaitHelpers.WaitForAsyncTask(testService.GetIsListeningAsync);
+        return currentState == expected;
+    }, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    currentState.Should().Be(expected,
+        because: $"the conversation system should be {(expected ? "listening" : "not listening")} within {timeoutInSeconds}s.");
+}
+```
+
+For example, the `SpeakAsync` method for `ITestSpeechRecognitionEngine` is implemented as an extension method that parses phrases and calls `RaiseRecognizedAsync`. This allows the complex parsing logic to run in the test process where it can be debugged easily, and only the simple event raising happens in the host process.
