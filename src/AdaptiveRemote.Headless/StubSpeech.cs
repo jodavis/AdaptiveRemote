@@ -7,13 +7,13 @@ namespace AdaptiveRemote.Headless;
 
 internal class StubSpeechSynthesizer : ISpeechSynthesizer
 {
-    private const int SpeechDelayMs = 500; // Delay to simulate speech duration for testing
+    private const int SpeechDelayMs = 1000; // Delay to simulate speech duration for testing
     public event EventHandler? SpeakCompleted;
 
     public void CancelAll() { }
-    
-    public void Speak(string phrase) 
-    { 
+
+    public void Speak(string phrase)
+    {
         // Add a delay to simulate speech duration so modal stays visible during tests
         _ = Task.Run(async () =>
         {
@@ -21,7 +21,7 @@ internal class StubSpeechSynthesizer : ISpeechSynthesizer
             SpeakCompleted?.Invoke(this, EventArgs.Empty);
         });
     }
-    
+
     public IEnumerable<string> GetInstalledVoices() => Array.Empty<string>();
     public void SelectVoice(string fullName) { }
     public void SetSpeakingRate(int rate) { }

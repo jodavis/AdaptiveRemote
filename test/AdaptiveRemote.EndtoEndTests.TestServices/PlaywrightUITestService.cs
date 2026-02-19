@@ -93,20 +93,6 @@ public class PlaywrightUITestService : IUITestService
         return CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
     }
 
-    public async Task<bool> IsTextVisibleAsync(string text, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = GetTextLocator(text);
-
-        try
-        {
-            return await locator.IsVisibleAsync();
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public async Task ClickTextAsync(string text, CancellationToken cancellationToken = default)
     {
         ILocator locator = GetTextLocator(text);
@@ -131,25 +117,25 @@ public class PlaywrightUITestService : IUITestService
         return CurrentPage.GetByText(text, new() { Exact = false });
     }
 
-    public async Task<bool> IsElementWithClassVisibleAsync(string cssClass, string? textContent = null, CancellationToken cancellationToken = default)
+    public async Task<string?> GetTextFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken = default)
     {
         try
         {
             // Find elements with the specified CSS class
             ILocator locator = CurrentPage.Locator($".{cssClass}");
 
-            // If text content is specified, filter by text
-            if (!string.IsNullOrEmpty(textContent))
+            // Check if at least one matching element is visible
+            if (await locator.First.IsVisibleAsync())
             {
-                locator = locator.Filter(new() { HasText = textContent });
+                // Return the text content of the first visible element
+                return await locator.First.TextContentAsync();
             }
 
-            // Check if at least one matching element is visible
-            return await locator.First.IsVisibleAsync();
+            return null;
         }
         catch
         {
-            return false;
+            return null;
         }
     }
 

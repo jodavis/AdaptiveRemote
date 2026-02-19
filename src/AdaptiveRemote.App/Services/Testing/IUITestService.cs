@@ -40,14 +40,6 @@ public partial interface IUITestService : IDisposable
     Task ClickButtonAsync(string label, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Checks if text with the specified content is visible in the UI.
-    /// </summary>
-    /// <param name="text">The exact text to find (case-sensitive).</param>
-    /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>True if the text is visible, false otherwise.</returns>
-    Task<bool> IsTextVisibleAsync(string text, CancellationToken cancellationToken);
-
-    /// <summary>
     /// Clicks on text with the specified content in the UI.
     /// The text must be visible before clicking.
     /// </summary>
@@ -57,11 +49,10 @@ public partial interface IUITestService : IDisposable
     Task ClickTextAsync(string text, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Checks if an element with the specified CSS class and text content is visible in the UI.
+    /// Gets the text content from an element with the specified CSS class.
     /// </summary>
     /// <param name="cssClass">The CSS class name to search for.</param>
-    /// <param name="textContent">Optional text content to match within elements with the CSS class.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    /// <returns>True if a matching element is visible, false otherwise.</returns>
-    Task<bool> IsElementWithClassVisibleAsync(string cssClass, string? textContent, CancellationToken cancellationToken);
+    /// <returns>The text content of the first matching element, or null if not found or not visible.</returns>
+    Task<string?> GetTextFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken);
 }

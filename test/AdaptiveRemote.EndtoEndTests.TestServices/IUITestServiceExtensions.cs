@@ -83,26 +83,6 @@ public static class IUITestServiceExtensions
     }
 
     /// <summary>
-    /// Checks if text with the specified content is visible in the UI (synchronous wrapper).
-    /// </summary>
-    /// <param name="service">The UI test service.</param>
-    /// <param name="text">The exact text to find (case-sensitive).</param>
-    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
-    /// <returns>True if the text is visible, false otherwise.</returns>
-    public static bool IsTextVisible(this IUITestService service, string text, int timeoutInSeconds = DefaultUITimeoutInSeconds)
-        => service.IsTextVisible(text, TimeSpan.FromSeconds(timeoutInSeconds));
-
-    /// <summary>
-    /// Checks if text with the specified content is visible in the UI (synchronous wrapper).
-    /// </summary>
-    /// <param name="service">The UI test service.</param>
-    /// <param name="text">The exact text to find (case-sensitive).</param>
-    /// <param name="timeout">Timeout for the operation.</param>
-    /// <returns>True if the text is visible, false otherwise.</returns>
-    public static bool IsTextVisible(this IUITestService service, string text, TimeSpan timeout)
-        => WaitHelpers.ExecuteWithRetries(ct => service.IsTextVisibleAsync(text, ct), timeout);
-
-    /// <summary>
     /// Clicks on text with the specified content in the UI (synchronous wrapper).
     /// </summary>
     /// <param name="service">The UI test service.</param>
@@ -129,24 +109,37 @@ public static class IUITestServiceExtensions
     }
 
     /// <summary>
-    /// Checks if an element with the specified CSS class and optional text content is visible (synchronous wrapper).
+    /// Waits for a modal message containing the specified text to appear.
+    /// This uses polling with retries to handle timing issues with speech synthesis.
     /// </summary>
     /// <param name="service">The UI test service.</param>
-    /// <param name="cssClass">The CSS class name to search for.</param>
-    /// <param name="textContent">Optional text content to match within elements with the CSS class.</param>
-    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
-    /// <returns>True if a matching element is visible, false otherwise.</returns>
-    public static bool IsElementWithClassVisible(this IUITestService service, string cssClass, string? textContent = null, int timeoutInSeconds = DefaultUITimeoutInSeconds)
-        => service.IsElementWithClassVisible(cssClass, textContent, TimeSpan.FromSeconds(timeoutInSeconds));
+    /// <param name="expectedText">The expected text content in the modal message.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation (default 5 seconds).</param>
+    /// <exception cref="TimeoutException">Thrown when the modal doesn't appear or has different text within the timeout.</exception>
+    public static void WaitForModalMessageContaining(this IUITestService service, string expectedText, int timeoutInSeconds = 5)
+    {
+        const string modalCssClass = "conversation-speaking-message";
+        string? actualText = null;
 
-    /// <summary>
-    /// Checks if an element with the specified CSS class and optional text content is visible (synchronous wrapper).
-    /// </summary>
-    /// <param name="service">The UI test service.</param>
-    /// <param name="cssClass">The CSS class name to search for.</param>
-    /// <param name="textContent">Optional text content to match within elements with the CSS class.</param>
-    /// <param name="timeout">Timeout for the operation.</param>
-    /// <returns>True if a matching element is visible, false otherwise.</returns>
-    public static bool IsElementWithClassVisible(this IUITestService service, string cssClass, string? textContent, TimeSpan timeout)
-        => WaitHelpers.ExecuteWithRetries(ct => service.IsElementWithClassVisibleAsync(cssClass, textContent, ct), timeout);
+        bool found = WaitHelpers.ExecuteWithRetries(() =>
+        {
+            actualText = WaitHelpers.WaitForAsyncTask(
+                ct => service.GetTextFromElementWithCssClassAsync(modalCssClass, ct),
+                TimeSpan.FromMilliseconds(500));
+
+            return actualText != null && actualText.Contains(expectedText, StringComparison.OrdinalIgnoreCase);
+        }, timeoutInSeconds);
+
+        if (!found)
+        {
+            if (actualText == null)
+            {
+                throw new TimeoutException($"Modal message box did not appear within {timeoutInSeconds} seconds.");
+            }
+            else
+            {
+                throw new TimeoutException($"Modal message box appeared but contained '{actualText}' instead of expected text '{expectedText}'.");
+            }
+        }
+    }
 }

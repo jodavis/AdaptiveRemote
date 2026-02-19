@@ -11,4 +11,4 @@ Scenario: Speech synthesis displays modal message box
 	Then the application should enter listening mode
 	When I say "Thank you"
 	Then the application should exit listening mode
-	And I should see a modal with class "conversation-speaking-message" containing "You're welcome"
+	And I should see a modal message containing "You're welcome"
