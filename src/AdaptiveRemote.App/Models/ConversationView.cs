@@ -4,7 +4,7 @@ namespace AdaptiveRemote.Models;
 
 public class ConversationView : RemoteLayoutElement
 {
-    internal static readonly MvvmProperty<bool> IsListeningProperty = new(nameof(IsListening));
+    public static readonly MvvmProperty<bool> IsListeningProperty = new(nameof(IsListening));
     internal static readonly MvvmProperty<string> StatusMessageProperty = new(nameof(StatusMessage));
     internal static readonly MvvmProperty<string?> SpeakingMessageProperty = new(nameof(SpeakingMessage));
     internal static readonly MvvmProperty<Action?> ToggleListeningProperty = new(nameof(ToggleListening));

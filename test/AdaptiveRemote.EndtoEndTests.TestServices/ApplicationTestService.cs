@@ -1,4 +1,5 @@
 using AdaptiveRemote.Models;
+using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Hosting;
 
@@ -14,15 +15,18 @@ public class ApplicationTestService : IApplicationTestService
     private readonly Services.IRemoteDefinitionService _remoteDefinitionService;
     private readonly LifecycleView _lifecycleView;
     private readonly IHostApplicationLifetime _applicationLifetime;
+    private readonly ISpeechRecognitionEngine? _speechRecognitionEngine;
 
     public ApplicationTestService(
         Services.IRemoteDefinitionService remoteDefinitionService,
         LifecycleView lifecycleView,
-        IHostApplicationLifetime applicationLifetime)
+        IHostApplicationLifetime applicationLifetime,
+        ISpeechRecognitionEngine? speechRecognitionEngine = null)
     {
         _remoteDefinitionService = remoteDefinitionService;
         _lifecycleView = lifecycleView;
         _applicationLifetime = applicationLifetime;
+        _speechRecognitionEngine = speechRecognitionEngine;
     }
 
     public async Task InvokeCommandAsync(string commandName, CancellationToken cancellationToken)
@@ -48,6 +52,27 @@ public class ApplicationTestService : IApplicationTestService
         }
     }
 
+    public Task<bool> GetIsListeningAsync(CancellationToken cancellationToken)
+    {
+        // Find the ConversationView by walking the remote tree
+        ConversationView? conversationView = FindConversationView(_remoteDefinitionService.RemoteRoot);
+        if (conversationView is null)
+        {
+            throw new InvalidOperationException("ConversationView not found in remote definition service");
+        }
+
+        // Use GetValue to access the internal property
+        bool isListening = conversationView.GetValue(ConversationView.IsListeningProperty);
+        return Task.FromResult(isListening);
+    }
+
+    public Task<ITestSpeechRecognitionEngine?> GetTestSpeechEngineAsync(CancellationToken cancellationToken)
+    {
+        // Check if the speech recognition engine is a test engine
+        ITestSpeechRecognitionEngine? testEngine = _speechRecognitionEngine as ITestSpeechRecognitionEngine;
+        return Task.FromResult(testEngine);
+    }
+
     private static Command? FindCommandByName(RemoteLayoutElement element, string name)
     {
         if (element is Command command && command.Name == name)
@@ -60,6 +85,28 @@ public class ApplicationTestService : IApplicationTestService
             foreach (RemoteLayoutElement child in group.Elements)
             {
                 Command? found = FindCommandByName(child, name);
+                if (found is not null)
+                {
+                    return found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static ConversationView? FindConversationView(RemoteLayoutElement element)
+    {
+        if (element is ConversationView conversationView)
+        {
+            return conversationView;
+        }
+
+        if (element is LayoutGroup group)
+        {
+            foreach (RemoteLayoutElement child in group.Elements)
+            {
+                ConversationView? found = FindConversationView(child);
                 if (found is not null)
                 {
                     return found;

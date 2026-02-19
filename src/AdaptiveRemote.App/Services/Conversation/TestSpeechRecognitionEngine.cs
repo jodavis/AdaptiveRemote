@@ -6,7 +6,7 @@ namespace AdaptiveRemote.Services.Conversation;
 /// Test implementation of ISpeechRecognitionEngine that allows tests to programmatically
 /// trigger speech recognition events.
 /// </summary>
-internal class TestSpeechRecognitionEngine : ISpeechRecognitionEngine, ITestSpeechRecognitionEngine
+public class TestSpeechRecognitionEngine : ISpeechRecognitionEngine, ITestSpeechRecognitionEngine
 {
     private readonly Dictionary<string, IGrammar> _grammars = new();
     private event EventHandler<RecognizedSpeechEventArgs>? _recognized;

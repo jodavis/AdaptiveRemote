@@ -77,6 +77,8 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     public IUITestService UI => _lazyUITestService.Value;
 
+    public ITestEndpoint TestEndpoint => _testEndpoint;
+
     public ILogger CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
 
     public ILogger CreateLogger(string category) => _loggerFactory.CreateLogger(category);

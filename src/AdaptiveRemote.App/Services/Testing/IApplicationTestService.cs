@@ -1,3 +1,4 @@
+using AdaptiveRemote.Services.Conversation;
 using PolyType;
 using StreamJsonRpc;
 
@@ -30,4 +31,19 @@ public partial interface IApplicationTestService : IDisposable
     /// Tells the application host to shut down
     /// </summary>
     Task StopApplicationAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets whether the conversation system is currently in listening mode.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>True if the conversation system is listening, false otherwise.</returns>
+    Task<bool> GetIsListeningAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a proxy to the test speech recognition engine, if one is installed.
+    /// This allows tests to programmatically trigger speech recognition events.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A proxy to the test speech engine, or null if not using test speech recognition.</returns>
+    Task<ITestSpeechRecognitionEngine?> GetTestSpeechEngineAsync(CancellationToken cancellationToken = default);
 }
