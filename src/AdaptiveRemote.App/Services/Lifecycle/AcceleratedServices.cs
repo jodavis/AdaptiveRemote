@@ -41,9 +41,15 @@ public class AcceleratedServices
         DiagnosticAdapter = new(Controller);
 
         // Check if test control port is configured
-        TestingSettings? testSettings = CommandLineConfig.GetSection("test").Get<TestingSettings>();
-        if (testSettings?.ControlPort is not null)
+        int? controlPort = ParseControlPort();
+        if (controlPort.HasValue)
         {
+            // Create TestingSettings from command line config
+            TestingSettings testSettings = new()
+            {
+                ControlPort = controlPort
+            };
+
             // Create and start the test endpoint service
             TestEndpointService testEndpointService = new(testSettings, LoggerFactory);
             testEndpointService.StartListening();
@@ -57,8 +63,21 @@ public class AcceleratedServices
         Controller.SetPhase(LifecyclePhase.Waiting);
     }
 
-    public virtual void AddPrecreatedServices(IServiceCollection services) =>
+    public virtual void AddPrecreatedServices(IServiceCollection services)
+    {
         services
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);
+    }
+
+    private int? ParseControlPort()
+    {
+        string? portString = CommandLineConfig["test:ControlPort"];
+        if (int.TryParse(portString, out int port))
+        {
+            return port;
+        }
+
+        return null;
+    }
 }

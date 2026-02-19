@@ -1,6 +1,4 @@
 using AdaptiveRemote.EndtoEndTests;
-using AdaptiveRemote.EndtoEndTests.Host;
-using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
@@ -12,34 +10,21 @@ public class SpeechSteps : StepsBase
 {
     private ITestSpeechRecognitionEngine? _testSpeechEngine;
 
-    [Given(@"the application is running")]
-    public void GivenTheApplicationIsRunning()
-    {
-        // Start the application if not already running
-        if (!IsHostRunning)
-        {
-            _ = Host; // Trigger lazy initialization
-        }
-
-        // Wait for the application to be ready
-        Host.Application.WaitForPhase(
-            LifecyclePhase.Ready,
-            timeout: TimeSpan.FromSeconds(60));
-
-        // Get the test speech engine from the host
-        _testSpeechEngine = WaitHelpers.WaitForAsyncTask(
-            ct => Host.TestEndpoint.GetTestServiceProviderAsync(ct)
-                .ContinueWith(t => t.Result.GetTestSpeechEngineAsync(ct), ct)
-                .Unwrap(),
-            timeout: TimeSpan.FromSeconds(10));
-
-        Assert.IsNotNull(_testSpeechEngine, "Test speech recognition engine was not injected into the host");
-    }
-
     [When("I say {string}")]
     public void WhenISay(string phrase)
     {
-        Assert.IsNotNull(_testSpeechEngine, "Test speech engine is not available");
+        // Get the test speech engine on first use
+        if (_testSpeechEngine is null)
+        {
+            _testSpeechEngine = WaitHelpers.WaitForAsyncTask(
+                ct => Host.TestEndpoint.GetTestServiceProviderAsync(ct)
+                    .ContinueWith(t => t.Result.GetTestSpeechEngineAsync(ct), ct)
+                    .Unwrap(),
+                timeout: TimeSpan.FromSeconds(10));
+
+            Assert.IsNotNull(_testSpeechEngine, "Test speech recognition engine was not injected into the host");
+        }
+
         WaitHelpers.WaitForAsyncTask(ct => _testSpeechEngine.SpeakAsync(phrase), TimeSpan.FromSeconds(5));
     }
 
