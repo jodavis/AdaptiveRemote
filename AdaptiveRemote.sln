@@ -38,15 +38,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{
 		.github\workflows\build-and-test.yml = .github\workflows\build-and-test.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.EndToEndTests.ConsoleHost", "test\AdaptiveRemote.EndtoEndTests.Console\AdaptiveRemote.EndToEndTests.ConsoleHost.csproj", "{380E467A-61F6-4FEA-A852-1796B4F256AA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.EndToEndTests.Host.Console", "test\AdaptiveRemote.EndtoEndTests.Host.Console\AdaptiveRemote.EndToEndTests.Host.Console.csproj", "{380E467A-61F6-4FEA-A852-1796B4F256AA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.EndToEndTests.Steps", "test\AdaptiveRemote.EndToEndTests.Steps\AdaptiveRemote.EndToEndTests.Steps.csproj", "{72062D2E-6FDF-42F8-8360-98130E2A9861}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "AdaptiveRemote.EndToEndTests.Features", "test\AdaptiveRemote.EndToEndTests.Features\AdaptiveRemote.EndToEndTests.Features.shproj", "{A2BDEE76-E5BE-45AD-BD99-3F94FB134358}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.EndToEndTests.HeadlessHost", "test\AdaptiveRemote.EndToEndTests.HeadlessHost\AdaptiveRemote.EndToEndTests.HeadlessHost.csproj", "{F631ED02-DB0B-4CE4-8462-89BA239AFB3A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.EndToEndTests.Host.Headless", "test\AdaptiveRemote.EndToEndTests.Host.Headless\AdaptiveRemote.EndToEndTests.Host.Headless.csproj", "{F631ED02-DB0B-4CE4-8462-89BA239AFB3A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.EndToEndTests.WpfHost", "test\AdaptiveRemote.EndToEndTests.WpfHost\AdaptiveRemote.EndToEndTests.WpfHost.csproj", "{54522D5A-CEB3-F5B9-2654-1005EF1C3262}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdaptiveRemote.EndToEndTests.Host.Wpf", "test\AdaptiveRemote.EndToEndTests.Host.Wpf\AdaptiveRemote.EndToEndTests.Host.Wpf.csproj", "{54522D5A-CEB3-F5B9-2654-1005EF1C3262}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
