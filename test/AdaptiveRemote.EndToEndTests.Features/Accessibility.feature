@@ -4,7 +4,7 @@ Feature: Accessibility compliance
 	So that I can see and use the interface effectively
 
 Scenario: UI meets WCAG contrast requirements
-	Given the application is running
-	And the application is in the Ready state
+	Given the host application does not use an embedded WebView2 control
+	And the application is in the Ready phase
 	When I run the accessibility contrast checker
 	Then I should not see any accessibility contrast violations

@@ -43,4 +43,10 @@ public static class HeadlessHostTestHooks
             testContext.AddResultFile(traceFile);
         }
     }
+
+    [Given(@"the host application does not use an embedded WebView2 control")]
+    public static void GivenTheHostApplicationDoesNotUseAnEmbeddedWebView2Control()
+    {
+        // This test does not use an embedded WebView2 control, so we can simply return without doing anything.
+    }
 }

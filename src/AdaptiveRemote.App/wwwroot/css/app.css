@@ -1,4 +1,4 @@
-html,
+﻿html,
 body {
   font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 48px;
@@ -115,7 +115,7 @@ div.conversation-speaking-message {
   margin: 20px;
   background-color: darkred;
   border-color: #250000;
-  color: white;
+  color: #222;
 }
 #ROOT #DPAD #POWER:hover {
   background-color: #a40000;

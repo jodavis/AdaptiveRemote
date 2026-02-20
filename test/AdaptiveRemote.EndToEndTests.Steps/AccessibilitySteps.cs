@@ -18,8 +18,7 @@ public class AccessibilitySteps : StepsBase
             "Cannot run accessibility checker. The application is not started.");
 
         // Run the accessibility checker and store results
-        _accessibilityViolations = Host.UI.CheckAccessibility(
-            timeoutInSeconds: 30);
+        _accessibilityViolations = Host.UI.CheckAccessibility();
     }
 
     [Then(@"I should not see any accessibility contrast violations")]

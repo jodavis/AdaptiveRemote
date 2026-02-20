@@ -1,6 +1,7 @@
 using AdaptiveRemote.Services.Testing;
 using Deque.AxeCore.Commons;
 using Deque.AxeCore.Playwright;
+using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
 
 namespace AdaptiveRemote.EndtoEndTests;
@@ -15,9 +16,10 @@ public class PlaywrightUITestService : IUITestService
 
     private readonly IBrowserUIAccess _browserProvider;
 
-    public PlaywrightUITestService(IBrowserUIAccess browserProvider)
+    public PlaywrightUITestService(IBrowserUIAccess browserProvider, ILogger<PlaywrightUITestService> logger)
     {
         _browserProvider = browserProvider;
+        Logger = logger;
 
         // Start warming up Playwright if necessary
         _ = Task.Run(() => _ = CurrentPage);
@@ -25,6 +27,8 @@ public class PlaywrightUITestService : IUITestService
 
     private IPage CurrentPage => _browserProvider.CurrentPage as IPage
         ?? throw new InvalidOperationException("IBrowserProvider service did not provide an object of type IPage");
+
+    protected ILogger<PlaywrightUITestService> Logger { get; }
 
     public async Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default)
     {
@@ -80,29 +84,38 @@ public class PlaywrightUITestService : IUITestService
 
     public async Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken = default)
     {
-        // Run axe on the current page
-        AxeResult axeResults = await CurrentPage.RunAxe();
-
-        // Convert axe violations to our AccessibilityViolation format
-        List<AccessibilityViolation> violations = new();
-
-        foreach (AxeResultItem violation in axeResults.Violations)
+        Logger.LogInformation("Starting accessibility check using axe...");
+        try
         {
-            foreach (AxeResultNode node in violation.Nodes)
-            {
-                violations.Add(new AccessibilityViolation
-                {
-                    RuleId = violation.Id,
-                    Impact = violation.Impact ?? "unknown",
-                    Description = violation.Description,
-                    HtmlSnippet = node.Html,
-                    HelpText = violation.Help,
-                    HelpUrl = violation.HelpUrl
-                });
-            }
-        }
+            // Run axe on the current page
+            AxeResult axeResults = await CurrentPage.RunAxe();
 
-        return violations;
+            // Convert axe violations to our AccessibilityViolation format
+            List<AccessibilityViolation> violations = new();
+
+            foreach (AxeResultItem violation in axeResults.Violations)
+            {
+                foreach (AxeResultNode node in violation.Nodes)
+                {
+                    violations.Add(new AccessibilityViolation
+                    {
+                        RuleId = violation.Id,
+                        Impact = violation.Impact ?? "unknown",
+                        Description = violation.Description,
+                        HtmlSnippet = node.Html,
+                        HelpText = violation.Help,
+                        HelpUrl = violation.HelpUrl
+                    });
+                }
+            }
+
+            return violations;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error while running accessibility checker: {Message}", ex.Message);
+            throw;
+        }
     }
 
     private static async Task<bool> IsButtonDisabledAsync(ILocator locator)
