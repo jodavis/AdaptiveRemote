@@ -18,4 +18,10 @@ public class DebugSteps : StepsBase
     {
         Logger.LogError("Logging an error for no reason");
     }
+
+    [Then("I should log a warning for no reason")]
+    public void ThenIShouldLogAWarningForNoReason()
+    {
+        Logger.LogWarning("Logging a warning for no reason");
+    }
 }

@@ -241,7 +241,9 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         Array.Copy(newKey, 0, responsePayload, 0x04, 16);
 
         // Encrypt the response with the default key
-        byte[] encryptedPayload = _encryption!.Encrypt(responsePayload);
+        _encryption?.Dispose();
+        _encryption = new BroadlinkEncryption();
+        byte[] encryptedPayload = _encryption.Encrypt(responsePayload);
 
         // Build response packet
         byte[] response = BroadlinkPacketEncoder.EncodeResponse(

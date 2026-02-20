@@ -1,12 +1,13 @@
 using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 
 namespace AdaptiveRemote.EndToEndTests.Steps;
 
 [Binding]
-public class BroadlinkSteps : StepsBase
+public class SimulatedBroadlinkSteps : StepsBase
 {
     [Then(@"I should see the Broadlink device recorded at least one inbound packet")]
     public void ThenIShouldSeeTheBroadlinkDeviceRecordedAtLeastOneInboundPacket()
@@ -26,7 +27,7 @@ public class BroadlinkSteps : StepsBase
             Assert.Fail($"Expected Broadlink device to record at least one inbound packet with IR data, but none were found. Recorded packets: {recordedPackets}");
         }
 
-        TestContext.WriteLine("Successfully verified Broadlink device recorded inbound packet with IR data");
+        Logger.LogInformation("Successfully verified Broadlink device recorded at least one inbound packet with IR data");
     }
 
     [Then(@"the recorded Broadlink packet's raw payload should not be empty")]
@@ -46,7 +47,7 @@ public class BroadlinkSteps : StepsBase
         }
 
         Assert.IsTrue(irPacket.RawPayload!.Length > 0, "IR payload should not be empty");
-        TestContext.WriteLine($"IR payload size: {irPacket.RawPayload.Length} bytes");
+        Logger.LogInformation("IR payload size: {PacketLength} bytes", irPacket.RawPayload.Length);
     }
 
     [Then(@"no Broadlink packets should be marked as malformed")]
@@ -65,6 +66,6 @@ public class BroadlinkSteps : StepsBase
             Assert.Fail($"Found malformed packet: {malformedPacket.DebugDescription}");
         }
 
-        TestContext.WriteLine("No malformed packets found");
+        Logger.LogInformation("No malformed packets found");
     }
 }

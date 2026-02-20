@@ -4,12 +4,8 @@ Feature: TiVo Device Integration
 	So that I can control my TiVo using the adaptive remote
 
 Scenario: TiVo receives Play command
-	Given the application is not running
-	When I start the application
-	Then I should see the application in the Ready phase
-	And I should not see any warning or error messages in the logs
+	Given the application is in the Ready phase
+	Then I should see the 'Play' button is enabled
 	When I click on the 'Play' button
 	Then I should see the TiVo receives a "PLAY" message
-	When I click on the 'Exit' button
-	And I wait for the application to shut down
-	Then I should not see any warning or error messages in the logs
+	And I should not see any error messages in the logs

@@ -4,46 +4,46 @@ using System.Text;
 using AdaptiveRemote.EndtoEndTests.Logging;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using StreamJsonRpc;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
 
 public partial class AdaptiveRemoteHost
 {
-    public static Builder CreateBuilder(AdaptiveRemoteHostSettings settings) => new(settings);
-
     public class Builder
     {
-        private readonly AdaptiveRemoteHostSettings _settings;
+        private AdaptiveRemoteHostSettings _settings;
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly HostApplicationLoggerProvider _hostLoggerProvider;
         private readonly List<Action<ILoggingBuilder>> _configureLogging = new();
 
-        internal Builder(AdaptiveRemoteHostSettings settings)
+        internal Builder(AdaptiveRemoteHostSettings settings, ILoggerFactory loggerFactory, HostApplicationLoggerProvider hostLoggerProvider)
         {
             _settings = settings;
+            _loggerFactory = loggerFactory;
+            _hostLoggerProvider = hostLoggerProvider;
         }
 
-        public Builder ConfigureLogging(Action<ILoggingBuilder> configureLogging)
+        public Builder ConfigureSettings(Func<AdaptiveRemoteHostSettings, AdaptiveRemoteHostSettings> configureSettings)
         {
-            _configureLogging.Add(configureLogging);
+            _settings = configureSettings(_settings);
             return this;
         }
 
         public AdaptiveRemoteHost Start()
         {
-            // Configure logging, including HostRpcLoggerProvider for forwarding test logs to host
-            HostApplicationLoggerProvider rpcProvider = new();
-
-            ILoggerFactory loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+            if (!File.Exists(_settings.ExePath))
             {
-                builder.AddProvider(rpcProvider);
+                Assert.Inconclusive($"Host not found at: {_settings.ExePath}");
+            }
 
-                foreach (Action<ILoggingBuilder> configure in _configureLogging)
-                {
-                    configure(builder);
-                }
-            });
+            if (!Directory.Exists(_settings.WorkingDirectory))
+            {
+                Assert.Inconclusive($"Working directory not found: {_settings.WorkingDirectory}");
+            }
 
-            ILogger<AdaptiveRemoteHost> logger = loggerFactory.CreateLogger<AdaptiveRemoteHost>();
+            ILogger<AdaptiveRemoteHost> logger = _loggerFactory.CreateLogger<AdaptiveRemoteHost>();
 
             // Configure the test control port
             int controlPort = GetAvailablePort();
@@ -170,10 +170,10 @@ public partial class AdaptiveRemoteHost
 
                 // Attach the RPC proxy to our HostRpcLoggerProvider so test-side logs are forwarded to the host
                 ITestLogger testLogger = testEndpoint.CreateTestService<ITestLogger, HostApplicationTestLogger>(_settings.StartupTimeout);
-                rpcProvider.AttachTestLoggerProxy(testLogger);
+                _hostLoggerProvider.AttachTestLoggerProxy(testLogger);
                 logger.LogInformation("Attached RPC test logger");
 
-                return new(_settings, loggerFactory, process, client, rpc, testEndpoint, standardOutput, standardError);
+                return new(_settings, _loggerFactory, process, client, rpc, testEndpoint, standardOutput, standardError);
             }
             catch (Exception ex)
             {

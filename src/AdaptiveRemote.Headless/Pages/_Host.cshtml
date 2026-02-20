@@ -1,0 +1,22 @@
+﻿@* This page needs to be kept in sync with AdaptiveRemote.App\wwwroot\index.html *@
+@page 
+@using Microsoft.AspNetCore.Components.Web
+@using AdaptiveRemote.Components
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Adaptive Remote</title>
+    <base href="~/" />
+    <link href="css/app.min.css" rel="stylesheet" />
+    <link href="WpfBlazor.styles.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+</head>
+<body>
+    <component type="typeof(Root)" render-mode="ServerPrerendered" />
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>
