@@ -113,18 +113,18 @@ div.conversation-speaking-message {
   grid-row: 1;
   grid-column: 1;
   margin: 20px;
-  background-color: darkred;
-  border-color: #250000;
-  color: #222;
+  background-color: #aa2525;
+  border-color: #561313;
+  color: black;
 }
 #ROOT #DPAD #POWER:hover {
-  background-color: #a40000;
+  background-color: #bf2a2a;
 }
 #ROOT #DPAD #POWER:active {
-  background-color: #d70000;
+  background-color: #d74545;
 }
 #ROOT #DPAD #POWER.btn-active {
-  background-color: #d70000;
+  background-color: #d74545;
 }
 #ROOT #DPAD #POWER.btn-disabled {
   background-color: #888888;
