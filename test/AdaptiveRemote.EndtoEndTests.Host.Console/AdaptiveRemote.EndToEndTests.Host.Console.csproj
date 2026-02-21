@@ -12,6 +12,6 @@
     <ProjectReference Include="..\..\src\AdaptiveRemote.Console\AdaptiveRemote.Console.csproj" />
   </ItemGroup>
 
-  <Import Project="..\AdaptiveRemote.EndToEndTests.Features\FeatureFiles.includeproj"/>
+  <Import Project="..\AdaptiveRemote.EndToEndTests.Host.Wpf\Features\FeatureFiles.includeproj" />
 
 </Project>

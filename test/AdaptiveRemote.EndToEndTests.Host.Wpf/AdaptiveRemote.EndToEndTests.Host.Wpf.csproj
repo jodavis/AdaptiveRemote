@@ -12,6 +12,11 @@
     <ProjectReference Include="..\..\src\AdaptiveRemote\AdaptiveRemote.csproj" />
   </ItemGroup>
 
-  <Import Project="..\AdaptiveRemote.EndToEndTests.Features\FeatureFiles.includeproj"/>
+  <ItemGroup>
+    <None Include="Features\FeatureFiles.includeproj" />
+    <None Include="Features\FeatureFiles.props" />
+  </ItemGroup>
+
+  <Import Project="Features\FeatureFiles.props" />
 
 </Project>

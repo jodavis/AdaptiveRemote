@@ -4,9 +4,6 @@
   "bindingAssemblies": [
     {
       "assembly": "AdaptiveRemote.EndToEndTests.Steps"
-    },
-    {
-      "assembly": "AdaptiveRemote.EndToEndTests.HeadlessHost"
     }
   ]
 }

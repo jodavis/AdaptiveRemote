@@ -1,0 +1,19 @@
+<Project>
+  <Import Project="FeatureFiles.props" />
+
+  <ItemGroup>
+    <None Remove="Shared\**\*.feature" />
+  </ItemGroup>
+  
+  <!-- Link shared .feature files into this test project so Reqnroll runs per-assembly -->
+  <ItemGroup>
+    <ReqnrollFeatureFile Include="..\AdaptiveRemote.EndToEndTests.Host.Wpf\Features\Shared\**\*.feature">
+      <Link>Features\Shared\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Visible>true</Visible>
+    </ReqnrollFeatureFile>
+
+    <Compile Include="$(IntermediateOutputPath)_\AdaptiveRemote.EndToEndTests.Host.Wpf\**\*.feature.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
+</Project>
