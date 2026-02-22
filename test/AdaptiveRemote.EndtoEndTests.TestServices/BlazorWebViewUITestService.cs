@@ -12,19 +12,19 @@ public class BlazorWebViewUITestService : PlaywrightUITestService
 {
     private static readonly TimeSpan InitializePlaywrightTimeout = TimeSpan.FromSeconds(30);
 
-    public BlazorWebViewUITestService(IBrowserDebuggerAccess browserDebugger, ILogger<BlazorWebViewUITestService> logger)
-        : base(new BrowserFromPortProvider(browserDebugger, logger))
+    public BlazorWebViewUITestService(IBrowserDebuggerAccess browserDebugger, ILogger<PlaywrightUITestService> logger)
+        : base(new BrowserFromPortProvider(browserDebugger, logger), logger)
     {
     }
 
     private class BrowserFromPortProvider : IBrowserUIAccess, IDisposable
     {
         private readonly IBrowserDebuggerAccess _browserDebugger;
-        private readonly ILogger<BlazorWebViewUITestService> _logger;
+        private readonly ILogger _logger;
         private readonly Lazy<IPlaywright> _playwright;
         private readonly Lazy<IBrowser> _browser;
 
-        public BrowserFromPortProvider(IBrowserDebuggerAccess browserDebugger, ILogger<BlazorWebViewUITestService> logger)
+        public BrowserFromPortProvider(IBrowserDebuggerAccess browserDebugger, ILogger logger)
         {
             _browserDebugger = browserDebugger;
             _logger = logger;
@@ -79,17 +79,6 @@ public class BlazorWebViewUITestService : PlaywrightUITestService
 
         public void Dispose()
         {
-            if (_browser.IsValueCreated)
-            {
-                try
-                {
-                    _ = _browser.Value.CloseAsync().ConfigureAwait(false);
-                }
-                catch
-                {
-                }
-            }
-
             if (_playwright.IsValueCreated)
             {
                 _playwright.Value.Dispose();

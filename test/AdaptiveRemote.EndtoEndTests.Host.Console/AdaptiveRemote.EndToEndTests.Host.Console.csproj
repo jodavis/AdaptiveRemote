@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\AdaptiveRemote.Headless\AdaptiveRemote.Headless.csproj" />
+    <ProjectReference Include="..\..\src\AdaptiveRemote.Console\AdaptiveRemote.Console.csproj" />
   </ItemGroup>
 
-  <Import Project="..\AdaptiveRemote.EndToEndTests.Features\FeatureFiles.includeproj"/>
+  <Import Project="..\AdaptiveRemote.EndToEndTests.Host.Wpf\Features\FeatureFiles.includeproj" />
 
 </Project>

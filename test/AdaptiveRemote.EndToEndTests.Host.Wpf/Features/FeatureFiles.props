@@ -1,0 +1,16 @@
+﻿<Project>
+  <PropertyGroup>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <ReqnrollUseIntermediateOutputPathForCodeBehind>true</ReqnrollUseIntermediateOutputPathForCodeBehind>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" />
+    <PackageReference Include="Reqnroll" />
+    <PackageReference Include="Reqnroll.MSTest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AdaptiveRemote.EndToEndTests.Steps\AdaptiveRemote.EndToEndTests.Steps.csproj" />
+  </ItemGroup>
+</Project>

@@ -30,4 +30,10 @@ public static class ConsoleHostTestHooks
             UIService: UIServiceType.BlazorWebView,
             ExePath: Path.Combine(deploymentPath, "AdaptiveRemote.Console.exe")));
     }
+
+    [Given(@"the host application does not use an embedded WebView2 control")]
+    public static void GivenTheHostApplicationDoesNotUseAnEmbeddedWebView2Control()
+    {
+        Assert.Inconclusive("Skipping this test because the console host uses a hosted WebView2 control.");
+    }
 }

@@ -81,4 +81,22 @@ public static class IUITestServiceExtensions
             // This exception occurs sometimes when clicking the "Exit" button if the application shuts down to fast
         }
     }
+
+    /// <summary>
+    /// Runs an accessibility contrast checker on the current page (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>A list of accessibility violations found, or an empty list if none.</returns>
+    public static IReadOnlyList<AccessibilityViolation> CheckAccessibility(this IUITestService service, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.CheckAccessibility(TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Runs an accessibility contrast checker on the current page (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>A list of accessibility violations found, or an empty list if none.</returns>
+    public static IReadOnlyList<AccessibilityViolation> CheckAccessibility(this IUITestService service, TimeSpan timeout)
+        => WaitHelpers.WaitForAsyncTask(service.CheckAccessibilityAsync, timeout);
 }

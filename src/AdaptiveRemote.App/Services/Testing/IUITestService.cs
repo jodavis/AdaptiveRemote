@@ -38,4 +38,11 @@ public partial interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <exception cref="InvalidOperationException">Thrown if multiple buttons match the label or if the button is not visible/enabled.</exception>
     Task ClickButtonAsync(string label, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Runs an accessibility contrast checker on the current page to detect WCAG violations.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>A list of accessibility violations found, or an empty list if none.</returns>
+    Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken);
 }
