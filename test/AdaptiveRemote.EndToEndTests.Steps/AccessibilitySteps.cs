@@ -13,10 +13,6 @@ public class AccessibilitySteps : StepsBase
     [When(@"I run the accessibility contrast checker")]
     public void WhenIRunTheAccessibilityContrastChecker()
     {
-        Assert.IsNotNull(
-            Host,
-            "Cannot run accessibility checker. The application is not started.");
-
         // Run the accessibility checker and store results
         _accessibilityViolations = Host.UI.CheckAccessibility();
     }
