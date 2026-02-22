@@ -12,20 +12,15 @@ The E2E testing subsystem validates that AdaptiveRemote host applications (WPF, 
 ## Test Architecture
 
 Tests are divided into 3 projects, one for each host type:
-1. `AdaptiveRemote.EndToEndTests.WpfHost` tests the primary `AdaptiveRemote` project. Requires Windows OS.
-2. `AdaptiveRemote.EndToEndTests.ConsoleHost` tests the `AdaptiveRemote.Console` project. Requires Windows OS.
-3. `AdaptiveRemote.EndToEndTests.HeadlessHost` tests the `AdaptiveRemote.Headless` project. Both Windows and Linux supported.
+1. `AdaptiveRemote.EndToEndTests.Host.Wpf` tests the primary `AdaptiveRemote` project. Requires Windows OS.
+2. `AdaptiveRemote.EndToEndTests.Host.Console` tests the `AdaptiveRemote.Console` project. Requires Windows OS.
+3. `AdaptiveRemote.EndToEndTests.Host.Headless` tests the `AdaptiveRemote.Headless` project. Both Windows and Linux supported.
+
+Shared tests are located in `AdaptiveRemote.EndToEndTests.Host.Wpf/Features/Shared`. Other host projects reference these shared tests as included files, so all hosts run the same scenarios unless there is a host-specific reason not to. All new tests should be added in the shared location unless explicitly required otherwise.
 
 The three host projects are minimal, sharing most of their functionality from other projects.
-- `AdaptiveRemote.EndToEndTests.Features` contains Gherkin `.feature` files that define test scenarios. 
-These are compiled at build time into C# test classes that are built into the 3 assemblies, so that they all have the same tests.
-- `AdaptiveRemote.EndToEndTests.Steps` contains definitions of the steps used in the feature scenarios.
-These should also be minimal, just enough to translate steps into TestService calls and error check inputs.
-- `AdaptiveRemote.EndToEndTests.TestServices` contains test services that load in the application being tested (the "host process")
-as well as extension methods for the test service interfaces. The test services can interact directly with components in the host
-process, but should also be fairly minimal, e.g. accessing a value or invoking a command. Extension methods will run in the test
-process and can contain more complex logic, like waiting for a value to change, checking values, etc. Having this logic in the test
-process makes it easier to debug. Services include:
+- Step definitions are located in `AdaptiveRemote.EndToEndTests.Steps`, just enough to translate steps into TestService calls and error check inputs.
+- Test services are located in `AdaptiveRemote.EndToEndTests.TestServices` and load in the application being tested (the "host process") as well as extension methods for the test service interfaces. The test services can interact directly with components in the host process, but should also be fairly minimal, e.g. accessing a value or invoking a command. Extension methods will run in the test process and can contain more complex logic, like waiting for a value to change, checking values, etc. Having this logic in the test process makes it easier to debug. Services include:
 	- [`ITestEndpoint`](../src/AdaptiveRemote.App/Services/Testing/ITestEndpoint.cs)
 	  is the initial JSON-RPC interface exposed by the host for dynamically loading other test services.
 	- [`ITestLogger`](../src/AdaptiveRemote.App/Services/Testing/ITestLogger.cs)
@@ -50,28 +45,33 @@ process makes it easier to debug. Services include:
 - `ApplicationTestService` (`test/AdaptiveRemote.EndtoEndTests.TestServices/ApplicationTestService.cs`): Implementation that uses `IRemoteDefinitionService` to find and invoke commands, demonstrating proper DI scope access.
 
 ### Accessibility Testing
-- **Accessibility Contrast Checker:** Automated UI accessibility testing using [Deque axe-core](https://github.com/dequelabs/axe-core) via Playwright to validate WCAG 2 AA contrast requirements
-- **Technology:** 
+**Accessibility Contrast Checker:** Automated UI accessibility testing using [Deque axe-core](https://github.com/dequelabs/axe-core) via Playwright to validate WCAG 2 AA contrast requirements.
+
+**Technology:**
   - `Deque.AxeCore.Playwright` package integrates axe-core with Playwright's IPage API
   - Tests run via `IUITestService.CheckAccessibilityAsync()` which returns a list of violations
-- **Test Coverage:**
+
+**Test Coverage:**
   - Color contrast ratios (text and backgrounds)
   - WCAG 2 AA compliance (4.5:1 for normal text, 3:1 for large text)
   - Buttons use 36pt font, qualifying as "large text"
-- **Implementation:**
-  - Feature file: `AdaptiveRemote.EndToEndTests.Features/Accessibility.feature`
+
+**Implementation:**
+  - Feature file: `AdaptiveRemote.EndToEndTests.Host.Headless/Features/Accessibility/Accessibility.feature`
   - Step definitions: `AdaptiveRemote.EndToEndTests.Steps/AccessibilitySteps.cs`
   - Service method: `PlaywrightUITestService.CheckAccessibilityAsync()`
-- **Running Tests:**
-  ```bash
-  dotnet test test/AdaptiveRemote.EndToEndTests.HeadlessHost \
-      --filter "FullyQualifiedName~AccessibilityCompliance"
-  ```
-- **Notes:**
-  - Tests work with all host types (WPF, Console, Headless)
-  - Headless host is recommended for CI/CD as it requires no graphical environment
-  - Violations include rule ID, impact level, description, help text, and HTML snippet
-  - Tests protect against accessibility regressions in future development
+
+**Running Tests:**
+```bash
+dotnet test test/AdaptiveRemote.EndToEndTests.Host.Headless \
+    --filter "FullyQualifiedName~AccessibilityCompliance"
+```
+
+**Notes:**
+  - The color contrast accessibility test is only available in the Headless host. It is not available in WPF or Console hosts due to WebView2 limitations (the accessibility checker crashes WebView2).
+  - Headless host is recommended for CI/CD as it requires no graphical environment.
+  - Violations include rule ID, impact level, description, help text, and HTML snippet.
+  - Tests protect against accessibility regressions in future development.
 
 ### Control Endpoint
 - `ITestEndpoint` (`src/AdaptiveRemote.App/Services/Testing/ITestEndpoint.cs`): JSON-RPC interface exposed by the host for test control operations. It exposes `CreateTestServiceAsync(...)` and `CreateTestLoggerAsync(...)` to load test-side services and logger targets into the host process.
