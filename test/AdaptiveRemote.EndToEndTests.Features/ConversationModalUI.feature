@@ -8,7 +8,8 @@ Scenario: Speech synthesis displays modal message box
 	When I start the application
 	Then I should see the application in the Ready phase
 	When I say "Hey Remote"
-	Then the application should enter listening mode
+	Then I should see a modal message containing "I'm listening..."
+	And the application should enter listening mode
 	When I say "Thank you"
-	Then the application should exit listening mode
-	And I should see a modal message containing "You're welcome"
+	Then I should see a modal message containing "You're welcome"
+	And the application should exit listening mode

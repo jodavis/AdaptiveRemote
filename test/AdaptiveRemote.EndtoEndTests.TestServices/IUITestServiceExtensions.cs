@@ -116,7 +116,7 @@ public static class IUITestServiceExtensions
     /// <param name="expectedText">The expected text content in the modal message.</param>
     /// <param name="timeoutInSeconds">Optional timeout for the operation (default 5 seconds).</param>
     /// <exception cref="TimeoutException">Thrown when the modal doesn't appear or has different text within the timeout.</exception>
-    public static void WaitForModalMessageContaining(this IUITestService service, string expectedText, int timeoutInSeconds = 5)
+    public static void WaitForModalMessageContaining(this IUITestService service, string expectedText, int timeoutInSeconds = DefaultUITimeoutInSeconds)
     {
         const string modalCssClass = "conversation-speaking-message";
         string? actualText = null;
@@ -125,7 +125,7 @@ public static class IUITestServiceExtensions
         {
             actualText = WaitHelpers.WaitForAsyncTask(
                 ct => service.GetTextFromElementWithCssClassAsync(modalCssClass, ct),
-                TimeSpan.FromMilliseconds(500));
+                timeoutInSeconds);
 
             return actualText != null && actualText.Contains(expectedText, StringComparison.OrdinalIgnoreCase);
         }, timeoutInSeconds);
