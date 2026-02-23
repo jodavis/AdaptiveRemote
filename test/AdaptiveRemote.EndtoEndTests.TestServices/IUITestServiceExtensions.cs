@@ -99,4 +99,65 @@ public static class IUITestServiceExtensions
     /// <returns>A list of accessibility violations found, or an empty list if none.</returns>
     public static IReadOnlyList<AccessibilityViolation> CheckAccessibility(this IUITestService service, TimeSpan timeout)
         => WaitHelpers.WaitForAsyncTask(service.CheckAccessibilityAsync, timeout);
+
+    /// <summary>
+    /// Clicks on text with the specified content in the UI (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="text">The exact text to click on (case-sensitive).</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
+    public static void ClickText(this IUITestService service, string text, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.ClickText(text, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Clicks on text with the specified content in the UI (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="text">The exact text to click on (case-sensitive).</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <exception cref="TimeoutException">Thrown when the operation times out.</exception>
+    public static void ClickText(this IUITestService service, string text, TimeSpan timeout)
+    {
+        bool succeeded = WaitHelpers.WaitForAsyncTask(ct => service.ClickTextAsync(text, ct), timeout);
+        if (!succeeded)
+        {
+            throw new TimeoutException($"Clicking text '{text}' did not complete within timeout.");
+        }
+    }
+
+    /// <summary>
+    /// Waits for a modal message containing the specified text to appear.
+    /// This uses polling with retries to handle timing issues with speech synthesis.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="expectedText">The expected text content in the modal message.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation (default 5 seconds).</param>
+    /// <exception cref="TimeoutException">Thrown when the modal doesn't appear or has different text within the timeout.</exception>
+    public static void WaitForModalMessageContaining(this IUITestService service, string expectedText, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+    {
+        const string modalCssClass = "conversation-speaking-message";
+        string? actualText = null;
+
+        bool found = WaitHelpers.ExecuteWithRetries(() =>
+        {
+            actualText = WaitHelpers.WaitForAsyncTask(
+                ct => service.GetTextFromElementWithCssClassAsync(modalCssClass, ct),
+                timeoutInSeconds);
+
+            return actualText != null && actualText.Contains(expectedText, StringComparison.OrdinalIgnoreCase);
+        }, timeoutInSeconds);
+
+        if (!found)
+        {
+            if (actualText == null)
+            {
+                throw new TimeoutException($"Modal message box did not appear within {timeoutInSeconds} seconds.");
+            }
+            else
+            {
+                throw new TimeoutException($"Modal message box appeared but contained '{actualText}' instead of expected text '{expectedText}'.");
+            }
+        }
+    }
 }
