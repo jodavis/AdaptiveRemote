@@ -45,4 +45,21 @@ public partial interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>A list of accessibility violations found, or an empty list if none.</returns>
     Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Clicks on text with the specified content in the UI.
+    /// The text must be visible before clicking.
+    /// </summary>
+    /// <param name="text">The exact text to click on (case-sensitive).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <exception cref="InvalidOperationException">Thrown if the text is not visible or not clickable.</exception>
+    Task ClickTextAsync(string text, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets the text content from an element with the specified CSS class.
+    /// </summary>
+    /// <param name="cssClass">The CSS class name to search for.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The text content of the first matching element, or null if not found or not visible.</returns>
+    Task<string?> GetTextFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken);
 }

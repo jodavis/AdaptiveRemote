@@ -135,6 +135,52 @@ public class PlaywrightUITestService : IUITestService
         return CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
     }
 
+    public async Task ClickTextAsync(string text, CancellationToken cancellationToken = default)
+    {
+        ILocator locator = GetTextLocator(text);
+
+        // Verify the text is visible
+        bool isVisible = await locator.IsVisibleAsync();
+        if (!isVisible)
+        {
+            throw new InvalidOperationException($"Text '{text}' is not visible.");
+        }
+
+        // Click the text element
+        await locator.ClickAsync(new LocatorClickOptions
+        {
+            Timeout = DefaultTimeoutMs
+        });
+    }
+
+    private ILocator GetTextLocator(string text)
+    {
+        // Use Playwright's getByText with partial match (contains)
+        return CurrentPage.GetByText(text, new() { Exact = false });
+    }
+
+    public async Task<string?> GetTextFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Find elements with the specified CSS class
+            ILocator locator = CurrentPage.Locator($".{cssClass}");
+
+            // Check if at least one matching element is visible
+            if (await locator.First.IsVisibleAsync())
+            {
+                // Return the text content of the first visible element
+                return await locator.First.TextContentAsync();
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public void Dispose()
     {
         if (_browserProvider is IDisposable disposable)
