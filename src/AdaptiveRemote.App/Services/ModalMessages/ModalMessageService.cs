@@ -26,7 +26,7 @@ internal sealed class ModalMessageService : IModalMessageService, IDisposable
     public Task ShowMessageAsync(string message, Func<CancellationToken, Task> body, bool keepAlive = false, CancellationToken cancellationToken = default)
     {
         TaskCompletionSource tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        _channel.Writer.TryWrite(new(message, body, keepAlive, tcs));
+        _channel.Writer.TryWrite(new(message, body, keepAlive, tcs, cancellationToken));
         return tcs.Task;
     }
 
@@ -40,7 +40,7 @@ internal sealed class ModalMessageService : IModalMessageService, IDisposable
             View.CurrentMessage = request.Message;
             try
             {
-                await request.Body(default);
+                await request.Body(request.CancellationToken);
 
                 if (!request.KeepAlive)
                 {
@@ -61,5 +61,6 @@ internal sealed class ModalMessageService : IModalMessageService, IDisposable
         string Message,
         Func<CancellationToken, Task> Body,
         bool KeepAlive,
-        TaskCompletionSource Tcs);
+        TaskCompletionSource Tcs,
+        CancellationToken CancellationToken);
 }
