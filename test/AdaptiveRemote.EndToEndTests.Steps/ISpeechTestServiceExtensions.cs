@@ -27,7 +27,7 @@ internal static class ISpeechTestServiceExtensions
     /// </summary>
     public static void WaitForSpokenPhrase(this ISpeechTestService speechTestService, string expectedText, TimeSpan timeout)
     {
-        string[]? spokenPhrases = null;
+        string[] spokenPhrases = Array.Empty<string>();
         bool result = WaitHelpers.ExecuteWithRetries(() =>
         {
             spokenPhrases = WaitHelpers.WaitForAsyncTask(speechTestService.GetSpokenPhrasesAsync);
