@@ -31,4 +31,9 @@ internal class SettingsKeys
     /// Settings for <see cref="Services.Testing.TestingSettings"/>
     /// </summary>
     public const string Testing = "test";
+
+    /// <summary>
+    /// Settings for <see cref="Services.ProgrammaticSettings.ProgrammaticSettings"/>
+    /// </summary>
+    public const string ProgrammaticSettings = "programmatic";
 }

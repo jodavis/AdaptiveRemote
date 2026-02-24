@@ -19,6 +19,13 @@ public class UISteps : StepsBase
         Assert.IsTrue(Host.UI.IsButtonEnabled(buttonLabel), "Button {0} was not enabled", buttonLabel);
     }
 
+    [Then(@"I should see the {string} button is disabled")]
+    public void ThenIShouldSeeTheButtonIsDisabled(string buttonLabel)
+    {
+        // Use a short timeout since a disabled button should be immediately disabled after the Ready phase.
+        Assert.IsFalse(Host.UI.IsButtonEnabled(buttonLabel, timeoutInSeconds: 5), "Button {0} was not disabled", buttonLabel);
+    }
+
     [When(@"I click on the text {string}")]
     public void WhenIClickOnTheText(string text)
     {

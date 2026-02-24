@@ -10,14 +10,15 @@ namespace AdaptiveRemote.Configuration;
 internal static class HostBuilderExtensions
 {
     internal static IHostBuilder AddRemoteServices(this IHostBuilder builder)
-        => builder.ConfigureServices((context, services) => services.AddRemoteServices());
+        => builder.ConfigureServices((context, services) => services.AddRemoteServices(context.Configuration));
 
-    internal static IServiceCollection AddRemoteServices(this IServiceCollection services)
+    internal static IServiceCollection AddRemoteServices(this IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration)
         => services
             .AddApplicationLifecycleServices()
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
-            .AddSingleton<IPersistSettings, PersistSettings>();
+            .AddSingleton<IPersistSettings, PersistSettings>()
+            .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings));
 
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle
