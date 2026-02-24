@@ -23,13 +23,13 @@ public static class HeadlessHostTestHooks
             throw new FileNotFoundException($"Host executable not found at path: {exePath}");
         }
 
-        objectContainer.RegisterInstanceAs(new AdaptiveRemoteHostSettings(
+        AdaptiveRemoteHostSettings settings = new(
             UIService: UIServiceType.Playwright,
             ExePath: exePath,
             CommandLineArgs: $"--playwright:TracesDir=\"{tracesDir}\"",
             EnvironmentVariables: System.Collections.Immutable.ImmutableDictionary<string, string>.Empty
-                .Add("ASPNETCORE_ENVIRONMENT", "Development")
-            ) with { ShutdownTimeout = TimeSpan.FromSeconds(120) });
+                .Add("ASPNETCORE_ENVIRONMENT", "Development"));
+        objectContainer.RegisterInstanceAs(settings with { ShutdownTimeout = TimeSpan.FromSeconds(30) });
     }
 
     [AfterScenario]

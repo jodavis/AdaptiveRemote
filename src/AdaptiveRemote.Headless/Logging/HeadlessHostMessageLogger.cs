@@ -56,4 +56,28 @@ internal partial class HeadlessHostMessageLogger
 
     [LoggerMessage(EventId = 10212, Level = LogLevel.Information, Message = "Playwright tracing stopped and saved to {TraceFilePath}\n\tGo to https://traces.playwright.dev/ to open and view the trace")]
     internal partial void Playwright_TracesSaved(string traceFilePath);
+
+    [LoggerMessage(EventId = 10213, Level = LogLevel.Information, Message = "Closing Playwright page.")]
+    internal partial void Playwright_ClosingPage();
+
+    [LoggerMessage(EventId = 10214, Level = LogLevel.Information, Message = "Playwright page closed.")]
+    internal partial void Playwright_PageClosed();
+
+    [LoggerMessage(EventId = 10215, Level = LogLevel.Information, Message = "Closing Playwright browser context.")]
+    internal partial void Playwright_ClosingBrowserContext();
+
+    [LoggerMessage(EventId = 10216, Level = LogLevel.Information, Message = "Playwright browser context closed.")]
+    internal partial void Playwright_BrowserContextClosed();
+
+    [LoggerMessage(EventId = 10217, Level = LogLevel.Information, Message = "Closing Playwright browser.")]
+    internal partial void Playwright_ClosingBrowser();
+
+    [LoggerMessage(EventId = 10218, Level = LogLevel.Information, Message = "Playwright browser closed.")]
+    internal partial void Playwright_BrowserClosed();
+
+    [LoggerMessage(EventId = 10219, Level = LogLevel.Information, Message = "Disposing Playwright driver.")]
+    internal partial void Playwright_DisposingDriver();
+
+    [LoggerMessage(EventId = 10220, Level = LogLevel.Information, Message = "Playwright driver disposed.")]
+    internal partial void Playwright_DriverDisposed();
 }
