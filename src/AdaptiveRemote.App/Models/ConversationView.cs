@@ -6,7 +6,6 @@ public class ConversationView : RemoteLayoutElement
 {
     internal static readonly MvvmProperty<bool> IsListeningProperty = new(nameof(IsListening));
     internal static readonly MvvmProperty<string> StatusMessageProperty = new(nameof(StatusMessage));
-    internal static readonly MvvmProperty<string?> SpeakingMessageProperty = new(nameof(SpeakingMessage));
     internal static readonly MvvmProperty<Action?> ToggleListeningProperty = new(nameof(ToggleListening));
 
     public ConversationView(string? placement = null)
@@ -26,17 +25,11 @@ public class ConversationView : RemoteLayoutElement
         set => SetValue(IsListeningProperty, value);
     }
 
-    internal string? SpeakingMessage
-    {
-        get => GetValue(SpeakingMessageProperty);
-        set => SetValue(SpeakingMessageProperty, value);
-    }
-
     internal Action? ToggleListening
     {
         get => GetValue(ToggleListeningProperty);
         set => SetValue(ToggleListeningProperty, value);
     }
 
-    public override string ToString() => SpeakingMessage ?? StatusMessage;
+    public override string ToString() => StatusMessage;
 }

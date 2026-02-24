@@ -1,11 +1,13 @@
-﻿@if (IsListening)
+﻿@inject Models.ModalMessageView ModalViewModel
+
+@if (IsListening)
 {
     <div class="conversation-border"><div></div></div>
 }
 
-@if (SpeakingMessage is not null)
+@if (CurrentMessage is not null)
 {
-    <div class="conversation-speaking-message"><span>"@SpeakingMessage"</span></div>
+    <div class="conversation-speaking-message"><span>"@CurrentMessage"</span></div>
 }
 
 @if (ToggleListening is not null)
@@ -23,7 +25,7 @@ else
 
     private bool IsListening => ViewModel?.IsListening ?? false;
     private string? StatusMessage => ViewModel?.StatusMessage;
-    private string? SpeakingMessage => ViewModel?.SpeakingMessage;
+    private string? CurrentMessage => ModalViewModel?.CurrentMessage;
     private Action? ToggleListening => ViewModel?.ToggleListening;
 
     protected override void OnInitialized()
@@ -31,6 +33,11 @@ else
         if (ViewModel is not null)
         {
             ViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
+        }
+
+        if (ModalViewModel is not null)
+        {
+            ModalViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
         }
 
         base.OnInitialized();
