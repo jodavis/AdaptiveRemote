@@ -1,10 +1,10 @@
 ﻿using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.Conversation;
+using AdaptiveRemote.Services.ModalMessages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
 namespace AdaptiveRemote.Configuration;
 
 internal static class ConversationHostBuilderExtensions
@@ -19,7 +19,9 @@ internal static class ConversationHostBuilderExtensions
             .AddScoped<ISpeechSynthesis, SpeechSynthesis>()
             .AddScoped<ConversationStateMachine>()
             .AddSingleton<IListeningController, ListeningController>()
-            .AddScoped(GetConversationViewModel);
+            .AddScoped(GetConversationViewModel)
+            .AddSingleton<Models.ModalMessageView>()
+            .AddSingleton<IModalMessageService, ModalMessageService>();
 
     internal static IServiceCollection AddConversationServices(this IServiceCollection services, IConfiguration config)
         => services

@@ -1,0 +1,20 @@
+@inject Models.ModalMessageView ModalViewModel
+
+@if (CurrentMessage is not null)
+{
+    <div class="conversation-speaking-message"><span>"@CurrentMessage"</span></div>
+}
+
+@code {
+    private string? CurrentMessage => ModalViewModel?.CurrentMessage;
+
+    protected override void OnInitialized()
+    {
+        if (ModalViewModel is not null)
+        {
+            ModalViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
+        }
+
+        base.OnInitialized();
+    }
+}
