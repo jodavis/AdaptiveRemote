@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.Services.Testing;
+using FluentAssertions;
 
 namespace AdaptiveRemote.EndToEndTests.Steps;
 
@@ -12,6 +13,30 @@ internal static class ISpeechTestServiceExtensions
 
     public static void Speak(this ISpeechTestService speechTestService, string text, TimeSpan timeout)
         => WaitHelpers.WaitForAsyncTask(ct => speechTestService.SpeakAsync(text, ct), timeout);
+
+    /// <summary>
+    /// Waits until the test speech synthesis service has spoken a phrase containing the given text.
+    /// Polls until a match is found or the timeout expires.
+    /// </summary>
+    public static void WaitForSpokenPhrase(this ISpeechTestService speechTestService, string expectedText, int timeoutInSeconds = DefaultTimeoutInSeconds)
+        => speechTestService.WaitForSpokenPhrase(expectedText, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Waits until the test speech synthesis service has spoken a phrase containing the given text.
+    /// Polls until a match is found or the timeout expires.
+    /// </summary>
+    public static void WaitForSpokenPhrase(this ISpeechTestService speechTestService, string expectedText, TimeSpan timeout)
+    {
+        string[]? spokenPhrases = null;
+        bool result = WaitHelpers.ExecuteWithRetries(() =>
+        {
+            spokenPhrases = WaitHelpers.WaitForAsyncTask(speechTestService.GetSpokenPhrasesAsync);
+            return spokenPhrases.Any(p => p.Contains(expectedText, StringComparison.OrdinalIgnoreCase));
+        }, timeout);
+
+        spokenPhrases.Should().Contain(p => p.Contains(expectedText, StringComparison.OrdinalIgnoreCase),
+            because: $"the speech synthesis should have spoken a phrase containing \"{expectedText}\" within {timeout.TotalSeconds}s.");
+    }
 
     /// <summary>
     /// Convenience method to speak a phrase with known semantics.
