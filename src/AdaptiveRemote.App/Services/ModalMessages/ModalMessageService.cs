@@ -14,11 +14,12 @@ internal sealed class ModalMessageService : IModalMessageService, IDisposable
         Channel.CreateUnbounded<MessageRequest>(new UnboundedChannelOptions { SingleReader = true });
 
     /// <inheritdoc/>
-    public ModalMessageView View { get; } = new();
+    public ModalMessageView View { get; }
 
-    /// <summary>Initializes the service and starts the background queue processor.</summary>
-    public ModalMessageService()
+    /// <summary>Initializes the service with the given view model and starts the background queue processor.</summary>
+    public ModalMessageService(ModalMessageView view)
     {
+        View = view;
         _ = ProcessQueueAsync();
     }
 
@@ -48,6 +49,11 @@ internal sealed class ModalMessageService : IModalMessageService, IDisposable
                 }
 
                 request.Tcs.TrySetResult();
+            }
+            catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested)
+            {
+                View.CurrentMessage = null;
+                request.Tcs.TrySetCanceled(request.CancellationToken);
             }
             catch (Exception ex)
             {
