@@ -8,7 +8,11 @@ namespace AdaptiveRemote.Configuration;
 internal static class BroadlinkHostBuilderExtensions
 {
     public static IHostBuilder AddBroadlinkSupport(this IHostBuilder builder)
-        => builder.ConfigureServices((context, services) => services.AddBroadlinkServices(context.Configuration.GetSection(SettingsKeys.Broadlink)));
+        => builder.ConfigureServices((context, services) =>
+        {
+            services.Configure<IRDataSettings>(context.Configuration.GetSection(SettingsKeys.IRData));
+            services.AddBroadlinkServices(context.Configuration.GetSection(SettingsKeys.Broadlink));
+        });
 
     private static IServiceCollection AddBroadlinkServices(this IServiceCollection services, IConfiguration configuration)
         => configuration.GetValue<bool>(nameof(BroadlinkSettings.Fake))

@@ -12,13 +12,13 @@ public class BroadlinkCommandServiceTests
     private readonly Mock<IDeviceConnection.Factory> MockConnectionFactory = new();
     private readonly Mock<IDeviceConnection> MockConnection = new();
     private readonly Mock<IRemoteDefinitionService> MockDefinitionService = new();
-    private readonly Mock<IPersistSettings> MockPersistSettings = new();
     private readonly Mock<ILifecycleActivity> MockInitializeActivity = new();
     private readonly MockLogger<BroadlinkCommandService> MockLogger = new();
 
     private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
 
-    private BroadlinkCommandService CreateSut() => new(MockLocator.Object, MockConnectionFactory.Object, MockPersistSettings.Object, MockDefinitionService.Object, MockLogger);
+    private BroadlinkCommandService CreateSut(IRDataSettings? irDataSettings = null)
+        => new(MockLocator.Object, MockConnectionFactory.Object, new MockOptionsSnapshot<IRDataSettings>(irDataSettings ?? new()), MockDefinitionService.Object, MockLogger);
 
     [TestInitialize]
     public void SetupMocks()
@@ -41,7 +41,6 @@ public class BroadlinkCommandServiceTests
         MockConnectionFactory.Verify();
         MockConnection.Verify();
         MockDefinitionService.Verify();
-        MockPersistSettings.Verify();
         MockInitializeActivity.Verify();
     }
 
@@ -87,12 +86,8 @@ public class BroadlinkCommandServiceTests
             .Setup(x => x.RemoteRoot)
             .Returns(new AdaptiveRemote.Models.LayoutGroup("ROOT", [new AdaptiveRemote.Models.IRCommand(commandName)]));
 
-        MockPersistSettings
-            .Setup(x => x.TryGetAsync($"IRData:{commandName}", It.IsAny<CancellationToken>()))
-            .WithStandardTaskBehavior<IPersistSettings, string?>(base64Data)
-            .Verifiable(Times.Once);
-
-        IScopedLifecycle sut = CreateSut();
+        IRDataSettings irData = new() { [commandName] = base64Data };
+        IScopedLifecycle sut = CreateSut(irData);
 
         Expect_IDeviceLocator_FindDevice("10.20.30.40:1234", 0x78AB, "AA:BB:CC:DD:EE:FF");
         Expect_ConnectionFactory_Create();
@@ -119,12 +114,7 @@ public class BroadlinkCommandServiceTests
             .Setup(x => x.RemoteRoot)
             .Returns(new AdaptiveRemote.Models.LayoutGroup("ROOT", [new AdaptiveRemote.Models.IRCommand(commandName)]));
 
-        MockPersistSettings
-            .Setup(x => x.TryGetAsync($"IRData:{commandName}", It.IsAny<CancellationToken>()))
-            .WithStandardTaskBehavior<IPersistSettings, string?>(default(string?))
-            .Verifiable(Times.Once);
-
-        IScopedLifecycle sut = CreateSut();
+        IScopedLifecycle sut = CreateSut(new IRDataSettings()); // empty - no data for "Mute"
 
         Expect_IDeviceLocator_FindDevice("10.20.30.40:1234", 0x78AB, "AA:BB:CC:DD:EE:FF");
         Expect_ConnectionFactory_Create();

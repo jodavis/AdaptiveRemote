@@ -7,7 +7,7 @@ namespace AdaptiveRemote.Services;
 internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     where CommandType : Command
 {
-    private readonly IReadOnlyList<CommandType> _commands;
+    private readonly IEnumerable<CommandType> _commands;
     private readonly CancellationTokenSource _stop = new();
 
     protected CommandServiceBase(string name, IRemoteDefinitionService remoteDefinition, ILogger logger)
@@ -28,19 +28,16 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
     public string Name { get; }
     protected MessageLogger Logger { get; }
 
-    /// <summary>
-    /// Gets the list of commands managed by this service.
-    /// </summary>
-    protected IReadOnlyList<CommandType> Commands => _commands;
-
     protected abstract Command.ExecuteDelegate CreateHandler(CommandType command);
+
+    protected virtual bool IsCommandEnabled(CommandType command) => true;
 
     public virtual Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
         foreach (CommandType command in _commands)
         {
             command.ExecuteAsync = CreateWrappedHandler(command, CreateHandler(command));
-            command.IsEnabled = true;
+            command.IsEnabled = IsCommandEnabled(command);
         }
         return Task.CompletedTask;
     }
@@ -56,11 +53,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
         }
     }
 
-    /// <summary>
-    /// Wraps a raw <paramref name="callback"/> with standard logging, error handling, and
-    /// <see cref="Command.IsActive"/> management.
-    /// </summary>
-    protected Command.ExecuteDelegate CreateWrappedHandler(CommandType command, Command.ExecuteDelegate callback)
+    private Command.ExecuteDelegate CreateWrappedHandler(CommandType command, Command.ExecuteDelegate callback)
     {
         return async delegate (CancellationToken cancellationToken)
         {

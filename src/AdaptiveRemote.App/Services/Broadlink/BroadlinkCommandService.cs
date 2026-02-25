@@ -1,29 +1,28 @@
 ﻿using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Broadlink;
 
 internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
 {
-    private const string IrDataKeyPrefix = "IRData:";
-
     private readonly IDeviceLocator _deviceLocator;
     private readonly IDeviceConnection.Factory _connectionFactory;
-    private readonly IPersistSettings _persistSettings;
+    private readonly IOptionsSnapshot<IRDataSettings> _irDataSettings;
 
     private IDeviceConnection? _connection;
 
     public BroadlinkCommandService(
         IDeviceLocator deviceLocator,
         IDeviceConnection.Factory connectionFactory,
-        IPersistSettings persistSettings,
+        IOptionsSnapshot<IRDataSettings> irDataSettings,
         IRemoteDefinitionService definitionService,
         ILogger<BroadlinkCommandService> logger)
         : base("Broadlink IR Commands", definitionService, logger)
     {
         _deviceLocator = deviceLocator;
         _connectionFactory = connectionFactory;
-        _persistSettings = persistSettings;
+        _irDataSettings = irDataSettings;
     }
 
     public override async Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
@@ -41,20 +40,23 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         cancellationToken.ThrowIfCancellationRequested();
         Logger.BroadlinkCommandService_Authenticated(found.HostEndPoint);
 
-        foreach (IRCommand command in Commands)
-        {
-            string? base64Data = await _persistSettings.TryGetAsync($"{IrDataKeyPrefix}{command.Name}", cancellationToken);
-            if (base64Data is not null)
-            {
-                byte[] data = Convert.FromBase64String(base64Data);
-                command.ExecuteAsync = CreateWrappedHandler(command, ct => _connection.SendDataAsync(data, ct));
-                command.IsEnabled = true;
-            }
-        }
+        await base.InitializeAsync(activity, cancellationToken);
 
         Logger.BroadlinkCommandService_Ready();
     }
 
+    protected override bool IsCommandEnabled(IRCommand command)
+        => _irDataSettings.Value.ContainsKey(command.Name);
+
     protected override Command.ExecuteDelegate CreateHandler(IRCommand command)
-        => throw new NotSupportedException($"{nameof(BroadlinkCommandService)} configures handlers from programmatic settings during {nameof(InitializeAsync)}. This method is not called.");
+    {
+        if (!_irDataSettings.Value.TryGetValue(command.Name, out string? base64Data))
+        {
+            return _ => Task.FromException(
+                new InvalidOperationException($"No IR data configured for command '{command.Name}'. Ensure it is programmed in the settings file."));
+        }
+
+        byte[] data = Convert.FromBase64String(base64Data);
+        return cancellationToken => _connection!.SendDataAsync(data, cancellationToken);
+    }
 }
