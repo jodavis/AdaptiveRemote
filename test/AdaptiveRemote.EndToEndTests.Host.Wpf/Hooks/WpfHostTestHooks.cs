@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using AdaptiveRemote.EndtoEndTests.Host;
-using AdaptiveRemote.EndToEndTests.TestServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 using Reqnroll.BoDi;
@@ -17,8 +16,6 @@ public static class WpfHostTestHooks
         {
             Assert.Inconclusive("WPF host test requires Windows");
         }
-
-        AudioDetectionHelper.AssertHasAudioInputAndOutput();
     }
 
     [BeforeTestRun]

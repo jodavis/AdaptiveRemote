@@ -40,6 +40,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             {
                 // Always inject TestSpeechRecognitionEngine so tests can share the same host instance
                 await testEndpoint.InjectTestServiceAsync<ISpeechRecognitionEngine, TestSpeechRecognitionEngine>(ct);
+                // Always inject TestSpeechSynthesis so tests can verify spoken phrases without audio devices
+                await testEndpoint.InjectTestServiceAsync<ISpeechSynthesis, TestSpeechSynthesis>(ct);
             });
     }
 
