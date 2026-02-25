@@ -26,4 +26,14 @@ public partial interface ISpeechTestService : IDisposable
     /// <param name="text">The rejected text.</param>
     /// <param name="confidence">Confidence level (0-100).</param>
     Task RaiseRejectedAsync(string text, int confidence, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the phrases that have been spoken by the test speech synthesis service.
+    /// </summary>
+    Task<string[]> GetSpokenPhrasesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Clears the spoken phrases tracked by the test speech synthesis service.
+    /// </summary>
+    Task ClearSpokenPhrasesAsync(CancellationToken cancellationToken = default);
 }
