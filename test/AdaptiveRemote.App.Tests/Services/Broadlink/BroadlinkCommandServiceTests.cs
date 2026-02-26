@@ -17,7 +17,8 @@ public class BroadlinkCommandServiceTests
 
     private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
 
-    private BroadlinkCommandService CreateSut() => new(MockLocator.Object, MockConnectionFactory.Object, MockDefinitionService.Object, MockLogger);
+    private BroadlinkCommandService CreateSut(IRDataSettings? irDataSettings = null)
+        => new(MockLocator.Object, MockConnectionFactory.Object, new MockOptionsSnapshot<IRDataSettings>(irDataSettings ?? new()), MockDefinitionService.Object, MockLogger);
 
     [TestInitialize]
     public void SetupMocks()
@@ -72,6 +73,61 @@ public class BroadlinkCommandServiceTests
 
         // Assert
         resultTask.Should().BeComplete(because: "InitializeAsync should complete after command service is initialized");
+    }
+
+    [TestMethod]
+    public void BroadlinkCommandService_InitializeAsync_WithProgrammedCommand_EnablesCommand()
+    {
+        // Arrange
+        const string commandName = "Power";
+        const string base64Data = "AQIDBA==";
+
+        MockDefinitionService
+            .Setup(x => x.RemoteRoot)
+            .Returns(new AdaptiveRemote.Models.LayoutGroup("ROOT", [new AdaptiveRemote.Models.IRCommand(commandName)]));
+
+        IRDataSettings irData = new() { [commandName] = base64Data };
+        IScopedLifecycle sut = CreateSut(irData);
+
+        Expect_IDeviceLocator_FindDevice("10.20.30.40:1234", 0x78AB, "AA:BB:CC:DD:EE:FF");
+        Expect_ConnectionFactory_Create();
+        Expect_Connection_Authenticate();
+        Expect_InitializeActivity_Description("Connecting to Broadlink device");
+
+        // Act
+        Task resultTask = sut.InitializeAsync(InitializeActivity, default);
+
+        // Assert
+        resultTask.Should().BeComplete(because: "InitializeAsync should complete with programmed command");
+        AdaptiveRemote.Models.IRCommand command = MockDefinitionService.Object.GetElement<AdaptiveRemote.Models.IRCommand>();
+        Assert.IsTrue(command.IsEnabled, "Programmed command should be enabled");
+        Assert.IsNotNull(command.ExecuteAsync, "Programmed command should have an execute handler");
+    }
+
+    [TestMethod]
+    public void BroadlinkCommandService_InitializeAsync_WithUnprogrammedCommand_CommandRemainsDisabled()
+    {
+        // Arrange
+        const string commandName = "Mute";
+
+        MockDefinitionService
+            .Setup(x => x.RemoteRoot)
+            .Returns(new AdaptiveRemote.Models.LayoutGroup("ROOT", [new AdaptiveRemote.Models.IRCommand(commandName)]));
+
+        IScopedLifecycle sut = CreateSut(new IRDataSettings()); // empty - no data for "Mute"
+
+        Expect_IDeviceLocator_FindDevice("10.20.30.40:1234", 0x78AB, "AA:BB:CC:DD:EE:FF");
+        Expect_ConnectionFactory_Create();
+        Expect_Connection_Authenticate();
+        Expect_InitializeActivity_Description("Connecting to Broadlink device");
+
+        // Act
+        Task resultTask = sut.InitializeAsync(InitializeActivity, default);
+
+        // Assert
+        resultTask.Should().BeComplete(because: "InitializeAsync should complete with unprogrammed command");
+        AdaptiveRemote.Models.IRCommand command = MockDefinitionService.Object.GetElement<AdaptiveRemote.Models.IRCommand>();
+        Assert.IsFalse(command.IsEnabled, "Unprogrammed command should remain disabled");
     }
 
     private void Expect_IDeviceLocator_FindDevice(string ip, short deviceType, string mac, bool isLocked = false)

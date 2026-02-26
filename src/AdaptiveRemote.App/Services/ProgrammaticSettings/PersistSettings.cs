@@ -14,10 +14,12 @@ internal class PersistSettings : IPersistSettings
     private const string NamePattern = @"\w+(:\w+)*";
     private const string ValueKey = "value";
     private const string ValuePattern = @"[^\\r\\n]*";
+    private const string SectionPattern = @"\w+";
 
     private static readonly Regex KeyRegex = new($"^{NamePattern}$", RegexOptions.Singleline);
     private static readonly Regex ValueRegex = new($"^{ValuePattern}$", RegexOptions.Singleline);
     private static readonly Regex LineRegex = new($"^(?<{NameKey}>{NamePattern}){Separator}(?<{ValueKey}>{ValuePattern})$");
+    private static readonly Regex SectionHeaderRegex = new($@"^\[(?<section>{SectionPattern})\]$", RegexOptions.Singleline);
 
     private readonly IFileSystem _fileSystem;
     private readonly string _filePath;
@@ -100,11 +102,27 @@ internal class PersistSettings : IPersistSettings
             using Stream readStream = _fileSystem.OpenRead(_filePath);
             using StreamReader reader = new(readStream);
 
+            string? currentSection = null;
             string? line;
             while ((line = await reader.ReadLineAsync()) is not null)
             {
-                Match match = LineRegex.Match(line);
-                values.TryAdd(match.Groups[NameKey].Value, match.Groups[ValueKey].Value);
+                string trimmed = line.Trim();
+
+                Match sectionMatch = SectionHeaderRegex.Match(trimmed);
+                if (sectionMatch.Success)
+                {
+                    currentSection = sectionMatch.Groups["section"].Value;
+                    continue;
+                }
+
+                Match lineMatch = LineRegex.Match(trimmed);
+                if (lineMatch.Success)
+                {
+                    string key = lineMatch.Groups[NameKey].Value;
+                    string value = lineMatch.Groups[ValueKey].Value;
+                    string fullKey = currentSection is not null ? $"{currentSection}:{key}" : key;
+                    values.TryAdd(fullKey, value);
+                }
             }
 
             _logger.ProgrammaticSettings_LoadedExistingSettings(values.Count, _filePath);
@@ -151,10 +169,25 @@ internal class PersistSettings : IPersistSettings
             using Stream writeStream = _fileSystem.OpenWrite(_filePath);
             using StreamWriter writer = new(writeStream);
 
-            foreach (KeyValuePair<string, string> pair in values)
+            // Write keys with no section first
+            foreach (KeyValuePair<string, string> pair in values.Where(p => !p.Key.Contains(':')))
             {
                 await writer.WriteLineAsync($"{pair.Key}{Separator}{pair.Value}");
             }
+
+            // Group remaining keys by section (part before first ':')
+            foreach (IGrouping<string, KeyValuePair<string, string>> group in values
+                .Where(p => p.Key.Contains(':'))
+                .GroupBy(p => p.Key[..p.Key.IndexOf(':')]))
+            {
+                await writer.WriteLineAsync($"[{group.Key}]");
+                foreach (KeyValuePair<string, string> pair in group)
+                {
+                    int colon = pair.Key.IndexOf(':');
+                    await writer.WriteLineAsync($"{pair.Key[(colon + 1)..]}{Separator}{pair.Value}");
+                }
+            }
+
             await writer.FlushAsync();
         }
     }

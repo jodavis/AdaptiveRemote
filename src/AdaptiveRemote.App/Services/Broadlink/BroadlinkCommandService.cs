@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Broadlink;
 
@@ -7,18 +8,21 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
 {
     private readonly IDeviceLocator _deviceLocator;
     private readonly IDeviceConnection.Factory _connectionFactory;
+    private readonly IOptionsSnapshot<IRDataSettings> _irDataSettings;
 
     private IDeviceConnection? _connection;
 
     public BroadlinkCommandService(
         IDeviceLocator deviceLocator,
         IDeviceConnection.Factory connectionFactory,
+        IOptionsSnapshot<IRDataSettings> irDataSettings,
         IRemoteDefinitionService definitionService,
         ILogger<BroadlinkCommandService> logger)
         : base("Broadlink IR Commands", definitionService, logger)
     {
         _deviceLocator = deviceLocator;
         _connectionFactory = connectionFactory;
+        _irDataSettings = irDataSettings;
     }
 
     public override async Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
@@ -41,10 +45,18 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         Logger.BroadlinkCommandService_Ready();
     }
 
+    protected override bool IsCommandEnabled(IRCommand command)
+        => _irDataSettings.Value.ContainsKey(command.Name);
+
     protected override Command.ExecuteDelegate CreateHandler(IRCommand command)
     {
-        byte[] data = Convert.FromBase64String(command.Data);
+        if (!_irDataSettings.Value.TryGetValue(command.Name, out string? base64Data))
+        {
+            return _ => Task.FromException(
+                new InvalidOperationException($"No IR data configured for command '{command.Name}'."));
+        }
 
+        byte[] data = Convert.FromBase64String(base64Data);
         return cancellationToken => _connection!.SendDataAsync(data, cancellationToken);
     }
 }
