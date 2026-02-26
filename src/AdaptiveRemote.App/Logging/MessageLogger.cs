@@ -90,6 +90,21 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 606, Level = LogLevel.Error, Message = "Could not execute {Command} because the service has been shut down")]
     public partial void CommandService_WasShutDown(Models.Command command);
 
+    [LoggerMessage(EventId = 607, Level = LogLevel.Information, Message = "Programming {Command}")]
+    public partial void CommandService_Programming(Models.Command command);
+
+    [LoggerMessage(EventId = 608, Level = LogLevel.Information, Message = "Programmed {Command}")]
+    public partial void CommandService_Programmed(Models.Command command);
+
+    [LoggerMessage(EventId = 609, Level = LogLevel.Error, Message = "Error programming {Command}")]
+    public partial void CommandService_ProgramError(Models.Command command, Exception error);
+
+    [LoggerMessage(EventId = 610, Level = LogLevel.Warning, Message = "Cancelled programming {Command}")]
+    public partial void CommandService_ProgramCancelled(Models.Command command);
+
+    [LoggerMessage(EventId = 611, Level = LogLevel.Error, Message = "Could not program {Command} because the service has been shut down")]
+    public partial void CommandService_ProgramWasShutDown(Models.Command command);
+
     [LoggerMessage(EventId = 801, Level = LogLevel.Information, Message = "Message sent: {Message}")]
     public partial void TiVoConnection_MessageSent(string message);
 
