@@ -389,6 +389,365 @@ public class CommandServiceBaseTests
         });
     }
 
+    private MockProgrammableCommandService CreateProgrammableSut(Task? executeReturns = default, Task? programReturns = default)
+        => new(MockRemoteDefinition.Object, MockLogger, executeReturns ?? Task.CompletedTask, programReturns ?? Task.CompletedTask);
+
+    [TestMethod]
+    public void CommandServiceBase_Constructor_LeavesProgramAsyncNullWhenNoProgramHandler()
+    {
+        // Arrange & Act
+        _ = CreateSut();
+
+        // Assert
+        foreach (Command command in RemoteDefinition.Elements)
+        {
+            if (command is MockCommand)
+            {
+                command.ProgramAsync.Should().BeNull(because: "{0} is not programmable (service does not override CreateProgramHandler)", command);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_Constructor_LeavesProgramAsyncNullEvenForProgrammableService()
+    {
+        // Arrange & Act
+        _ = CreateProgrammableSut();
+
+        // Assert
+        foreach (Command command in RemoteDefinition.Elements)
+        {
+            if (command is MockCommand)
+            {
+                command.ProgramAsync.Should().BeNull(because: "{0} ProgramAsync is not set until InitializeAsync is called", command);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_InitializeAsync_SetsProgramAsyncForProgrammableService()
+    {
+        // Arrange
+        IScopedLifecycle sut = CreateProgrammableSut();
+
+        // Act
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
+
+        // Assert
+        initializeTask.Should().BeComplete(because: "the service was initialized");
+
+        foreach (Command command in RemoteDefinition.Elements)
+        {
+            if (command is MockCommand)
+            {
+                command.ProgramAsync.Should().NotBeNull(because: "a program handler should have been added to {0}", command);
+            }
+        }
+
+        MockLogger.VerifyMessages(messageLogger => { });
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_InitializeAsync_LeavesProgramAsyncNullForNonProgrammableService()
+    {
+        // Arrange
+        IScopedLifecycle sut = CreateSut();
+
+        // Act
+        Task initializeTask = sut.InitializeAsync(InitializeActivity, default);
+
+        // Assert
+        initializeTask.Should().BeComplete(because: "the service was initialized");
+
+        foreach (Command command in RemoteDefinition.Elements)
+        {
+            if (command is MockCommand)
+            {
+                command.ProgramAsync.Should().BeNull(because: "{0} is not programmable and ProgramAsync should remain null", command);
+            }
+        }
+
+        MockLogger.VerifyMessages(messageLogger => { });
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_ProgramAsync_ProgramsCommandFromDerivedClass()
+    {
+        // Arrange
+        MockProgrammableCommandService sut = CreateProgrammableSut();
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        int commandCount = 0;
+        foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
+        {
+            command.ProgramAsync.Should().NotBeNull(because: "{0} was initialized", command);
+
+            // Act
+            Task programTask = command.ProgramAsync!(default);
+
+            // Assert
+            programTask.Should().BeComplete(because: "{0} programs synchronously", command);
+            command.IsActive.Should().BeFalse(because: "{0} programming has already completed", command);
+
+            sut.ProgrammedCommands.Count.Should().Be(commandCount + 1, because: "that's how many times a command has been programmed so far");
+            sut.ProgrammedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was programmed");
+            commandCount++;
+
+            MockLogger.VerifyMessages(messageLogger =>
+            {
+                messageLogger.CommandService_Programming(command);
+                messageLogger.CommandService_Programmed(command);
+            });
+            MockLogger.ClearMessages();
+        }
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_ProgramAsync_WaitsForProgramHandlerFromDerivedClass()
+    {
+        // Arrange
+        MockProgrammableCommandService sut = CreateProgrammableSut(programReturns: new TaskCompletionSource().Task);
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        int commandCount = 0;
+        foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
+        {
+            command.ProgramAsync.Should().NotBeNull(because: "{0} was initialized", command);
+
+            // Act
+            Task programTask = command.ProgramAsync!(default);
+
+            // Assert
+            programTask.Should().NotBeComplete(because: "{0} returns an incomplete Task", command);
+            command.IsActive.Should().Be(true, because: "{0} is still programming", command);
+
+            sut.ProgrammedCommands.Count.Should().Be(commandCount + 1, because: "that's how many times a command has been programmed so far");
+            sut.ProgrammedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was programmed");
+            commandCount++;
+
+            MockLogger.VerifyMessages(messageLogger =>
+            {
+                messageLogger.CommandService_Programming(command);
+            });
+            MockLogger.ClearMessages();
+        }
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_ProgramAsync_SetsIsActiveDuringProgramming()
+    {
+        // Arrange
+        TaskCompletionSource tcs = new();
+        MockProgrammableCommandService sut = CreateProgrammableSut(programReturns: tcs.Task);
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        MockCommand command = RemoteDefinition.Elements.OfType<MockCommand>().First();
+
+        // Act
+        Task programTask = command.ProgramAsync!(default);
+
+        // Assert - IsActive is true during programming
+        command.IsActive.Should().BeTrue(because: "{0} is still programming", command);
+
+        // Complete the task
+        tcs.SetResult();
+
+        programTask.Should().BeComplete(because: "{0} programming has completed", command);
+        command.IsActive.Should().BeFalse(because: "{0} programming has completed", command);
+
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.CommandService_Programming(command);
+            messageLogger.CommandService_Programmed(command);
+        });
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_ProgramAsync_LogsMessageOnErrorInHandler()
+    {
+        // Arrange
+        Exception expectedException = new InvalidOperationException("Programming device not found");
+
+        MockProgrammableCommandService sut = CreateProgrammableSut(programReturns: Task.FromException(expectedException));
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        int commandCount = 0;
+        foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
+        {
+            command.ProgramAsync.Should().NotBeNull(because: "{0} was initialized", command);
+
+            // Act
+            Task programTask = command.ProgramAsync!(default);
+
+            // Assert
+            programTask.Should().BeFaultedWith(expectedException, because: "{0} throws an exception", command);
+            command.IsActive.Should().Be(false, because: "{0} threw an exception and is no longer programming", command);
+
+            sut.ProgrammedCommands.Count.Should().Be(commandCount + 1, because: "that's how many times a command has been programmed so far");
+            sut.ProgrammedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was programmed");
+            commandCount++;
+
+            MockLogger.VerifyMessages(messageLogger =>
+            {
+                messageLogger.CommandService_Programming(command);
+                messageLogger.CommandService_ProgramError(command, expectedException);
+            });
+            MockLogger.ClearMessages();
+        }
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_ProgramAsync_LogsMessageWhenHandlerCancelled()
+    {
+        // Arrange
+        CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        MockProgrammableCommandService sut = CreateProgrammableSut(programReturns: Task.FromCanceled(cts.Token));
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        int commandCount = 0;
+        foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
+        {
+            command.ProgramAsync.Should().NotBeNull(because: "{0} was initialized", command);
+
+            // Act
+            Task programTask = command.ProgramAsync!(default);
+
+            // Assert
+            programTask.Should().BeCanceled(because: "{0} returns a cancelled Task", command);
+            command.IsActive.Should().Be(false, because: "{0} was cancelled and is no longer programming", command);
+
+            sut.ProgrammedCommands.Count.Should().Be(commandCount + 1, because: "that's how many times a command has been programmed so far");
+            sut.ProgrammedCommands[commandCount].Should().BeSameAs(command, because: "that's the last command that was programmed");
+            commandCount++;
+
+            MockLogger.VerifyMessages(messageLogger =>
+            {
+                messageLogger.CommandService_Programming(command);
+                messageLogger.CommandService_ProgramCancelled(command);
+            });
+            MockLogger.ClearMessages();
+        }
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_ProgramAsync_PassesCancellationTokenToHandler()
+    {
+        // Arrange
+        CancellationTokenSource cts = new();
+
+        MockProgrammableCommandService sut = CreateProgrammableSut(programReturns: new TaskCompletionSource().Task);
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
+        {
+            command.ProgramAsync.Should().NotBeNull(because: "{0} was initialized", command);
+
+            Task programTask = command.ProgramAsync!(cts.Token);
+        }
+
+        // Act
+        cts.Cancel();
+
+        // Assert
+        sut.CancelTokens.ForEach(x => x.IsCancellationRequested.Should().Be(true, because: "all programming commands were cancelled"));
+
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            List<MockCommand> list = RemoteDefinition.Elements.OfType<MockCommand>().ToList();
+            messageLogger.CommandService_Programming(list[0]);
+            messageLogger.CommandService_Programming(list[1]);
+            messageLogger.CommandService_Programming(list[2]);
+        });
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_CleanUpAsync_SetsProgramWasShutDownHandlerForProgrammableCommands()
+    {
+        // Arrange
+        IScopedLifecycle sut = CreateProgrammableSut();
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        // Act
+        Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
+
+        // Assert
+        cleanUpTask.Should().BeComplete(because: "no tasks were executing, so cleanup can happen immediately.");
+
+        foreach (Command command in RemoteDefinition.Elements)
+        {
+            if (command is MockCommand)
+            {
+                command.ProgramAsync.Should().NotBeNull(because: "a was-shut-down handler should be set on {0}", command);
+                command.IsEnabled.Should().BeFalse(because: "the service has uninitialized {0}", command);
+
+                Task resultTask = command.ProgramAsync!(default);
+                resultTask.Should().BeFaultedWith(Errors.CommandService_ProgramWasShutDown(command),
+                    because: "the service has been shut down for {0}", command);
+
+                MockLogger.VerifyMessages(messageLogger =>
+                {
+                    messageLogger.CommandService_ProgramWasShutDown(command);
+                });
+                MockLogger.ClearMessages();
+            }
+        }
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_CleanUpAsync_LeavesProgramAsyncNullForNonProgrammableCommands()
+    {
+        // Arrange
+        IScopedLifecycle sut = CreateSut();
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        // Act
+        Task cleanUpTask = sut.CleanUpAsync(CleanupActivity, default);
+
+        // Assert
+        cleanUpTask.Should().BeComplete(because: "no tasks were executing, so cleanup can happen immediately.");
+
+        foreach (Command command in RemoteDefinition.Elements)
+        {
+            if (command is MockCommand)
+            {
+                command.ProgramAsync.Should().BeNull(because: "{0} is not programmable and ProgramAsync should stay null after cleanup", command);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void CommandServiceBase_CleanUpAsync_CancelsProgrammingInProgress()
+    {
+        // Arrange
+        CancellationTokenSource cts = new();
+
+        MockProgrammableCommandService sut = CreateProgrammableSut(programReturns: new TaskCompletionSource().Task);
+        _ = sut.InitializeAsync(InitializeActivity, default);
+
+        foreach (MockCommand command in RemoteDefinition.Elements.OfType<MockCommand>())
+        {
+            command.ProgramAsync.Should().NotBeNull(because: "{0} was initialized", command);
+
+            Task programTask = command.ProgramAsync!(cts.Token);
+        }
+
+        // Act
+        _ = sut.CleanUpAsync(CleanupActivity, default);
+
+        // Assert
+        sut.CancelTokens.ForEach(x => x.WaitForCancelledAsync().Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "all programming commands were cancelled"));
+
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.CommandService_Programming(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(0));
+            messageLogger.CommandService_Programming(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(1));
+            messageLogger.CommandService_Programming(RemoteDefinition.Elements.OfType<MockCommand>().ElementAt(2));
+        });
+    }
+
     private class MockCommandService : CommandServiceBase<MockCommand>
     {
         private readonly Task _returns;
@@ -409,6 +768,43 @@ public class CommandServiceBaseTests
                 ExecutedCommands.Add(command);
                 CancelTokens.Add(cancel);
                 return _returns;
+            };
+        }
+    }
+
+    private class MockProgrammableCommandService : CommandServiceBase<MockCommand>
+    {
+        private readonly Task _executeReturns;
+        private readonly Task _programReturns;
+
+        public MockProgrammableCommandService(IRemoteDefinitionService remoteDefinition, ILogger logger, Task executeReturns, Task programReturns)
+            : base(nameof(MockProgrammableCommandService), remoteDefinition, logger)
+        {
+            _executeReturns = executeReturns;
+            _programReturns = programReturns;
+        }
+
+        public List<Command> ExecutedCommands { get; } = new();
+        public List<Command> ProgrammedCommands { get; } = new();
+        public List<CancellationToken> CancelTokens { get; } = new();
+
+        protected override Command.ExecuteDelegate CreateHandler(MockCommand command)
+        {
+            return cancel =>
+            {
+                ExecutedCommands.Add(command);
+                CancelTokens.Add(cancel);
+                return _executeReturns;
+            };
+        }
+
+        protected override Command.ExecuteDelegate? CreateProgramHandler(MockCommand command)
+        {
+            return cancel =>
+            {
+                ProgrammedCommands.Add(command);
+                CancelTokens.Add(cancel);
+                return _programReturns;
             };
         }
     }
