@@ -30,12 +30,14 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
 
     protected abstract Command.ExecuteDelegate CreateHandler(CommandType command);
 
+    protected virtual bool IsCommandEnabled(CommandType command) => true;
+
     public virtual Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
     {
         foreach (CommandType command in _commands)
         {
-            command.ExecuteAsync = CreateWrappedHandler(command);
-            command.IsEnabled = true;
+            command.ExecuteAsync = CreateWrappedHandler(command, CreateHandler(command));
+            command.IsEnabled = IsCommandEnabled(command);
         }
         return Task.CompletedTask;
     }
@@ -51,10 +53,8 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
         }
     }
 
-    private Command.ExecuteDelegate CreateWrappedHandler(CommandType command)
+    private Command.ExecuteDelegate CreateWrappedHandler(CommandType command, Command.ExecuteDelegate callback)
     {
-        Command.ExecuteDelegate callback = CreateHandler(command);
-
         return async delegate (CancellationToken cancellationToken)
         {
             CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stop.Token);
