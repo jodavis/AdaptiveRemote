@@ -14,10 +14,11 @@ internal static class HostBuilderExtensions
         => builder
             .ConfigureAppConfiguration((ctx, config) =>
             {
-                string path = ctx.Configuration[$"{SettingsKeys.ProgrammaticSettings}:{nameof(ProgrammaticSettings.ProgrammaticSettingsPath)}"]
-                              ?? @"%LocalAppData%\AdaptiveRemote\Settings.ini";
-                path = Environment.ExpandEnvironmentVariables(path);
-                config.Add(new ProgrammaticSettingsConfigurationSource(path, optional: true));
+                ProgrammaticSettings settings = ctx.Configuration
+                    .GetSection(SettingsKeys.ProgrammaticSettings)
+                    .Get<ProgrammaticSettings>() ?? new ProgrammaticSettings();
+                string path = Environment.ExpandEnvironmentVariables(settings.ProgrammaticSettingsPath);
+                config.AddIniFile(path, optional: true, reloadOnChange: false);
             })
             .ConfigureServices((context, services) => services.AddRemoteServices(context.Configuration));
 

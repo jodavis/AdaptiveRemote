@@ -40,5 +40,5 @@ internal class SettingsKeys
     /// <summary>
     /// Configuration section for <see cref="Services.Broadlink.IRDataSettings"/> IR command payloads.
     /// </summary>
-    public const string IRData = "IRData";
+    public const string IRData = "irdata";
 }

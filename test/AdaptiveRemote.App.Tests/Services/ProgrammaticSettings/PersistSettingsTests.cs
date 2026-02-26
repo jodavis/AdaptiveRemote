@@ -344,5 +344,62 @@ public class PersistSettingsTests
         }
     }
 
+    [TestMethod]
+    public async Task PersistSettings_Set_SectionKey_WritesSectionFormatAsync()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.AddDirectory(Path.GetDirectoryName(InputSettingsPath));
+        MockFileSystem.Expect_OpenRead_IsNotCalled();
+        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+
+        // Act
+        sut.Set("IRData:Power", "AQIDBA==");
+
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+
+        // Assert
+        MockFileSystem.VerifyFileContents(InputSettingsPath, $"[IRData]{Environment.NewLine}Power=AQIDBA=={Environment.NewLine}");
+
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_AddSetting("IRData:Power", "AQIDBA==");
+            log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+        });
+    }
+
+    [TestMethod]
+    public async Task PersistSettings_Set_ReadsExistingIniSectionFormatAsync()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.AddFile(InputSettingsPath, $"[IRData]{Environment.NewLine}Power=AQIDBA=={Environment.NewLine}");
+        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+
+        // Act
+        sut.Set("IRData:VolumeUp", "BQYHCA==");
+
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+
+        // Assert
+        string contents = MockFileSystem.GetFileContents(InputSettingsPath);
+        Assert.IsTrue(contents.Contains("[IRData]"), "Output should contain [IRData] section header");
+        Assert.IsTrue(contents.Contains($"Power=AQIDBA=="), "Output should contain existing Power entry");
+        Assert.IsTrue(contents.Contains($"VolumeUp=BQYHCA=="), "Output should contain new VolumeUp entry");
+
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_AddSetting("IRData:VolumeUp", "BQYHCA==");
+            log.ProgrammaticSettings_SavingSettings(2, InputSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+        });
+    }
+
 }
 

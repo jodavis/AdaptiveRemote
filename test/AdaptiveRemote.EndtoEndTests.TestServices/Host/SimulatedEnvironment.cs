@@ -25,22 +25,18 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     private readonly ISimulatedTiVoDevice _tivo;
     private readonly ISimulatedBroadlinkDevice _broadlink;
     private readonly AdaptiveRemoteHost.Builder _hostBuilder;
-    // _testSettingsPath is stored as a field to support cleanup during Dispose().
-    private readonly string _testSettingsPath;
     private bool _disposed;
     private AdaptiveRemoteHost? _host;
     private string? _nextLogLocation;
     private string? _currentLogLocation;
+    // Settings file path is determined lazily from the TestResults directory when SetLogLocation is first called.
+    private string? _testSettingsPath;
 
     public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder)
     {
         _tivo = tivoBuilder.Start();
         _broadlink = (ISimulatedBroadlinkDevice)broadlinkBuilder.Start();
         _hostBuilder = hostBuilder;
-
-        // Create a test-time settings file with a subset of programmed IR commands.
-        _testSettingsPath = Path.Combine(Path.GetTempPath(), $"AdaptiveRemote_TestSettings_{Guid.NewGuid():N}.ini");
-        WriteTestSettingsFile(_testSettingsPath, _testIrPayloads);
 
         List<string> args =
         [
@@ -50,9 +46,6 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             // Use the simulated Broadlink device
             $"--broadlink:DiscoveryAddress=127.0.0.1",
             $"--broadlink:DiscoveryPort={_broadlink.Port}",
-
-            // Use the test-time programmatic settings file
-            $"--programmatic:ProgrammaticSettingsPath={_testSettingsPath}",
         ];
 
         hostBuilder
@@ -120,18 +113,6 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             // Ignore disposal errors
         }
 
-        try
-        {
-            if (File.Exists(_testSettingsPath))
-            {
-                File.Delete(_testSettingsPath);
-            }
-        }
-        catch
-        {
-            // Ignore disposal errors
-        }
-
         _disposed = true;
     }
 
@@ -159,16 +140,36 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         }
     }
 
-    public void SetLogLocation(string logLocation) => _hostBuilder.ConfigureSettings(settings =>
+    public void SetLogLocation(string logLocation)
     {
-        _nextLogLocation = logLocation;
-        return settings.AddCommandLineArgs($"--log:FilePath=\"{logLocation}\"");
-    });
+        // Ensure settings file is created (adds --programmatic arg) before adding log arg
+        EnsureTestSettingsFileCreated(Path.GetDirectoryName(logLocation)!);
+
+        _hostBuilder.ConfigureSettings(settings =>
+        {
+            _nextLogLocation = logLocation;
+            return settings.AddCommandLineArgs($"--log:FilePath=\"{logLocation}\"");
+        });
+    }
+
+    private void EnsureTestSettingsFileCreated(string directory)
+    {
+        if (_testSettingsPath is not null)
+        {
+            return;
+        }
+
+        _testSettingsPath = Path.Combine(directory, "ProgrammaticSettings.ini");
+        WriteTestSettingsFile(_testSettingsPath, _testIrPayloads);
+
+        _hostBuilder.ConfigureSettings(s =>
+            s.AddCommandLineArgs($"--programmatic:ProgrammaticSettingsPath=\"{_testSettingsPath}\""));
+    }
 
     private static void WriteTestSettingsFile(string path, IReadOnlyDictionary<string, byte[]> payloads)
     {
-        IEnumerable<string> lines = payloads.Select(kvp =>
-            $"IRData:{kvp.Key}={Convert.ToBase64String(kvp.Value)}");
+        List<string> lines = [$"[IRData]"];
+        lines.AddRange(payloads.Select(kvp => $"{kvp.Key}={Convert.ToBase64String(kvp.Value)}"));
         File.WriteAllLines(path, lines);
     }
 }

@@ -73,28 +73,19 @@ public class SimulatedBroadlinkSteps : StepsBase
     public void ThenTheRecordedBroadlinkPacketPayloadShouldMatchConfiguredPayload(string commandName)
     {
         ISimulatedBroadlinkDevice? device = Environment.Broadlink;
-        if (device == null)
-        {
-            Assert.Fail("Broadlink device is not running");
-        }
+        Assert.IsNotNull(device, "Broadlink device is not running");
 
-        if (!Environment.TestIrPayloads.TryGetValue(commandName, out byte[]? expectedPayload))
-        {
-            Assert.Fail($"No test IR payload configured for command '{commandName}'");
-        }
+        bool hasPayload = Environment.TestIrPayloads.TryGetValue(commandName, out byte[]? expectedPayload);
+        Assert.IsTrue(hasPayload, "No test IR payload configured for command '{0}'", commandName);
 
         RecordedPacket? irPacket = device.GetFirstPacketWithIrData();
-
-        if (irPacket is null)
-        {
-            Assert.Fail("No packet with IR payload was recorded");
-        }
+        Assert.IsNotNull(irPacket, "No packet with IR payload was recorded");
 
         CollectionAssert.AreEqual(
             expectedPayload,
             irPacket.RawPayload,
             $"IR payload for command '{commandName}' does not match configured test payload");
 
-        Logger.LogInformation("IR payload for '{CommandName}' matches configured test payload ({PayloadLength} bytes)", commandName, expectedPayload.Length);
+        Logger.LogInformation("IR payload for '{CommandName}' matches configured test payload ({PayloadLength} bytes)", commandName, expectedPayload!.Length);
     }
 }

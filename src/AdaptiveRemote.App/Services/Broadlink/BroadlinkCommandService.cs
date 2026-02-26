@@ -53,7 +53,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         if (!_irDataSettings.Value.TryGetValue(command.Name, out string? base64Data))
         {
             return _ => Task.FromException(
-                new InvalidOperationException($"No IR data configured for command '{command.Name}'. Ensure it is programmed in the settings file."));
+                new InvalidOperationException($"No IR data configured for command '{command.Name}'."));
         }
 
         byte[] data = Convert.FromBase64String(base64Data);
