@@ -1,4 +1,4 @@
-﻿<button class="@CssClasses" id="@ID" @onclick="Invoke">@Label</button>
+﻿<button class="@CssClasses" id="@ID" disabled=@(!IsEnabled) @onclick="Invoke">@Label</button>
 
 @code {
     [Parameter]

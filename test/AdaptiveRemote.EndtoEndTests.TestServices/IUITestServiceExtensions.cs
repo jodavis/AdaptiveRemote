@@ -50,6 +50,28 @@ public static class IUITestServiceExtensions
         => WaitHelpers.ExecuteWithRetries(ct => service.IsButtonEnabledAsync(label, ct), timeout);
 
     /// <summary>
+    /// Waits for a button with the specified label to be enabled or disabled in the UI (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
+    /// <param name="enabled">Whether to wait for the button to be enabled or disabled.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>True if the button reaches the desired state within the timeout, false otherwise.</returns>
+    public static bool WaitForButtonEnabled(this IUITestService service, string label, bool enabled = true, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.WaitForButtonEnabled(label, enabled, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Waits for a button with the specified label to be enabled or disabled in the UI (synchronous wrapper).
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
+    /// <param name="enabled">Whether to wait for the button to be enabled or disabled.</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>True if the button reaches the desired state within the timeout, false otherwise.</returns>
+    public static bool WaitForButtonEnabled(this IUITestService service, string label, bool enabled, TimeSpan timeout)
+        => WaitHelpers.ExecuteWithRetries(async ct => await service.IsButtonEnabledAsync(label, ct) == enabled, timeout);    
+
+    /// <summary>
     /// Clicks a button with the specified label in the UI (synchronous wrapper).
     /// </summary>
     /// <param name="service">The UI test service.</param>

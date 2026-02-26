@@ -31,4 +31,14 @@ internal class SettingsKeys
     /// Settings for <see cref="Services.Testing.TestingSettings"/>
     /// </summary>
     public const string Testing = "test";
+
+    /// <summary>
+    /// Settings for <see cref="Services.ProgrammaticSettings.ProgrammaticSettings"/>
+    /// </summary>
+    public const string ProgrammaticSettings = "programmatic";
+
+    /// <summary>
+    /// Configuration section for <see cref="Services.Broadlink.IRDataSettings"/> IR command payloads.
+    /// </summary>
+    public const string IRData = "irdata";
 }

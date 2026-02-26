@@ -2,6 +2,7 @@
 using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.ProgrammaticSettings;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -10,14 +11,24 @@ namespace AdaptiveRemote.Configuration;
 internal static class HostBuilderExtensions
 {
     internal static IHostBuilder AddRemoteServices(this IHostBuilder builder)
-        => builder.ConfigureServices((context, services) => services.AddRemoteServices());
+        => builder
+            .ConfigureAppConfiguration((ctx, config) =>
+            {
+                ProgrammaticSettings settings = ctx.Configuration
+                    .GetSection(SettingsKeys.ProgrammaticSettings)
+                    .Get<ProgrammaticSettings>() ?? new ProgrammaticSettings();
+                string path = Environment.ExpandEnvironmentVariables(settings.ProgrammaticSettingsPath);
+                config.AddIniFile(path, optional: true, reloadOnChange: false);
+            })
+            .ConfigureServices((context, services) => services.AddRemoteServices(context.Configuration));
 
-    internal static IServiceCollection AddRemoteServices(this IServiceCollection services)
+    internal static IServiceCollection AddRemoteServices(this IServiceCollection services, IConfiguration configuration)
         => services
             .AddApplicationLifecycleServices()
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
-            .AddSingleton<IPersistSettings, PersistSettings>();
+            .AddSingleton<IPersistSettings, PersistSettings>()
+            .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings));
 
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle

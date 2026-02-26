@@ -68,4 +68,24 @@ public class SimulatedBroadlinkSteps : StepsBase
 
         Logger.LogInformation("No malformed packets found");
     }
+
+    [Then(@"the recorded Broadlink packet's raw payload should match the configured payload for '(.*)'")]
+    public void ThenTheRecordedBroadlinkPacketPayloadShouldMatchConfiguredPayload(string commandName)
+    {
+        ISimulatedBroadlinkDevice? device = Environment.Broadlink;
+        Assert.IsNotNull(device, "Broadlink device is not running");
+
+        bool hasPayload = Environment.TestIrPayloads.TryGetValue(commandName, out byte[]? expectedPayload);
+        Assert.IsTrue(hasPayload, "No test IR payload configured for command '{0}'", commandName);
+
+        RecordedPacket? irPacket = device.GetFirstPacketWithIrData();
+        Assert.IsNotNull(irPacket, "No packet with IR payload was recorded");
+
+        CollectionAssert.AreEqual(
+            expectedPayload,
+            irPacket.RawPayload,
+            $"IR payload for command '{commandName}' does not match configured test payload");
+
+        Logger.LogInformation("IR payload for '{CommandName}' matches configured test payload ({PayloadLength} bytes)", commandName, expectedPayload!.Length);
+    }
 }
