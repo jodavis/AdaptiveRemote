@@ -7,6 +7,7 @@ public abstract class Command : RemoteLayoutElement
     public static readonly MvvmProperty<bool> IsActiveProperty = new(nameof(IsActive));
     public static readonly MvvmProperty<bool> IsEnabledProperty = new(nameof(IsEnabled));
     public static readonly MvvmProperty<ExecuteDelegate?> ExecuteAsyncProperty = new(nameof(ExecuteAsync));
+    public static readonly MvvmProperty<ExecuteDelegate?> ProgramAsyncProperty = new(nameof(ProgramAsync));
 
     public delegate Task ExecuteDelegate(CancellationToken cancellationToken);
 
@@ -49,6 +50,12 @@ public abstract class Command : RemoteLayoutElement
     {
         get => GetValue(ExecuteAsyncProperty);
         set => SetValue(ExecuteAsyncProperty, value);
+    }
+
+    public ExecuteDelegate? ProgramAsync
+    {
+        get => GetValue(ProgramAsyncProperty);
+        set => SetValue(ProgramAsyncProperty, value);
     }
 
     public override string ToString() => $"{GetType().Name} '{Name}'";

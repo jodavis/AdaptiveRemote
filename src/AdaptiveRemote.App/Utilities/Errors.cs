@@ -51,6 +51,8 @@ internal static class Errors
         => new InvalidOperationException($"Cannot execute {command} because the service has not been started.");
     internal static Exception CommandService_WasShutDown(Command command)
         => new InvalidOperationException($"Cannot execute {command} because the service has been shut down.");
+    internal static Exception CommandService_ProgramWasShutDown(Command command)
+        => new InvalidOperationException($"Cannot program {command} because the service has been shut down.");
 
     internal static Exception PersistSettings_InvalidName(string paramName, string settingName)
         => new ArgumentException($"The setting name '{settingName}' was in an invalid format.", paramName);
