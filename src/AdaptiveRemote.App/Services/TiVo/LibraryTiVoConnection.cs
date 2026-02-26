@@ -36,13 +36,15 @@ internal class LibraryTiVoConnection : ITiVoConnection
         {
             _logger.TiVoConnection_Disconnecting(_description);
 
-            client.Close();
-            client.Dispose();
-
+            // Unsubscribe event handlers before closing the connection so that the expected
+            // socket-closed errors from the background reader are not logged as errors.
             client.Error -= OnError;
             client.EventReceived -= OnEventReceived;
             client.MessageReceived -= OnMessageReceived;
             client.MessageSent -= OnMessageSent;
+
+            client.Close();
+            client.Dispose();
         }
 
         return Task.CompletedTask;

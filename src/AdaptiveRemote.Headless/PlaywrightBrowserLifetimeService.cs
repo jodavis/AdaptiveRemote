@@ -131,24 +131,32 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
         {
             if (_page is not null)
             {
+                _logger.Playwright_ClosingPage();
                 await _page.CloseAsync();
                 _page = null;
+                _logger.Playwright_PageClosed();
             }
 
             if (_browserContext is not null)
             {
+                _logger.Playwright_ClosingBrowserContext();
                 await _browserContext.CloseAsync();
                 _browserContext = null;
+                _logger.Playwright_BrowserContextClosed();
             }
 
             if (_browser is not null)
             {
+                _logger.Playwright_ClosingBrowser();
                 await _browser.CloseAsync();
                 _browser = null;
+                _logger.Playwright_BrowserClosed();
             }
 
+            _logger.Playwright_DisposingDriver();
             _playwright?.Dispose();
             _playwright = null;
+            _logger.Playwright_DriverDisposed();
 
             _logger.Playwright_CleanedUp();
         }
