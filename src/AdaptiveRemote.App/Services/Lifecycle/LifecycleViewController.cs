@@ -133,9 +133,12 @@ internal class LifecycleViewController : ILifecycleViewController
 
         public void Dispose()
         {
-            if (FatalError is null)
+            lock (_owner._lock)
             {
-                _owner._activities.Remove(this);
+                if (FatalError is null)
+                {
+                    _owner._activities.Remove(this);
+                }
             }
             _owner.UpdateTaskName();
         }
