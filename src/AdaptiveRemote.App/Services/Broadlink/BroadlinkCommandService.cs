@@ -100,6 +100,10 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
                 try
                 {
                     data = await _connection.CheckLearnedDataAsync(combined.Token);
+                    if (data is null)
+                    {
+                        await Task.Delay(100, combined.Token);
+                    }
                 }
                 catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
                 {
