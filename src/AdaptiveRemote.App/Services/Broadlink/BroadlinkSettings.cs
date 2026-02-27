@@ -14,10 +14,21 @@ public class BroadlinkSettings
     public int SendTimeout { get; set; } = 5;
 
     /// <summary>
-    /// Amoutn of time, in seconds, that we will wait for a response when scanning
+    /// Amount of time, in seconds, that we will wait for a response when scanning
     /// for devices.
     /// </summary>
     public double ScanTimeout { get; set; } = 3;
+
+    /// <summary>
+    /// Amount of time, in seconds, to wait for the user to point their remote at the device
+    /// and press a button during IR learning mode before timing out.
+    /// </summary>
+    public double LearnTimeout { get; set; } = 30;
+
+    /// <summary>
+    /// Amount of time, in seconds, to wait between polling the device for a learned IR code.
+    /// </summary>
+    public double LearnPollInterval { get; set; } = 1;
 
     /// <summary>
     /// Optional discovery port override for testing. If not set, uses port 80.
