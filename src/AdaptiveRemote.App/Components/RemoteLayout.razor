@@ -1,10 +1,7 @@
-﻿@inject Models.LifecycleView LifecycleView
-@implements IDisposable
-
-@switch (LayoutElement)
+﻿@switch (LayoutElement)
 {
     case Models.Command command:
-        @if (LifecycleView.IsProgrammingMode)
+        @if (ProgramMode)
         {
             <ProgramButton Command="@command" />
         }
@@ -17,7 +14,7 @@
         <div id="@nestedGroup.CSSID">
             @foreach (Models.RemoteLayoutElement element in nestedGroup.Elements)
             {
-                <RemoteLayout LayoutElement="@element" />
+                <RemoteLayout LayoutElement="@element" ProgramMode="@ProgramMode" />
             }
         </div>
         break;
@@ -27,23 +24,9 @@
 }
 
 @code {
-    private System.ComponentModel.PropertyChangedEventHandler? _propertyChangedHandler;
-
     [Parameter]
     public Models.RemoteLayoutElement? LayoutElement { get; set; }
 
-    protected override void OnInitialized()
-    {
-        _propertyChangedHandler = (sender, args) => InvokeAsync(StateHasChanged);
-        LifecycleView.PropertyChanged += _propertyChangedHandler;
-        base.OnInitialized();
-    }
-
-    public void Dispose()
-    {
-        if (_propertyChangedHandler is not null)
-        {
-            LifecycleView.PropertyChanged -= _propertyChangedHandler;
-        }
-    }
+    [Parameter]
+    public bool ProgramMode { get; set; }
 }

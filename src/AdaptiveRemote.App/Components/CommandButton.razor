@@ -1,42 +1,11 @@
-﻿<button class="@CssClasses" id="@ID" disabled=@(!IsEnabled) @onclick="Invoke">@Label</button>
+﻿@inherits CommandButtonBase
+
+<button class="@CssClasses" id="@ID" disabled=@(!IsEnabled) @onclick="Invoke">@Label</button>
 
 @code {
-    [Parameter]
-    public Models.Command? Command { get; set; }
+    protected override bool IsEnabled => Command?.ExecuteAsync is not null && Command?.IsEnabled == true;
 
-    private bool IsActive => Command?.IsActive ?? false;
-    private bool IsEnabled => Command?.ExecuteAsync is not null && Command?.IsEnabled == true;
-    private string ID => Command?.CSSID ?? string.Empty;
-    private string Label => Command?.Label ?? string.Empty;
-
-    private string CssClasses => string.Join(" ", ComputeCssClasses());
-
-    private IEnumerable<string> ComputeCssClasses()
-    {
-        yield return "btn-primary";
-
-        if (IsActive)
-        {
-            yield return "btn-active";
-        }
-
-        if (!IsEnabled)
-        {
-            yield return "btn-disabled";
-        }
-    }
-
-    protected override void OnInitialized()
-    {
-        if (Command is not null)
-        {
-            Command.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
-        }
-
-        base.OnInitialized();
-    }
-
-    private void Invoke()
+    protected override void Invoke()
     {
         Command?.ExecuteAsync?.Invoke(default);
     }
