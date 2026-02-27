@@ -28,4 +28,9 @@ public class BroadlinkSettings
     /// Optional discovery address override for testing. If not set, uses broadcast address.
     /// </summary>
     public string? DiscoveryAddress { get; set; }
+
+    /// <summary>
+    /// Amount of time, in seconds, to wait for a user to press a button during IR learning.
+    /// </summary>
+    public int LearningTimeout { get; set; } = 30;
 }

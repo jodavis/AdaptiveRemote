@@ -138,6 +138,18 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 1004, Level = LogLevel.Information, Message = "Ready to send commands")]
     public partial void BroadlinkCommandService_Ready();
 
+    [LoggerMessage(EventId = 1005, Level = LogLevel.Information, Message = "Loaded programmed IR data for command '{CommandName}'")]
+    public partial void BroadlinkCommandService_LoadedProgrammedData(string commandName);
+
+    [LoggerMessage(EventId = 1006, Level = LogLevel.Information, Message = "Entering learning mode for {Command}")]
+    public partial void BroadlinkCommandService_EnteringLearningMode(Models.Command command);
+
+    [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "Waiting for IR signal for {Command}")]
+    public partial void BroadlinkCommandService_WaitingForIRSignal(Models.Command command);
+
+    [LoggerMessage(EventId = 1008, Level = LogLevel.Information, Message = "Learned IR data for {Command}")]
+    public partial void BroadlinkCommandService_LearnedData(Models.Command command);
+
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Loading existing settings from {FilePath}")]
     public partial void ProgrammaticSettings_LoadingExistingSettings(string filePath);
 

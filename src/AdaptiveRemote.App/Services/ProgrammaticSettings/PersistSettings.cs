@@ -45,6 +45,13 @@ internal class PersistSettings : IPersistSettings
         _ = SetAsync(name, value);
     }
 
+    async Task<string?> IPersistSettings.GetAsync(string name)
+    {
+        ConcurrentDictionary<string, string> values = await _lazyValues.GetValueAsync();
+        values.TryGetValue(name, out string? value);
+        return value;
+    }
+
     private void ValidateInputs(string name, string value)
     {
         try

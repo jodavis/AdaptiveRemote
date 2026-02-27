@@ -344,4 +344,59 @@ public class PersistSettingsTests
         }
     }
 
+    [TestMethod]
+    public async Task PersistSettings_GetAsync_WhenKeyExists_ReturnsValueAsync()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=hello");
+        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
+
+        // Act
+        string? result = await sut.GetAsync("ExistingSetting");
+
+        // Assert
+        Assert.AreEqual("hello", result, nameof(result));
+
+        MockLogger.VerifyMessages(log =>
+        {
+            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+        });
+    }
+
+    [TestMethod]
+    public async Task PersistSettings_GetAsync_WhenKeyDoesNotExist_ReturnsNullAsync()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=hello");
+        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
+
+        // Act
+        string? result = await sut.GetAsync("MissingSetting");
+
+        // Assert
+        Assert.IsNull(result, nameof(result));
+    }
+
+    [TestMethod]
+    public async Task PersistSettings_GetAsync_WhenFileNotFound_ReturnsNullAsync()
+    {
+        // Arrange
+        IPersistSettings sut = CreateSut();
+
+        MockFileSystem.Expect_OpenRead_IsNotCalled();
+
+        // Act
+        string? result = await sut.GetAsync("AnySetting");
+
+        // Assert
+        Assert.IsNull(result, nameof(result));
+
+        MockLogger.VerifyMessages();
+    }
+
 }

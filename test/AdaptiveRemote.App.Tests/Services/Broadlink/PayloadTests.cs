@@ -581,4 +581,29 @@ public class PayloadTests
         Assert.AreEqual(0x48, sut.Size, nameof(sut.Size));
         Assert.AreEqual(-15326, sut.ComputeChecksum(), nameof(sut.ComputeChecksum));
     }
+
+    [TestMethod]
+    public void LearnedDataResponsePayload_GetBuffer()
+    {
+        // Arrange
+        byte[] irData = [0xAA, 0xBB, 0xCC, 0xDD, 0xEE];
+        // CommandAndDataLength = (short)(irData.Length + sizeof(int)) = (short)(5 + 4) = 9
+        // Command = 4 (check learned data command)
+        byte[] input =
+        [
+            0x09, 0x00,                         // CommandAndDataLength = 9
+            0x04, 0x00, 0x00, 0x00,             // Command = 4
+            0xAA, 0xBB, 0xCC, 0xDD, 0xEE,       // IR data
+        ];
+
+        // Act
+        LearnedDataResponsePayload sut = new(input);
+
+        // Assert
+        Assert.AreEqual(9, sut.CommandAndDataLength, nameof(sut.CommandAndDataLength));
+        Assert.AreEqual(4, sut.Command, nameof(sut.Command));
+        MemoryAssert.AreEqual(irData, sut.Data, nameof(sut.Data));
+
+        Assert.AreEqual(input.Length, sut.Size, nameof(sut.Size));
+    }
 }
