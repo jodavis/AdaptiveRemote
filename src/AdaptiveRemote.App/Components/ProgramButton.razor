@@ -1,0 +1,56 @@
+﻿@implements IDisposable
+
+<button class="@CssClasses" id="@ID" disabled=@(!IsEnabled) @onclick="Invoke">@Label</button>
+
+@code {
+    private System.ComponentModel.PropertyChangedEventHandler? _propertyChangedHandler;
+
+    [Parameter]
+    public Models.Command? Command { get; set; }
+
+    private bool IsActive => Command?.IsActive ?? false;
+    private bool IsEnabled => Command?.ProgramAsync is not null;
+    private string ID => Command?.CSSID ?? string.Empty;
+    private string Label => Command?.Label ?? string.Empty;
+
+    private string CssClasses => string.Join(" ", ComputeCssClasses());
+
+    private IEnumerable<string> ComputeCssClasses()
+    {
+        yield return "btn-primary";
+
+        if (IsActive)
+        {
+            yield return "btn-active";
+        }
+
+        if (!IsEnabled)
+        {
+            yield return "btn-disabled";
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Command is not null)
+        {
+            _propertyChangedHandler = (sender, args) => InvokeAsync(StateHasChanged);
+            Command.PropertyChanged += _propertyChangedHandler;
+        }
+
+        base.OnInitialized();
+    }
+
+    public void Dispose()
+    {
+        if (Command is not null && _propertyChangedHandler is not null)
+        {
+            Command.PropertyChanged -= _propertyChangedHandler;
+        }
+    }
+
+    private void Invoke()
+    {
+        Command?.ProgramAsync?.Invoke(CancellationToken.None);
+    }
+}
