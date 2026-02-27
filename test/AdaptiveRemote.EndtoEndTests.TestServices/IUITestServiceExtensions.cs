@@ -69,7 +69,7 @@ public static class IUITestServiceExtensions
     /// <param name="timeout">Timeout for the operation.</param>
     /// <returns>True if the button reaches the desired state within the timeout, false otherwise.</returns>
     public static bool WaitForButtonEnabled(this IUITestService service, string label, bool enabled, TimeSpan timeout)
-        => WaitHelpers.ExecuteWithRetries(async ct => await service.IsButtonEnabledAsync(label, ct) == enabled, timeout);    
+        => WaitHelpers.ExecuteWithRetries(async ct => await service.IsButtonEnabledAsync(label, ct) == enabled, timeout);
 
     /// <summary>
     /// Clicks a button with the specified label in the UI (synchronous wrapper).

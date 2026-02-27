@@ -15,6 +15,7 @@ public class LifecycleView : MvvmObject
     public static readonly MvvmProperty<ICommand> ShutdownCommandProperty = new(nameof(ShutdownCommand));
     public static readonly MvvmProperty<ICommand> ShowErrorCommandProperty = new(nameof(ShowErrorCommand));
     public static readonly MvvmProperty<ICommand> CloseErrorCommandProperty = new(nameof(CloseErrorCommand));
+    public static readonly MvvmProperty<bool> IsProgrammingModeProperty = new(nameof(IsProgrammingMode));
 
     public string TaskName
     {
@@ -74,5 +75,11 @@ public class LifecycleView : MvvmObject
     {
         get => GetValue(CloseErrorCommandProperty);
         set => SetValue(CloseErrorCommandProperty, value);
+    }
+
+    public bool IsProgrammingMode
+    {
+        get => GetValue(IsProgrammingModeProperty);
+        set => SetValue(IsProgrammingModeProperty, value);
     }
 }
