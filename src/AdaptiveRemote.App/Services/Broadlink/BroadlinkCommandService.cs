@@ -75,13 +75,11 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
             BroadlinkSettings settings = _broadlinkSettings.Value;
             TimeSpan timeout = TimeSpan.FromSeconds(settings.LearnTimeout);
             TimeSpan pollInterval = TimeSpan.FromSeconds(settings.LearnPollInterval);
-            DateTime deadline = DateTime.UtcNow + timeout;
+            System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            while (DateTime.UtcNow < deadline)
+            while (stopwatch.Elapsed < timeout)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                await Task.Delay(pollInterval, cancellationToken);
 
                 Logger.BroadlinkCommandService_PollingForLearnedData(command);
                 byte[]? data = await _connection!.CheckLearnedDataAsync(cancellationToken);
@@ -93,6 +91,8 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
                     _persistSettings.Set($"IRData:{command.Name}", base64Data);
                     return;
                 }
+
+                await Task.Delay(pollInterval, cancellationToken);
             }
 
             Logger.BroadlinkCommandService_LearningTimedOut(command);
