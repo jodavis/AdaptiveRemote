@@ -68,7 +68,7 @@ internal abstract class CommandServiceBase<CommandType> : IScopedLifecycle
         }
     }
 
-    private Command.ExecuteDelegate CreateWrappedHandler(CommandType command, Command.ExecuteDelegate callback)
+    protected Command.ExecuteDelegate CreateWrappedHandler(CommandType command, Command.ExecuteDelegate callback)
     {
         return async delegate (CancellationToken cancellationToken)
         {

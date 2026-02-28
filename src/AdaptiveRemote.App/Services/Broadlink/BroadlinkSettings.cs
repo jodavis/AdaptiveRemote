@@ -20,12 +20,6 @@ public class BroadlinkSettings
     public double ScanTimeout { get; set; } = 3;
 
     /// <summary>
-    /// Amount of time, in seconds, to wait for the user to point their remote at the device
-    /// and press a button during IR learning mode before timing out.
-    /// </summary>
-    public double LearnTimeout { get; set; } = 30;
-
-    /// <summary>
     /// Amount of time, in seconds, to wait between polling the device for a learned IR code.
     /// </summary>
     public double LearnPollInterval { get; set; } = 1;

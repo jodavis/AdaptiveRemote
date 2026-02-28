@@ -69,33 +69,35 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     protected override Command.ExecuteDelegate? CreateProgramHandler(IRCommand command)
         => async cancellationToken =>
         {
+            IDeviceConnection connection = _connection
+                ?? throw new InvalidOperationException($"Cannot program {command}: the Broadlink service is not connected.");
+
             Logger.BroadlinkCommandService_EnteringLearningMode(command);
-            await _connection!.EnterLearningModeAsync(cancellationToken);
+            await connection.EnterLearningModeAsync(cancellationToken);
 
-            BroadlinkSettings settings = _broadlinkSettings.Value;
-            TimeSpan timeout = TimeSpan.FromSeconds(settings.LearnTimeout);
-            TimeSpan pollInterval = TimeSpan.FromSeconds(settings.LearnPollInterval);
-            System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            TimeSpan pollInterval = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnPollInterval);
 
-            while (stopwatch.Elapsed < timeout)
+            // Poll indefinitely: the loop exits when data is received (early return),
+            // the cancellation token fires (OperationCanceledException), or the device
+            // times out in learning mode and throws a BroadlinkException.
+            while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 Logger.BroadlinkCommandService_PollingForLearnedData(command);
-                byte[]? data = await _connection!.CheckLearnedDataAsync(cancellationToken);
+                byte[]? data = await connection.CheckLearnedDataAsync(cancellationToken);
 
                 if (data is not null)
                 {
                     Logger.BroadlinkCommandService_LearnedDataReceived(command, data.Length);
                     string base64Data = Convert.ToBase64String(data);
                     _persistSettings.Set($"IRData:{command.Name}", base64Data);
+                    command.ExecuteAsync = CreateWrappedHandler(command, ct => connection.SendDataAsync(data, ct));
+                    command.IsEnabled = true;
                     return;
                 }
 
                 await Task.Delay(pollInterval, cancellationToken);
             }
-
-            Logger.BroadlinkCommandService_LearningTimedOut(command);
-            throw Errors.Broadlink_LearningTimedOut(timeout);
         };
 }
