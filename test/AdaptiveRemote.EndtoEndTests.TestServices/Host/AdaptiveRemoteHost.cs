@@ -92,7 +92,6 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     public bool IsRunning => !_process.HasExited;
 
-    
     public bool WaitForShutdown()
     {
         return _process.WaitForExit(_settings.ShutdownTimeout);
