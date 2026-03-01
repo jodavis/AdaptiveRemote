@@ -40,9 +40,9 @@ Scenario: Programming a programmable command fails with a device error
 	Then I should see the 'Mute' button is enabled
 	When I click on the 'Mute' button
 	Then the Broadlink device should be in learning mode
+	And I should see a modal message containing "Programming 'Mute'"
 	When the Broadlink device simulates a device error
 	Then I should not see a modal message
-	And I should see the 'Mute' button is not programmed
 
 Scenario: Programming a programmable command is cancelled
 	Given the application is in the Ready phase

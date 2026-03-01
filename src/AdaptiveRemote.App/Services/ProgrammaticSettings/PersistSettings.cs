@@ -13,7 +13,7 @@ internal class PersistSettings : IPersistSettings
     private const string NameKey = "name";
     private const string NamePattern = @"\w+(:\w+)*";
     private const string ValueKey = "value";
-    private const string ValuePattern = @"[^\\r\\n]*";
+    private const string ValuePattern = @"[^\r\n]*";
     private const string SectionPattern = @"\w+";
 
     private static readonly Regex KeyRegex = new($"^{NamePattern}$", RegexOptions.Singleline);
