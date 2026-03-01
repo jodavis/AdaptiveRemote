@@ -99,7 +99,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
                         Logger.BroadlinkCommandService_LearnedDataReceived(command, data.Length);
                         string base64Data = Convert.ToBase64String(data);
                         _persistSettings.Set($"IRData:{command.Name}", base64Data);
-                        command.ExecuteAsync = CreateWrappedHandler(command, ct2 => connection.SendDataAsync(data, ct2));
+                        command.ExecuteAsync = CreateWrappedHandler(command, sendCt => connection.SendDataAsync(data, sendCt));
                         command.IsEnabled = true;
                         return;
                     }

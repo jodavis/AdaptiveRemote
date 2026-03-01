@@ -139,11 +139,6 @@ public class PlaywrightUITestService : IUITestService
 
     public void Dispose()
     {
-        if (_browserProvider is IDisposable disposable)
-        {
-            disposable.Dispose();
-        }
-
         GC.SuppressFinalize(this);
     }
 
