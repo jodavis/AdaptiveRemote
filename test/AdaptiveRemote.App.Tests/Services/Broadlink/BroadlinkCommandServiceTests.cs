@@ -1,5 +1,7 @@
 ﻿using System.Net;
 using System.Net.NetworkInformation;
+using AdaptiveRemote.Models;
+using AdaptiveRemote.Services.ModalMessages;
 using FluentAssertions;
 using Moq;
 
@@ -14,12 +16,20 @@ public class BroadlinkCommandServiceTests
     private readonly Mock<IRemoteDefinitionService> MockDefinitionService = new();
     private readonly Mock<ILifecycleActivity> MockInitializeActivity = new();
     private readonly Mock<IPersistSettings> MockPersistSettings = new();
+    private readonly Mock<IModalMessageService> MockModalMessageService = new();
     private readonly MockLogger<BroadlinkCommandService> MockLogger = new();
 
     private ILifecycleActivity InitializeActivity => MockInitializeActivity.Object;
 
     private BroadlinkCommandService CreateSut(IRDataSettings? irDataSettings = null, BroadlinkSettings? broadlinkSettings = null)
-        => new(MockLocator.Object, MockConnectionFactory.Object, new MockOptionsSnapshot<IRDataSettings>(irDataSettings ?? new()), new MockOptions<BroadlinkSettings>(broadlinkSettings ?? new()), MockPersistSettings.Object, MockDefinitionService.Object, MockLogger);
+        => new(MockLocator.Object,
+               MockConnectionFactory.Object,
+               new MockOptionsSnapshot<IRDataSettings>(irDataSettings ?? []),
+               new MockOptions<BroadlinkSettings>(broadlinkSettings ?? new()),
+               MockPersistSettings.Object,
+               MockDefinitionService.Object,
+               MockModalMessageService.Object,
+               MockLogger);
 
     [TestInitialize]
     public void SetupMocks()
@@ -33,6 +43,9 @@ public class BroadlinkCommandServiceTests
         MockInitializeActivity
             .Setup(x => x.Dispose())
             .Verifiable(Times.Never);
+        MockModalMessageService
+            .Setup(x => x.ShowMessageAsync(It.IsAny<string>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Verifiable(Times.Never);
     }
 
     [TestCleanup]
@@ -44,6 +57,7 @@ public class BroadlinkCommandServiceTests
         MockDefinitionService.Verify();
         MockInitializeActivity.Verify();
         MockPersistSettings.Verify();
+        MockModalMessageService.Verify();
     }
 
     [TestMethod]
@@ -94,7 +108,7 @@ public class BroadlinkCommandServiceTests
 
         MockDefinitionService
             .Setup(x => x.RemoteRoot)
-            .Returns(new AdaptiveRemote.Models.LayoutGroup("ROOT", [new AdaptiveRemote.Models.IRCommand(commandName)]));
+            .Returns(new LayoutGroup("ROOT", [new IRCommand(commandName)]));
 
         IRDataSettings irData = new() { [commandName] = base64Data };
         IScopedLifecycle sut = CreateSut(irData);
@@ -109,7 +123,7 @@ public class BroadlinkCommandServiceTests
 
         // Assert
         resultTask.Should().BeComplete(because: "InitializeAsync should complete with programmed command");
-        AdaptiveRemote.Models.IRCommand command = MockDefinitionService.Object.GetElement<AdaptiveRemote.Models.IRCommand>();
+        IRCommand command = MockDefinitionService.Object.GetElement<IRCommand>();
         Assert.IsTrue(command.IsEnabled, "Programmed command should be enabled");
         Assert.IsNotNull(command.ExecuteAsync, "Programmed command should have an execute handler");
 
@@ -130,7 +144,7 @@ public class BroadlinkCommandServiceTests
 
         MockDefinitionService
             .Setup(x => x.RemoteRoot)
-            .Returns(new AdaptiveRemote.Models.LayoutGroup("ROOT", [new AdaptiveRemote.Models.IRCommand(commandName)]));
+            .Returns(new LayoutGroup("ROOT", [new IRCommand(commandName)]));
 
         IScopedLifecycle sut = CreateSut(new IRDataSettings()); // empty - no data for "Mute"
 
@@ -144,7 +158,7 @@ public class BroadlinkCommandServiceTests
 
         // Assert
         resultTask.Should().BeComplete(because: "InitializeAsync should complete with unprogrammed command");
-        AdaptiveRemote.Models.IRCommand command = MockDefinitionService.Object.GetElement<AdaptiveRemote.Models.IRCommand>();
+        IRCommand command = MockDefinitionService.Object.GetElement<IRCommand>();
         Assert.IsFalse(command.IsEnabled, "Unprogrammed command should remain disabled");
 
         MockLogger.VerifyMessages(messageLogger =>
@@ -161,7 +175,7 @@ public class BroadlinkCommandServiceTests
     {
         // Arrange
         const string commandName = "Power";
-        AdaptiveRemote.Models.IRCommand command = SetupAndInitializeWithCommand(commandName);
+        IRCommand command = SetupAndInitializeWithCommand(commandName);
 
         // Assert
         Assert.IsNotNull(command.ProgramAsync, "All IR commands should have a ProgramAsync handler");
@@ -185,11 +199,12 @@ public class BroadlinkCommandServiceTests
         string expectedSettingKey = $"IRData:{commandName}";
 
         BroadlinkSettings settings = new() { LearnPollInterval = 0 };
-        AdaptiveRemote.Models.IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
+        IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
 
         Expect_Connection_EnterLearningMode();
         Expect_Connection_CheckLearnedData(null, learnedData);
         Expect_PersistSettings_Set(expectedSettingKey, expectedBase64);
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
 
         // Act
         Task programTask = command.ProgramAsync!(default);
@@ -222,12 +237,13 @@ public class BroadlinkCommandServiceTests
 
         // Start with no IR data so the command starts disabled
         BroadlinkSettings settings = new() { LearnPollInterval = 0 };
-        AdaptiveRemote.Models.IRCommand command = SetupAndInitializeWithCommand(commandName, irData: new IRDataSettings(), settings: settings);
+        IRCommand command = SetupAndInitializeWithCommand(commandName, irData: new IRDataSettings(), settings: settings);
         Assert.IsFalse(command.IsEnabled, "Command should start disabled without IR data");
 
         Expect_Connection_EnterLearningMode();
         Expect_Connection_CheckLearnedData(null, learnedData);
         Expect_PersistSettings_Set($"IRData:{commandName}", expectedBase64);
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
 
         // Act
         Task programTask = command.ProgramAsync!(default);
@@ -253,12 +269,14 @@ public class BroadlinkCommandServiceTests
         // Arrange
         const string commandName = "Mute";
         BroadlinkSettings settings = new() { LearnPollInterval = 0 };
-        AdaptiveRemote.Models.IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
+        IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
 
         CancellationTokenSource cts = new();
         MockConnection
             .Setup(x => x.EnterLearningModeAsync(It.IsAny<CancellationToken>()))
             .WithExpectedCancellation(throwWhenCancelled: true);
+
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
 
         // Act
         Task programTask = command.ProgramAsync!(cts.Token);
@@ -286,7 +304,7 @@ public class BroadlinkCommandServiceTests
         // Arrange
         const string commandName = "Mute";
         BroadlinkSettings settings = new() { LearnPollInterval = 0 };
-        AdaptiveRemote.Models.IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
+        IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
 
         CancellationTokenSource cts = new();
 
@@ -294,6 +312,8 @@ public class BroadlinkCommandServiceTests
         MockConnection
             .Setup(x => x.CheckLearnedDataAsync(It.IsAny<CancellationToken>()))
             .WithExpectedCancellation(throwWhenCancelled: true);
+
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
 
         // Act
         Task programTask = command.ProgramAsync!(cts.Token);
@@ -322,13 +342,15 @@ public class BroadlinkCommandServiceTests
         // Arrange
         const string commandName = "Power";
         BroadlinkSettings settings = new() { LearnPollInterval = 0 };
-        AdaptiveRemote.Models.IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
+        IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
 
         BroadlinkException expectedException = new("Device is offline");
         MockConnection
             .Setup(x => x.EnterLearningModeAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(expectedException)
             .Verifiable(Times.Once);
+
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
 
         // Act
         Task programTask = command.ProgramAsync!(default);
@@ -355,9 +377,10 @@ public class BroadlinkCommandServiceTests
         // Arrange
         const string commandName = "Power";
         BroadlinkSettings settings = new() { LearnPollInterval = 0 };
-        AdaptiveRemote.Models.IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
+        IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
 
         Expect_Connection_EnterLearningMode();
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
 
         BroadlinkException expectedException = new("Read error");
         MockConnection
@@ -385,11 +408,11 @@ public class BroadlinkCommandServiceTests
         });
     }
 
-    private AdaptiveRemote.Models.IRCommand SetupAndInitializeWithCommand(string commandName, IRDataSettings? irData = null, BroadlinkSettings? settings = null)
+    private IRCommand SetupAndInitializeWithCommand(string commandName, IRDataSettings? irData = null, BroadlinkSettings? settings = null)
     {
         MockDefinitionService
             .Setup(x => x.RemoteRoot)
-            .Returns(new AdaptiveRemote.Models.LayoutGroup("ROOT", [new AdaptiveRemote.Models.IRCommand(commandName)]));
+            .Returns(new LayoutGroup("ROOT", [new IRCommand(commandName)]));
 
         IScopedLifecycle sut = CreateSut(irData, settings);
 
@@ -399,7 +422,7 @@ public class BroadlinkCommandServiceTests
         Expect_InitializeActivity_Description("Connecting to Broadlink device");
 
         sut.InitializeAsync(InitializeActivity, default);
-        return MockDefinitionService.Object.GetElement<AdaptiveRemote.Models.IRCommand>();
+        return MockDefinitionService.Object.GetElement<IRCommand>();
     }
 
     private void Expect_IDeviceLocator_FindDevice(string ip, short deviceType, string mac, bool isLocked = false)
@@ -424,6 +447,16 @@ public class BroadlinkCommandServiceTests
         => MockConnection
             .Setup(x => x.EnterLearningModeAsync(It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior()
+            .Verifiable(Times.Once);
+
+    private void Expect_ModalMessageService_ShowMessage(string expectedMessage)
+        => MockModalMessageService
+            .Setup(x => x.ShowMessageAsync(expectedMessage, It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Returns(delegate(string message, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
+            {
+                Assert.AreEqual(expectedMessage, message, "Modal message should have the expected text");
+                return action(ct);
+            })
             .Verifiable(Times.Once);
 
     private void Expect_Connection_CheckLearnedData(params byte[]?[] returnSequence)

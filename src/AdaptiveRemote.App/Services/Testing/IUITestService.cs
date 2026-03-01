@@ -62,4 +62,13 @@ public partial interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The text content of the first matching element, or null if not found or not visible.</returns>
     Task<string?> GetTextFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Checks whether the button with the given label has been programmed (has IR data).
+    /// This reflects the <c>data-programmed</c> attribute set by the <c>ProgramButton</c> component.
+    /// </summary>
+    /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>True if the button is marked as programmed; false otherwise.</returns>
+    Task<bool> IsButtonProgrammedAsync(string label, CancellationToken cancellationToken);
 }

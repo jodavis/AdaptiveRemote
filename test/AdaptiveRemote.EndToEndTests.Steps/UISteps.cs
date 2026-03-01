@@ -25,6 +25,18 @@ public class UISteps : StepsBase
         Assert.IsTrue(Host.UI.WaitForButtonEnabled(buttonLabel, enabled: false), "Button {0} was not disabled", buttonLabel);
     }
 
+    [Then(@"I should see the {string} button is programmed")]
+    public void ThenIShouldSeeTheButtonIsProgrammed(string buttonLabel)
+    {
+        Assert.IsTrue(Host.UI.WaitForButtonProgrammed(buttonLabel, programmed: true), "Button '{0}' was not programmed", buttonLabel);
+    }
+
+    [Then(@"I should see the {string} button is not programmed")]
+    public void ThenIShouldSeeTheButtonIsNotProgrammed(string buttonLabel)
+    {
+        Assert.IsTrue(Host.UI.WaitForButtonProgrammed(buttonLabel, programmed: false), "Button '{0}' was unexpectedly programmed", buttonLabel);
+    }
+
     [When(@"I click on the text {string}")]
     public void WhenIClickOnTheText(string text)
     {
@@ -35,5 +47,11 @@ public class UISteps : StepsBase
     public void ThenIShouldSeeAModalMessageContaining(string expectedText)
     {
         Host.UI.WaitForModalMessageContaining(expectedText);
+    }
+
+    [Then(@"I should not see a modal message")]
+    public void ThenIShouldNotSeeAModalMessage()
+    {
+        Host.UI.WaitForNoModalMessage();
     }
 }

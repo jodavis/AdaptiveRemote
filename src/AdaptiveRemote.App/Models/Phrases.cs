@@ -28,6 +28,8 @@ internal static class Phrases
     public static string Cleanup_CleaningUp(string service) => $"Cleaning up {service}";
     public static string Cleanup_ShuttingDown => "Shutting down...";
 
+    public static string Broadlink_ProgrammingCommand(string command) => $"Programming '{command}': point your remote at the Broadlink device and press {command}.";
+
     public static string Ellipsis(string activity) => $"{activity}...";
     public static string ErrorWhile(string activity) => $"Error while {activity}";
 

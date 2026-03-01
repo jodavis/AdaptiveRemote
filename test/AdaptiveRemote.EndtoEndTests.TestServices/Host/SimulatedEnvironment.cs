@@ -22,6 +22,12 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         ["VolumeUp"] = [0x05, 0x06, 0x07, 0x08],
     };
 
+    /// <summary>
+    /// IR data returned when a test simulates a user pressing a physical remote button
+    /// during the Broadlink learning sequence.
+    /// </summary>
+    private static readonly byte[] _newlyLearnedIrData = [0xAA, 0xBB, 0xCC, 0xDD];
+
     private readonly ISimulatedTiVoDevice _tivo;
     private readonly ISimulatedBroadlinkDevice _broadlink;
     private readonly AdaptiveRemoteHost.Builder _hostBuilder;
@@ -67,6 +73,9 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, byte[]> TestIrPayloads => _testIrPayloads;
+
+    /// <inheritdoc/>
+    public byte[] NewlyLearnedIrData => _newlyLearnedIrData;
 
     public AdaptiveRemoteHost Host
     {

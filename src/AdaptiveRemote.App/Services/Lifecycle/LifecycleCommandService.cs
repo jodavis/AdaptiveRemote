@@ -30,6 +30,7 @@ internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
             ,
             "Learn" => delegate (CancellationToken _)
             {
+                _lifecycleView.ProgrammingCancellation = new CancellationTokenSource();
                 _lifecycleView.IsProgrammingMode = true;
                 return Task.CompletedTask;
             }
@@ -40,10 +41,16 @@ internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
     protected override Command.ExecuteDelegate? CreateProgramHandler(LifecycleCommand command)
         => command.Name switch
         {
-            "Learn" => delegate (CancellationToken _)
+            "Learn" => async delegate (CancellationToken _)
             {
                 _lifecycleView.IsProgrammingMode = false;
-                return Task.CompletedTask;
+                CancellationTokenSource? cts = _lifecycleView.ProgrammingCancellation;
+                _lifecycleView.ProgrammingCancellation = null;
+                if (cts is not null)
+                {
+                    await cts.CancelAsync();
+                    cts.Dispose();
+                }
             }
             ,
             _ => null

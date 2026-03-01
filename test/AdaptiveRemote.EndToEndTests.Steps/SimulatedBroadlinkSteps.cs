@@ -88,4 +88,68 @@ public class SimulatedBroadlinkSteps : StepsBase
 
         Logger.LogInformation("IR payload for '{CommandName}' matches configured test payload ({PayloadLength} bytes)", commandName, expectedPayload!.Length);
     }
+
+    [Then(@"the Broadlink device should be in learning mode")]
+    public void ThenTheBroadlinkDeviceShouldBeInLearningMode()
+    {
+        ISimulatedBroadlinkDevice? device = Environment.Broadlink;
+        Assert.IsNotNull(device, "Broadlink device is not running");
+
+        bool entered = device.WaitForLearningMode(timeoutInSeconds: 10);
+
+        Assert.IsTrue(entered, "Broadlink device did not enter learning mode within 10 seconds");
+        Logger.LogInformation("Broadlink device is in learning mode");
+    }
+
+    [When(@"I send an IR signal to the Broadlink device")]
+    public void WhenISendAnIRSignalToTheBroadlinkDevice()
+    {
+        ISimulatedBroadlinkDevice? device = Environment.Broadlink;
+        Assert.IsNotNull(device, "Broadlink device is not running");
+
+        // Use a fixed test payload for the simulated IR signal
+        byte[] learnedData = Environment.NewlyLearnedIrData;
+        device.ProvideLearnedData(learnedData);
+
+        Logger.LogInformation("Simulated IR signal sent to Broadlink device ({Length} bytes)", learnedData.Length);
+    }
+
+    [Then(@"the recorded Broadlink packet's raw payload should match the newly learned data")]
+    public void ThenTheRecordedBroadlinkPacketPayloadShouldMatchNewlyLearnedData()
+    {
+        ISimulatedBroadlinkDevice? device = Environment.Broadlink;
+        Assert.IsNotNull(device, "Broadlink device is not running");
+
+        RecordedPacket? irPacket = device.GetFirstPacketWithIrData();
+        Assert.IsNotNull(irPacket, "No packet with IR payload was recorded");
+
+        CollectionAssert.AreEqual(
+            Environment.NewlyLearnedIrData,
+            irPacket.RawPayload,
+            "IR payload does not match the newly learned data");
+
+        Logger.LogInformation("IR payload matches newly learned data ({Length} bytes)", Environment.NewlyLearnedIrData.Length);
+    }
+
+    [When(@"the Broadlink device simulates a device error")]
+    public void WhenTheBroadlinkDeviceSimulatesADeviceError()
+    {
+        ISimulatedBroadlinkDevice? device = Environment.Broadlink;
+        Assert.IsNotNull(device, "Broadlink device is not running");
+
+        // Simulate device offline error code
+        device.SimulateNextCheckError(-3);
+
+        Logger.LogInformation("Broadlink device configured to return error on next CheckLearnedData poll");
+    }
+
+    [When(@"I clear the Broadlink recorded packets")]
+    public void WhenIClearTheBroadlinkRecordedPackets()
+    {
+        ISimulatedBroadlinkDevice? device = Environment.Broadlink;
+        Assert.IsNotNull(device, "Broadlink device is not running");
+
+        device.ClearRecordedPackets();
+        Logger.LogInformation("Cleared Broadlink recorded packets");
+    }
 }

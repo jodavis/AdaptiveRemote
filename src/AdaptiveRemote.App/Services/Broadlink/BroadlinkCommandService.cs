@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.Models;
+using AdaptiveRemote.Services.ModalMessages;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -11,6 +12,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     private readonly IOptionsSnapshot<IRDataSettings> _irDataSettings;
     private readonly IOptions<BroadlinkSettings> _broadlinkSettings;
     private readonly IPersistSettings _persistSettings;
+    private readonly IModalMessageService _modalMessageService;
 
     private IDeviceConnection? _connection;
 
@@ -21,6 +23,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         IOptions<BroadlinkSettings> broadlinkSettings,
         IPersistSettings persistSettings,
         IRemoteDefinitionService definitionService,
+        IModalMessageService modalMessageService,
         ILogger<BroadlinkCommandService> logger)
         : base("Broadlink IR Commands", definitionService, logger)
     {
@@ -29,6 +32,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         _irDataSettings = irDataSettings;
         _broadlinkSettings = broadlinkSettings;
         _persistSettings = persistSettings;
+        _modalMessageService = modalMessageService;
     }
 
     public override async Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
@@ -67,37 +71,41 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     }
 
     protected override Command.ExecuteDelegate? CreateProgramHandler(IRCommand command)
-        => async cancellationToken =>
+        => cancellationToken =>
         {
             IDeviceConnection connection = _connection
                 ?? throw new InvalidOperationException($"Cannot program {command}: the Broadlink service is not connected.");
 
-            Logger.BroadlinkCommandService_EnteringLearningMode(command);
-            await connection.EnterLearningModeAsync(cancellationToken);
-
+            string message = Phrases.Broadlink_ProgrammingCommand(command.Label);
             TimeSpan pollInterval = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnPollInterval);
 
-            // Poll indefinitely: the loop exits when data is received (early return),
-            // the cancellation token fires (OperationCanceledException), or the device
-            // times out in learning mode and throws a BroadlinkException.
-            while (true)
+            return _modalMessageService.ShowMessageAsync(message, async ct =>
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                Logger.BroadlinkCommandService_EnteringLearningMode(command);
+                await connection.EnterLearningModeAsync(ct);
 
-                Logger.BroadlinkCommandService_PollingForLearnedData(command);
-                byte[]? data = await connection.CheckLearnedDataAsync(cancellationToken);
-
-                if (data is not null)
+                // Poll indefinitely: the loop exits when data is received (early return),
+                // the cancellation token fires (OperationCanceledException), or the device
+                // times out in learning mode and throws a BroadlinkException.
+                while (true)
                 {
-                    Logger.BroadlinkCommandService_LearnedDataReceived(command, data.Length);
-                    string base64Data = Convert.ToBase64String(data);
-                    _persistSettings.Set($"IRData:{command.Name}", base64Data);
-                    command.ExecuteAsync = CreateWrappedHandler(command, ct => connection.SendDataAsync(data, ct));
-                    command.IsEnabled = true;
-                    return;
-                }
+                    ct.ThrowIfCancellationRequested();
 
-                await Task.Delay(pollInterval, cancellationToken);
-            }
+                    Logger.BroadlinkCommandService_PollingForLearnedData(command);
+                    byte[]? data = await connection.CheckLearnedDataAsync(ct);
+
+                    if (data is not null)
+                    {
+                        Logger.BroadlinkCommandService_LearnedDataReceived(command, data.Length);
+                        string base64Data = Convert.ToBase64String(data);
+                        _persistSettings.Set($"IRData:{command.Name}", base64Data);
+                        command.ExecuteAsync = CreateWrappedHandler(command, ct2 => connection.SendDataAsync(data, ct2));
+                        command.IsEnabled = true;
+                        return;
+                    }
+
+                    await Task.Delay(pollInterval, ct);
+                }
+            }, cancellationToken: cancellationToken);
         };
 }

@@ -1,12 +1,16 @@
 ﻿@inherits CommandButtonBase
+@inject Models.LifecycleView LifecycleView
 
-<button class="@CssClasses" id="@ID" disabled=@(!IsEnabled) @onclick="Invoke">@Label</button>
+<button class="@CssClasses" id="@ID" disabled=@(!IsEnabled) data-programmed="@IsProgrammed" @onclick="Invoke">@Label</button>
 
 @code {
     protected override bool IsEnabled => Command?.ProgramAsync is not null;
 
+    private bool IsProgrammed => Command?.IsEnabled ?? false;
+
     protected override void Invoke()
     {
-        Command?.ProgramAsync?.Invoke(CancellationToken.None);
+        CancellationToken token = LifecycleView.ProgrammingCancellation?.Token ?? CancellationToken.None;
+        Command?.ProgramAsync?.Invoke(token);
     }
 }

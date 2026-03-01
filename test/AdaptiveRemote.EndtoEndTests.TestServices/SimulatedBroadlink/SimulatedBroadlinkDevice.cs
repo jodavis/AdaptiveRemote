@@ -17,6 +17,14 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
     private const int AuthenticateCommand = 0x65;
     private const int SendDataCommand = 0x6A;
 
+    // Sub-commands within the 0x6A packet type
+    private const int SubCommandSendData = 0x2;
+    private const int SubCommandEnterLearning = 0x3;
+    private const int SubCommandCheckLearnedData = 0x4;
+
+    // Offset of the sub-command int within the decrypted payload
+    private const int SubCommandOffset = 2;
+
     private readonly ILogger _logger;
     private readonly UdpClient _udpClient;
     private readonly PhysicalAddress _macAddress;
@@ -27,6 +35,12 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
     private short _deviceId;
     private BroadlinkEncryption? _encryption;
     private bool _disposed;
+
+    // Learning mode state
+    private volatile bool _isInLearningMode;
+    private byte[]? _pendingLearnedData;
+    private short? _pendingCheckError;
+    private readonly object _learningLock = new();
 
     internal SimulatedBroadlinkDevice(int port, ILogger logger)
     {
@@ -50,6 +64,31 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
 
     /// <inheritdoc/>
     public int Port { get; }
+
+    /// <inheritdoc/>
+    public bool IsInLearningMode => _isInLearningMode;
+
+    /// <inheritdoc/>
+    public void ProvideLearnedData(byte[] data)
+    {
+        lock (_learningLock)
+        {
+            _pendingLearnedData = data;
+        }
+
+        _logger.LogInformation("SimulatedBroadlinkDevice: learned data queued ({Length} bytes)", data.Length);
+    }
+
+    /// <inheritdoc/>
+    public void SimulateNextCheckError(short errorCode)
+    {
+        lock (_learningLock)
+        {
+            _pendingCheckError = errorCode;
+        }
+
+        _logger.LogInformation("SimulatedBroadlinkDevice: next CheckLearnedData will return error code {ErrorCode}", errorCode);
+    }
 
     /// <inheritdoc/>
     public IReadOnlyList<RecordedMessage> GetRecordedMessages()
@@ -215,7 +254,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
                 break;
 
             case SendDataCommand:
-                await HandleSendDataAsync(packet, remoteEndPoint);
+                await HandleSendDataCommandAsync(packet, remoteEndPoint);
                 break;
 
             default:
@@ -274,11 +313,9 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         });
     }
 
-    private async Task HandleSendDataAsync(DecodedPacket packet, IPEndPoint remoteEndPoint)
+    private async Task HandleSendDataCommandAsync(DecodedPacket packet, IPEndPoint remoteEndPoint)
     {
-        _logger.LogInformation("Handling send data command");
-
-        // Decrypt the payload
+        // Decrypt the payload to determine the sub-command
         byte[] decryptedPayload;
         try
         {
@@ -290,6 +327,37 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
             RecordMalformedPacket(remoteEndPoint, "Decryption failed");
             return;
         }
+
+        // Read sub-command from offset 2 (after the 2-byte CommandAndDataLength)
+        int subCommand = decryptedPayload.Length >= SubCommandOffset + 4
+            ? BitConverter.ToInt32(decryptedPayload, SubCommandOffset)
+            : -1;
+
+        _logger.LogInformation("Handling 0x6A packet with sub-command 0x{SubCommand:X}", subCommand);
+
+        switch (subCommand)
+        {
+            case SubCommandSendData:
+                await HandleSendDataAsync(packet, decryptedPayload, remoteEndPoint);
+                break;
+
+            case SubCommandEnterLearning:
+                await HandleEnterLearningAsync(packet, remoteEndPoint);
+                break;
+
+            case SubCommandCheckLearnedData:
+                await HandleCheckLearnedDataAsync(packet, remoteEndPoint);
+                break;
+
+            default:
+                _logger.LogWarning("Unknown 0x6A sub-command 0x{SubCommand:X}", subCommand);
+                break;
+        }
+    }
+
+    private async Task HandleSendDataAsync(DecodedPacket packet, byte[] decryptedPayload, IPEndPoint remoteEndPoint)
+    {
+        _logger.LogInformation("Handling send data command");
 
         // Extract IR data from the command payload
         // Format: [length:2][command:4][data:...]
@@ -331,6 +399,136 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         await _udpClient.SendAsync(response, response.Length, remoteEndPoint);
 
         _logger.LogInformation("Send data command complete, IR payload: {PayloadSize} bytes", irData?.Length ?? 0);
+    }
+
+    private async Task HandleEnterLearningAsync(DecodedPacket packet, IPEndPoint remoteEndPoint)
+    {
+        _logger.LogInformation("Handling enter learning mode command");
+
+        lock (_learningLock)
+        {
+            _isInLearningMode = true;
+            _pendingLearnedData = null; // Clear any previous learned data
+        }
+
+        // Record the packet
+        RecordPacket(new RecordedPacket
+        {
+            ReceivedAt = DateTimeOffset.UtcNow,
+            IsInbound = true,
+            PacketType = SendDataCommand,
+            DebugDescription = "Enter learning mode request"
+        });
+
+        // Respond with success
+        byte[] responsePayload = _encryption!.Encrypt(Array.Empty<byte>());
+        byte[] response = BroadlinkPacketEncoder.EncodeResponse(
+            DefaultDeviceType,
+            SendDataCommand,
+            packet.MessageCount,
+            packet.HostAddress,
+            _deviceId,
+            responsePayload,
+            errorCode: 0);
+
+        await _udpClient.SendAsync(response, response.Length, remoteEndPoint);
+
+        _logger.LogInformation("Enter learning mode complete");
+    }
+
+    private async Task HandleCheckLearnedDataAsync(DecodedPacket packet, IPEndPoint remoteEndPoint)
+    {
+        _logger.LogInformation("Handling check learned data command");
+
+        byte[]? learnedData;
+        short? errorCode;
+        lock (_learningLock)
+        {
+            errorCode = _pendingCheckError;
+            if (errorCode is not null)
+            {
+                _pendingCheckError = null;
+                _isInLearningMode = false;
+                learnedData = null;
+            }
+            else
+            {
+                learnedData = _pendingLearnedData;
+                if (learnedData is not null)
+                {
+                    _pendingLearnedData = null;
+                    _isInLearningMode = false;
+                }
+            }
+        }
+
+        // Record the packet
+        RecordPacket(new RecordedPacket
+        {
+            ReceivedAt = DateTimeOffset.UtcNow,
+            IsInbound = true,
+            PacketType = SendDataCommand,
+            DebugDescription = errorCode is not null
+                ? $"Check learned data (simulated error: {errorCode})"
+                : learnedData is not null
+                    ? $"Check learned data (data available: {learnedData.Length} bytes)"
+                    : "Check learned data (no data yet)"
+        });
+
+        if (errorCode is not null)
+        {
+            // Return the simulated error code
+            byte[] emptyPayload = _encryption!.Encrypt(Array.Empty<byte>());
+            byte[] errorResponse = BroadlinkPacketEncoder.EncodeResponse(
+                DefaultDeviceType,
+                SendDataCommand,
+                packet.MessageCount,
+                packet.HostAddress,
+                _deviceId,
+                emptyPayload,
+                errorCode: errorCode.Value);
+
+            await _udpClient.SendAsync(errorResponse, errorResponse.Length, remoteEndPoint);
+            _logger.LogInformation("Check learned data: returned simulated error code {ErrorCode}", errorCode);
+            return;
+        }
+
+        if (learnedData is null)
+        {
+            // No data yet: respond with error code -1 (app should keep polling)
+            byte[] emptyPayload = _encryption!.Encrypt(Array.Empty<byte>());
+            byte[] notReadyResponse = BroadlinkPacketEncoder.EncodeResponse(
+                DefaultDeviceType,
+                SendDataCommand,
+                packet.MessageCount,
+                packet.HostAddress,
+                _deviceId,
+                emptyPayload,
+                errorCode: -1);
+
+            await _udpClient.SendAsync(notReadyResponse, notReadyResponse.Length, remoteEndPoint);
+
+            _logger.LogInformation("Check learned data: no data available, returned error code -1");
+            return;
+        }
+
+        // Data available: build LearnedDataResponsePayload (IR data at offset 0x04)
+        byte[] responseData = new byte[4 + learnedData.Length];
+        Array.Copy(learnedData, 0, responseData, 4, learnedData.Length);
+
+        byte[] encryptedResponseData = _encryption!.Encrypt(responseData);
+        byte[] dataResponse = BroadlinkPacketEncoder.EncodeResponse(
+            DefaultDeviceType,
+            SendDataCommand,
+            packet.MessageCount,
+            packet.HostAddress,
+            _deviceId,
+            encryptedResponseData,
+            errorCode: 0);
+
+        await _udpClient.SendAsync(dataResponse, dataResponse.Length, remoteEndPoint);
+
+        _logger.LogInformation("Check learned data: returned {Length} bytes of learned IR data", learnedData.Length);
     }
 
     private void RecordPacket(RecordedPacket packet)

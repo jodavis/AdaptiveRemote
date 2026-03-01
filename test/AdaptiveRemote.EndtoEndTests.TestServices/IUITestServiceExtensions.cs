@@ -182,4 +182,42 @@ public static class IUITestServiceExtensions
             }
         }
     }
+
+    /// <summary>
+    /// Waits until no modal message is visible in the UI.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <exception cref="TimeoutException">Thrown when a modal message is still visible after the timeout.</exception>
+    public static void WaitForNoModalMessage(this IUITestService service, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+    {
+        const string modalCssClass = "conversation-speaking-message";
+
+        bool dismissed = WaitHelpers.ExecuteWithRetries(() =>
+        {
+            string? text = WaitHelpers.WaitForAsyncTask(
+                ct => service.GetTextFromElementWithCssClassAsync(modalCssClass, ct),
+                timeoutInSeconds);
+
+            return text is null;
+        }, timeoutInSeconds);
+
+        if (!dismissed)
+        {
+            throw new TimeoutException($"Modal message was still visible after {timeoutInSeconds} seconds.");
+        }
+    }
+
+    /// <summary>
+    /// Waits until the button with the given label reaches the desired programmed state.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="label">The exact visible text of the button.</param>
+    /// <param name="programmed">Whether to wait for programmed (<c>true</c>) or unprogrammed (<c>false</c>) state.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>True if the button reaches the desired state within the timeout; false otherwise.</returns>
+    public static bool WaitForButtonProgrammed(this IUITestService service, string label, bool programmed, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => WaitHelpers.ExecuteWithRetries(
+            async ct => await service.IsButtonProgrammedAsync(label, ct) == programmed,
+            TimeSpan.FromSeconds(timeoutInSeconds));
 }

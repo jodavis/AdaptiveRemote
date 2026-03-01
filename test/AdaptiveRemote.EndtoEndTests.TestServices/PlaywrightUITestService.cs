@@ -181,6 +181,21 @@ public class PlaywrightUITestService : IUITestService
         }
     }
 
+    public async Task<bool> IsButtonProgrammedAsync(string label, CancellationToken cancellationToken = default)
+    {
+        ILocator locator = GetButtonLocatorByLabel(label);
+
+        try
+        {
+            string? programmed = await locator.GetAttributeAsync("data-programmed");
+            return string.Equals(programmed, "true", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public void Dispose()
     {
         if (_browserProvider is IDisposable disposable)

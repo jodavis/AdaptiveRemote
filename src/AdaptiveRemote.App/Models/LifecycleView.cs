@@ -82,4 +82,10 @@ public class LifecycleView : MvvmObject
         get => GetValue(IsProgrammingModeProperty);
         set => SetValue(IsProgrammingModeProperty, value);
     }
+
+    /// <summary>
+    /// A <see cref="CancellationTokenSource"/> that is cancelled when programming mode is exited.
+    /// Created when programming mode is entered and cancelled when it is exited.
+    /// </summary>
+    internal CancellationTokenSource? ProgrammingCancellation { get; set; }
 }
