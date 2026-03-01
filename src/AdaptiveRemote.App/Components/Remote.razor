@@ -1,6 +1,7 @@
 ﻿@inject Services.IRemoteDefinitionService RemoteDefinitions
+@inject Models.ModalMessageView ModalMessageView
 
-<ModalMessageUI />
+<ModalMessageUI ViewModel="@ModalMessageView" />
 <RemoteLayout LayoutElement="@RemoteDefinitions.RemoteRoot" ProgramMode="@ProgramMode" />
 
 @code {

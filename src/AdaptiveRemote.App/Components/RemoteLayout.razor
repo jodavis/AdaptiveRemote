@@ -3,11 +3,11 @@
     case Models.Command command:
         @if (ProgramMode)
         {
-            <ProgramButton Command="@command" />
+            <ProgramButton ViewModel="@command" />
         }
         else
         {
-            <CommandButton Command="@command" />
+            <CommandButton ViewModel="@command" />
         }
         break;
     case Models.LayoutGroup nestedGroup:

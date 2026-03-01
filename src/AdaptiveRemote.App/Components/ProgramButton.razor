@@ -3,10 +3,10 @@
 <button class="@CssClasses" id="@ID" disabled=@(!IsEnabled) @onclick="Invoke">@Label</button>
 
 @code {
-    protected override bool IsEnabled => Command?.ProgramAsync is not null;
+    protected override bool IsEnabled => ViewModel?.ProgramAsync is not null;
 
     protected override void Invoke()
     {
-        Command?.ProgramAsync?.Invoke(CancellationToken.None);
+        ViewModel?.ProgramAsync?.Invoke(CancellationToken.None);
     }
 }

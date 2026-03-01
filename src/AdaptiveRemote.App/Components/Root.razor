@@ -1,30 +1,22 @@
-@inject Models.LifecycleView ViewModel;
+@inherits Mvvm.MvvmComponent<Models.LifecycleView>
+@inject Models.LifecycleView RootViewModel;
 @inject BlazorAppScope AppScope;
-@implements IDisposable
 
-@if (ViewModel.CurrentPhase == LifecyclePhase.Ready)
+@if (ViewModel?.CurrentPhase == LifecyclePhase.Ready)
 {
     <Remote ProgramMode="@ViewModel.IsProgrammingMode" />
 }
 else
 {
-    <LoadingScreen />
+    <LoadingScreen ViewModel="@ViewModel" />
 }
 
 @code
 {
     protected override void OnInitialized()
     {
-        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        ViewModel = RootViewModel;
 
         base.OnInitialized();
-    }
-
-    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
-        => InvokeAsync(StateHasChanged);
-
-    public void Dispose()
-    {
-        ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
     }
 }
