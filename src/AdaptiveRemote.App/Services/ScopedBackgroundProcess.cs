@@ -94,14 +94,24 @@ internal abstract class ScopedBackgroundProcess : IScopedLifecycle
         return task;
     }
 
-    private Task StartExecutingWithInitializationCancellationAsync(CancellationToken stopToken, CancellationToken cancellationToken)
+    // This method is `async Task` (rather than returning the Task from ExecuteAsync directly)
+    // so that the `using` block properly disposes `linked` after ExecuteAsync completes.
+    // Exception propagation is equivalent: exceptions from ExecuteAsync still propagate to the
+    // caller (StartExecutingOnWorkerThreadAsync) as a faulted Task.
+    private async Task StartExecutingWithInitializationCancellationAsync(CancellationToken stopToken, CancellationToken cancellationToken)
     {
-        CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(stopToken);
+        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(stopToken);
 
+        // Apply initializationToken cancellation only during the synchronous startup phase.
+        // Once ExecuteAsync has started (returned a Task at its first await), the registration
+        // is removed so that further initialization cancellation does not stop the running service.
+        Task executeTask;
         using (cancellationToken.Register(linked.Cancel))
         {
-            return ExecuteAsync(linked.Token);
+            executeTask = ExecuteAsync(linked.Token);
         }
+
+        await executeTask;
     }
 
     public virtual async Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken)

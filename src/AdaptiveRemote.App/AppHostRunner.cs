@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote;
 
@@ -34,6 +35,9 @@ public abstract class AppHostRunner
         }
         catch (Exception configErrors)
         {
+            acceleratedServices.LoggerFactory
+                .CreateLogger<AppHostRunner>()
+                .LogError(configErrors, "Fatal error during host configuration or startup.");
             acceleratedServices.Controller.SetFatalError(configErrors);
             throw;
         }

@@ -1,4 +1,6 @@
-﻿@if (IsListening)
+﻿@inherits Mvvm.MvvmComponent<Models.ConversationView>
+
+@if (IsListening)
 {
     <div class="conversation-border"><div></div></div>
 }
@@ -13,20 +15,7 @@ else
 }
 
 @code {
-    [Parameter]
-    public Models.ConversationView? ViewModel { get; set; }
-
     private bool IsListening => ViewModel?.IsListening ?? false;
     private string? StatusMessage => ViewModel?.StatusMessage;
     private Action? ToggleListening => ViewModel?.ToggleListening;
-
-    protected override void OnInitialized()
-    {
-        if (ViewModel is not null)
-        {
-            ViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
-        }
-
-        base.OnInitialized();
-    }
 }

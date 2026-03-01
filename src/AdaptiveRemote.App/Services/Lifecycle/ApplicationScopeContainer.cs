@@ -12,34 +12,37 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
     async Task IApplicationScopeProvider.InvokeInScopeAsync(Func<IServiceProvider, CancellationToken, Task> workItem, CancellationToken cancellationToken)
     {
         Task<IApplicationScope> scopeTask;
-        CancellationToken combinedToken;
+        CancellationTokenSource linkedCts;
 
         lock (_lockObject)
         {
             scopeTask = _scopeTcs.Task;
-            combinedToken = CancellationTokenSource.CreateLinkedTokenSource(_stopTokenSource.Token, cancellationToken).Token;
+            linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_stopTokenSource.Token, cancellationToken);
         }
 
-        IApplicationScope scope = await scopeTask;
-
-        Task invokeTask = scope.InvokeInScopeAsync(workItem, combinedToken);
-
-        if (!invokeTask.IsCompletedSuccessfully)
+        using (linkedCts)
         {
-            try
-            {
-                lock (_lockObject)
-                {
-                    _invokeTasks.Add(invokeTask);
-                }
+            IApplicationScope scope = await scopeTask;
 
-                await invokeTask;
-            }
-            finally
+            Task invokeTask = scope.InvokeInScopeAsync(workItem, linkedCts.Token);
+
+            if (!invokeTask.IsCompletedSuccessfully)
             {
-                lock (_lockObject)
+                try
                 {
-                    _invokeTasks.Remove(invokeTask);
+                    lock (_lockObject)
+                    {
+                        _invokeTasks.Add(invokeTask);
+                    }
+
+                    await invokeTask;
+                }
+                finally
+                {
+                    lock (_lockObject)
+                    {
+                        _invokeTasks.Remove(invokeTask);
+                    }
                 }
             }
         }

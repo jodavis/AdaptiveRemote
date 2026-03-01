@@ -1,4 +1,4 @@
-@inject Models.ModalMessageView ModalViewModel
+@inherits Mvvm.MvvmComponent<Models.ModalMessageView>
 
 @if (CurrentMessage is not null)
 {
@@ -6,15 +6,5 @@
 }
 
 @code {
-    private string? CurrentMessage => ModalViewModel?.CurrentMessage;
-
-    protected override void OnInitialized()
-    {
-        if (ModalViewModel is not null)
-        {
-            ModalViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
-        }
-
-        base.OnInitialized();
-    }
+    private string? CurrentMessage => ViewModel?.CurrentMessage;
 }

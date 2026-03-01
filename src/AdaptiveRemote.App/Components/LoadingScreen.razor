@@ -1,14 +1,4 @@
-@inject Models.LifecycleView ViewModel;
+@inherits Mvvm.MvvmComponent<Models.LifecycleView>
 
 <div id="LifecycleTitle"><div>[ [ Adaptive Remote ] ]</div></div>
-<div id="LifecycleTaskDescription">@ViewModel.TaskName</div>
-
-@code
-{
-    protected override void OnInitialized()
-    {
-        ViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
-
-        base.OnInitialized();
-    }
-}
+<div id="LifecycleTaskDescription">@ViewModel?.TaskName</div>

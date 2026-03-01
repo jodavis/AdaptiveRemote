@@ -1,20 +1,21 @@
-@inject Models.LifecycleView ViewModel;
+@inherits Mvvm.MvvmComponent<Models.LifecycleView>
+@inject Models.LifecycleView RootViewModel;
 @inject BlazorAppScope AppScope;
 
-@if (ViewModel.CurrentPhase == LifecyclePhase.Ready)
+@if (ViewModel?.CurrentPhase == LifecyclePhase.Ready)
 {
     <Remote ProgramMode="@ViewModel.IsProgrammingMode" />
 }
 else
 {
-    <LoadingScreen />
+    <LoadingScreen ViewModel="@ViewModel" />
 }
 
 @code
 {
     protected override void OnInitialized()
     {
-        ViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
+        ViewModel = RootViewModel;
 
         base.OnInitialized();
     }
