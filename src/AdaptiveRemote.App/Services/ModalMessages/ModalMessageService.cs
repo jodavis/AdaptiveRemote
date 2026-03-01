@@ -38,9 +38,9 @@ internal sealed class ModalMessageService : IModalMessageService, IDisposable
     {
         await foreach (MessageRequest request in _channel.Reader.ReadAllAsync())
         {
-            View.CurrentMessage = request.Message;
             try
             {
+                View.CurrentMessage = request.Message;
                 await request.Body(request.CancellationToken);
 
                 if (!request.KeepAlive)

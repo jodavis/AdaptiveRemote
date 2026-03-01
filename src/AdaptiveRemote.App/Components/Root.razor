@@ -1,5 +1,6 @@
 @inject Models.LifecycleView ViewModel;
 @inject BlazorAppScope AppScope;
+@implements IDisposable
 
 @if (ViewModel.CurrentPhase == LifecyclePhase.Ready)
 {
@@ -14,8 +15,16 @@ else
 {
     protected override void OnInitialized()
     {
-        ViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
+        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
 
         base.OnInitialized();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
     }
 }

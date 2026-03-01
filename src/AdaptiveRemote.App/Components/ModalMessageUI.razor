@@ -1,4 +1,5 @@
 @inject Models.ModalMessageView ModalViewModel
+@implements IDisposable
 
 @if (CurrentMessage is not null)
 {
@@ -12,9 +13,20 @@
     {
         if (ModalViewModel is not null)
         {
-            ModalViewModel.PropertyChanged += (sender, args) => InvokeAsync(StateHasChanged);
+            ModalViewModel.PropertyChanged += OnModalViewModelPropertyChanged;
         }
 
         base.OnInitialized();
+    }
+
+    private void OnModalViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (ModalViewModel is not null)
+        {
+            ModalViewModel.PropertyChanged -= OnModalViewModelPropertyChanged;
+        }
     }
 }
