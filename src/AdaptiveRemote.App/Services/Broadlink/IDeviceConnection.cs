@@ -22,6 +22,21 @@ internal interface IDeviceConnection
     /// <returns>A Task that completes when the IR signal has been sent</returns>
     Task SendDataAsync(byte[] data, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Puts the device into IR learning mode, ready to capture the next IR signal it receives.
+    /// </summary>
+    /// <returns>A Task that completes when the device has entered learning mode</returns>
+    Task EnterLearningModeAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Checks whether the device has captured an IR signal during learning mode.
+    /// </summary>
+    /// <returns>
+    /// A Task that completes with the captured IR data bytes if an IR signal has been received,
+    /// or <c>null</c> if no signal has been captured yet.
+    /// </returns>
+    Task<byte[]?> CheckLearnedDataAsync(CancellationToken cancellationToken);
+
     internal interface Factory
     {
         /// <summary>
