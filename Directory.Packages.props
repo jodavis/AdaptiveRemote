@@ -31,7 +31,7 @@
     <!-- Test Frameworks -->
     <PackageVersion Include="MSTest" Version="3.1.1" />
     <PackageVersion Include="MSTest.TestAdapter" Version="3.1.1" />
-    <PackageVersion Include="MSTest.TestFramework" Version="3.1.1" />
+    <PackageVersion Include="MSTest.TestFramework" Version="4.1.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Reqnroll" Version="3.3.2" />
     <PackageVersion Include="Reqnroll.MSTest" Version="3.3.2" />
