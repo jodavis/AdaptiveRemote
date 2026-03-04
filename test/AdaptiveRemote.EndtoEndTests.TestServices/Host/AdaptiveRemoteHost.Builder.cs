@@ -31,7 +31,13 @@ public partial class AdaptiveRemoteHost
             return this;
         }
 
-        public AdaptiveRemoteHost Start()
+        public AdaptiveRemoteHost Start(Func<AdaptiveRemoteHostSettings, AdaptiveRemoteHostSettings>? overrideSettings = null)
+        {
+            AdaptiveRemoteHostSettings effectiveSettings = overrideSettings?.Invoke(_settings) ?? _settings;
+            return StartWithSettings(effectiveSettings);
+        }
+
+        private AdaptiveRemoteHost StartWithSettings(AdaptiveRemoteHostSettings _settings)
         {
             if (!File.Exists(_settings.ExePath))
             {
@@ -127,6 +133,12 @@ public partial class AdaptiveRemoteHost
 
                 WaitHelpers.ExecuteWithRetries(async (cancellationToken) =>
                 {
+                    if (process.HasExited)
+                    {
+                        throw new InvalidOperationException(
+                            $"Host process (PID {process.Id}) exited with exit code {process.ExitCode} before the test control endpoint became available.");
+                    }
+
                     try
                     {
                         client = new TcpClient();

@@ -21,17 +21,20 @@ internal class ApplicationLifecycle : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        _logger.ApplicationLifecycle_WaitingForScope();
+
         try
         {
             await _scopeProvider.InvokeInScopeAsync(InitializeLifecycleAsync, stoppingToken);
+            _logger.ApplicationLifecycle_ScopeReleased();
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             // Do nothing, shutdown was requested
         }
-        catch
+        catch (Exception ex)
         {
-            // An error occurred, so stop all the services
+            _logger.ApplicationLifecycle_UnhandledError(ex);
             await CleanUpCurrentContainerAsync(default);
         }
 
