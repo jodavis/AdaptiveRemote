@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Services.Testing;
 using Microsoft.Playwright;
+using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -55,8 +56,9 @@ internal class PlaywrightButtonTestObject : IUIButtonTestObject
     {
         await ValidateLocatorAsync();
 
-        string? programmed = await _locator.GetAttributeAsync("data-programmed");
-        return string.Equals(programmed, "true", StringComparison.OrdinalIgnoreCase);
+        // Check for the btn-programmed CSS class which provides visual distinction
+        return await _locator.EvaluateAsync<bool>(
+            "el => el.classList.contains('btn-programmed')");
     }
 
     public async Task<bool> IsVisibleAsync(CancellationToken cancellationToken = default)

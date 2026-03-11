@@ -32,6 +32,10 @@ body {
   color: #3c3c3c;
   border-color: #555555;
 }
+.btn-primary.btn-programmed {
+  border-color: #00cc44;
+  border-width: 4px;
+}
 div.conversation-border {
   pointer-events: none;
   position: fixed;

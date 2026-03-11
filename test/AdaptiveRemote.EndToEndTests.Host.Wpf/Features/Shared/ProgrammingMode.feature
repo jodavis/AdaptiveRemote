@@ -24,15 +24,13 @@ Scenario: Program a programmable command
 	When I click on the 'Volume Down' button
 	Then I should see a modal message containing "Programming 'Down'"
 	And the Broadlink device should be in learning mode
-	When I send an IR signal to the Broadlink device
+	When I send the IR signal for Volume Down to the Broadlink device
 	Then I should see the 'Volume Down' button is programmed
 	And I should not see a modal message
 	When I click on the 'Learn' button
 	Then I should see the 'Volume Down' button is enabled
-	When I clear the Broadlink recorded packets
-	And I click on the 'Volume Down' button
-	Then I should see the Broadlink device recorded at least one inbound packet
-	And the recorded Broadlink packet's raw payload should match the newly learned data
+	When I click on the 'Volume Down' button
+	Then I should see the Broadlink device sent the IR signal for Volume Down
 	And no Broadlink packets should be marked as malformed
 
 Scenario: Programming a programmable command fails with a device error

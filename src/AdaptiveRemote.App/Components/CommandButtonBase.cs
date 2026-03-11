@@ -22,7 +22,7 @@ public abstract class CommandButtonBase : ComponentBase, IDisposable
 
     protected string CssClasses => string.Join(" ", ComputeCssClasses());
 
-    protected IEnumerable<string> ComputeCssClasses()
+    protected virtual IEnumerable<string> ComputeCssClasses()
     {
         yield return "btn-primary";
 

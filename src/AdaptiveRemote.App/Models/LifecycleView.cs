@@ -84,8 +84,30 @@ public class LifecycleView : MvvmObject
     }
 
     /// <summary>
-    /// A <see cref="CancellationTokenSource"/> that is cancelled when programming mode is exited.
-    /// Created when programming mode is entered and cancelled when it is exited.
+    /// A <see cref="CancellationToken"/> that is cancelled when programming mode is exited.
+    /// Readers use this token to cancel any in-progress programming operation.
+    /// The token is replaced with a new one each time programming mode is entered.
     /// </summary>
-    internal CancellationTokenSource? ProgrammingCancellation { get; set; }
+    internal CancellationToken ProgrammingCancellationToken { get; private set; } = new CancellationToken(canceled: true);
+
+    /// <summary>
+    /// Called by <see cref="AdaptiveRemote.Services.Lifecycle.LifecycleCommandService"/> when programming mode is entered.
+    /// Returns the new <see cref="CancellationTokenSource"/> so the caller can cancel it when mode is exited.
+    /// </summary>
+    internal CancellationTokenSource EnterProgrammingMode()
+    {
+        CancellationTokenSource cts = new();
+        ProgrammingCancellationToken = cts.Token;
+        IsProgrammingMode = true;
+        return cts;
+    }
+
+    /// <summary>
+    /// Called by <see cref="AdaptiveRemote.Services.Lifecycle.LifecycleCommandService"/> when programming mode is exited.
+    /// </summary>
+    internal void ExitProgrammingMode()
+    {
+        ProgrammingCancellationToken = new CancellationToken(canceled: true);
+        IsProgrammingMode = false;
+    }
 }

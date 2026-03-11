@@ -4,7 +4,7 @@ namespace AdaptiveRemote.Models;
 
 /// <summary>
 /// View model for the modal message display. Holds the currently visible message,
-/// updated by <see cref="AdaptiveRemote.Services.ModalMessages.IModalMessageService"/>.
+/// updated by <see cref="AdaptiveRemote.Services.IModalMessageService"/>.
 /// </summary>
 public class ModalMessageView : MvvmObject
 {

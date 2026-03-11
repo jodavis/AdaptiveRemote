@@ -9,6 +9,7 @@ internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ILifecycleViewController _viewController;
     private readonly LifecycleView _lifecycleView;
+    private CancellationTokenSource? _programmingCts;
 
     public LifecycleCommandService(IHostApplicationLifetime applicationLifetime, ILifecycleViewController viewController, LifecycleView lifecycleView, IRemoteDefinitionService remoteDefinition, ILogger<LifecycleCommandService> logger)
         : base("Application Commands", remoteDefinition, logger)
@@ -30,8 +31,7 @@ internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
             ,
             "Learn" => delegate (CancellationToken _)
             {
-                _lifecycleView.ProgrammingCancellation = new CancellationTokenSource();
-                _lifecycleView.IsProgrammingMode = true;
+                _programmingCts = _lifecycleView.EnterProgrammingMode();
                 return Task.CompletedTask;
             }
             ,
@@ -43,9 +43,8 @@ internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
         {
             "Learn" => async delegate (CancellationToken _)
             {
-                _lifecycleView.IsProgrammingMode = false;
-                CancellationTokenSource? cts = _lifecycleView.ProgrammingCancellation;
-                _lifecycleView.ProgrammingCancellation = null;
+                _lifecycleView.ExitProgrammingMode();
+                CancellationTokenSource? cts = Interlocked.Exchange(ref _programmingCts, null);
                 if (cts is not null)
                 {
                     await cts.CancelAsync();

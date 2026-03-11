@@ -34,10 +34,4 @@ public interface ISimulatedEnvironment : IDisposable
     /// Commands not present in this dictionary are not programmed and should be disabled.
     /// </summary>
     IReadOnlyDictionary<string, byte[]> TestIrPayloads { get; }
-
-    /// <summary>
-    /// Gets the IR data that is returned by the simulated device when a test simulates
-    /// a user sending an IR signal during the programming/learning sequence.
-    /// </summary>
-    byte[] NewlyLearnedIrData { get; }
 }

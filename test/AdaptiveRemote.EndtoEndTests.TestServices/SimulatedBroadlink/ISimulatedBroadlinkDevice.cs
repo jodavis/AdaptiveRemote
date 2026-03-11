@@ -1,12 +1,20 @@
-using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
-
 namespace AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 
 /// <summary>
 /// Interface for the simulated Broadlink device, used by tests to verify packet transmission.
 /// </summary>
-public interface ISimulatedBroadlinkDevice : ISimulatedTiVoDevice
+public interface ISimulatedBroadlinkDevice : IDisposable
 {
+    /// <summary>
+    /// Gets the UDP port the device is listening on. Valid while device is running.
+    /// </summary>
+    int Port { get; }
+
+    /// <summary>
+    /// Stops the device and releases resources. Safe to call multiple times.
+    /// </summary>
+    void Stop();
+
     /// <summary>
     /// Gets all packets recorded since the device started or since the last clear.
     /// </summary>

@@ -8,6 +8,6 @@ Scenario: Broadlink receives Power command
 	Then I should see the 'Power' button is enabled
 	When I click on the 'Power' button
 	Then I should see the Broadlink device recorded at least one inbound packet
-	And the recorded Broadlink packet's raw payload should not be empty
+	And I should see the Broadlink device sent the IR signal for Power
 	And no Broadlink packets should be marked as malformed
 	And I should not see any error messages in the logs

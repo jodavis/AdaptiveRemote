@@ -1,6 +1,6 @@
 using AdaptiveRemote.Models;
 
-namespace AdaptiveRemote.Services.ModalMessages;
+namespace AdaptiveRemote.Services;
 
 /// <summary>
 /// Service for displaying modal messages to the user with FIFO queuing support.

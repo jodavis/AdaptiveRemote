@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
@@ -88,26 +87,6 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         }
 
         _logger.LogInformation("SimulatedBroadlinkDevice: next CheckLearnedData will return error code {ErrorCode}", errorCode);
-    }
-
-    /// <inheritdoc/>
-    public IReadOnlyList<RecordedMessage> GetRecordedMessages()
-    {
-        // For compatibility with ISimulatedDevice interface
-        return _recordedPackets
-            .Select(p => new RecordedMessage
-            {
-                Timestamp = p.ReceivedAt,
-                Payload = p.DebugDescription,
-                Incoming = p.IsInbound
-            })
-            .ToList();
-    }
-
-    /// <inheritdoc/>
-    public void ClearRecordedMessages()
-    {
-        ClearRecordedPackets();
     }
 
     /// <inheritdoc/>
