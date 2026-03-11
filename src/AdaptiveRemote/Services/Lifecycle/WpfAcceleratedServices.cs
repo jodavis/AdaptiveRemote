@@ -19,9 +19,9 @@ public class WpfAcceleratedServices : AcceleratedServices
             .GetSection("test")
             .Get<TestingSettings>();
 
-        if (settings?.WebViewRemoteDebuggingPort is int debuggerPort)
+        if (settings?.WebViewDebugging == true)
         {
-            _browserDebugger = new BlazorWebViewDebugger(MainWindow.Browser, debuggerPort);
+            _browserDebugger = new BlazorWebViewDebugger(MainWindow.Browser);
         }
     }
 

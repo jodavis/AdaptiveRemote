@@ -67,10 +67,8 @@ public partial class AdaptiveRemoteHost
 
             AdaptiveRemoteHostSettings settingsWithControlPort = _settings.AddCommandLineArgs($"--test:ControlPort={controlPort}");
 
-            // Configure the WebView debugging port
-            int debuggingPort = GetAvailablePort();
-
-            settingsWithControlPort = settingsWithControlPort.AddCommandLineArgs($"--test:WebViewRemoteDebuggingPort={debuggingPort}");
+            // Configure the WebView debugging
+            settingsWithControlPort = settingsWithControlPort.AddCommandLineArgs($"--test:WebViewDebugging=True");
 
             // Start the host process
             string exePath = Path.GetFullPath(settingsWithControlPort.ExePath);

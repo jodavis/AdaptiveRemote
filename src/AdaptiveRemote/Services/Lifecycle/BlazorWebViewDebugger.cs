@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.AspNetCore.Components.WebView.Wpf;
 
@@ -9,12 +10,13 @@ namespace AdaptiveRemote.Services.Lifecycle;
 /// </summary>
 internal class BlazorWebViewDebugger : IBrowserDebuggerAccess
 {
-    public BlazorWebViewDebugger(BlazorWebView blazorWebView, int debuggerPort)
+    public BlazorWebViewDebugger(BlazorWebView blazorWebView)
     {
-        Port = debuggerPort;
+        Port = 0;
 
         blazorWebView.BlazorWebViewInitializing += (sender, args) =>
         {
+            Port = GetAvailablePort();
             args.EnvironmentOptions = new()
             {
                 AdditionalBrowserArguments = $"--remote-debugging-port={Port}"
@@ -26,5 +28,14 @@ internal class BlazorWebViewDebugger : IBrowserDebuggerAccess
     /// Returns the remote debugging port as an integer (boxed as object).
     /// BlazorWebViewUITestService will unbox this and use it to connect via Playwright.
     /// </summary>
-    public int Port { get; }
+    public int Port { get; private set; }
+
+    private static int GetAvailablePort()
+    {
+        using TcpListener listener = new(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
+    }
 }
