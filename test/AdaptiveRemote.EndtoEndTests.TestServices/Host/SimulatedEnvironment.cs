@@ -97,7 +97,11 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         if (_host is null || !_host.IsRunning)
         {
             _currentLogLocation = _nextLogLocation;
-            _host = _hostBuilder.Start();
+            _host?.Dispose();
+            _host = null;
+            _host = _hostBuilder.Start(_currentLogLocation is not null
+                ? settings => settings.AddCommandLineArgs($"--log:FilePath=\"{_currentLogLocation}\"")
+                : null);
         }
     }
 
@@ -116,9 +120,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         }
     }
 
-    public void SetLogLocation(string logLocation) => _hostBuilder.ConfigureSettings(settings =>
+    public void SetLogLocation(string logLocation)
     {
         _nextLogLocation = logLocation;
-        return settings.AddCommandLineArgs($"--log:FilePath=\"{logLocation}\"");
-    });
+    }
 }
