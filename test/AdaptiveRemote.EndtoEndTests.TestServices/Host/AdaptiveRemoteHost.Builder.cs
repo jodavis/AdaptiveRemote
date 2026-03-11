@@ -42,16 +42,22 @@ public partial class AdaptiveRemoteHost
             return this;
         }
 
-        public AdaptiveRemoteHost Start()
+        public AdaptiveRemoteHost Start(Func<AdaptiveRemoteHostSettings, AdaptiveRemoteHostSettings>? overrideSettings = null)
         {
-            if (!File.Exists(_settings.ExePath))
+            AdaptiveRemoteHostSettings effectiveSettings = overrideSettings?.Invoke(_settings) ?? _settings;
+            return StartWithSettings(effectiveSettings);
+        }
+
+        private AdaptiveRemoteHost StartWithSettings(AdaptiveRemoteHostSettings effectiveSettings)
+        {
+            if (!File.Exists(effectiveSettings.ExePath))
             {
-                Assert.Inconclusive($"Host not found at: {_settings.ExePath}");
+                Assert.Inconclusive($"Host not found at: {effectiveSettings.ExePath}");
             }
 
-            if (!Directory.Exists(_settings.WorkingDirectory))
+            if (!Directory.Exists(effectiveSettings.WorkingDirectory))
             {
-                Assert.Inconclusive($"Working directory not found: {_settings.WorkingDirectory}");
+                Assert.Inconclusive($"Working directory not found: {effectiveSettings.WorkingDirectory}");
             }
 
             ILogger<AdaptiveRemoteHost> logger = _loggerFactory.CreateLogger<AdaptiveRemoteHost>();
@@ -59,7 +65,7 @@ public partial class AdaptiveRemoteHost
             // Configure the test control port
             int controlPort = GetAvailablePort();
 
-            AdaptiveRemoteHostSettings settingsWithControlPort = _settings.AddCommandLineArgs($"--test:ControlPort={controlPort}");
+            AdaptiveRemoteHostSettings settingsWithControlPort = effectiveSettings.AddCommandLineArgs($"--test:ControlPort={controlPort}");
 
             // Configure the WebView debugging port
             int debuggingPort = GetAvailablePort();
@@ -73,14 +79,14 @@ public partial class AdaptiveRemoteHost
             {
                 FileName = exePath,
                 Arguments = settingsWithControlPort.CommandLineArgs,
-                WorkingDirectory = _settings.WorkingDirectory,
+                WorkingDirectory = effectiveSettings.WorkingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = false
             };
 
-            foreach (KeyValuePair<string, string> kvp in _settings.EnvironmentVariables)
+            foreach (KeyValuePair<string, string> kvp in effectiveSettings.EnvironmentVariables)
             {
                 startInfo.Environment[kvp.Key] = kvp.Value;
             }
@@ -138,6 +144,12 @@ public partial class AdaptiveRemoteHost
 
                 WaitHelpers.ExecuteWithRetries(async (cancellationToken) =>
                 {
+                    if (process.HasExited)
+                    {
+                        throw new InvalidOperationException(
+                            $"Host process (PID {process.Id}) exited with exit code {process.ExitCode} before the test control endpoint became available.");
+                    }
+
                     try
                     {
                         client = new TcpClient();
@@ -159,7 +171,7 @@ public partial class AdaptiveRemoteHost
                         return false;
                     }
 
-                }, timeout: _settings.StartupTimeout);
+                }, timeout: effectiveSettings.StartupTimeout);
 
                 if (client is null || rpc is null)
                 {
@@ -169,10 +181,10 @@ public partial class AdaptiveRemoteHost
                         Last error: {ErrorMesssage}
                         """,
                         controlPort,
-                        _settings.StartupTimeout,
+                        effectiveSettings.StartupTimeout,
                         connectionError?.Message);
                     throw new TimeoutException(
-                        $"Failed to connect to test control endpoint on port {controlPort} within {_settings.StartupTimeout}. " +
+                        $"Failed to connect to test control endpoint on port {controlPort} within {effectiveSettings.StartupTimeout}. " +
                         $"Last error: {connectionError?.Message}");
                 }
 
@@ -185,25 +197,25 @@ public partial class AdaptiveRemoteHost
                     logger.LogInformation("Injecting test services...");
                     foreach (Func<ITestEndpoint, CancellationToken, Task> configureService in _configureServices)
                     {
-                        WaitHelpers.WaitForAsyncTask(ct => configureService(testEndpoint, ct), _settings.StartupTimeout);
+                        WaitHelpers.WaitForAsyncTask(ct => configureService(testEndpoint, ct), effectiveSettings.StartupTimeout);
                     }
                     logger.LogInformation("Test services injected");
                 }
 
                 // Signal the host to build and run
                 logger.LogInformation("Signaling host to build and run");
-                WaitHelpers.WaitForAsyncTask(testEndpoint.BuildAndRunHostAsync, _settings.StartupTimeout);
+                WaitHelpers.WaitForAsyncTask(testEndpoint.BuildAndRunHostAsync, effectiveSettings.StartupTimeout);
 
                 // Get the test service provider
                 logger.LogInformation("Getting test service provider");
-                ITestServiceProvider serviceProvider = WaitHelpers.WaitForAsyncTask(testEndpoint.GetTestServiceProviderAsync, _settings.StartupTimeout);
+                ITestServiceProvider serviceProvider = WaitHelpers.WaitForAsyncTask(testEndpoint.GetTestServiceProviderAsync, effectiveSettings.StartupTimeout);
 
                 // Attach the RPC proxy to our HostRpcLoggerProvider so test-side logs are forwarded to the host
-                ITestLogger testLogger = serviceProvider.CreateTestService<ITestLogger, HostApplicationTestLogger>(_settings.StartupTimeout);
+                ITestLogger testLogger = serviceProvider.CreateTestService<ITestLogger, HostApplicationTestLogger>(effectiveSettings.StartupTimeout);
                 _hostLoggerProvider.AttachTestLoggerProxy(testLogger);
                 logger.LogInformation("Attached RPC test logger");
 
-                return new(_settings, _loggerFactory, process, client, rpc, testEndpoint, standardOutput, standardError);
+                return new(effectiveSettings, _loggerFactory, process, client, rpc, testEndpoint, standardOutput, standardError);
             }
             catch (Exception ex)
             {

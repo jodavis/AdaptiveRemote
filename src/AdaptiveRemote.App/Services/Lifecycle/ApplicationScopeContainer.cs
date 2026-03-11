@@ -22,7 +22,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
 
         using (linkedCts)
         {
-            IApplicationScope scope = await scopeTask;
+            IApplicationScope scope = await scopeTask.WaitAsync(linkedCts.Token);
 
             Task invokeTask = scope.InvokeInScopeAsync(workItem, linkedCts.Token);
 

@@ -36,6 +36,15 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 708, Level = LogLevel.Error, Message = "An error occurred while constructing the ScopedLifecycleContainer. Either there is a missing dependency, or a dependency's constructor threw an exception.")]
     public partial void ApplicationLifecycle_ScopeConstructionFailed(Exception error);
 
+    [LoggerMessage(EventId = 709, Level = LogLevel.Error, Message = "An unhandled error occurred in the application lifecycle")]
+    public partial void ApplicationLifecycle_UnhandledError(Exception error);
+
+    [LoggerMessage(EventId = 710, Level = LogLevel.Information, Message = "Waiting for application scope")]
+    public partial void ApplicationLifecycle_WaitingForScope();
+
+    [LoggerMessage(EventId = 711, Level = LogLevel.Information, Message = "Application scope released, shutting down")]
+    public partial void ApplicationLifecycle_ScopeReleased();
+
     [LoggerMessage(EventId = 205, Level = LogLevel.Warning, Message = "Not restarting after {ErrorCount} error(s)")]
     public partial void ConversationController_RetryLimitReached(int errorCount);
 
