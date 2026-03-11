@@ -51,7 +51,20 @@ internal class ApplicationLifecycle : BackgroundService
 
         if (_currentContainer is not null)
         {
-            await _currentContainer.InitializeAllAsync(cancellationToken);
+            try
+            {
+                await _currentContainer.InitializeAllAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // Service initialization failures are already logged in ScopedLifecycleContainer.
+                // Clean up and return normally so ExecuteAsync can log ScopeReleased.
+                await CleanUpCurrentContainerAsync(default);
+            }
         }
 
         ScopedLifecycleContainer? SafeGetContainer(IServiceProvider provider)
