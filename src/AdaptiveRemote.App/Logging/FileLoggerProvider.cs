@@ -28,6 +28,7 @@ public sealed class FileLoggerProvider : ILoggerProvider
     {
         try
         {
+            _writer.Flush();
             _writer.Dispose();
         }
         catch { }

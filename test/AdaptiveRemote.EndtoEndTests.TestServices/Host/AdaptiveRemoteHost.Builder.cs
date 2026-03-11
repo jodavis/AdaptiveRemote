@@ -97,21 +97,29 @@ public partial class AdaptiveRemoteHost
                 EnableRaisingEvents = true
             };
 
-            StringBuilder standardOutput = new();
+            StringBuilder standardOutputAndError = new();
             process.OutputDataReceived += (sender, e) =>
             {
                 if (e.Data is not null)
                 {
-                    standardOutput.AppendLine(e.Data);
+                    standardOutputAndError.AppendLine(e.Data);
                 }
             };
 
-            StringBuilder standardError = new();
             process.ErrorDataReceived += (sender, e) =>
             {
                 if (e.Data is not null)
                 {
-                    standardError.AppendLine(e.Data);
+                    standardOutputAndError.AppendLine(e.Data);
+                }
+            };
+
+            process.Exited += (sender, e) =>
+            {
+                if (process.ExitCode != 0)
+                {
+                    logger.LogWarning("Host process exited with code {ExitCode}. Standard output and error:\n{OutputAndError}",
+                        process.ExitCode, standardOutputAndError.ToString());
                 }
             };
 
@@ -215,7 +223,7 @@ public partial class AdaptiveRemoteHost
                 _hostLoggerProvider.AttachTestLoggerProxy(testLogger);
                 logger.LogInformation("Attached RPC test logger");
 
-                return new(_settings, _loggerFactory, process, client, rpc, testEndpoint, standardOutput, standardError);
+                return new(_settings, _loggerFactory, process, client, rpc, testEndpoint);
             }
             catch (Exception ex)
             {
