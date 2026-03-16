@@ -513,8 +513,9 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         }
 
         // Data available: build LearnedDataResponsePayload (IR data at offset 0x04)
-        byte[] responseData = new byte[4 + learnedData.Length];
-        Array.Copy(learnedData, 0, responseData, 4, learnedData.Length);
+        byte[] responseData = new byte[6 + learnedData.Length];
+        Array.Copy(BitConverter.GetBytes((short)learnedData.Length), 0, responseData, 0, 2);
+        Array.Copy(learnedData, 0, responseData, 6, learnedData.Length);
 
         byte[] encryptedResponseData = _encryption!.Encrypt(responseData);
         byte[] dataResponse = BroadlinkPacketEncoder.EncodeResponse(

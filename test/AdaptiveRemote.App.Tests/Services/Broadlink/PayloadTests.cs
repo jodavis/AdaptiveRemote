@@ -634,8 +634,9 @@ public class PayloadTests
         // Arrange
         byte[] input =
         [
+            0x07, 0x00, // DataLength = 7
             0x00, 0x00, 0x00, 0x00,  // 4-byte header
-            0x26, 0x00, 0x0D, 0x00,  // IR data starts at offset 0x04
+            0x26, 0x00, 0x0D, 0x00,  // IR data starts at offset 0x06
             0xAB, 0xCD, 0xEF,
         ];
 
@@ -643,7 +644,7 @@ public class PayloadTests
         LearnedDataResponsePayload sut = new(input);
 
         // Assert
-        byte[] expectedData = input[0x04..];
+        byte[] expectedData = input[0x06..];
         MemoryAssert.AreEqual(expectedData, sut.Data, nameof(sut.Data));
         Assert.AreEqual(input.Length, sut.Size, nameof(sut.Size));
     }

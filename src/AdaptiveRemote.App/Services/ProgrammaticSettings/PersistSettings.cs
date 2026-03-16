@@ -55,7 +55,7 @@ internal class PersistSettings : IPersistSettings
             {
                 throw Errors.PersistSettings_InvalidName(nameof(name), name);
             }
-            if (!ValueRegex.IsMatch(value))
+            if (!ValueRegex.IsMatch(value) || value.Contains('\n'))
             {
                 throw Errors.PersistSettings_InvalidValue(nameof(value), value);
             }

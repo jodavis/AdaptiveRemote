@@ -21,66 +21,14 @@ public class PlaywrightUITestService : IUITestService
         _browserProvider = browserProvider;
         Logger = logger;
 
-        // Start warming up Playwright if necessary
-        _ = Task.Run(() => _ = CurrentPage);
+        // Warm up Playwright
+        CurrentPage = _browserProvider.CurrentPage as IPage
+            ?? throw new InvalidOperationException("IBrowserProvider service did not provide an object of type IPage");
     }
 
-    private IPage CurrentPage => _browserProvider.CurrentPage as IPage
-        ?? throw new InvalidOperationException("IBrowserProvider service did not provide an object of type IPage");
+    private IPage CurrentPage { get; }
 
     protected ILogger<PlaywrightUITestService> Logger { get; }
-
-    public async Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = GetButtonLocatorByLabel(label);
-
-        try
-        {
-            return await locator.IsVisibleAsync();
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = GetButtonLocatorByLabel(label);
-
-        try
-        {
-            return await locator.IsEnabledAsync();
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task ClickButtonAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = GetButtonLocatorByLabel(label);
-
-        // Verify the button is visible
-        bool isVisible = await locator.IsVisibleAsync();
-        if (!isVisible)
-        {
-            throw new InvalidOperationException($"Button with label '{label}' is not visible.");
-        }
-
-        // Verify the button is enabled
-        if (await IsButtonDisabledAsync(locator))
-        {
-            throw new InvalidOperationException($"Button with label '{label}' is not enabled.");
-        }
-
-        // Click the button
-        await locator.ClickAsync(new LocatorClickOptions
-        {
-            Timeout = DefaultTimeoutMs
-        });
-    }
 
     public async Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken = default)
     {
@@ -132,7 +80,15 @@ public class PlaywrightUITestService : IUITestService
     {
         // Use Playwright's getByRole with exact match - it will throw meaningful errors
         // if there are no matches or ambiguous matches
-        return CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
+        return label switch
+        {
+            "Channel Down" => GetButtonLocatorByLabel("Down").Nth(1),
+            "Channel Up" => GetButtonLocatorByLabel("Up").Nth(1),
+            "Volume Down" => GetButtonLocatorByLabel("Down").Nth(2),
+            "Volume Up" => GetButtonLocatorByLabel("Up").Nth(2),
+            _ => CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true })
+                .Describe($"button with label '{label}'")
+        };
     }
 
     public async Task ClickTextAsync(string text, CancellationToken cancellationToken = default)
@@ -181,21 +137,6 @@ public class PlaywrightUITestService : IUITestService
         }
     }
 
-    public async Task<bool> IsButtonProgrammedAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = GetButtonLocatorByLabel(label);
-
-        try
-        {
-            string? programmed = await locator.GetAttributeAsync("data-programmed");
-            return string.Equals(programmed, "true", StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public void Dispose()
     {
         if (_browserProvider is IDisposable disposable)
@@ -204,5 +145,21 @@ public class PlaywrightUITestService : IUITestService
         }
 
         GC.SuppressFinalize(this);
+    }
+
+    public async Task<IUIButtonTestObject?> FindButtonByLabelAsync(string label, CancellationToken cancellationToken)
+    {
+        ILocator locator = GetButtonLocatorByLabel(label);
+
+        if (await locator.CountAsync() == 0)
+        {
+            return null;
+        }
+
+        PlaywrightButtonTestObject button = new(locator);
+
+        await button.ValidateLocatorAsync();
+
+        return button;
     }
 }

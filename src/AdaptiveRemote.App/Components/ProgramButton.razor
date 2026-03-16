@@ -6,7 +6,7 @@
 @code {
     protected override bool IsEnabled => Command?.ProgramAsync is not null;
 
-    private bool IsProgrammed => Command?.IsEnabled ?? false;
+    private string IsProgrammed => (Command?.IsEnabled ?? false).ToString();
 
     protected override void Invoke()
     {

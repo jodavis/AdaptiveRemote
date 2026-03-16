@@ -8,14 +8,30 @@
 /// <seealso href="https://github.com/broadlink/broadlink/blob/master/broadlink/remote.py"/>
 internal class LearnedDataResponsePayload : Payload
 {
-    private const int DataIndex = 0x04;
+    private const int DataLengthSize = sizeof(short);
+    private const int SkipSize = 4;
 
-    public LearnedDataResponsePayload(Memory<byte> buffer)
-        : base(buffer)
+    public LearnedDataResponsePayload(Memory<byte> data)
+        : base(data)
     { }
 
+    private const int DataLengthIndex = 0x00;
     /// <summary>
-    /// The captured IR data bytes, which can be Base64-encoded and stored for later playback.
+    /// The length of the data plus the size of the command that preceeds it
     /// </summary>
-    public byte[] Data => GetBytes(DataIndex);
+    public short DataLength
+    {
+        get => GetShort(DataLengthIndex);
+        set => Set(DataLengthIndex, value);
+    }
+
+    private const int DataIndex = DataLengthSize + SkipSize;
+    /// <summary>
+    /// The data to send
+    /// </summary>
+    public byte[] Data
+    {
+        get => GetBytes(DataIndex, DataLength);
+        set => Set(DataIndex, value);
+    }
 }

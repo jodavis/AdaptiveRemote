@@ -1,4 +1,5 @@
 using AdaptiveRemote.Services.Testing;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AdaptiveRemote.EndtoEndTests;
 
@@ -7,47 +8,31 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// </summary>
 public static class IUITestServiceExtensions
 {
-    public const int DefaultUITimeoutInSeconds = 60;
+    public const int DefaultUITimeoutInSeconds = 5;
 
     /// <summary>
-    /// Checks if a button with the specified label is visible in the UI (synchronous wrapper).
+    /// Waits for a button with the specified label to be visible or not visible in the UI (synchronous wrapper).
     /// </summary>
     /// <param name="service">The UI test service.</param>
     /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
     /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
     /// <returns>True if the button is visible, false otherwise.</returns>
-    public static bool IsButtonVisible(this IUITestService service, string label, int timeoutInSeconds = DefaultUITimeoutInSeconds)
-        => service.IsButtonVisible(label, TimeSpan.FromSeconds(timeoutInSeconds));
+    public static bool WaitForButtonVisible(this IUITestService service, string label, bool visible = true, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.WaitForButtonVisible(label, visible, TimeSpan.FromSeconds(timeoutInSeconds));
 
     /// <summary>
-    /// Checks if a button with the specified label is visible in the UI (synchronous wrapper).
+    /// Waits for a button with the specified label to be visible or not visible in the UI (synchronous wrapper).
     /// </summary>
     /// <param name="service">The UI test service.</param>
     /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
     /// <param name="timeout">Timeout for the operation.</param>
     /// <returns>True if the button is visible, false otherwise.</returns>
-    public static bool IsButtonVisible(this IUITestService service, string label, TimeSpan timeout)
-        => WaitHelpers.ExecuteWithRetries(ct => service.IsButtonVisibleAsync(label, ct), timeout);
+    public static bool WaitForButtonVisible(this IUITestService service, string label, bool visible, TimeSpan timeout)
+    {
+        using IUIButtonTestObject button = service.GetButtonByLabel(label, timeout);
 
-    /// <summary>
-    /// Checks if a button with the specified label is enabled in the UI (synchronous wrapper).
-    /// </summary>
-    /// <param name="service">The UI test service.</param>
-    /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
-    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
-    /// <returns>True if the button is enabled, false otherwise.</returns>
-    public static bool IsButtonEnabled(this IUITestService service, string label, int timeoutInSeconds = DefaultUITimeoutInSeconds)
-        => service.IsButtonEnabled(label, TimeSpan.FromSeconds(timeoutInSeconds));
-
-    /// <summary>
-    /// Checks if a button with the specified label is enabled in the UI (synchronous wrapper).
-    /// </summary>
-    /// <param name="service">The UI test service.</param>
-    /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
-    /// <param name="timeout">Timeout for the operation.</param>
-    /// <returns>True if the button is enabled, false otherwise.</returns>
-    public static bool IsButtonEnabled(this IUITestService service, string label, TimeSpan timeout)
-        => WaitHelpers.ExecuteWithRetries(ct => service.IsButtonEnabledAsync(label, ct), timeout);
+        return WaitHelpers.WaitForState(button.IsVisibleAsync, visible, timeout);
+    }
 
     /// <summary>
     /// Waits for a button with the specified label to be enabled or disabled in the UI (synchronous wrapper).
@@ -69,7 +54,11 @@ public static class IUITestServiceExtensions
     /// <param name="timeout">Timeout for the operation.</param>
     /// <returns>True if the button reaches the desired state within the timeout, false otherwise.</returns>
     public static bool WaitForButtonEnabled(this IUITestService service, string label, bool enabled, TimeSpan timeout)
-        => WaitHelpers.ExecuteWithRetries(async ct => await service.IsButtonEnabledAsync(label, ct) == enabled, timeout);
+    {
+        using IUIButtonTestObject button = service.GetButtonByLabel(label, timeout);
+
+        return WaitHelpers.WaitForState(button.IsEnabledAsync, enabled, timeout);
+    }
 
     /// <summary>
     /// Clicks a button with the specified label in the UI (synchronous wrapper).
@@ -92,7 +81,9 @@ public static class IUITestServiceExtensions
     {
         try
         {
-            bool succeeded = WaitHelpers.WaitForAsyncTask(ct => service.ClickButtonAsync(label, ct), timeout);
+            using IUIButtonTestObject button = service.GetButtonByLabel(label, timeout);
+            
+            bool succeeded = WaitHelpers.WaitForAsyncTask(button.ClickAsync, timeout);
             if (!succeeded)
             {
                 throw new TimeoutException($"Clicking button '{label}' did not complete within timeout.");
@@ -216,8 +207,35 @@ public static class IUITestServiceExtensions
     /// <param name="programmed">Whether to wait for programmed (<c>true</c>) or unprogrammed (<c>false</c>) state.</param>
     /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
     /// <returns>True if the button reaches the desired state within the timeout; false otherwise.</returns>
-    public static bool WaitForButtonProgrammed(this IUITestService service, string label, bool programmed, int timeoutInSeconds = DefaultUITimeoutInSeconds)
-        => WaitHelpers.ExecuteWithRetries(
-            async ct => await service.IsButtonProgrammedAsync(label, ct) == programmed,
-            TimeSpan.FromSeconds(timeoutInSeconds));
+    public static bool WaitForButtonProgrammed(this IUITestService service, string label, bool programmed = true, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.WaitForButtonProgrammed(label, programmed, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Waits until the button with the given label reaches the desired programmed state.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="label">The exact visible text of the button.</param>
+    /// <param name="programmed">Whether to wait for programmed (<c>true</c>) or unprogrammed (<c>false</c>) state.</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>True if the button reaches the desired state within the timeout; false otherwise.</returns>
+    public static bool WaitForButtonProgrammed(this IUITestService service, string label, bool programmed, TimeSpan timeout)
+    {
+        using IUIButtonTestObject button = service.GetButtonByLabel(label, timeout);
+
+        return WaitHelpers.WaitForState(button.IsProgrammedAsync, programmed, timeout);
+    }
+
+    private static IUIButtonTestObject GetButtonByLabel(this IUITestService service, string label, TimeSpan timeout)
+    {
+        IUIButtonTestObject? button = null;
+        WaitHelpers.ExecuteWithRetries(async ct =>
+        {
+            button = await service.FindButtonByLabelAsync(label, ct);
+            return button is not null;
+        }, timeout);
+
+        Assert.IsNotNull(button, "Button with label '{0}' was not found. (Waited {1}s)", label, timeout.TotalSeconds);
+
+        return button;
+    }
 }

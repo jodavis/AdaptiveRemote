@@ -17,19 +17,20 @@ Scenario: Entering and exiting programming mode manages button states
 
 Scenario: Program a programmable command
 	Given the application is in the Ready phase
+	Then I should see the 'Volume Down' button is disabled
 	When I click on the 'Learn' button
-	Then I should see the 'Mute' button is enabled
-	And I should see the 'Mute' button is not programmed
-	When I click on the 'Mute' button
-	Then I should see a modal message containing "Programming 'Mute'"
+	Then I should see the 'Volume Down' button is enabled
+	And I should see the 'Volume Down' button is not programmed
+	When I click on the 'Volume Down' button
+	Then I should see a modal message containing "Programming 'Down'"
 	And the Broadlink device should be in learning mode
 	When I send an IR signal to the Broadlink device
-	Then I should see the 'Mute' button is programmed
+	Then I should see the 'Volume Down' button is programmed
 	And I should not see a modal message
 	When I click on the 'Learn' button
-	Then I should see the 'Mute' button is enabled
+	Then I should see the 'Volume Down' button is enabled
 	When I clear the Broadlink recorded packets
-	And I click on the 'Mute' button
+	And I click on the 'Volume Down' button
 	Then I should see the Broadlink device recorded at least one inbound packet
 	And the recorded Broadlink packet's raw payload should match the newly learned data
 	And no Broadlink packets should be marked as malformed
@@ -43,6 +44,12 @@ Scenario: Programming a programmable command fails with a device error
 	And I should see a modal message containing "Programming 'Mute'"
 	When the Broadlink device simulates a device error
 	Then I should not see a modal message
+	And I should see an error message in the logs:
+		"""
+		Error programming IRCommand 'Mute'
+		"""
+	When I click on the 'Learn' button
+	Then I should see the 'Mute' button is disabled
 
 Scenario: Programming a programmable command is cancelled
 	Given the application is in the Ready phase

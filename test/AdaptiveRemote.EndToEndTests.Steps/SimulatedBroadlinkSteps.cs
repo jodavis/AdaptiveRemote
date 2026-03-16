@@ -1,5 +1,6 @@
 using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
@@ -123,10 +124,8 @@ public class SimulatedBroadlinkSteps : StepsBase
         RecordedPacket? irPacket = device.GetFirstPacketWithIrData();
         Assert.IsNotNull(irPacket, "No packet with IR payload was recorded");
 
-        CollectionAssert.AreEqual(
-            Environment.NewlyLearnedIrData,
-            irPacket.RawPayload,
-            "IR payload does not match the newly learned data");
+        irPacket.RawPayload.Should().BeEquivalentTo(Environment.NewlyLearnedIrData,
+            because: "the application should have learned the new data");
 
         Logger.LogInformation("IR payload matches newly learned data ({Length} bytes)", Environment.NewlyLearnedIrData.Length);
     }
