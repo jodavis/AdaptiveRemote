@@ -245,6 +245,12 @@ div.conversation-speaking-message {
   grid-row: 1;
   grid-column: 3;
 }
+#ROOT #GUTTER #LEARN {
+  grid-row: 1;
+  grid-column: 2;
+  margin: 20px;
+  font-size: 18pt;
+}
 #ROOT #GUTTER #LISTENING {
   grid-row: 1;
   grid-column: 1;

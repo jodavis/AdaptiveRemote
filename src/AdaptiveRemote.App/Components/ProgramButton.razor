@@ -13,7 +13,7 @@
             yield return cls;
         }
 
-        if (Command?.IsEnabled == true)
+        if (IsEnabled && Command?.IsEnabled == true)
         {
             yield return "btn-programmed";
         }
@@ -21,7 +21,7 @@
 
     protected override void Invoke()
     {
-        CancellationToken token = LifecycleView.ProgrammingCancellationToken;
+        CancellationToken token = LifecycleView.LearningCancellationToken;
         Command?.ProgramAsync?.Invoke(token);
     }
 }

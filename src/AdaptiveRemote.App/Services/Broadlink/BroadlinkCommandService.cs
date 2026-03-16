@@ -73,7 +73,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         => cancellationToken =>
         {
             IDeviceConnection connection = _connection
-                ?? throw new InvalidOperationException($"Cannot program {command}: the Broadlink service is not connected.");
+                ?? throw new InvalidOperationException(Phrases.Broadlink_NotConnected(command.Name));
 
             string message = Phrases.Broadlink_ProgrammingCommand(command.Label);
             TimeSpan pollInterval = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnPollInterval);

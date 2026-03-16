@@ -4,7 +4,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
-using Reqnroll.Assist;
 
 namespace AdaptiveRemote.EndToEndTests.Steps;
 
@@ -12,7 +11,7 @@ namespace AdaptiveRemote.EndToEndTests.Steps;
 public class SimulatedBroadlinkSteps : StepsBase
 {
     /// <summary>
-    /// Converts the phrase "an IR signal" in step arguments to a fixed test IR payload.
+    /// Converts the phrase "the IR signal for {commandName}" in step arguments to a test IR payload.
     /// </summary>
     [StepArgumentTransformation("the IR signal for (.*)")]
     public static byte[] TransformIrSignalPhrase(string commandName)
@@ -22,7 +21,6 @@ public class SimulatedBroadlinkSteps : StepsBase
             "Power" => [0x01, 0x02, 0x03, 0x04],
             _ => throw new ArgumentException($"No test IR payload configured for command '{commandName}'")
         };
-        
 
     [Then(@"I should see the Broadlink device recorded at least one inbound packet")]
     public void ThenIShouldSeeTheBroadlinkDeviceRecordedAtLeastOneInboundPacket()
@@ -95,19 +93,24 @@ public class SimulatedBroadlinkSteps : StepsBase
     }
 
     [Then(@"I should see the Broadlink device sent (.*)")]
-    public void ThenTheRecordedBroadlinkPacketPayloadShouldMatch(byte[] expectedData)
+    public void ThenIShouldSeeBroadlinkDeviceSentSignal(byte[] expectedData)
     {
+        // Wait for at least one inbound IR packet
         bool found = WaitHelpers.ExecuteWithRetries(Environment.Broadlink.HasRecordedInboundPacketWithIrData, timeoutInSeconds: 10);
-        
+        Assert.IsTrue(found, "Broadlink device did not receive any inbound IR packets");
+
+        // Validate no malformed packets
+        RecordedPacket? malformedPacket = Environment.Broadlink.GetFirstMalformedPacket();
+        Assert.IsNull(malformedPacket, $"Found malformed packet: {malformedPacket?.DebugDescription}");
+
+        // Validate packet payload matches expected signal
         RecordedPacket? irPacket = Environment.Broadlink.GetFirstPacketWithIrData();
         Assert.IsNotNull(irPacket, "No packet with IR payload was recorded");
 
-        byte[] actual = irPacket.RawPayload!;
-
         irPacket.RawPayload.Should().BeEquivalentTo(expectedData,
-            because: "the application should have learned the new data");
+            because: "the Broadlink device should have sent the correct IR signal");
 
-        Logger.LogInformation("IR payload starts with expected data ({ExpectedLength}/{ActualLength} bytes)", expectedData.Length, actual.Length);
+        Logger.LogInformation("Broadlink device sent correct IR signal ({Length} bytes)", expectedData.Length);
     }
 
     [When(@"the Broadlink device simulates a device error")]

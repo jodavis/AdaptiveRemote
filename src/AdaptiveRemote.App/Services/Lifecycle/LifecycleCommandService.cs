@@ -8,30 +8,21 @@ internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
 {
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ILifecycleViewController _viewController;
-    private readonly LifecycleView _lifecycleView;
-    private CancellationTokenSource? _programmingCts;
 
-    public LifecycleCommandService(IHostApplicationLifetime applicationLifetime, ILifecycleViewController viewController, LifecycleView lifecycleView, IRemoteDefinitionService remoteDefinition, ILogger<LifecycleCommandService> logger)
+    public LifecycleCommandService(IHostApplicationLifetime applicationLifetime, ILifecycleViewController viewController, IRemoteDefinitionService remoteDefinition, ILogger<LifecycleCommandService> logger)
         : base("Application Commands", remoteDefinition, logger)
     {
         _applicationLifetime = applicationLifetime;
         _viewController = viewController;
-        _lifecycleView = lifecycleView;
     }
 
     protected override Command.ExecuteDelegate CreateHandler(LifecycleCommand command)
         => command.Name switch
         {
-            "Exit" => delegate (CancellationToken _)
-            {
-                _viewController.SetPhase(LifecyclePhase.Stopping);
-                _applicationLifetime.StopApplication();
-                return Task.CompletedTask;
-            }
-            ,
+            "Exit" => ExitAsync,
             "Learn" => delegate (CancellationToken _)
             {
-                _programmingCts = _lifecycleView.EnterProgrammingMode();
+                _viewController.EnterLearningMode();
                 return Task.CompletedTask;
             }
             ,
@@ -41,17 +32,19 @@ internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
     protected override Command.ExecuteDelegate? CreateProgramHandler(LifecycleCommand command)
         => command.Name switch
         {
+            "Exit" => ExitAsync,
             "Learn" => async delegate (CancellationToken _)
             {
-                _lifecycleView.ExitProgrammingMode();
-                CancellationTokenSource? cts = Interlocked.Exchange(ref _programmingCts, null);
-                if (cts is not null)
-                {
-                    await cts.CancelAsync();
-                    cts.Dispose();
-                }
+                await _viewController.ExitLearningModeAsync();
             }
             ,
             _ => null
         };
+
+    private Task ExitAsync(CancellationToken _)
+    {
+        _viewController.SetPhase(LifecyclePhase.Stopping);
+        _applicationLifetime.StopApplication();
+        return Task.CompletedTask;
+    }
 }
