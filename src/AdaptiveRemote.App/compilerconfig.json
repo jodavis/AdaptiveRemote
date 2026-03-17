@@ -1,6 +1,9 @@
 ﻿[
   {
     "outputFile": "wwwroot/css/app.css",
-    "inputFile": "wwwroot/css/app.less"
+    "inputFile": "wwwroot/css/app.less",
+    "minify": {
+      "enabled": true
+    }
   }
 ]

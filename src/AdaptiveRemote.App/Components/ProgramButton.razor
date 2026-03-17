@@ -13,9 +13,9 @@
             yield return cls;
         }
 
-        if (IsEnabled && Command?.IsEnabled == true)
+        if (Command?.ProgramAsync is not null)
         {
-            yield return "btn-programmed";
+            yield return Command.IsEnabled ? "btn-programmed" : "btn-not-programmed";
         }
     }
 
