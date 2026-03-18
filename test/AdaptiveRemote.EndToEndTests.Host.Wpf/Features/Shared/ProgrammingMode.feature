@@ -5,11 +5,13 @@ Feature: Learning Mode UI
 
 Scenario: Entering and exiting learning mode manages button states
 	Given the application is in the Ready phase
+
+	# Verify states before programming mode
 	Then I should see the 'Power' button is enabled
 	And I should see the 'TiVo' button is enabled
 	And I should see the 'Mute' button is disabled
-	When I run the accessibility contrast checker
-	Then I should not see any accessibility contrast violations
+
+	# Verify states after entering programming mode
 	When I click on the 'Learn' button
 	Then I should see the 'Power' button is enabled
 	And I should see the 'Power' button is programmed
@@ -17,8 +19,11 @@ Scenario: Entering and exiting learning mode manages button states
 	And I should see the 'Mute' button is not programmed
 	And I should see the 'TiVo' button is disabled
 	And I should see the 'TiVo' button is not programmed
+	#   Verify color contrast in programming mode
 	When I run the accessibility contrast checker
 	Then I should not see any accessibility contrast violations
+	
+	# Verify states are restored after exiting programming mode
 	When I click on the 'Learn' button
 	Then I should see the 'Power' button is enabled
 	And I should see the 'TiVo' button is enabled
@@ -35,6 +40,9 @@ Scenario: Program a programmable command
 	When I click on the 'Volume Down' button
 	Then I should see a modal message containing "# Programming 'Down'"
 	And the Broadlink device should be in learning mode
+	#   Verify the button active color is valid
+	When I run the accessibility contrast checker
+	Then I should not see any accessibility contrast violations
 	When I send the IR signal for Volume Down to the Broadlink device
 	Then I should see the 'Volume Down' button is programmed
 	And I should not see a modal message
@@ -80,3 +88,4 @@ Scenario: Programming a programmable command is cancelled
 	When I click on the 'Learn' button
 	Then I should see the 'Mute' button is disabled
 	And I should see the 'Power' button is enabled
+

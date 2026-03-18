@@ -30,7 +30,7 @@ public class PlaywrightUITestService : IUITestService
 
     protected ILogger<PlaywrightUITestService> Logger { get; }
 
-    public async Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Starting accessibility check using axe...");
         try
