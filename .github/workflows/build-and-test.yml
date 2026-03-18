@@ -37,9 +37,13 @@ jobs:
       shell: pwsh
       run: pwsh ./src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium
     
-    - name: Test
-      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults"
-    
+    - name: Unit Tests 
+      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "FullyQualifiedName!~EndToEndTest"
+
+    - name: E2E Tests
+      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "FullyQualifiedName~EndToEndTest" -m:1
+      if: always()
+
     - name: Upload E2E Test Logs
       uses: actions/upload-artifact@v6
       if: always()
@@ -48,7 +52,7 @@ jobs:
         path: |
           TestResults/**/*.log
         retention-days: 30
-    
+
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action/windows@v2
       if: always()
