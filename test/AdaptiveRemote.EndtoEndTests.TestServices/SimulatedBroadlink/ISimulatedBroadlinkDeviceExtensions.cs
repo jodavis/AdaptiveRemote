@@ -49,4 +49,13 @@ public static class ISimulatedBroadlinkDeviceExtensions
         IReadOnlyList<RecordedPacket> packets = device.GetRecordedPackets();
         return packets.FirstOrDefault(p => p.IsMalformed);
     }
+
+    /// <summary>
+    /// Waits until the device enters learning mode, polling with retries.
+    /// </summary>
+    /// <param name="device">The simulated Broadlink device.</param>
+    /// <param name="timeoutInSeconds">Maximum seconds to wait.</param>
+    /// <returns>True if the device entered learning mode within the timeout; otherwise, false.</returns>
+    public static bool WaitForLearningMode(this ISimulatedBroadlinkDevice device, int timeoutInSeconds = 10)
+        => WaitHelpers.ExecuteWithRetries(() => device.IsInLearningMode, TimeSpan.FromSeconds(timeoutInSeconds));
 }

@@ -43,6 +43,13 @@ internal class EnvironmentSetupHooks
         _startedEnvironment.SetLogLocation(logLocation);
     }
 
+    [BeforeScenario]
+    public static void OnBeforeScenario_ClearBroadlinkPackets(IObjectContainer container)
+    {
+        _startedEnvironment ??= container.Resolve<SimulatedEnvironment>();
+        _startedEnvironment.Broadlink.ClearRecordedPackets();
+    }
+
     [AfterScenario]
     public static void OnAfterScenario_AttachLogsToTestResult(TestContext testContext)
     {
@@ -65,7 +72,7 @@ internal class EnvironmentSetupHooks
         }
     }
 
-    [AfterScenario]
+    [AfterScenario(Order = 1000000)]
     public static void OnAfterScenario_StopHostIfTestFailed(ScenarioContext scenario)
     {
         if (scenario.ScenarioExecutionStatus != ScenarioExecutionStatus.OK && _startedEnvironment is not null)

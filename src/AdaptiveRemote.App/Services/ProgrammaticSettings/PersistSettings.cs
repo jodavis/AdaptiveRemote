@@ -13,7 +13,7 @@ internal class PersistSettings : IPersistSettings
     private const string NameKey = "name";
     private const string NamePattern = @"\w+(:\w+)*";
     private const string ValueKey = "value";
-    private const string ValuePattern = @"[^\\r\\n]*";
+    private const string ValuePattern = @"[^\r\n]*";
     private const string SectionPattern = @"\w+";
 
     private static readonly Regex KeyRegex = new($"^{NamePattern}$", RegexOptions.Singleline);
@@ -55,7 +55,7 @@ internal class PersistSettings : IPersistSettings
             {
                 throw Errors.PersistSettings_InvalidName(nameof(name), name);
             }
-            if (!ValueRegex.IsMatch(value))
+            if (!ValueRegex.IsMatch(value) || value.Contains('\n'))
             {
                 throw Errors.PersistSettings_InvalidValue(nameof(value), value);
             }

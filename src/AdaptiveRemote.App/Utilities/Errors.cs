@@ -46,6 +46,8 @@ internal static class Errors
         => new BroadlinkException("Read error");
     internal static Exception Broadlink_SsidNotFound()
         => new BroadlinkException("SSID could not be found in AP configuration");
+    internal static Exception Broadlink_LearningTimedOut(TimeSpan timeout)
+        => new TimeoutException($"IR learning timed out: No IR code was received within {timeout.TotalSeconds}s");
 
     internal static Exception CommandService_NotStarted(Command command)
         => new InvalidOperationException($"Cannot execute {command} because the service has not been started.");

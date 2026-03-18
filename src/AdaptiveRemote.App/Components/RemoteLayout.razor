@@ -1,13 +1,20 @@
 ﻿@switch (LayoutElement)
 {
     case Models.Command command:
-        <CommandButton Command="@command" />
+        @if (ProgramMode)
+        {
+            <ProgramButton Command="@command" />
+        }
+        else
+        {
+            <CommandButton Command="@command" />
+        }
         break;
     case Models.LayoutGroup nestedGroup:
         <div id="@nestedGroup.CSSID">
             @foreach (Models.RemoteLayoutElement element in nestedGroup.Elements)
             {
-                <RemoteLayout LayoutElement="@element" />
+                <RemoteLayout LayoutElement="@element" ProgramMode="@ProgramMode" />
             }
         </div>
         break;
@@ -19,4 +26,7 @@
 @code {
     [Parameter]
     public Models.RemoteLayoutElement? LayoutElement { get; set; }
+
+    [Parameter]
+    public bool ProgramMode { get; set; }
 }

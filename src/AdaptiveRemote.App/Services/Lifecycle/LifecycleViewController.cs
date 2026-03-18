@@ -6,6 +6,7 @@ internal class LifecycleViewController : ILifecycleViewController
 {
     private readonly List<Activity> _activities;
     private readonly object _lock = new();
+    private CancellationTokenSource? _learningCts;
 
     public LifecycleViewController(LifecycleView viewModel)
     {
@@ -30,6 +31,27 @@ internal class LifecycleViewController : ILifecycleViewController
         }
         UpdateTaskName();
         return activity;
+    }
+
+    public CancellationToken EnterLearningMode()
+    {
+        CancellationTokenSource cts = new();
+        _learningCts = cts;
+        ViewModel.LearningCancellationToken = cts.Token;
+        ViewModel.IsProgrammingMode = true;
+        return cts.Token;
+    }
+
+    public async Task ExitLearningModeAsync()
+    {
+        ViewModel.LearningCancellationToken = new CancellationToken(canceled: true);
+        ViewModel.IsProgrammingMode = false;
+        CancellationTokenSource? cts = Interlocked.Exchange(ref _learningCts, null);
+        if (cts is not null)
+        {
+            await cts.CancelAsync();
+            cts.Dispose();
+        }
     }
 
     public void SetPhase(LifecyclePhase phase)

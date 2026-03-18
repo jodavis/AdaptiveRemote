@@ -9,6 +9,9 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     private readonly IDeviceLocator _deviceLocator;
     private readonly IDeviceConnection.Factory _connectionFactory;
     private readonly IOptionsSnapshot<IRDataSettings> _irDataSettings;
+    private readonly IOptions<BroadlinkSettings> _broadlinkSettings;
+    private readonly IPersistSettings _persistSettings;
+    private readonly IModalMessageService _modalMessageService;
 
     private IDeviceConnection? _connection;
 
@@ -16,13 +19,19 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         IDeviceLocator deviceLocator,
         IDeviceConnection.Factory connectionFactory,
         IOptionsSnapshot<IRDataSettings> irDataSettings,
+        IOptions<BroadlinkSettings> broadlinkSettings,
+        IPersistSettings persistSettings,
         IRemoteDefinitionService definitionService,
+        IModalMessageService modalMessageService,
         ILogger<BroadlinkCommandService> logger)
         : base("Broadlink IR Commands", definitionService, logger)
     {
         _deviceLocator = deviceLocator;
         _connectionFactory = connectionFactory;
         _irDataSettings = irDataSettings;
+        _broadlinkSettings = broadlinkSettings;
+        _persistSettings = persistSettings;
+        _modalMessageService = modalMessageService;
     }
 
     public override async Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
@@ -59,4 +68,43 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         byte[] data = Convert.FromBase64String(base64Data);
         return cancellationToken => _connection!.SendDataAsync(data, cancellationToken);
     }
+
+    protected override Command.ExecuteDelegate? CreateProgramHandler(IRCommand command)
+        => cancellationToken =>
+        {
+            IDeviceConnection connection = _connection
+                ?? throw new InvalidOperationException(Phrases.Broadlink_NotConnected(command.Name));
+
+            string message = Phrases.Broadlink_ProgrammingCommand(command.Label);
+            TimeSpan pollInterval = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnPollInterval);
+
+            return _modalMessageService.ShowMessageAsync(message, async ct =>
+            {
+                Logger.BroadlinkCommandService_EnteringLearningMode(command);
+                await connection.EnterLearningModeAsync(ct);
+
+                // Poll indefinitely: the loop exits when data is received (early return),
+                // the cancellation token fires (OperationCanceledException), or the device
+                // times out in learning mode and throws a BroadlinkException.
+                while (true)
+                {
+                    ct.ThrowIfCancellationRequested();
+
+                    Logger.BroadlinkCommandService_PollingForLearnedData(command);
+                    byte[]? data = await connection.CheckLearnedDataAsync(ct);
+
+                    if (data is not null)
+                    {
+                        Logger.BroadlinkCommandService_LearnedDataReceived(command, data.Length);
+                        string base64Data = Convert.ToBase64String(data);
+                        _persistSettings.Set($"IRData:{command.Name}", base64Data);
+                        command.ExecuteAsync = CreateWrappedHandler(command, sendCt => connection.SendDataAsync(data, sendCt));
+                        command.IsEnabled = true;
+                        return;
+                    }
+
+                    await Task.Delay(pollInterval, ct);
+                }
+            }, cancellationToken: cancellationToken);
+        };
 }

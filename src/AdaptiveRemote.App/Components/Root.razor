@@ -3,7 +3,7 @@
 
 @if (ViewModel.CurrentPhase == LifecyclePhase.Ready)
 {
-    <Remote />
+    <Remote ProgramMode="@ViewModel.IsProgrammingMode" />
 }
 else
 {

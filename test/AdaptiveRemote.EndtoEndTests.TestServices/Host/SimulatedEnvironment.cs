@@ -35,7 +35,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder)
     {
         _tivo = tivoBuilder.Start();
-        _broadlink = (ISimulatedBroadlinkDevice)broadlinkBuilder.Start();
+        _broadlink = broadlinkBuilder.Start();
         _hostBuilder = hostBuilder;
 
         List<string> args =

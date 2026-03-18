@@ -43,6 +43,7 @@ internal class StaticCommandGroupProvider : IRemoteDefinitionService
         new LayoutGroup("GUTTER",
         [
             new ConversationView(),
+            new LifecycleCommand("Learn"),
             new LifecycleCommand("Exit", speakPhrase: Phrases.Conversation_Goodbye)
         ])
     ]);

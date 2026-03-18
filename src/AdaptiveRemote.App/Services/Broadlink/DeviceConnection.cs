@@ -55,6 +55,28 @@ internal class DeviceConnection : IDeviceConnection
         CheckError(response.Header.ErrorCode);
     }
 
+    public async Task EnterLearningModeAsync(CancellationToken cancellationToken)
+    {
+        EnterLearningPayload payload = new();
+        ResponsePacket response = await SendPacketAsync(SendDataCommandCode, payload, cancellationToken);
+        CheckError(response.Header.ErrorCode);
+    }
+
+    public async Task<byte[]?> CheckLearnedDataAsync(CancellationToken cancellationToken)
+    {
+        CheckLearnedDataPayload payload = new();
+        ResponsePacket response = await SendPacketAsync(SendDataCommandCode, payload, cancellationToken);
+
+        if (response.Header.ErrorCode == -1)
+        {
+            return null; // No IR data captured yet; caller should continue polling
+        }
+
+        CheckError(response.Header.ErrorCode);
+        LearnedDataResponsePayload responsePayload = Decrypt<LearnedDataResponsePayload>(response.Payload);
+        return responsePayload.Data;
+    }
+
     private async Task<ResponsePacket> SendPacketAsync(short packetType, Payload payload, CancellationToken cancellationToken)
     {
         _messageCount = ((_messageCount + 1) | 0x8000) & 0XFFFF;
