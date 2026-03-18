@@ -44,6 +44,9 @@ public partial class AdaptiveRemoteHost
 
         public AdaptiveRemoteHost Start(Func<AdaptiveRemoteHostSettings, AdaptiveRemoteHostSettings>? overrideSettings = null)
         {
+            // Add a small random delay to reduce the chance of resource conflicts when starting multiple hosts in parallel
+            Thread.Sleep(Random.Shared.Next(100, 500)); 
+
             AdaptiveRemoteHostSettings effectiveSettings = overrideSettings?.Invoke(_settings) ?? _settings;
             return StartWithSettings(effectiveSettings);
         }
