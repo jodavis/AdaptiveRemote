@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 
 namespace AdaptiveRemote;
 
@@ -19,5 +20,11 @@ public partial class MainWindow : Window
         base.OnSourceInitialized(e);
 
         Browser.WebView.DefaultBackgroundColor = System.Drawing.Color.FromArgb(0x00, 0x22, 0x22, 0x22);
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        base.OnClosing(e);
+        Browser.WebView.Dispose();
     }
 }
