@@ -17,6 +17,7 @@ body {
   cursor: pointer;
   background-color: #62b0ff;
   border-color: #007dfb;
+  border-width: 2px;
 }
 .btn-primary:hover {
   background-color: #7cbdff;
@@ -26,14 +27,17 @@ body {
   background-color: #afd6ff;
 }
 .btn-primary.btn-not-programmed {
-  background-color: #004a95;
+  color: #62b0ff;
+  border-color: #62b0ff;
+  background-color: #222;
+  border-width: 5px;
 }
 .btn-primary.btn-not-programmed:hover {
-  background-color: #NaNNaNNaN;
+  background-color: #2f2f2f;
 }
 .btn-primary.btn-not-programmed:active,
 .btn-primary.btn-not-programmed.btn-active {
-  background-color: #0070e2;
+  background-color: #484848;
 }
 .btn-primary.btn-disabled {
   background-color: #888888;
@@ -123,6 +127,7 @@ div.conversation-speaking-message {
   margin: 20px;
   background-color: #aa2525;
   border-color: #561313;
+  border-width: 2px;
   color: black;
 }
 #ROOT #DPAD #POWER:hover {
@@ -133,14 +138,17 @@ div.conversation-speaking-message {
   background-color: #d74545;
 }
 #ROOT #DPAD #POWER.btn-not-programmed {
-  background-color: #020101;
+  color: #aa2525;
+  border-color: #aa2525;
+  background-color: #222;
+  border-width: 5px;
 }
 #ROOT #DPAD #POWER.btn-not-programmed:hover {
-  background-color: #NaNNaNNaN;
+  background-color: #2f2f2f;
 }
 #ROOT #DPAD #POWER.btn-not-programmed:active,
 #ROOT #DPAD #POWER.btn-not-programmed.btn-active {
-  background-color: #410e0e;
+  background-color: #484848;
 }
 #ROOT #DPAD #POWER.btn-disabled {
   background-color: #888888;
@@ -261,7 +269,6 @@ div.conversation-speaking-message {
   grid-row: 1;
   grid-column: 2;
   margin: 20px;
-  font-size: 18pt;
 }
 #ROOT #GUTTER #LISTENING {
   grid-row: 1;
