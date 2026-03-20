@@ -349,4 +349,23 @@ public class ModalMessageServiceTests
         secondMessageSeen.Should().Be("Second");
         sut.View.CurrentMessage.Should().BeNull();
     }
+
+    // ─── Dispose behavior ────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void ShowMessageAsync_AfterDispose_FaultsWithChannelClosedException()
+    {
+        // Arrange
+        ModalMessageService sut = CreateSut();
+        sut.Dispose();
+
+        // Act
+        Task showTask = sut.ShowMessageAsync("Hello", _ => Task.CompletedTask);
+
+        // Assert – channel is complete so WriteAsync throws ChannelClosedException
+        showTask.Should().BeFaultedWith(
+            new System.Threading.Channels.ChannelClosedException(),
+            TimeSpan.FromMilliseconds(100),
+            because: "ShowMessageAsync should fault when the channel is closed after Dispose");
+    }
 }

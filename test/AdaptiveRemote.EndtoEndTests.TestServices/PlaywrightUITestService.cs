@@ -23,7 +23,7 @@ public class PlaywrightUITestService : IUITestService
 
         // Warm up Playwright
         CurrentPage = _browserProvider.CurrentPage as IPage
-            ?? throw new InvalidOperationException("IBrowserProvider service did not provide an object of type IPage");
+            ?? throw new InvalidOperationException("IBrowserUIAccess service did not provide an object of type IPage");
     }
 
     private IPage CurrentPage { get; }

@@ -38,7 +38,7 @@ Scenario: Program a programmable command
 	Then I should see the 'Volume Down' button is enabled
 	And I should see the 'Volume Down' button is not programmed
 	When I click on the 'Volume Down' button
-	Then I should see a modal message containing "# Programming 'Down'"
+	Then I should see a modal message containing "Programming 'Down'"
 	And the Broadlink device should be in learning mode
 	#   Verify the button active color is valid
 	When I run the accessibility contrast checker
@@ -69,7 +69,7 @@ Scenario: Programming a programmable command fails with a device error
 	Then I should see the 'Mute' button is enabled
 	When I click on the 'Mute' button
 	Then the Broadlink device should be in learning mode
-	And I should see a modal message containing "# Programming 'Mute'"
+	And I should see a modal message containing "Programming 'Mute'"
 	When the Broadlink device simulates a device error
 	Then I should not see a modal message
 	And I should see an error message in the logs:

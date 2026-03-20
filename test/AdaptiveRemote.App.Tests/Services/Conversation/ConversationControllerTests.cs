@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.Services.ModalMessages;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;

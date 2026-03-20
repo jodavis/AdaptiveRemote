@@ -1,6 +1,5 @@
 ﻿using AdaptiveRemote.Services.Testing;
 using Microsoft.Playwright;
-using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
 
 namespace AdaptiveRemote.EndtoEndTests;
 

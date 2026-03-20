@@ -1,4 +1,4 @@
-# Programmable IR Commands � Design Document
+# Programmable IR Commands — Design Document
 
 # Goal
 Enable users to program new IR commands through the application UI, making it accessible and easy to update remote layouts for new devices or functions.
