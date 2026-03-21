@@ -407,6 +407,83 @@ public class BroadlinkCommandServiceTests
         });
     }
 
+    [TestMethod]
+    public void BroadlinkCommandService_ProgramAsync_WhileLearningAlreadyInProgress_ReturnsImmediately()
+    {
+        // Arrange
+        const string commandName = "Mute";
+        const string commandName2 = "Power";
+        BroadlinkSettings settings = new() { LearnPollInterval = 0 };
+
+        MockDefinitionService
+            .Setup(x => x.RemoteRoot)
+            .Returns(new LayoutGroup("ROOT", [new IRCommand(commandName), new IRCommand(commandName2)]));
+
+        IScopedLifecycle sut = CreateSut(broadlinkSettings: settings);
+
+        Expect_IDeviceLocator_FindDevice("10.20.30.40:1234", 0x78AB, "AA:BB:CC:DD:EE:FF");
+        Expect_ConnectionFactory_Create();
+        Expect_Connection_Authenticate();
+        Expect_InitializeActivity_Description("Connecting to Broadlink device");
+        sut.InitializeAsync(InitializeActivity, default);
+
+        IRCommand firstCommand = MockDefinitionService.Object.GetCommands<IRCommand>().First(c => c.Name == commandName);
+        IRCommand secondCommand = MockDefinitionService.Object.GetCommands<IRCommand>().First(c => c.Name == commandName2);
+
+        // First learning cycle: ShowMessageAsync blocks (body not called), semaphore stays acquired
+        TaskCompletionSource firstTaskBlocker = new();
+        MockModalMessageService
+            .Setup(x => x.ShowMessageAsync(
+                Phrases.Broadlink_ProgrammingCommand(commandName),
+                It.IsAny<Func<CancellationToken, Task>>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(delegate (string message, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
+            {
+                // Return blocking task without running body, simulating a long-running learning cycle.
+                // The semaphore is held for the duration since the body's finally never runs.
+                return firstTaskBlocker.Task;
+            })
+            .Verifiable(Times.Once);
+
+        // Second command's ShowMessageAsync must never be called — rejected before reaching it
+        MockModalMessageService
+            .Setup(x => x.ShowMessageAsync(
+                Phrases.Broadlink_ProgrammingCommand(commandName2),
+                It.IsAny<Func<CancellationToken, Task>>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
+            .Verifiable(Times.Never);
+
+        // Act – start first learning (semaphore acquired, modal is "showing")
+        Task firstTask = firstCommand.ProgramAsync!(default);
+
+        // Start second learning immediately — semaphore is held so it should be rejected
+        Task secondTask = secondCommand.ProgramAsync!(default);
+
+        // Assert – second task completes immediately without modal or device interaction
+        secondTask.Should().BeCompleteWithin(TimeSpan.FromMilliseconds(200),
+            because: "a concurrent ProgramAsync call while learning is in progress should return immediately");
+
+        // Unblock first task and wait for it to finish
+        firstTaskBlocker.SetResult();
+        firstTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "the first ProgramAsync call should complete once the modal task resolves");
+
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.BroadlinkCommandService_SearchingForDevice();
+            messageLogger.BroadlinkCommandService_Authenticating(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Authenticated(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Ready();
+            messageLogger.CommandService_Programming(firstCommand);
+            messageLogger.CommandService_Programming(secondCommand);
+            messageLogger.BroadlinkCommandService_LearningAlreadyInProgress(secondCommand);
+            messageLogger.CommandService_Programmed(secondCommand);
+            messageLogger.CommandService_Programmed(firstCommand);
+        });
+    }
+
     private IRCommand SetupAndInitializeWithCommand(string commandName, IRDataSettings? irData = null, BroadlinkSettings? settings = null)
     {
         MockDefinitionService

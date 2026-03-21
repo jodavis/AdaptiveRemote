@@ -137,6 +137,25 @@ public class PlaywrightUITestService : IUITestService
         }
     }
 
+    public async Task<string?> GetInnerHtmlFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            ILocator locator = CurrentPage.Locator($".{cssClass}");
+
+            if (await locator.First.IsVisibleAsync())
+            {
+                return await locator.First.InnerHTMLAsync();
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);

@@ -49,6 +49,12 @@ public class UISteps : StepsBase
         Host.UI.WaitForModalMessageContaining(expectedText);
     }
 
+    [Then(@"I should see a modal message containing")]
+    public void ThenIShouldSeeAModalMessageContainingMarkup(string expectedMarkup)
+    {
+        Host.UI.WaitForModalMessageMarkupContaining(expectedMarkup);
+    }
+
     [Then(@"I should not see a modal message")]
     public void ThenIShouldNotSeeAModalMessage()
     {

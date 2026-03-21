@@ -2,13 +2,15 @@
 @implements IDisposable
 @inject Models.ModalMessageView ModalViewModel
 
-@if (CurrentMessage is not null)
+@if (CurrentMessageHtml is not null)
 {
-    <div class="conversation-speaking-message">@((MarkupString)RenderMarkdown(CurrentMessage))</div>
+    <div class="conversation-speaking-message">@((MarkupString)CurrentMessageHtml)</div>
 }
 
 @code {
     private string? CurrentMessage => ModalViewModel?.CurrentMessage;
+
+    private string? CurrentMessageHtml => CurrentMessage is not null ? RenderMarkdown(CurrentMessage) : null;
 
     private static readonly MarkdownPipeline _markdownPipeline =
         new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();

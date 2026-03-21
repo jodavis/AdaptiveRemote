@@ -13,6 +13,13 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     private readonly IPersistSettings _persistSettings;
     private readonly IModalMessageService _modalMessageService;
 
+    /// <summary>
+    /// Ensures that only one IR learning cycle runs at a time. The device
+    /// cannot handle concurrent learning requests; a second attempt while one
+    /// is in progress is silently ignored.
+    /// </summary>
+    private readonly SemaphoreSlim _learningSemaphore = new(1, 1);
+
     private IDeviceConnection? _connection;
 
     public BroadlinkCommandService(
@@ -70,52 +77,67 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     }
 
     protected override Command.ExecuteDelegate? CreateProgramHandler(IRCommand command)
-        => cancellationToken =>
+        => async cancellationToken =>
         {
             IDeviceConnection connection = _connection
                 ?? throw new InvalidOperationException(Phrases.Broadlink_NotConnected(command.Name));
+
+            // Prevent a second learning cycle from starting while one is already in progress.
+            // The device cannot handle concurrent learning; we silently skip the duplicate request.
+            if (!await _learningSemaphore.WaitAsync(0, cancellationToken))
+            {
+                Logger.BroadlinkCommandService_LearningAlreadyInProgress(command);
+                return;
+            }
 
             string message = Phrases.Broadlink_ProgrammingCommand(command.Label);
             TimeSpan pollInterval = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnPollInterval);
             TimeSpan learnTimeout = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnTimeout);
 
-            return _modalMessageService.ShowMessageAsync(message, async ct =>
+            try
             {
-                using CancellationTokenSource timeoutCts = new(learnTimeout);
-                using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
-
-                Logger.BroadlinkCommandService_EnteringLearningMode(command);
-                await connection.EnterLearningModeAsync(linkedCts.Token);
-
-                // Poll until data is received (early return), the user cancels (ct fires),
-                // or the overall learning timeout fires (timeoutCts fires).
-                try
+                await _modalMessageService.ShowMessageAsync(message, async ct =>
                 {
-                    while (true)
+                    using CancellationTokenSource timeoutCts = new(learnTimeout);
+                    using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+                    Logger.BroadlinkCommandService_EnteringLearningMode(command);
+                    await connection.EnterLearningModeAsync(linkedCts.Token);
+
+                    // Poll until data is received (early return), the user cancels (ct fires),
+                    // or the overall learning timeout fires (timeoutCts fires).
+                    try
                     {
-                        linkedCts.Token.ThrowIfCancellationRequested();
-
-                        Logger.BroadlinkCommandService_PollingForLearnedData(command);
-                        byte[]? data = await connection.CheckLearnedDataAsync(linkedCts.Token);
-
-                        if (data is not null)
+                        while (true)
                         {
-                            Logger.BroadlinkCommandService_LearnedDataReceived(command, data.Length);
-                            string base64Data = Convert.ToBase64String(data);
-                            _persistSettings.Set($"IRData:{command.Name}", base64Data);
-                            command.ExecuteAsync = CreateWrappedHandler(command, sendCt => connection.SendDataAsync(data, sendCt));
-                            command.IsEnabled = true;
-                            return;
-                        }
+                            linkedCts.Token.ThrowIfCancellationRequested();
 
-                        await Task.Delay(pollInterval, linkedCts.Token);
+                            Logger.BroadlinkCommandService_PollingForLearnedData(command);
+                            byte[]? data = await connection.CheckLearnedDataAsync(linkedCts.Token);
+
+                            if (data is not null)
+                            {
+                                Logger.BroadlinkCommandService_LearnedDataReceived(command, data.Length);
+                                string base64Data = Convert.ToBase64String(data);
+                                _persistSettings.Set($"IRData:{command.Name}", base64Data);
+                                command.ExecuteAsync = CreateWrappedHandler(command, sendCt => connection.SendDataAsync(data, sendCt));
+                                command.IsEnabled = true;
+                                return;
+                            }
+
+                            await Task.Delay(pollInterval, linkedCts.Token);
+                        }
                     }
-                }
-                catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
-                {
-                    Logger.BroadlinkCommandService_LearningTimedOut(command);
-                    throw Errors.Broadlink_LearningTimedOut(learnTimeout);
-                }
-            }, cancellationToken: cancellationToken);
+                    catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+                    {
+                        Logger.BroadlinkCommandService_LearningTimedOut(command);
+                        throw Errors.Broadlink_LearningTimedOut(learnTimeout);
+                    }
+                }, cancellationToken: cancellationToken);
+            }
+            finally
+            {
+                _learningSemaphore.Release();
+            }
         };
 }
