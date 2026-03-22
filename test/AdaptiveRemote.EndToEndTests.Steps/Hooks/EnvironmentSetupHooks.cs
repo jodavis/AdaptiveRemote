@@ -72,7 +72,7 @@ internal class EnvironmentSetupHooks
         }
     }
 
-    [AfterScenario(Order = 1000000)]
+    [AfterScenario(Order = 0)]
     public static void OnAfterScenario_StopHostIfTestFailed(ScenarioContext scenario)
     {
         if (scenario.ScenarioExecutionStatus != ScenarioExecutionStatus.OK && _startedEnvironment is not null)
