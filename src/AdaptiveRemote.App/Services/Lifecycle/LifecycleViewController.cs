@@ -35,6 +35,15 @@ internal class LifecycleViewController : ILifecycleViewController
 
     public CancellationToken EnterLearningMode()
     {
+        // If we're already in learning mode, return the existing token rather than
+        // creating a new CTS. Starting a second learning cycle while one is in progress
+        // could leave the device in an inconsistent state.
+        CancellationTokenSource? existing = _learningCts;
+        if (existing is not null)
+        {
+            return existing.Token;
+        }
+
         CancellationTokenSource cts = new();
         _learningCts = cts;
         ViewModel.LearningCancellationToken = cts.Token;

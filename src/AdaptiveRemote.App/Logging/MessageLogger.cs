@@ -174,6 +174,9 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 1008, Level = LogLevel.Warning, Message = "IR learning timed out for {Command}")]
     public partial void BroadlinkCommandService_LearningTimedOut(Models.Command command);
 
+    [LoggerMessage(EventId = 1009, Level = LogLevel.Warning, Message = "IR learning already in progress; ignoring request to program {Command}")]
+    public partial void BroadlinkCommandService_LearningAlreadyInProgress(Models.Command command);
+
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Loading existing settings from {FilePath}")]
     public partial void ProgrammaticSettings_LoadingExistingSettings(string filePath);
 

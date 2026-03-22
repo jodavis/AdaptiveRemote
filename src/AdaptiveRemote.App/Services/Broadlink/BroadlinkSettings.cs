@@ -25,6 +25,14 @@ public class BroadlinkSettings
     public double LearnPollInterval { get; set; } = 1;
 
     /// <summary>
+    /// Maximum amount of time, in seconds, to wait for the device to return a learned IR code.
+    /// This should be set significantly longer than the device's own learning mode timeout so
+    /// that the device can exit learning mode naturally before the application gives up. Defaults
+    /// to 120 seconds (2 minutes).
+    /// </summary>
+    public double LearnTimeout { get; set; } = 120;
+
+    /// <summary>
     /// Optional discovery port override for testing. If not set, uses port 80.
     /// </summary>
     public int? DiscoveryPort { get; set; }

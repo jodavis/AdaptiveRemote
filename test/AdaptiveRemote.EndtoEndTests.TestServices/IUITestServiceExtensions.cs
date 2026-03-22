@@ -200,6 +200,41 @@ public static class IUITestServiceExtensions
     }
 
     /// <summary>
+    /// Waits for the modal message element's inner HTML to contain the expected markup.
+    /// Use this to verify that markdown was rendered correctly as HTML.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="expectedMarkup">A substring of HTML markup expected to appear in the modal element's inner HTML.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation (default 5 seconds).</param>
+    /// <exception cref="TimeoutException">Thrown when the modal doesn't appear or its markup doesn't contain the expected value within the timeout.</exception>
+    public static void WaitForModalMessageMarkupContaining(this IUITestService service, string expectedMarkup, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+    {
+        const string modalCssClass = "conversation-speaking-message";
+        string? actualHtml = null;
+
+        bool found = WaitHelpers.ExecuteWithRetries(() =>
+        {
+            actualHtml = WaitHelpers.WaitForAsyncTask(
+                ct => service.GetInnerHtmlFromElementWithCssClassAsync(modalCssClass, ct),
+                timeoutInSeconds);
+
+            return actualHtml != null && actualHtml.Contains(expectedMarkup, StringComparison.OrdinalIgnoreCase);
+        }, timeoutInSeconds);
+
+        if (!found)
+        {
+            if (actualHtml == null)
+            {
+                throw new TimeoutException($"Modal message box did not appear within {timeoutInSeconds} seconds.");
+            }
+            else
+            {
+                throw new TimeoutException($"Modal message box appeared but its HTML was '{actualHtml}' instead of containing expected markup '{expectedMarkup}'.");
+            }
+        }
+    }
+
+    /// <summary>
     /// Waits until the button with the given label reaches the desired programmed state.
     /// </summary>
     /// <param name="service">The UI test service.</param>

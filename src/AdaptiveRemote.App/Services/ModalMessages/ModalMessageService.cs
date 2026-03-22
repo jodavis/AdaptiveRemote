@@ -24,11 +24,11 @@ internal sealed class ModalMessageService : IModalMessageService, IDisposable
     }
 
     /// <inheritdoc/>
-    public Task ShowMessageAsync(string message, Func<CancellationToken, Task> body, bool keepAlive = false, CancellationToken cancellationToken = default)
+    public async Task ShowMessageAsync(string message, Func<CancellationToken, Task> body, bool keepAlive = false, CancellationToken cancellationToken = default)
     {
         TaskCompletionSource tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        _channel.Writer.TryWrite(new(message, body, keepAlive, tcs, cancellationToken));
-        return tcs.Task;
+        await _channel.Writer.WriteAsync(new(message, body, keepAlive, tcs, cancellationToken), cancellationToken);
+        await tcs.Task;
     }
 
     /// <inheritdoc/>

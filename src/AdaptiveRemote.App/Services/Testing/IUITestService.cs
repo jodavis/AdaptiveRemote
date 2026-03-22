@@ -45,4 +45,12 @@ public partial interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The text content of the first matching element, or null if not found or not visible.</returns>
     Task<string?> GetTextFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets the inner HTML from an element with the specified CSS class.
+    /// </summary>
+    /// <param name="cssClass">The CSS class name to search for.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The inner HTML of the first matching element, or null if not found or not visible.</returns>
+    Task<string?> GetInnerHtmlFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken);
 }

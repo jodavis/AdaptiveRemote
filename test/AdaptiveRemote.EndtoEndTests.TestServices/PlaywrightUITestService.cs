@@ -23,7 +23,7 @@ public class PlaywrightUITestService : IUITestService
 
         // Warm up Playwright
         CurrentPage = _browserProvider.CurrentPage as IPage
-            ?? throw new InvalidOperationException("IBrowserProvider service did not provide an object of type IPage");
+            ?? throw new InvalidOperationException("IBrowserUIAccess service did not provide an object of type IPage");
     }
 
     private IPage CurrentPage { get; }
@@ -127,6 +127,25 @@ public class PlaywrightUITestService : IUITestService
             {
                 // Return the text content of the first visible element
                 return await locator.First.TextContentAsync();
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<string?> GetInnerHtmlFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            ILocator locator = CurrentPage.Locator($".{cssClass}");
+
+            if (await locator.First.IsVisibleAsync())
+            {
+                return await locator.First.InnerHTMLAsync();
             }
 
             return null;

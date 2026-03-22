@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.NetworkInformation;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.Services.ModalMessages;
 using FluentAssertions;
 using Moq;
 
@@ -408,6 +407,83 @@ public class BroadlinkCommandServiceTests
         });
     }
 
+    [TestMethod]
+    public void BroadlinkCommandService_ProgramAsync_WhileLearningAlreadyInProgress_ReturnsImmediately()
+    {
+        // Arrange
+        const string commandName = "Mute";
+        const string commandName2 = "Power";
+        BroadlinkSettings settings = new() { LearnPollInterval = 0 };
+
+        MockDefinitionService
+            .Setup(x => x.RemoteRoot)
+            .Returns(new LayoutGroup("ROOT", [new IRCommand(commandName), new IRCommand(commandName2)]));
+
+        IScopedLifecycle sut = CreateSut(broadlinkSettings: settings);
+
+        Expect_IDeviceLocator_FindDevice("10.20.30.40:1234", 0x78AB, "AA:BB:CC:DD:EE:FF");
+        Expect_ConnectionFactory_Create();
+        Expect_Connection_Authenticate();
+        Expect_InitializeActivity_Description("Connecting to Broadlink device");
+        sut.InitializeAsync(InitializeActivity, default);
+
+        IRCommand firstCommand = MockDefinitionService.Object.GetCommands<IRCommand>().First(c => c.Name == commandName);
+        IRCommand secondCommand = MockDefinitionService.Object.GetCommands<IRCommand>().First(c => c.Name == commandName2);
+
+        // First learning cycle: ShowMessageAsync blocks (body not called), semaphore stays acquired
+        TaskCompletionSource firstTaskBlocker = new();
+        MockModalMessageService
+            .Setup(x => x.ShowMessageAsync(
+                Phrases.Broadlink_ProgrammingCommand(commandName),
+                It.IsAny<Func<CancellationToken, Task>>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(delegate (string message, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
+            {
+                // Return blocking task without running body, simulating a long-running learning cycle.
+                // The semaphore is held for the duration since the body's finally never runs.
+                return firstTaskBlocker.Task;
+            })
+            .Verifiable(Times.Once);
+
+        // Second command's ShowMessageAsync must never be called — rejected before reaching it
+        MockModalMessageService
+            .Setup(x => x.ShowMessageAsync(
+                Phrases.Broadlink_ProgrammingCommand(commandName2),
+                It.IsAny<Func<CancellationToken, Task>>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
+            .Verifiable(Times.Never);
+
+        // Act – start first learning (semaphore acquired, modal is "showing")
+        Task firstTask = firstCommand.ProgramAsync!(default);
+
+        // Start second learning immediately — semaphore is held so it should be rejected
+        Task secondTask = secondCommand.ProgramAsync!(default);
+
+        // Assert – second task completes immediately without modal or device interaction
+        secondTask.Should().BeCompleteWithin(TimeSpan.FromMilliseconds(200),
+            because: "a concurrent ProgramAsync call while learning is in progress should return immediately");
+
+        // Unblock first task and wait for it to finish
+        firstTaskBlocker.SetResult();
+        firstTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
+            because: "the first ProgramAsync call should complete once the modal task resolves");
+
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.BroadlinkCommandService_SearchingForDevice();
+            messageLogger.BroadlinkCommandService_Authenticating(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Authenticated(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Ready();
+            messageLogger.CommandService_Programming(firstCommand);
+            messageLogger.CommandService_Programming(secondCommand);
+            messageLogger.BroadlinkCommandService_LearningAlreadyInProgress(secondCommand);
+            messageLogger.CommandService_Programmed(secondCommand);
+            messageLogger.CommandService_Programmed(firstCommand);
+        });
+    }
+
     private IRCommand SetupAndInitializeWithCommand(string commandName, IRDataSettings? irData = null, BroadlinkSettings? settings = null)
     {
         MockDefinitionService
@@ -423,6 +499,85 @@ public class BroadlinkCommandServiceTests
 
         sut.InitializeAsync(InitializeActivity, default);
         return MockDefinitionService.Object.GetElement<IRCommand>();
+    }
+
+    [TestMethod]
+    public void BroadlinkCommandService_ProgramAsync_LearnTimeoutExpires_FaultsWithTimeoutException()
+    {
+        // Arrange
+        const string commandName = "Mute";
+        // Use a very short timeout so the test completes quickly
+        BroadlinkSettings settings = new() { LearnPollInterval = 0, LearnTimeout = 0.001 };
+        IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
+
+        Expect_Connection_EnterLearningMode();
+        // CheckLearnedDataAsync blocks until its cancellation token fires (timeout will trigger it)
+        MockConnection
+            .Setup(x => x.CheckLearnedDataAsync(It.IsAny<CancellationToken>()))
+            .WithExpectedCancellation(throwWhenCancelled: true);
+
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
+
+        // Act – no user cancellation token; the overall timeout should fire
+        Task programTask = command.ProgramAsync!(default);
+
+        // Assert – should fault with TimeoutException, not cancel
+        TimeSpan expectedTimeout = TimeSpan.FromSeconds(0.001);
+        TimeoutException expectedException = new($"IR learning timed out: No IR code was received within {expectedTimeout.TotalSeconds}s");
+        programTask.Should().BeFaultedWith(expectedException, TimeSpan.FromSeconds(5),
+            because: "ProgramAsync should fault with TimeoutException when the overall learning timeout expires");
+
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.BroadlinkCommandService_SearchingForDevice();
+            messageLogger.BroadlinkCommandService_Authenticating(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Authenticated(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Ready();
+            messageLogger.CommandService_Programming(command);
+            messageLogger.BroadlinkCommandService_EnteringLearningMode(command);
+            messageLogger.BroadlinkCommandService_PollingForLearnedData(command);
+            messageLogger.BroadlinkCommandService_LearningTimedOut(command);
+            messageLogger.CommandService_ProgramError(command, expectedException);
+        });
+    }
+
+    [TestMethod]
+    public void BroadlinkCommandService_ProgramAsync_UserCancelsBeforeTimeout_TaskCancelsNotFaults()
+    {
+        // Arrange
+        const string commandName = "Mute";
+        // Use a long timeout to ensure the user cancellation fires first
+        BroadlinkSettings settings = new() { LearnPollInterval = 0, LearnTimeout = 120 };
+        IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
+
+        CancellationTokenSource cts = new();
+
+        Expect_Connection_EnterLearningMode();
+        MockConnection
+            .Setup(x => x.CheckLearnedDataAsync(It.IsAny<CancellationToken>()))
+            .WithExpectedCancellation(throwWhenCancelled: true);
+
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
+
+        // Act
+        Task programTask = command.ProgramAsync!(cts.Token);
+        cts.Cancel();
+
+        // Assert – user cancellation should cancel the task, not fault it as a timeout
+        programTask.Should().BeCanceledWithin(TimeSpan.FromSeconds(5),
+            because: "ProgramAsync should cancel (not timeout) when the user's cancellation token fires");
+
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.BroadlinkCommandService_SearchingForDevice();
+            messageLogger.BroadlinkCommandService_Authenticating(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Authenticated(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Ready();
+            messageLogger.CommandService_Programming(command);
+            messageLogger.BroadlinkCommandService_EnteringLearningMode(command);
+            messageLogger.BroadlinkCommandService_PollingForLearnedData(command);
+            messageLogger.CommandService_ProgramCancelled(command);
+        });
     }
 
     private void Expect_IDeviceLocator_FindDevice(string ip, short deviceType, string mac, bool isLocked = false)
@@ -452,7 +607,7 @@ public class BroadlinkCommandServiceTests
     private void Expect_ModalMessageService_ShowMessage(string expectedMessage)
         => MockModalMessageService
             .Setup(x => x.ShowMessageAsync(expectedMessage, It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-            .Returns(delegate(string message, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
+            .Returns(delegate (string message, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
             {
                 Assert.AreEqual(expectedMessage, message, "Modal message should have the expected text");
                 return action(ct);
