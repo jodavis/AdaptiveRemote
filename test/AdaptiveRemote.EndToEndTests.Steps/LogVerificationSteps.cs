@@ -46,7 +46,7 @@ public class LogVerificationSteps : StepsBase
             return errorLines.Count > 0;
         }, waitTimeoutInSeconds);
 
-        Assert.IsTrue(found, "Host log did not contain any error messages within {0} seconds.", waitTimeoutInSeconds);
+        Assert.IsTrue(found, $"Host log did not contain any error messages within {waitTimeoutInSeconds} seconds.");
         Assert.AreEqual(1, errorLines.Count,
             "Host log contains unexpected errors:\n{0}",
             string.Join("\n", errorLines));
