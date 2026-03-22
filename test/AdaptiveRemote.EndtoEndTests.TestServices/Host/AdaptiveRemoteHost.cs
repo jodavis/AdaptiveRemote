@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Net.Sockets;
-using System.Text;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Logging;
 using StreamJsonRpc;

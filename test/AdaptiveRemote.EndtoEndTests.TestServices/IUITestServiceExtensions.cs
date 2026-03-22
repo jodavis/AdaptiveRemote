@@ -82,7 +82,7 @@ public static class IUITestServiceExtensions
         try
         {
             using IUIButtonTestObject button = service.GetButtonByLabel(label, timeout);
-            
+
             bool succeeded = WaitHelpers.WaitForAsyncTask(button.ClickAsync, timeout);
             if (!succeeded)
             {
@@ -178,9 +178,10 @@ public static class IUITestServiceExtensions
     /// Waits until no modal message is visible in the UI.
     /// </summary>
     /// <param name="service">The UI test service.</param>
-    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation. Defaults to 15 seconds to allow
+    /// time for asynchronous error handling and UI re-render after a device error.</param>
     /// <exception cref="TimeoutException">Thrown when a modal message is still visible after the timeout.</exception>
-    public static void WaitForNoModalMessage(this IUITestService service, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+    public static void WaitForNoModalMessage(this IUITestService service, int timeoutInSeconds = 15)
     {
         const string modalCssClass = "conversation-speaking-message";
 
@@ -188,7 +189,7 @@ public static class IUITestServiceExtensions
         {
             string? text = WaitHelpers.WaitForAsyncTask(
                 ct => service.GetTextFromElementWithCssClassAsync(modalCssClass, ct),
-                timeoutInSeconds);
+                WaitHelpers.DefaultTimeoutInSeconds);
 
             return text is null;
         }, timeoutInSeconds);

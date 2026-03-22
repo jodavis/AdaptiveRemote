@@ -46,6 +46,11 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             // Use the simulated Broadlink device
             $"--broadlink:DiscoveryAddress=127.0.0.1",
             $"--broadlink:DiscoveryPort={_broadlink.Port}",
+
+            // Use a short poll interval so that errors are detected quickly in tests.
+            // The default of 1 second can cause E2E tests to time out waiting for
+            // the modal to dismiss after a device error.
+            "--broadlink:LearnPollInterval=0.1",
         ];
 
         hostBuilder
