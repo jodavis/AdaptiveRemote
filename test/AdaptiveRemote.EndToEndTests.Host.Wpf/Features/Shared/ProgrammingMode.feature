@@ -77,11 +77,11 @@ Scenario: Programming a programmable command fails with a device error
 		<h1 id="programming-mute">Programming 'Mute'</h1>
 		"""
 	When the Broadlink device simulates a device error
-	Then I should not see a modal message
-	And I should see an error message in the logs:
+	Then I should see an error message in the logs:
 		"""
 		Error programming IRCommand 'Mute'
 		"""
+	And I should not see a modal message
 	When I click on the 'Learn' button
 	Then I should see the 'Mute' button is disabled
 

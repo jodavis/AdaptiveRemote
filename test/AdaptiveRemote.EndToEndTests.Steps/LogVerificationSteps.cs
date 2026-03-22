@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AdaptiveRemote.EndtoEndTests;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 
@@ -34,10 +35,19 @@ public class LogVerificationSteps : StepsBase
     [Then("I should see an error message in the logs:")]
     public void ThenIShouldSeeAnErrorInTheLogs(string expectedErrorMessage)
     {
-        IEnumerable<string> errorLines = FilterLogLines(IsError);
+        const int waitTimeoutInSeconds = 10;
+        List<string> errorLines = [];
 
-        Assert.IsTrue(errorLines.Any(), "Host log does not contain any error messages.");
-        Assert.AreEqual(1, errorLines.Count(),
+        // Wait up to 10 seconds for the expected error to appear in the log file.
+        // The error may be written asynchronously after an operation fails, so retry until it appears.
+        bool found = WaitHelpers.ExecuteWithRetries(() =>
+        {
+            errorLines = FilterLogLines(IsError).ToList();
+            return errorLines.Count > 0;
+        }, waitTimeoutInSeconds);
+
+        Assert.IsTrue(found, "Host log did not contain any error messages within {0} seconds.", waitTimeoutInSeconds);
+        Assert.AreEqual(1, errorLines.Count,
             "Host log contains unexpected errors:\n{0}",
             string.Join("\n", errorLines));
         StringAssert.Contains(errorLines.First(), expectedErrorMessage,
