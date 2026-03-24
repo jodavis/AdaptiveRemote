@@ -1,0 +1,41 @@
+@using Markdig
+@implements IDisposable
+@inject Models.ModalMessageView ModalViewModel
+
+@if (CurrentMessageHtml is not null)
+{
+    <div class="conversation-speaking-message">@((MarkupString)CurrentMessageHtml)</div>
+}
+
+@code {
+    private string? CurrentMessage => ModalViewModel?.CurrentMessage;
+
+    private string? CurrentMessageHtml => CurrentMessage is not null ? RenderMarkdown(CurrentMessage) : null;
+
+    private static readonly MarkdownPipeline _markdownPipeline =
+        new MarkdownPipelineBuilder().Build();
+
+    private static string RenderMarkdown(string markdown)
+        => Markdown.ToHtml(markdown, _markdownPipeline);
+
+    protected override void OnInitialized()
+    {
+        if (ModalViewModel is not null)
+        {
+            ModalViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        }
+
+        base.OnInitialized();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (ModalViewModel is not null)
+        {
+            ModalViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        }
+    }
+}

@@ -1,19 +1,35 @@
 @import "theme.less";
 
 .btn-behavior(@base-color) {
+    @hover-adjustment: 5%;
+    @active-adjustment: 15%;
+    @border-adjustment: 20%;
+
     background-color: @base-color;
-    border-color: darken(@base-color, 20%);
+    border-color: darken(@base-color, @border-adjustment);
+    border-width: 2px;
 
     &:hover {
-        background-color: lighten(@base-color, 5%)
+        background-color: lighten(@base-color, @hover-adjustment)
     }
 
-    &:active {
-        background-color: lighten(@base-color, 15%)
+    &:active, &.btn-active {
+        background-color: lighten(@base-color, @active-adjustment)
     }
 
-    &.btn-active {
-        background-color: lighten(@base-color, 15%)
+    &.btn-not-programmed {
+        color: @base-color;
+        border-color: @base-color;
+        background-color: @background-color;
+        border-width: 5px;
+
+        &:hover {
+            background-color: lighten(@background-color, @hover-adjustment)
+        }
+
+        &:active, &.btn-active {
+            background-color: lighten(@background-color, @active-adjustment)
+        }
     }
 
     &.btn-disabled {

@@ -48,6 +48,17 @@ public class ApplicationTestService : IApplicationTestService
         }
     }
 
+    public Task<bool> GetIsListeningAsync(CancellationToken cancellationToken)
+    {
+        // Find the ConversationView by walking the remote tree
+        ConversationView? conversationView = FindConversationView(_remoteDefinitionService.RemoteRoot)
+            ?? throw new InvalidOperationException("ConversationView not found in remote definition service");
+
+        // Use GetValue to access the internal property
+        bool isListening = conversationView.GetValue(ConversationView.IsListeningProperty);
+        return Task.FromResult(isListening);
+    }
+
     private static Command? FindCommandByName(RemoteLayoutElement element, string name)
     {
         if (element is Command command && command.Name == name)
@@ -60,6 +71,28 @@ public class ApplicationTestService : IApplicationTestService
             foreach (RemoteLayoutElement child in group.Elements)
             {
                 Command? found = FindCommandByName(child, name);
+                if (found is not null)
+                {
+                    return found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static ConversationView? FindConversationView(RemoteLayoutElement element)
+    {
+        if (element is ConversationView conversationView)
+        {
+            return conversationView;
+        }
+
+        if (element is LayoutGroup group)
+        {
+            foreach (RemoteLayoutElement child in group.Elements)
+            {
+                ConversationView? found = FindConversationView(child);
                 if (found is not null)
                 {
                     return found;

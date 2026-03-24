@@ -19,13 +19,32 @@ internal class LifecycleCommandService : CommandServiceBase<LifecycleCommand>
     protected override Command.ExecuteDelegate CreateHandler(LifecycleCommand command)
         => command.Name switch
         {
-            "Exit" => delegate (CancellationToken _)
+            "Exit" => ExitAsync,
+            "Learn" => delegate (CancellationToken _)
             {
-                _viewController.SetPhase(LifecyclePhase.Stopping);
-                _applicationLifetime.StopApplication();
+                _viewController.EnterLearningMode();
                 return Task.CompletedTask;
             }
             ,
             _ => throw new Exception($"Unknown {command}")
         };
+
+    protected override Command.ExecuteDelegate? CreateProgramHandler(LifecycleCommand command)
+        => command.Name switch
+        {
+            "Exit" => ExitAsync,
+            "Learn" => async delegate (CancellationToken _)
+            {
+                await _viewController.ExitLearningModeAsync();
+            }
+            ,
+            _ => null
+        };
+
+    private Task ExitAsync(CancellationToken _)
+    {
+        _viewController.SetPhase(LifecyclePhase.Stopping);
+        _applicationLifetime.StopApplication();
+        return Task.CompletedTask;
+    }
 }

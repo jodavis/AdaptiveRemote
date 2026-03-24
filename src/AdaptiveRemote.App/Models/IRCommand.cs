@@ -4,7 +4,6 @@ internal class IRCommand : Command
 {
     public IRCommand(
         string name,
-        string data,
         string? placement = null,
         string? label = null,
         string? cssid = null,
@@ -13,8 +12,5 @@ internal class IRCommand : Command
         string? speakName = null)
         : base(name, placement, label, cssid, glyph, reverse, Phrases.Conversation_Sent(speakName ?? name))
     {
-        Data = data;
     }
-
-    public string Data { get; }
 }

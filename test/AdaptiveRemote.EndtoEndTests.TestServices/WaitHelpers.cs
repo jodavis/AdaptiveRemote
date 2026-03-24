@@ -22,23 +22,10 @@ public static class WaitHelpers
     }
 
     public static bool ExecuteWithRetries(Func<CancellationToken, Task<bool>> action, int timeoutInSeconds = DefaultTimeoutInSeconds)
-        => ExecuteWithRetries(action, TimeSpan.FromSeconds(timeoutInSeconds));
+        => WaitForState(action, true, TimeSpan.FromSeconds(timeoutInSeconds));
 
     public static bool ExecuteWithRetries(Func<CancellationToken, Task<bool>> action, TimeSpan timeout)
-    {
-        DateTime endTime = DateTime.UtcNow.Add(timeout);
-
-        return ExecuteWithRetries(() =>
-        {
-            bool result = false;
-
-            WaitForAsyncTask(
-                async cancellationToken => { result = await action(cancellationToken); },
-                endTime - DateTime.UtcNow);
-
-            return result;
-        }, timeout);
-    }
+        => WaitForState(action, true, timeout);
 
     public static bool WaitForAsyncTask(Func<CancellationToken, Task> action, int timeoutInSeconds = DefaultTimeoutInSeconds)
         => WaitForAsyncTask(action, TimeSpan.FromSeconds(timeoutInSeconds));
@@ -79,5 +66,26 @@ public static class WaitHelpers
         }
 
         return result!;
+    }
+
+    public static bool WaitForState<StateType>(Func<CancellationToken, Task<StateType>> stateFunc, StateType expectedState, int timeoutInSeconds = DefaultTimeoutInSeconds)
+        where StateType : struct
+        => WaitForState(stateFunc, expectedState, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    public static bool WaitForState<StateType>(Func<CancellationToken, Task<StateType>> stateFunc, StateType expectedValue, TimeSpan timeout)
+        where StateType : struct
+    {
+        DateTime endTime = DateTime.UtcNow.Add(timeout);
+
+        return ExecuteWithRetries(() =>
+        {
+            StateType result = default;
+
+            bool completed = WaitForAsyncTask(
+                async cancellationToken => { result = await stateFunc(cancellationToken); },
+                endTime - DateTime.UtcNow);
+
+            return completed && result.Equals(expectedValue);
+        }, timeout);
     }
 }

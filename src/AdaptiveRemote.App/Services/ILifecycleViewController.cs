@@ -20,4 +20,17 @@ public interface ILifecycleViewController
     /// when it is complete.
     /// </summary>
     ILifecycleActivity StartTask(string description);
+
+    /// <summary>
+    /// Enters learning mode, creating a <see cref="CancellationToken"/> that callers may
+    /// use to cancel any in-progress programming operation. The token is cancelled when
+    /// <see cref="ExitLearningModeAsync"/> is called.
+    /// </summary>
+    CancellationToken EnterLearningMode();
+
+    /// <summary>
+    /// Exits learning mode, cancelling any in-progress programming operations and
+    /// disposing the internal <see cref="CancellationTokenSource"/>.
+    /// </summary>
+    Task ExitLearningModeAsync();
 }

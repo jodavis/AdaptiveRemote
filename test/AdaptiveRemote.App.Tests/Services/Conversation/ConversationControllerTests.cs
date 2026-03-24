@@ -24,6 +24,8 @@ public class ConversationControllerTests
     private readonly Mock<CommandExecute> Command2Execute = new();
     private readonly Mock<ILifecycleActivity> MockInitializeActivity = new() { Name = nameof(MockInitializeActivity) };
     private readonly Mock<ILifecycleActivity> MockCleanupActivity = new() { Name = nameof(MockCleanupActivity) };
+    private readonly Mock<IModalMessageService> MockModalMessageService = new();
+    private readonly ModalMessageView ModalView = new();
 
     private readonly TiVoCommand Command1 = new("Hey you!");
     private readonly TiVoCommand Command2 = new("Test Two");
@@ -105,10 +107,18 @@ public class ConversationControllerTests
             .Verifiable(Times.Never);
 
     private void Expect_Synthesis_Say(string phrase, Task? completeTask = default, Times? times = default)
-        => MockSynthesis
+    {
+        MockSynthesis
             .Setup(x => x.SayAsync(phrase, It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(completeTask)
             .Verifiable(times ?? Times.Once());
+
+        // Modal message service is called before synthesis – set up to execute the body
+        MockModalMessageService
+            .Setup(x => x.ShowMessageAsync("# " + phrase, It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Returns<string, Func<CancellationToken, Task>, bool, CancellationToken>((_, body, _, ct) => body(ct))
+            .Verifiable(times ?? Times.Once());
+    }
 
     private void Expect_Recognition_AllExpectedSpeechIsRead()
         => _allSpeechWasRead = false;
@@ -134,7 +144,8 @@ public class ConversationControllerTests
         MockSynthesis.Object,
         MockLogger,
         new ConversationStateMachine(MockDefinition.Object, MockOptions.Object, new MockLogger<ConversationStateMachine>()),
-        ViewModel);
+        ViewModel,
+        MockModalMessageService.Object);
 
     private static Mock<IRecognizedSpeech> CreateMockSpeech(string text, params string[] semanticValues)
     {
@@ -206,6 +217,14 @@ public class ConversationControllerTests
             .Returns(ConversationSettings)
             .Verifiable(Times.Exactly(2));
 
+        MockModalMessageService
+            .SetupGet(x => x.View)
+            .Returns(ModalView);
+        MockModalMessageService
+            .Setup(x => x.ShowMessageAsync(It.IsAny<string>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Returns<string, Func<CancellationToken, Task>, bool, CancellationToken>((_, body, _, ct) => body(ct))
+            .Verifiable(Times.Never);
+
         MockLogger.OutputWriter = TestContext;
 
         MockInitializeActivity
@@ -238,6 +257,7 @@ public class ConversationControllerTests
         MockSynthesis.Verify();
         Command1Execute.Verify();
         MockDefinition.Verify();
+        MockModalMessageService.Verify();
         _allSpeechWasRead.Should().BeTrue(because: "the test should have finished reading all the speech from ISpeechRecognition.RecognizeAsync()");
     }
 
@@ -257,7 +277,6 @@ public class ConversationControllerTests
         // Assert
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_WaitingForActivation);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -286,7 +305,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -327,7 +345,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
-        ViewModel.SpeakingMessage.Should().Be(Phrases.Conversation_ImListening);
     }
 
     [TestMethod]
@@ -385,7 +402,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse(because: "ConversationController does not listen while cleaning up");
         ViewModel.StatusMessage.Should().BeEmpty(because: "ConversationController has no status while cleaning up");
-        ViewModel.SpeakingMessage.Should().BeNull(because: "ConversationController should not speak while cleaning up");
     }
 
     [TestMethod]
@@ -426,7 +442,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeTrue(because: "ConversationController should be listening for commands after attention word is recognized");
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
-        ViewModel.SpeakingMessage.Should().BeNull(because: "ConversationController should not be speaking while listening");
     }
 
     [TestMethod]
@@ -464,7 +479,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse(because: "ConversationController should not be listening while speaking");
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImSending);
-        ViewModel.SpeakingMessage.Should().Be(Phrases.Conversation_Sent(Command1.Name));
     }
 
     [TestMethod]
@@ -513,7 +527,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeTrue();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -554,7 +567,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse(because: "ConversationController should not be listening while speaking");
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImSending);
-        ViewModel.SpeakingMessage.Should().Be(Phrases.Conversation_Sent(Command1.Name));
     }
 
     [TestMethod]
@@ -598,7 +610,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().Be(true);
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
-        ViewModel.SpeakingMessage.Should().Be(null);
     }
 
     [TestMethod]
@@ -671,7 +682,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().BeEmpty();
-        ViewModel.SpeakingMessage.Should().BeNull(because: "ConversationController should not be speaking while cleaning up");
     }
 
     [TestMethod]
@@ -713,7 +723,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().Be(true);
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -745,7 +754,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
-        ViewModel.SpeakingMessage.Should().Be(Phrases.Conversation_StoppedListening);
     }
 
     [TestMethod]
@@ -808,7 +816,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().BeEmpty();
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -841,7 +848,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().Be(true);
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ImListening);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -883,7 +889,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_ListeningForAttention);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -956,7 +961,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Conversation_SystemFailed);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -998,7 +1002,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().Be(Phrases.Cleanup_ShuttingDown);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -1042,7 +1045,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().BeEmpty();
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -1098,7 +1100,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().Be(true);
         ViewModel.StatusMessage.Should().Be(Phrases.Cleanup_ShuttingDown);
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     [TestMethod]
@@ -1154,7 +1155,6 @@ public class ConversationControllerTests
 
         ViewModel.IsListening.Should().BeFalse();
         ViewModel.StatusMessage.Should().BeEmpty();
-        ViewModel.SpeakingMessage.Should().BeNull();
     }
 
     public abstract class CommandExecute

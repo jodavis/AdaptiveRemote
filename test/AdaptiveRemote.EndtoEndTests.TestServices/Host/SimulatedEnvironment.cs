@@ -1,5 +1,6 @@
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using AdaptiveRemote.Services.Conversation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
@@ -9,6 +10,18 @@ namespace AdaptiveRemote.EndtoEndTests.Host;
 /// </summary>
 public sealed class SimulatedEnvironment : ISimulatedEnvironment
 {
+    /// <summary>
+    /// Test IR payloads programmed into the test-time settings file.
+    /// Commands present here will be enabled; commands absent will be disabled.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, byte[]> _testIrPayloads = new Dictionary<string, byte[]>
+    {
+        // Power: test payload bytes [0x01, 0x02, 0x03, 0x04]
+        ["Power"] = [0x01, 0x02, 0x03, 0x04],
+        // VolumeUp: test payload bytes [0x05, 0x06, 0x07, 0x08]
+        ["VolumeUp"] = [0x05, 0x06, 0x07, 0x08],
+    };
+
     private readonly ISimulatedTiVoDevice _tivo;
     private readonly ISimulatedBroadlinkDevice _broadlink;
     private readonly AdaptiveRemoteHost.Builder _hostBuilder;
@@ -16,11 +29,13 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     private AdaptiveRemoteHost? _host;
     private string? _nextLogLocation;
     private string? _currentLogLocation;
+    // Settings file path is determined lazily from the TestResults directory when SetLogLocation is first called.
+    private string? _testSettingsPath;
 
     public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder)
     {
         _tivo = tivoBuilder.Start();
-        _broadlink = (ISimulatedBroadlinkDevice)broadlinkBuilder.Start();
+        _broadlink = broadlinkBuilder.Start();
         _hostBuilder = hostBuilder;
 
         List<string> args =
@@ -33,7 +48,15 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             $"--broadlink:DiscoveryPort={_broadlink.Port}",
         ];
 
-        hostBuilder.ConfigureSettings(hostSettings => hostSettings.AddCommandLineArgs(string.Join(" ", args)));
+        hostBuilder
+            .ConfigureSettings(hostSettings => hostSettings.AddCommandLineArgs(string.Join(" ", args)))
+            .ConfigureTestServices(async (testEndpoint, ct) =>
+            {
+                // Always inject TestSpeechRecognitionEngine so tests can share the same host instance
+                await testEndpoint.InjectTestServiceAsync<ISpeechRecognitionEngine, TestSpeechRecognitionEngine>(ct);
+                // Always inject TestSpeechSynthesis so tests can verify spoken phrases without audio devices
+                await testEndpoint.InjectTestServiceAsync<ISpeechSynthesis, TestSpeechSynthesis>(ct);
+            });
     }
 
     /// <inheritdoc/>
@@ -41,6 +64,9 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     /// <inheritdoc/>
     public ISimulatedBroadlinkDevice Broadlink => _broadlink;
+
+    /// <inheritdoc/>
+    public IReadOnlyDictionary<string, byte[]> TestIrPayloads => _testIrPayloads;
 
     public AdaptiveRemoteHost Host
     {
@@ -122,6 +148,30 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     public void SetLogLocation(string logLocation)
     {
+        // Ensure settings file is created (adds --programmatic arg) before adding log arg
+        EnsureTestSettingsFileCreated(Path.GetDirectoryName(logLocation)!);
+
         _nextLogLocation = logLocation;
+    }
+
+    private void EnsureTestSettingsFileCreated(string directory)
+    {
+        if (_testSettingsPath is not null)
+        {
+            return;
+        }
+
+        _testSettingsPath = Path.Combine(directory, "ProgrammaticSettings.ini");
+        WriteTestSettingsFile(_testSettingsPath, _testIrPayloads);
+
+        _hostBuilder.ConfigureSettings(s =>
+            s.AddCommandLineArgs($"--programmatic:ProgrammaticSettingsPath=\"{_testSettingsPath}\""));
+    }
+
+    private static void WriteTestSettingsFile(string path, IReadOnlyDictionary<string, byte[]> payloads)
+    {
+        List<string> lines = [$"[IRData]"];
+        lines.AddRange(payloads.Select(kvp => $"{kvp.Key}={Convert.ToBase64String(kvp.Value)}"));
+        File.WriteAllLines(path, lines);
     }
 }

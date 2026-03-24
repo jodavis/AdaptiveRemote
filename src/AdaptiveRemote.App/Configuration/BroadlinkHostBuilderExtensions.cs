@@ -8,10 +8,10 @@ namespace AdaptiveRemote.Configuration;
 internal static class BroadlinkHostBuilderExtensions
 {
     public static IHostBuilder AddBroadlinkSupport(this IHostBuilder builder)
-        => builder.ConfigureServices((context, services) => services.AddBroadlinkServices(context.Configuration.GetSection(SettingsKeys.Broadlink)));
+        => builder.ConfigureServices((context, services) => services.AddBroadlinkServices(context.Configuration));
 
     private static IServiceCollection AddBroadlinkServices(this IServiceCollection services, IConfiguration configuration)
-        => configuration.GetValue<bool>(nameof(BroadlinkSettings.Fake))
+        => configuration.GetSection(SettingsKeys.Broadlink).GetValue<bool>(nameof(BroadlinkSettings.Fake))
             ? services.AddNullCommandService<Models.IRCommand>()
             : services
                 .AddScopedLifecycleService<BroadlinkCommandService>()
@@ -20,5 +20,6 @@ internal static class BroadlinkHostBuilderExtensions
                 .AddSingleton<IDeviceConnection.Factory, DeviceConnection.Factory>()
                 .AddSingleton<IUdpService, UdpService>()
                 .AddSingleton<ISocket.Factory, SocketWrapper.Factory>()
-                .Configure<BroadlinkSettings>(configuration);
+                .Configure<BroadlinkSettings>(configuration.GetSection(SettingsKeys.Broadlink))
+                .Configure<IRDataSettings>(configuration.GetSection(SettingsKeys.IRData));
 }

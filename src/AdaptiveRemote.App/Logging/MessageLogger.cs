@@ -99,6 +99,21 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 606, Level = LogLevel.Error, Message = "Could not execute {Command} because the service has been shut down")]
     public partial void CommandService_WasShutDown(Models.Command command);
 
+    [LoggerMessage(EventId = 607, Level = LogLevel.Information, Message = "Programming {Command}")]
+    public partial void CommandService_Programming(Models.Command command);
+
+    [LoggerMessage(EventId = 608, Level = LogLevel.Information, Message = "Programmed {Command}")]
+    public partial void CommandService_Programmed(Models.Command command);
+
+    [LoggerMessage(EventId = 609, Level = LogLevel.Error, Message = "Error programming {Command}")]
+    public partial void CommandService_ProgramError(Models.Command command, Exception error);
+
+    [LoggerMessage(EventId = 610, Level = LogLevel.Warning, Message = "Cancelled programming {Command}")]
+    public partial void CommandService_ProgramCancelled(Models.Command command);
+
+    [LoggerMessage(EventId = 611, Level = LogLevel.Error, Message = "Could not program {Command} because the service has been shut down")]
+    public partial void CommandService_ProgramWasShutDown(Models.Command command);
+
     [LoggerMessage(EventId = 801, Level = LogLevel.Information, Message = "Message sent: {Message}")]
     public partial void TiVoConnection_MessageSent(string message);
 
@@ -146,6 +161,21 @@ internal partial class MessageLogger
 
     [LoggerMessage(EventId = 1004, Level = LogLevel.Information, Message = "Ready to send commands")]
     public partial void BroadlinkCommandService_Ready();
+
+    [LoggerMessage(EventId = 1005, Level = LogLevel.Information, Message = "Entering IR learning mode for {Command}")]
+    public partial void BroadlinkCommandService_EnteringLearningMode(Models.Command command);
+
+    [LoggerMessage(EventId = 1006, Level = LogLevel.Information, Message = "Polling for learned IR data for {Command}")]
+    public partial void BroadlinkCommandService_PollingForLearnedData(Models.Command command);
+
+    [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "Learned IR data received for {Command} ({ByteCount} bytes)")]
+    public partial void BroadlinkCommandService_LearnedDataReceived(Models.Command command, int byteCount);
+
+    [LoggerMessage(EventId = 1008, Level = LogLevel.Warning, Message = "IR learning timed out for {Command}")]
+    public partial void BroadlinkCommandService_LearningTimedOut(Models.Command command);
+
+    [LoggerMessage(EventId = 1009, Level = LogLevel.Warning, Message = "IR learning already in progress; ignoring request to program {Command}")]
+    public partial void BroadlinkCommandService_LearningAlreadyInProgress(Models.Command command);
 
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Loading existing settings from {FilePath}")]
     public partial void ProgrammaticSettings_LoadingExistingSettings(string filePath);
@@ -292,4 +322,28 @@ internal partial class MessageLogger
 
     [LoggerMessage(EventId = 1508, Level = LogLevel.Error, Message = "Test service {TypeName} does not implement {ServiceContract}")]
     public partial void TestEndpointService_ServiceTypeIncompatible(string typeName, string? serviceContract);
+
+    [LoggerMessage(EventId = 1509, Level = LogLevel.Information, Message = "Registering test service {ServiceName} for contract {ContractType}")]
+    public partial void TestEndpointHooksService_RegisteringTestService(string serviceName, string contractType);
+
+    [LoggerMessage(EventId = 1510, Level = LogLevel.Information, Message = "Signaling host to build")]
+    public partial void TestEndpointHooksService_SignalingBuildHost();
+
+    [LoggerMessage(EventId = 1511, Level = LogLevel.Information, Message = "Signaling host to abort startup")]
+    public partial void TestEndpointHooksService_SignalingAbort();
+
+    [LoggerMessage(EventId = 1512, Level = LogLevel.Information, Message = "Waiting for test services to be registered")]
+    public partial void TestEndpointHooksService_WaitingForTestServices();
+
+    [LoggerMessage(EventId = 1513, Level = LogLevel.Information, Message = "Registered {Count} test service(s)")]
+    public partial void TestEndpointHooksService_TestServicesRegistered(int count);
+
+    [LoggerMessage(EventId = 1514, Level = LogLevel.Information, Message = "Providing services to test")]
+    public partial void TestEndpointHooksService_ProvidingServicesToTest();
+
+    [LoggerMessage(EventId = 1515, Level = LogLevel.Information, Message = "Loading test service type {ServiceName} from {AssemblyPath}")]
+    public partial void TestEndpointHooksService_LoadingTestServiceType(string serviceName, string assemblyPath);
+
+    [LoggerMessage(EventId = 1516, Level = LogLevel.Information, Message = "Registering test service {ServiceName} implementing {ContractType} in DI container")]
+    public partial void TestEndpointHooksService_RegisteringTestServiceInDI(string serviceName, string contractType);
 }

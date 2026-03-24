@@ -21,68 +21,16 @@ public class PlaywrightUITestService : IUITestService
         _browserProvider = browserProvider;
         Logger = logger;
 
-        // Start warming up Playwright if necessary
-        _ = Task.Run(() => _ = CurrentPage);
+        // Warm up Playwright
+        CurrentPage = _browserProvider.CurrentPage as IPage
+            ?? throw new InvalidOperationException("IBrowserUIAccess service did not provide an object of type IPage");
     }
 
-    private IPage CurrentPage => _browserProvider.CurrentPage as IPage
-        ?? throw new InvalidOperationException("IBrowserProvider service did not provide an object of type IPage");
+    private IPage CurrentPage { get; }
 
     protected ILogger<PlaywrightUITestService> Logger { get; }
 
-    public async Task<bool> IsButtonVisibleAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = GetButtonLocatorByLabel(label);
-
-        try
-        {
-            return await locator.IsVisibleAsync();
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<bool> IsButtonEnabledAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = GetButtonLocatorByLabel(label);
-
-        try
-        {
-            return await locator.IsEnabledAsync();
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task ClickButtonAsync(string label, CancellationToken cancellationToken = default)
-    {
-        ILocator locator = GetButtonLocatorByLabel(label);
-
-        // Verify the button is visible
-        bool isVisible = await locator.IsVisibleAsync();
-        if (!isVisible)
-        {
-            throw new InvalidOperationException($"Button with label '{label}' is not visible.");
-        }
-
-        // Verify the button is enabled
-        if (await IsButtonDisabledAsync(locator))
-        {
-            throw new InvalidOperationException($"Button with label '{label}' is not enabled.");
-        }
-
-        // Click the button
-        await locator.ClickAsync(new LocatorClickOptions
-        {
-            Timeout = DefaultTimeoutMs
-        });
-    }
-
-    public async Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken = default)
     {
         Logger.LogInformation("Starting accessibility check using axe...");
         try
@@ -132,16 +80,100 @@ public class PlaywrightUITestService : IUITestService
     {
         // Use Playwright's getByRole with exact match - it will throw meaningful errors
         // if there are no matches or ambiguous matches
-        return CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true });
+        return label switch
+        {
+            "Channel Down" => GetButtonLocatorByLabel("Down").Nth(1),
+            "Channel Up" => GetButtonLocatorByLabel("Up").Nth(1),
+            "Volume Down" => GetButtonLocatorByLabel("Down").Nth(2),
+            "Volume Up" => GetButtonLocatorByLabel("Up").Nth(2),
+            _ => CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true })
+                .Describe($"button with label '{label}'")
+        };
+    }
+
+    public async Task ClickTextAsync(string text, CancellationToken cancellationToken = default)
+    {
+        ILocator locator = GetTextLocator(text);
+
+        // Verify the text is visible
+        bool isVisible = await locator.IsVisibleAsync();
+        if (!isVisible)
+        {
+            throw new InvalidOperationException($"Text '{text}' is not visible.");
+        }
+
+        // Click the text element
+        await locator.ClickAsync(new LocatorClickOptions
+        {
+            Timeout = DefaultTimeoutMs
+        });
+    }
+
+    private ILocator GetTextLocator(string text)
+    {
+        // Use Playwright's getByText with partial match (contains)
+        return CurrentPage.GetByText(text, new() { Exact = false });
+    }
+
+    public async Task<string?> GetTextFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Find elements with the specified CSS class
+            ILocator locator = CurrentPage.Locator($".{cssClass}");
+
+            // Check if at least one matching element is visible
+            if (await locator.First.IsVisibleAsync())
+            {
+                // Return the text content of the first visible element
+                return await locator.First.TextContentAsync();
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<string?> GetInnerHtmlFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            ILocator locator = CurrentPage.Locator($".{cssClass}");
+
+            if (await locator.First.IsVisibleAsync())
+            {
+                return await locator.First.InnerHTMLAsync();
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public void Dispose()
     {
-        if (_browserProvider is IDisposable disposable)
+        GC.SuppressFinalize(this);
+    }
+
+    public async Task<IUIButtonTestObject?> FindButtonByLabelAsync(string label, CancellationToken cancellationToken)
+    {
+        ILocator locator = GetButtonLocatorByLabel(label);
+
+        if (await locator.CountAsync() == 0)
         {
-            disposable.Dispose();
+            return null;
         }
 
-        GC.SuppressFinalize(this);
+        PlaywrightButtonTestObject button = new(locator);
+
+        await button.ValidateLocatorAsync();
+
+        return button;
     }
 }
