@@ -15,3 +15,4 @@ Scenario: Speech synthesis displays modal message box
 	Then I should see a modal message containing "You're welcome"
 	And the application should have spoken "You're welcome"
 	And the application should exit listening mode
+	And I should not see any error messages in the logs

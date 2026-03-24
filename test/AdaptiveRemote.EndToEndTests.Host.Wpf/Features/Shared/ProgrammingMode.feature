@@ -51,11 +51,13 @@ Scenario: Program a programmable command
 	And I should not see a modal message
 	When I click on the 'Learn' button
 	Then I should see the 'Volume Down' button is enabled
+	And I should not see any error messages in the logs
 
 	# Verify that the programmed command works
 	When I click on the 'Volume Down' button
 	Then I should see the Broadlink device sent the IR signal for Volume Down
 	And no Broadlink packets should be marked as malformed
+	And I should not see any error messages in the logs
 
 	# Verify that the programmed command persists after shutting down and restarting
 	When I click on the 'Exit' button
@@ -65,6 +67,7 @@ Scenario: Program a programmable command
 	And I should see the 'Volume Down' button is enabled
 	When I click on the 'Volume Down' button
 	Then I should see the Broadlink device sent the IR signal for Volume Down
+	And I should not see any error messages in the logs
 
 Scenario: Programming a programmable command fails with a device error
 	Given the application is in the Ready phase
@@ -77,13 +80,14 @@ Scenario: Programming a programmable command fails with a device error
 		<h1 id="programming-mute">Programming 'Mute'</h1>
 		"""
 	When the Broadlink device simulates a device error
-	Then I should not see a modal message
-	And I should see an error message in the logs:
+	Then I should see an error message in the logs:
 		"""
 		Error programming IRCommand 'Mute'
 		"""
+	And I should not see a modal message
 	When I click on the 'Learn' button
 	Then I should see the 'Mute' button is disabled
+	And I should not see any error messages in the logs
 
 Scenario: Programming a programmable command is cancelled
 	Given the application is in the Ready phase
@@ -94,4 +98,5 @@ Scenario: Programming a programmable command is cancelled
 	When I click on the 'Learn' button
 	Then I should see the 'Mute' button is disabled
 	And I should see the 'Power' button is enabled
+	And I should not see any error messages in the logs
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AdaptiveRemote.EndtoEndTests;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 
@@ -34,20 +35,21 @@ public class LogVerificationSteps : StepsBase
     [Then("I should see an error message in the logs:")]
     public void ThenIShouldSeeAnErrorInTheLogs(string expectedErrorMessage)
     {
-        IEnumerable<string> errorLines = FilterLogLines(IsError);
+        IEnumerable<string>? errorLines = null;
 
+        WaitHelpers.ExecuteWithRetries(() =>
+        {
+            errorLines = FilterLogLines(IsError);
+            return errorLines.Any(line => line.Contains(expectedErrorMessage, StringComparison.Ordinal));
+        });
+
+        Assert.IsNotNull(errorLines, "Failed to read host log lines.");
         Assert.IsTrue(errorLines.Any(), "Host log does not contain any error messages.");
         Assert.AreEqual(1, errorLines.Count(),
             "Host log contains unexpected errors:\n{0}",
             string.Join("\n", errorLines));
         StringAssert.Contains(errorLines.First(), expectedErrorMessage,
             "Host log error message does not match the expected text");
-    }
-
-    [AfterScenario]
-    public void OnAfterScenario_CheckLogsForWarningsOrErrors()
-    {
-        ThenIShouldNotSeeAnyErrorsInTheLogFile();
     }
 
     private IEnumerable<string> FilterLogLines(Func<string, bool> lineFilter)
