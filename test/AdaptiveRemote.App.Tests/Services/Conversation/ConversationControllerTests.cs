@@ -115,7 +115,7 @@ public class ConversationControllerTests
 
         // Modal message service is called before synthesis – set up to execute the body
         MockModalMessageService
-            .Setup(x => x.ShowMessageAsync(phrase, It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.ShowMessageAsync("# " + phrase, It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .Returns<string, Func<CancellationToken, Task>, bool, CancellationToken>((_, body, _, ct) => body(ct))
             .Verifiable(times ?? Times.Once());
     }

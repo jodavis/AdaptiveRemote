@@ -6,7 +6,10 @@ Feature: Conversation Modal UI
 Scenario: Speech synthesis displays modal message box
 	Given the application is in the Ready phase
 	When I say "Hey Remote"
-	Then I should see a modal message containing "I'm listening..."
+	Then I should see a modal message containing
+		"""
+		<h1>I'm listening...</h1>
+		"""
 	And the application should have spoken "I'm listening..."
 	And the application should enter listening mode
 	When I run the accessibility contrast checker

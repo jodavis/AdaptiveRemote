@@ -167,7 +167,7 @@ internal class ConversationController : ScopedBackgroundProcess
             {
                 string phrase = phraseList[i];
                 bool keepAlive = isAsking && i == phraseList.Length - 1;
-                await _modalMessageService.ShowMessageAsync(phrase, ct => _speechSynthesis.SayAsync(phrase, ct), keepAlive);
+                await _modalMessageService.ShowMessageAsync($"# {phrase}", ct => _speechSynthesis.SayAsync(phrase, ct), keepAlive);
             }
         }
         finally

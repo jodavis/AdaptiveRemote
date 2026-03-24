@@ -72,12 +72,13 @@ div.conversation-status-message.clickable:hover {
   background-color: #484848;
 }
 div.conversation-speaking-message {
+  font-size: 24px;
   background-color: #222;
   border-radius: 15px;
   border: 5px solid #ffea00;
   margin: -5px;
   color: white;
-  padding: 40px;
+  padding: 0 48px;
   position: fixed;
   top: 50%;
   left: 50%;
@@ -268,7 +269,7 @@ div.conversation-speaking-message {
 #ROOT #GUTTER #LEARN {
   grid-row: 1;
   grid-column: 2;
-  margin: 20px;
+  margin: 10px;
 }
 #ROOT #GUTTER #LISTENING {
   grid-row: 1;

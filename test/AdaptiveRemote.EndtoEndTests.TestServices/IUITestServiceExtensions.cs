@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -212,11 +213,14 @@ public static class IUITestServiceExtensions
         const string modalCssClass = "conversation-speaking-message";
         string? actualHtml = null;
 
+        expectedMarkup = NormalizeHtml(expectedMarkup);
+
         bool found = WaitHelpers.ExecuteWithRetries(() =>
         {
-            actualHtml = WaitHelpers.WaitForAsyncTask(
+            string? nextHtml = WaitHelpers.WaitForAsyncTask(
                 ct => service.GetInnerHtmlFromElementWithCssClassAsync(modalCssClass, ct),
                 timeoutInSeconds);
+            actualHtml = NormalizeHtml(nextHtml) ?? actualHtml;
 
             return actualHtml != null && actualHtml.Contains(expectedMarkup, StringComparison.OrdinalIgnoreCase);
         }, timeoutInSeconds);
@@ -231,6 +235,12 @@ public static class IUITestServiceExtensions
             {
                 throw new TimeoutException($"Modal message box appeared but its HTML was '{actualHtml}' instead of containing expected markup '{expectedMarkup}'.");
             }
+        }
+
+        [return:NotNullIfNotNull(nameof(html))]
+        static string? NormalizeHtml(string? html)
+        {
+            return html?.Replace("\r", "").Replace("\n", "").Replace("\t", "").Trim();
         }
     }
 

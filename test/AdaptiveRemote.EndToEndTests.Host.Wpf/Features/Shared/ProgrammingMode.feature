@@ -40,7 +40,8 @@ Scenario: Program a programmable command
 	When I click on the 'Volume Down' button
 	Then I should see a modal message containing
 		"""
-		<h1 id="programming-down">Programming 'Down'</h1>
+		<h1>Programming 'Down'</h1>
+		<p>Point your remote at the Broadlink device and press Down.</p>
 		"""
 	And the Broadlink device should be in learning mode
 	#   Verify the button active color is valid
@@ -77,7 +78,8 @@ Scenario: Programming a programmable command fails with a device error
 	Then the Broadlink device should be in learning mode
 	And I should see a modal message containing
 		"""
-		<h1 id="programming-mute">Programming 'Mute'</h1>
+		<h1>Programming 'Mute'</h1>
+		<p>Point your remote at the Broadlink device and press Mute.</p>
 		"""
 	When the Broadlink device simulates a device error
 	Then I should see an error message in the logs:
@@ -95,6 +97,11 @@ Scenario: Programming a programmable command is cancelled
 	Then I should see the 'Mute' button is enabled
 	When I click on the 'Mute' button
 	Then the Broadlink device should be in learning mode
+	And I should see a modal message containing
+		"""
+		<h1>Programming 'Mute'</h1>
+		<p>Point your remote at the Broadlink device and press Mute.</p>
+		"""
 	When I click on the 'Learn' button
 	Then I should see the 'Mute' button is disabled
 	And I should see the 'Power' button is enabled

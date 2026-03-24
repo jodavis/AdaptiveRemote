@@ -13,7 +13,7 @@
     private string? CurrentMessageHtml => CurrentMessage is not null ? RenderMarkdown(CurrentMessage) : null;
 
     private static readonly MarkdownPipeline _markdownPipeline =
-        new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+        new MarkdownPipelineBuilder().Build();
 
     private static string RenderMarkdown(string markdown)
         => Markdown.ToHtml(markdown, _markdownPipeline);
