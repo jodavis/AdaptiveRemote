@@ -1,6 +1,4 @@
-﻿using AdaptiveRemote.Services.Lifecycle;
-
-namespace AdaptiveRemote;
+﻿namespace AdaptiveRemote;
 
 internal class Program : App
 {
@@ -17,6 +15,6 @@ internal class Program : App
         new Program(args).Run();
     }
 
-    protected override WpfAcceleratedServices CreateAcceleratedServices(string[] args)
-        => base.CreateAcceleratedServices(_args);
+    protected override WpfAppHostRunner CreateAppHostRunner(string[] args)
+        => base.CreateAppHostRunner(_args);
 }

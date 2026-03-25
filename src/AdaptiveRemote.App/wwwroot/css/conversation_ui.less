@@ -35,12 +35,13 @@ div.conversation-status-message {
 }
 
 div.conversation-speaking-message {
+    font-size: @modal-message-font-size;
     background-color: @background-color;
     border-radius: @button-radius;
     border: 5px solid @listening-color;
     margin: -5px;
     color: @listening-text-color;
-    padding: 40px;
+    padding: 0 @modal-message-font-size*2;
     position: fixed;
     top: 50%;
     left: 50%;

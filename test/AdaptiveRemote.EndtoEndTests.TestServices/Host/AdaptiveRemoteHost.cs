@@ -13,11 +13,9 @@ public partial class AdaptiveRemoteHost : IDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<AdaptiveRemoteHost> _logger;
     private readonly Lazy<IApplicationTestService> _lazyTestService;
+    private readonly Lazy<ISpeechTestService> _lazySpeechTestService;
     private readonly Lazy<IUITestService> _lazyUITestService;
     private readonly ITestEndpoint _testEndpoint;
-
-    private readonly StringBuilder _standardOutput;
-    private readonly StringBuilder _standardError;
 
     private readonly Process _process;
     private readonly TcpClient _client;
@@ -28,9 +26,7 @@ public partial class AdaptiveRemoteHost : IDisposable
                                Process process,
                                TcpClient client,
                                JsonRpc rpc,
-                               ITestEndpoint testEndpoint,
-                               StringBuilder standardOutput,
-                               StringBuilder standardError)
+                               ITestEndpoint testEndpoint)
     {
         _settings = settings;
         _loggerFactory = loggerFactory;
@@ -39,10 +35,9 @@ public partial class AdaptiveRemoteHost : IDisposable
         _client = client;
         _rpc = rpc;
         _testEndpoint = testEndpoint;
-        _standardOutput = standardOutput;
-        _standardError = standardError;
 
         _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>();
+        _lazySpeechTestService = CreateLazyTestService<SpeechTestService, ISpeechTestService>();
 
         // Choose UI test service based on settings
         _lazyUITestService = _settings.UIService switch
@@ -77,12 +72,13 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     public IUITestService UI => _lazyUITestService.Value;
 
+    public ISpeechTestService Speech => _lazySpeechTestService.Value;
+
+    public ITestEndpoint TestEndpoint => _testEndpoint;
+
     public ILogger CreateLogger<CategoryType>() => _loggerFactory.CreateLogger<CategoryType>();
 
     public ILogger CreateLogger(string category) => _loggerFactory.CreateLogger(category);
-
-    public string StandardOutput => _standardOutput.ToString();
-    public string StandardError => _standardError.ToString();
 
     public bool IsRunning => !_process.HasExited;
 

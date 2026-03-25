@@ -22,7 +22,8 @@ internal static class TestingHostBuilderExtensions
             if (controlPort.HasValue)
             {
                 services.Configure<TestingSettings>(context.Configuration.GetSection(SettingsKeys.Testing));
-                services.AddHostedService<TestEndpointService>();
+                // Register TestServiceProvider for creating test services after host is built
+                services.AddSingleton<ITestServiceProvider, TestServiceProvider>();
             }
         });
 }

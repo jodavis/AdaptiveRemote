@@ -125,12 +125,14 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_ScopeReleased();
         });
 
         startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
@@ -154,6 +156,7 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
@@ -186,6 +189,7 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
@@ -194,6 +198,7 @@ public class ApplicationLifecycleTests
             log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
             log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
             log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_ScopeReleased();
         });
 
         startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
@@ -237,6 +242,7 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
@@ -249,6 +255,7 @@ public class ApplicationLifecycleTests
             log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
             log.ApplicationLifecycle_CleaningUp(MockService3.Object.Name);
             log.ApplicationLifecycle_CleanedUp(MockService3.Object.Name);
+            log.ApplicationLifecycle_ScopeReleased();
         });
 
         sut.ExecuteTask.Should().NotBeComplete(because: "ExecuteTask should remain running after startup");
@@ -279,7 +286,9 @@ public class ApplicationLifecycleTests
             .Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "Error should be logged");
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_ScopeConstructionFailed(expectedError1);
+            log.ApplicationLifecycle_ScopeReleased();
         });
     }
 
@@ -311,7 +320,9 @@ public class ApplicationLifecycleTests
         stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1), because: "StopAsync should have nothing to do");
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_ScopeConstructionFailed(expectedError1);
+            log.ApplicationLifecycle_ScopeReleased();
             log.ApplicationLifecycle_ShuttingDown();
         });
     }
@@ -338,6 +349,7 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
             log.ApplicationLifecycle_InitializingFailed(MockService2.Object.Name, expectedError1);
@@ -345,6 +357,7 @@ public class ApplicationLifecycleTests
             log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
             log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
             log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_ScopeReleased();
         });
 
         startTask.Should().BeComplete(because: "StartAsync should complete after all services are initialized");
@@ -378,12 +391,14 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_ScopeReleased();
             log.ApplicationLifecycle_ShuttingDown();
             log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
             log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
@@ -424,12 +439,14 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_ScopeReleased();
             log.ApplicationLifecycle_ShuttingDown();
             log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
             log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
@@ -471,12 +488,14 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService2.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService3.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService3.Object.Name);
+            log.ApplicationLifecycle_ScopeReleased();
             log.ApplicationLifecycle_ShuttingDown();
             log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name);
             log.ApplicationLifecycle_CleaningUpFailed(MockService1.Object.Name, expectedError1);
@@ -517,6 +536,7 @@ public class ApplicationLifecycleTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
@@ -567,6 +587,7 @@ public class ApplicationLifecycleTests
 
         MockLogger.VerifyMessages(log =>
         {
+            log.ApplicationLifecycle_WaitingForScope();
             log.ApplicationLifecycle_Initializing(MockService1.Object.Name);
             log.ApplicationLifecycle_Initialized(MockService1.Object.Name);
             log.ApplicationLifecycle_Initializing(MockService2.Object.Name);
@@ -575,6 +596,7 @@ public class ApplicationLifecycleTests
             log.ApplicationLifecycle_CleanedUp(MockService1.Object.Name);
             log.ApplicationLifecycle_CleaningUp(MockService2.Object.Name);
             log.ApplicationLifecycle_CleanedUp(MockService2.Object.Name);
+            log.ApplicationLifecycle_ScopeReleased();
             log.ApplicationLifecycle_ShuttingDown();
         });
 

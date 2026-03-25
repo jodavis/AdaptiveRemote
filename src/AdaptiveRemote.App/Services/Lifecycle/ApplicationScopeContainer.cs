@@ -20,7 +20,7 @@ internal class ApplicationScopeContainer : IApplicationScopeContainer, IApplicat
             combinedToken = CancellationTokenSource.CreateLinkedTokenSource(_stopTokenSource.Token, cancellationToken).Token;
         }
 
-        IApplicationScope scope = await scopeTask;
+        IApplicationScope scope = await scopeTask.WaitAsync(combinedToken);
 
         Task invokeTask = scope.InvokeInScopeAsync(workItem, combinedToken);
 

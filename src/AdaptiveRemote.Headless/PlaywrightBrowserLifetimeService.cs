@@ -112,11 +112,18 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
         {
             if (_browserContext is not null && _settings.TracesDir is not null)
             {
-                await _browserContext.Tracing.StopAsync(new TracingStopOptions
+                try
                 {
-                    Path = Path.Combine(_settings.TracesDir, "traces.zip"),
-                });
-                _logger.Playwright_TracesSaved(_settings.TracesDir);
+                    await _browserContext.Tracing.StopAsync(new TracingStopOptions
+                    {
+                        Path = Path.Combine(_settings.TracesDir, "traces.zip"),
+                    });
+                    _logger.Playwright_TracesSaved(_settings.TracesDir);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Playwright_ErrorWhileCleaningUp(ex);
+                }
             }
 
             await CleanupAsync();

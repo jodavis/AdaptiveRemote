@@ -15,6 +15,7 @@ public class LifecycleView : MvvmObject
     public static readonly MvvmProperty<ICommand> ShutdownCommandProperty = new(nameof(ShutdownCommand));
     public static readonly MvvmProperty<ICommand> ShowErrorCommandProperty = new(nameof(ShowErrorCommand));
     public static readonly MvvmProperty<ICommand> CloseErrorCommandProperty = new(nameof(CloseErrorCommand));
+    public static readonly MvvmProperty<bool> IsProgrammingModeProperty = new(nameof(IsProgrammingMode));
 
     public string TaskName
     {
@@ -75,4 +76,17 @@ public class LifecycleView : MvvmObject
         get => GetValue(CloseErrorCommandProperty);
         set => SetValue(CloseErrorCommandProperty, value);
     }
+
+    public bool IsProgrammingMode
+    {
+        get => GetValue(IsProgrammingModeProperty);
+        set => SetValue(IsProgrammingModeProperty, value);
+    }
+
+    /// <summary>
+    /// A <see cref="CancellationToken"/> that is cancelled when learning mode is exited.
+    /// Set by <see cref="AdaptiveRemote.Services.ILifecycleViewController.EnterLearningMode"/>
+    /// and remains cancelled when not in learning mode.
+    /// </summary>
+    internal CancellationToken LearningCancellationToken { get; set; } = new CancellationToken(canceled: true);
 }

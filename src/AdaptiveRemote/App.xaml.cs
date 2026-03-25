@@ -1,6 +1,4 @@
 ﻿using System.Windows;
-using AdaptiveRemote.Services.Lifecycle;
-using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote;
 
@@ -8,54 +6,21 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
-        try
-        {
-            WpfAcceleratedServices accelerator = CreateAcceleratedServices(e.Args);
-            accelerator.ViewModel.ShutdownCommand = new ActionCommand(Shutdown);
+        WpfAppHostRunner runner = CreateAppHostRunner(e.Args);
 
-            accelerator.MainWindow.Show();
+        base.OnStartup(e);
 
-            IHostBuilder hostBuilder = Host.CreateDefaultBuilder(e.Args)
-                .AddAcceleratedServices(accelerator)
-                .AddWindowsUIServices()
-                .AddWindowsSpeechServices();
-
-            base.OnStartup(e);
-
-            _ = RunApplicationLoopAndShutdownAsync(hostBuilder, accelerator.Controller);
-        }
-        catch (Exception startupFailure)
-        {
-            MessageBox.Show(
-                startupFailure.ToString(),
-                "WPF window failure",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-            throw;
-        }
+        _ = RunApplicationLoopAndShutdownAsync(runner);
     }
 
-    protected virtual WpfAcceleratedServices CreateAcceleratedServices(string[] args) => new(args);
-
-    private async Task RunApplicationLoopAndShutdownAsync(IHostBuilder hostBuilder, Services.ILifecycleViewController controller)
+    protected virtual WpfAppHostRunner CreateAppHostRunner(string[] args) => new(args)
     {
-        await Task.Run(async () =>
-        {
-            try
-            {
-                IHost host = hostBuilder.Build();
-                await host.RunAsync();
-            }
-            catch (Exception configErrors)
-            {
-                controller.SetFatalError(configErrors);
-                throw;
-            }
-            finally
-            {
-                controller.SetPhase(LifecyclePhase.CleaningUp);
-            }
-        });
+        Shutdown = Shutdown,
+    };
+
+    private async Task RunApplicationLoopAndShutdownAsync(WpfAppHostRunner runner)
+    {
+        await runner.RunAsync(CancellationToken.None);
 
         // If the application loop completes without error, it means
         // the app is shutting down normally. If it ends with an exception

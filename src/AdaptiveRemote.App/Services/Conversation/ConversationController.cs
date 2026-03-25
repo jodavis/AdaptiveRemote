@@ -11,6 +11,7 @@ internal class ConversationController : ScopedBackgroundProcess
     private readonly ISpeechSynthesis _speechSynthesis;
     private readonly ConversationStateMachine _stateMachine;
     private readonly ConversationView _viewModel;
+    private readonly IModalMessageService _modalMessageService;
 
     public ConversationController(
         IOptionsSnapshot<ConversationSettings> options,
@@ -18,7 +19,8 @@ internal class ConversationController : ScopedBackgroundProcess
         ISpeechSynthesis speechSynthesis,
         ILogger<ConversationController> logger,
         ConversationStateMachine stateMachine,
-        ConversationView viewModel)
+        ConversationView viewModel,
+        IModalMessageService modalMessageService)
         : base("Conversation system", logger)
     {
         _speechSettings = options.Value;
@@ -26,6 +28,7 @@ internal class ConversationController : ScopedBackgroundProcess
         _speechSynthesis = speechSynthesis;
         _stateMachine = stateMachine;
         _viewModel = viewModel;
+        _modalMessageService = modalMessageService;
 
         _viewModel.IsListening = false;
         _viewModel.StatusMessage = Phrases.Conversation_WaitingForActivation;
@@ -159,19 +162,17 @@ internal class ConversationController : ScopedBackgroundProcess
         try
         {
             _viewModel.IsListening = false;
-            foreach (string phrase in phrases)
+            string[] phraseList = phrases.ToArray();
+            for (int i = 0; i < phraseList.Length; i++)
             {
-                _viewModel.SpeakingMessage = phrase;
-                await _speechSynthesis.SayAsync(phrase, default);
+                string phrase = phraseList[i];
+                bool keepAlive = isAsking && i == phraseList.Length - 1;
+                await _modalMessageService.ShowMessageAsync($"# {phrase}", ct => _speechSynthesis.SayAsync(phrase, ct), keepAlive);
             }
         }
         finally
         {
             _viewModel.IsListening = wasListening;
-            if (!isAsking)
-            {
-                _viewModel.SpeakingMessage = null;
-            }
         }
     }
 }

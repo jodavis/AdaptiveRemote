@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__jira__getAccessibleAtlassianResources",
+      "mcp__jira__searchJiraIssuesUsingJql",
+      "mcp__jira__getJiraIssue",
+      "Bash(xargs:*)",
+      "mcp__jira__createJiraIssue",
+      "mcp__jira__editJiraIssue"
+    ]
+  }
+}

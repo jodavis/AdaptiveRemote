@@ -1,4 +1,3 @@
-using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
@@ -6,7 +5,7 @@ namespace AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 /// <summary>
 /// Builder for creating a simulated Broadlink device.
 /// </summary>
-public sealed class SimulatedBroadlinkDeviceBuilder : ISimulatedDeviceBuilder
+public sealed class SimulatedBroadlinkDeviceBuilder : IDisposable
 {
     private readonly ILogger _logger;
 
@@ -15,15 +14,11 @@ public sealed class SimulatedBroadlinkDeviceBuilder : ISimulatedDeviceBuilder
         _logger = loggerFactory.CreateLogger<SimulatedBroadlinkDevice>();
     }
 
-    /// <inheritdoc/>
-    public ISimulatedDeviceBuilder WithPort(int port)
-    {
-        // Port configuration is not supported - always use ephemeral port
-        return this;
-    }
-
-    /// <inheritdoc/>
-    public ISimulatedTiVoDevice Start()
+    /// <summary>
+    /// Starts the device synchronously and returns the running device.
+    /// </summary>
+    /// <returns>A running simulated Broadlink device instance.</returns>
+    public ISimulatedBroadlinkDevice Start()
     {
         return new SimulatedBroadlinkDevice(0, _logger); // Always use port 0 for ephemeral
     }

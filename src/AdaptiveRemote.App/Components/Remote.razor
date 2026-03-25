@@ -1,7 +1,9 @@
 ﻿@inject Services.IRemoteDefinitionService RemoteDefinitions
 
-<RemoteLayout LayoutElement="@RemoteDefinitions.RemoteRoot" />
+<ModalMessageUI />
+<RemoteLayout LayoutElement="@RemoteDefinitions.RemoteRoot" ProgramMode="@ProgramMode" />
 
 @code {
-
+    [Parameter]
+    public bool ProgramMode { get; set; }
 }

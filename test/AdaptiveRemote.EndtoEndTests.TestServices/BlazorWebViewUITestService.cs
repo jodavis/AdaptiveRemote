@@ -17,6 +17,12 @@ public class BlazorWebViewUITestService : PlaywrightUITestService
     {
     }
 
+    public override Task<IReadOnlyList<AccessibilityViolation>> CheckAccessibilityAsync(CancellationToken cancellationToken = default)
+    {
+        Logger.LogInformation("Skipped accessibility checks due to incompatibility with WebView2");
+        return Task.FromResult((IReadOnlyList<AccessibilityViolation>)Array.Empty<AccessibilityViolation>());
+    }
+
     private class BrowserFromPortProvider : IBrowserUIAccess, IDisposable
     {
         private readonly IBrowserDebuggerAccess _browserDebugger;

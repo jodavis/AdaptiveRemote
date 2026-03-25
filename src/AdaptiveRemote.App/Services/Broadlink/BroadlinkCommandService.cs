@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.Broadlink;
 
@@ -7,18 +8,37 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
 {
     private readonly IDeviceLocator _deviceLocator;
     private readonly IDeviceConnection.Factory _connectionFactory;
+    private readonly IOptionsSnapshot<IRDataSettings> _irDataSettings;
+    private readonly IOptions<BroadlinkSettings> _broadlinkSettings;
+    private readonly IPersistSettings _persistSettings;
+    private readonly IModalMessageService _modalMessageService;
+
+    /// <summary>
+    /// Ensures that only one IR learning cycle runs at a time. The device
+    /// cannot handle concurrent learning requests; a second attempt while one
+    /// is in progress is silently ignored.
+    /// </summary>
+    private readonly SemaphoreSlim _learningSemaphore = new(1, 1);
 
     private IDeviceConnection? _connection;
 
     public BroadlinkCommandService(
         IDeviceLocator deviceLocator,
         IDeviceConnection.Factory connectionFactory,
+        IOptionsSnapshot<IRDataSettings> irDataSettings,
+        IOptions<BroadlinkSettings> broadlinkSettings,
+        IPersistSettings persistSettings,
         IRemoteDefinitionService definitionService,
+        IModalMessageService modalMessageService,
         ILogger<BroadlinkCommandService> logger)
         : base("Broadlink IR Commands", definitionService, logger)
     {
         _deviceLocator = deviceLocator;
         _connectionFactory = connectionFactory;
+        _irDataSettings = irDataSettings;
+        _broadlinkSettings = broadlinkSettings;
+        _persistSettings = persistSettings;
+        _modalMessageService = modalMessageService;
     }
 
     public override async Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
@@ -41,10 +61,83 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
         Logger.BroadlinkCommandService_Ready();
     }
 
+    protected override bool IsCommandEnabled(IRCommand command)
+        => _irDataSettings.Value.ContainsKey(command.Name);
+
     protected override Command.ExecuteDelegate CreateHandler(IRCommand command)
     {
-        byte[] data = Convert.FromBase64String(command.Data);
+        if (!_irDataSettings.Value.TryGetValue(command.Name, out string? base64Data))
+        {
+            return _ => Task.FromException(
+                new InvalidOperationException($"No IR data configured for command '{command.Name}'."));
+        }
 
+        byte[] data = Convert.FromBase64String(base64Data);
         return cancellationToken => _connection!.SendDataAsync(data, cancellationToken);
     }
+
+    protected override Command.ExecuteDelegate? CreateProgramHandler(IRCommand command)
+        => async cancellationToken =>
+        {
+            IDeviceConnection connection = _connection
+                ?? throw new InvalidOperationException(Phrases.Broadlink_NotConnected(command.Name));
+
+            // Prevent a second learning cycle from starting while one is already in progress.
+            // The device cannot handle concurrent learning; we silently skip the duplicate request.
+            if (!await _learningSemaphore.WaitAsync(0, cancellationToken))
+            {
+                Logger.BroadlinkCommandService_LearningAlreadyInProgress(command);
+                return;
+            }
+
+            string message = Phrases.Broadlink_ProgrammingCommand(command.Label);
+            TimeSpan pollInterval = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnPollInterval);
+            TimeSpan learnTimeout = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnTimeout);
+
+            try
+            {
+                await _modalMessageService.ShowMessageAsync(message, async ct =>
+                {
+                    using CancellationTokenSource timeoutCts = new(learnTimeout);
+                    using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+                    Logger.BroadlinkCommandService_EnteringLearningMode(command);
+                    await connection.EnterLearningModeAsync(linkedCts.Token);
+
+                    // Poll until data is received (early return), the user cancels (ct fires),
+                    // or the overall learning timeout fires (timeoutCts fires).
+                    try
+                    {
+                        while (true)
+                        {
+                            linkedCts.Token.ThrowIfCancellationRequested();
+
+                            Logger.BroadlinkCommandService_PollingForLearnedData(command);
+                            byte[]? data = await connection.CheckLearnedDataAsync(linkedCts.Token);
+
+                            if (data is not null)
+                            {
+                                Logger.BroadlinkCommandService_LearnedDataReceived(command, data.Length);
+                                string base64Data = Convert.ToBase64String(data);
+                                _persistSettings.Set($"IRData:{command.Name}", base64Data);
+                                command.ExecuteAsync = CreateWrappedHandler(command, sendCt => connection.SendDataAsync(data, sendCt));
+                                command.IsEnabled = true;
+                                return;
+                            }
+
+                            await Task.Delay(pollInterval, linkedCts.Token);
+                        }
+                    }
+                    catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+                    {
+                        Logger.BroadlinkCommandService_LearningTimedOut(command);
+                        throw Errors.Broadlink_LearningTimedOut(learnTimeout);
+                    }
+                }, cancellationToken: cancellationToken);
+            }
+            finally
+            {
+                _learningSemaphore.Release();
+            }
+        };
 }

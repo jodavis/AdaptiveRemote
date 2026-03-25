@@ -27,4 +27,11 @@ public interface ISimulatedEnvironment : IDisposable
     AdaptiveRemoteHost Host { get; }
 
     string? HostLogs { get; }
+
+    /// <summary>
+    /// Gets the test-time IR payloads that are programmed into the settings file.
+    /// Keys are command names (e.g. "Power"); values are the raw IR bytes.
+    /// Commands not present in this dictionary are not programmed and should be disabled.
+    /// </summary>
+    IReadOnlyDictionary<string, byte[]> TestIrPayloads { get; }
 }
