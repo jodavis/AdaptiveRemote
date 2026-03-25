@@ -7,6 +7,8 @@
       "Bash(xargs:*)",
       "mcp__jira__createJiraIssue",
       "mcp__jira__editJiraIssue"
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)"
     ]
   }
 }
