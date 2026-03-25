@@ -1,4 +1,5 @@
 ﻿using AdaptiveRemote.Configuration;
+using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
@@ -17,7 +18,7 @@ public static class AppHostBuilderExtensions
             .AddSystemWrapperServices()
             .OptionallyAddTestHookEndpoint();
 
-    public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)
+    public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, AcceleratedServices acceleratedServices)
         => hostBuilder
             .ConfigureAppConfiguration(config =>
             {
@@ -31,7 +32,7 @@ public static class AppHostBuilderExtensions
                     // ["telemetry:Publish"] = "True"
                 });
                 config.AddUserSecrets<UserSecretsKey>();
-                config.AddCommandLine(args);
+                config.AddCommandLine(acceleratedServices.Args);
             });
 
     // This class is used to locate the user secrets assembly for this project.

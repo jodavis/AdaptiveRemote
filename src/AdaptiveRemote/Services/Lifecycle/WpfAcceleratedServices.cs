@@ -13,9 +13,7 @@ public class WpfAcceleratedServices : AcceleratedServices
     {
         MainWindow = new(ViewModel);
 
-        TestingSettings? settings = new ConfigurationBuilder()
-            .AddCommandLine(args)
-            .Build()
+        TestingSettings? settings = StartupConfig
             .GetSection("test")
             .Get<TestingSettings>();
 
