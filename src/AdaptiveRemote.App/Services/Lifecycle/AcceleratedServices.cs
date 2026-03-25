@@ -17,9 +17,8 @@ public class AcceleratedServices
 
     /// <summary>
     /// Raw command-line arguments passed to the application.
-    /// Available for the host configuration pipeline.
     /// </summary>
-    public string[] Args { get; }
+    internal string[] Args { get; }
 
     /// <summary>
     /// Startup configuration built from appsettings.json, environment variables, and command-line args.
@@ -56,10 +55,11 @@ public class AcceleratedServices
             builder.AddConfiguration(StartupConfig.GetSection("Logging"));
 
             // Add file logging if configured
-            string? logFilePath = StartupConfig[SettingsKeys.Logging + ":FilePath"];
-            if (!string.IsNullOrEmpty(logFilePath))
+            LoggingSettings loggingSettings = StartupConfig.GetSection(SettingsKeys.Logging).Get<LoggingSettings>()
+                ?? new LoggingSettings();
+            if (loggingSettings.FilePath is not null)
             {
-                builder.AddProvider(new FileLoggerProvider(logFilePath));
+                builder.AddProvider(new FileLoggerProvider(loggingSettings.FilePath));
             }
         });
 
@@ -68,17 +68,12 @@ public class AcceleratedServices
         DiagnosticAdapter = new(Controller);
 
         // Check if test control port is configured
-        int? controlPort = ParseControlPort();
-        if (controlPort.HasValue)
+        TestingSettings testingSettings = StartupConfig.GetSection(SettingsKeys.Testing).Get<TestingSettings>()
+            ?? new TestingSettings();
+        if (testingSettings.ControlPort.HasValue)
         {
-            // Create TestingSettings from startup config
-            TestingSettings testSettings = new()
-            {
-                ControlPort = controlPort
-            };
-
             // Create and start the test endpoint service
-            TestEndpointService testEndpointService = new(testSettings, LoggerFactory);
+            TestEndpointService testEndpointService = new(testingSettings, LoggerFactory);
             testEndpointService.StartListening();
             TestEndpoint = testEndpointService;
         }
@@ -95,16 +90,5 @@ public class AcceleratedServices
         services
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);
-    }
-
-    private int? ParseControlPort()
-    {
-        string? portString = StartupConfig["test:ControlPort"];
-        if (int.TryParse(portString, out int port))
-        {
-            return port;
-        }
-
-        return null;
     }
 }

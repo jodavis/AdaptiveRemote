@@ -22,6 +22,9 @@ public static class AppHostBuilderExtensions
         => hostBuilder
             .ConfigureAppConfiguration(config =>
             {
+                // Add startup configuration sources to maintain consistency between startup and host
+                config.AddConfiguration(acceleratedServices.StartupConfig);
+
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     // This makes the default behavior to publish telemetry when the full application
@@ -32,7 +35,6 @@ public static class AppHostBuilderExtensions
                     // ["telemetry:Publish"] = "True"
                 });
                 config.AddUserSecrets<UserSecretsKey>();
-                config.AddCommandLine(acceleratedServices.Args);
             });
 
     // This class is used to locate the user secrets assembly for this project.
