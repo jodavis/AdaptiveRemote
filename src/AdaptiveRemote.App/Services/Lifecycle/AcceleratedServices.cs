@@ -1,4 +1,6 @@
-﻿using AdaptiveRemote.Models;
+﻿using AdaptiveRemote.Configuration;
+using AdaptiveRemote.Logging;
+using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,10 +16,11 @@ public class AcceleratedServices
     internal ITestEndpointHooks TestEndpoint { get; }
 
     /// <summary>
-    /// Command line configuration parsed from arguments.
-    /// Available for any startup services that need command line settings.
+    /// Bootstrap configuration built from appsettings.json, environment-specific appsettings,
+    /// environment variables, and command-line args (in ascending override order).
+    /// Available for any startup services that need settings before the host is configured.
     /// </summary>
-    public IConfigurationRoot CommandLineConfig { get; }
+    public IConfigurationRoot StartupConfig { get; }
 
     /// <summary>
     /// Logger factory for startup processes.
@@ -27,28 +30,35 @@ public class AcceleratedServices
 
     public AcceleratedServices(string[] args)
     {
-        // Parse command line configuration early
-        ConfigurationBuilder configBuilder = new();
-        CommandLineConfig = configBuilder
+        string env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+        StartupConfig = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile($"appsettings.{env}.json", optional: true)
+            .AddEnvironmentVariables()
             .AddCommandLine(args)
             .Build();
 
-        // Create logger factory for startup processes
-        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole());
+        // Create logger factory for startup processes, respecting configured log levels and file sink
+        LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+            builder.AddConfiguration(StartupConfig.GetSection(SettingsKeys.Logging));
+
+            LoggingSettings loggingSettings = GetStartupSettings<LoggingSettings>(SettingsKeys.Logging);
+            builder.LogToFile(loggingSettings.FilePath);
+        });
 
         ViewModel = new();
         Controller = new LifecycleViewController(ViewModel);
         DiagnosticAdapter = new(Controller);
 
+        // Create TestingSettings from startup config
+        TestingSettings testSettings = GetStartupSettings<TestingSettings>(SettingsKeys.Testing);
+
         // Check if test control port is configured
-        int? controlPort = ParseControlPort();
-        if (controlPort.HasValue)
+        if (testSettings.ControlPort.HasValue)
         {
-            // Create TestingSettings from command line config
-            TestingSettings testSettings = new()
-            {
-                ControlPort = controlPort
-            };
 
             // Create and start the test endpoint service
             TestEndpointService testEndpointService = new(testSettings, LoggerFactory);
@@ -63,21 +73,14 @@ public class AcceleratedServices
         Controller.SetPhase(LifecyclePhase.Waiting);
     }
 
+    public SettingsType GetStartupSettings<SettingsType>(string settingsKey)
+        where SettingsType : class, new() 
+        => StartupConfig.GetSection(settingsKey).Get<SettingsType>() ?? new();
+
     public virtual void AddPrecreatedServices(IServiceCollection services)
     {
         services
             .AddSingleton(Controller)
             .AddSingleton(ViewModel);
-    }
-
-    private int? ParseControlPort()
-    {
-        string? portString = CommandLineConfig["test:ControlPort"];
-        if (int.TryParse(portString, out int port))
-        {
-            return port;
-        }
-
-        return null;
     }
 }

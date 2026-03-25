@@ -17,7 +17,7 @@ public static class AppHostBuilderExtensions
             .AddSystemWrapperServices()
             .OptionallyAddTestHookEndpoint();
 
-    public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)
+    public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, IConfiguration startupConfiguration)
         => hostBuilder
             .ConfigureAppConfiguration(config =>
             {
@@ -31,7 +31,7 @@ public static class AppHostBuilderExtensions
                     // ["telemetry:Publish"] = "True"
                 });
                 config.AddUserSecrets<UserSecretsKey>();
-                config.AddCommandLine(args);
+                config.AddConfiguration(startupConfiguration);
             });
 
     // This class is used to locate the user secrets assembly for this project.
