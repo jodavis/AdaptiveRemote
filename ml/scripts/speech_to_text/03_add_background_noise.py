@@ -5,23 +5,17 @@ import random
 import numpy as np
 import soundfile as sf
 from tqdm import tqdm
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))  # adds ml/scripts/ to sys.path
 
-# Settings
-# Noise frequency
-background_noise_frequency = 2  # Add noise every N samples
-
-# Noise volume
-background_noise_volume_min = 0.01  # Minimum noise volume
-background_noise_volume_max = 0.3   # Maximum noise volume
+from shared.constants import BACKGROUND_NOISE_FREQUENCY, BACKGROUND_NOISE_VOLUME_MIN, BACKGROUND_NOISE_VOLUME_MAX
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Add background noise to audio samples.")
 parser.add_argument('--input-dir', type=Path, required=True, help='Directory containing input wav files')
 parser.add_argument('--noise-dir', type=Path, required=True, help='Directory containing noise wav files')
 parser.add_argument('--output-dir', type=Path, required=True, help='Directory for output wav files')
-paths = parser.parse_args()
 
-os.makedirs(paths.output_dir, exist_ok=True)
 
 def get_random_noise(noise_files, length, sr):
     noise_file = random.choice(noise_files)
@@ -41,10 +35,13 @@ def get_random_noise(noise_files, length, sr):
     start = random.randint(0, max_start)
     return noise[start:start+length]
 
+
 def add_noise_to_audio(audio, noise, volume):
     return audio + noise * volume
 
-def main():
+
+def main(paths):
+    os.makedirs(paths.output_dir, exist_ok=True)
     noise_files = list(paths.noise_dir.glob("*.wav"))
     if not noise_files:
         print(f"No noise samples found in {paths.noise_dir}")
@@ -55,10 +52,10 @@ def main():
         audio, sr = sf.read(input_file)
         if len(audio.shape) > 1:
             audio = audio[:,0]  # Use first channel if stereo
-        add_noise = (random.randint(1, background_noise_frequency) == 1)
+        add_noise = (random.randint(1, BACKGROUND_NOISE_FREQUENCY) == 1)
         if add_noise:
             noise = get_random_noise(noise_files, len(audio), sr)
-            volume = random.uniform(background_noise_volume_min, background_noise_volume_max)
+            volume = random.uniform(BACKGROUND_NOISE_VOLUME_MIN, BACKGROUND_NOISE_VOLUME_MAX)
             audio_noisy = add_noise_to_audio(audio, noise, volume)
             # Clip to [-1,1] to avoid overflow
             audio_noisy = np.clip(audio_noisy, -1.0, 1.0)
@@ -72,6 +69,6 @@ def main():
         out_path = paths.output_dir / out_filename
         sf.write(out_path, out_audio, sr)
 
-if __name__ == "__main__":
-	main()
 
+if __name__ == "__main__":
+    main(parser.parse_args())

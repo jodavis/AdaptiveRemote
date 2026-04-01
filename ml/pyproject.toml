@@ -1,0 +1,9 @@
+[project]
+name = "adaptiveremote-ml"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["scripts"]   # adds ml/scripts to sys.path so tests can do: from shared.xxx import ...
+addopts = "-v --tb=short"

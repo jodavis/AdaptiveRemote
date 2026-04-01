@@ -13,7 +13,7 @@ vars:
       script: "scripts/intent_prediction/02_compute_vocab.py"
       vocab_directory: "data/intent_prediction/02_compute_vocab"
 
-  - tts01a: 
+  - tts01a:
       name: "01a_generate_speech_sample_variations"
       script: "scripts/speech_to_text/01a_generate_speech_sample_variations.py"
       speech_sample_variations: "data/speech_to_text/01a_generate_speech_sample_variations/speech_sample_variations.csv"
@@ -88,11 +88,12 @@ stages:
                                    --output-dir ${intent02.vocab_directory}
     deps:
     - ${intent02.script}
+    - scripts/shared/phoneme_utils.py
     - ${intent01.outputfile}
     - ${intent02a.phoneme_dictionary_dir}
     outs:
     - ${intent02.vocab_directory}
-    
+
   # Speech-to-Text Data Preparation and Model Training Stages
   generate_speech_sample_variations:
     cmd: python ${tts01a.script} --input-file ${intent01.outputfile}
@@ -101,6 +102,10 @@ stages:
     deps:
     - ${tts01a.script}
     - ${intent01.outputfile}
+    - scripts/shared/constants.py
+    params:
+    - pipeline.subsample_rate
+    - generate_speech_sample_variations
     outs:
     - ${tts01a.speech_sample_variations}:
         persist: true
@@ -110,6 +115,9 @@ stages:
     deps:
     - ${tts01a.speech_sample_variations}
     - ${tts01.script}
+    - scripts/shared/constants.py
+    params:
+    - generate_speech_samples
     outs:
     - ${tts01.clean_speech_samples}:
         persist: true
@@ -119,6 +127,8 @@ stages:
     deps:
     - ${tts02a.script}
     - ${tts01.clean_speech_samples}
+    params:
+    - add_delays
     outs:
     - ${tts02a.delay_variations}:
         persist: true
@@ -137,6 +147,9 @@ stages:
     deps:
     - ${tts03.speech_samples_with_bg_noise}
     - ${tts04.script}
+    - scripts/shared/constants.py
+    params:
+    - add_microphone_noise
     outs:
     - ${tts04.noisy_speech_samples}
   add_background_noise:
@@ -147,6 +160,9 @@ stages:
     - ${tts02.speech_samples_with_delays}
     - ${tts03a.background_noise_samples}
     - ${tts03.script}
+    - scripts/shared/constants.py
+    params:
+    - add_background_noise
     outs:
     - ${tts03.speech_samples_with_bg_noise}
   create_set_manifests:
@@ -158,6 +174,9 @@ stages:
     - ${tts01.clean_speech_samples}
     - ${tts04.noisy_speech_samples}
     - ${tts05.script}
+    - scripts/shared/constants.py
+    params:
+    - create_set_manifests
     outs:
     - ${tts05.speech_sample_manifests}
   compute_token_lists:
@@ -167,8 +186,12 @@ stages:
                                 --phoneme-list ${intent02.vocab_directory}/phoneme_list.txt
                                 --words-to-phonemes ${intent02.vocab_directory}/words_to_phonemes.json
                                 --output-dir ${tts06.token_lists}
+    params:
+    - pipeline.input_token_length
     deps:
     - ${tts06.script}
+    - scripts/shared/io_utils.py
+    - scripts/shared/constants.py
     - ${tts05.speech_sample_manifests}/train_manifest.csv
     - ${tts05.speech_sample_manifests}/val_manifest.csv
     - ${tts05.speech_sample_manifests}/test_manifest.csv
@@ -181,12 +204,17 @@ stages:
                                 --eval-manifest ${tts05.speech_sample_manifests}/val_manifest.csv
                                 --test-manifest ${tts05.speech_sample_manifests}/test_manifest.csv
                                 --output-dir ${tts07.speech_sample_spectrograms}
+    params:
+    - pipeline.n_mels
+    - pipeline.time_steps
     deps:
     - ${tts01.clean_speech_samples}
     - ${tts04.noisy_speech_samples}
     - ${tts05.speech_sample_manifests}
     - ${intent02.vocab_directory}/phoneme_list.txt
     - ${tts07.script}
+    - scripts/shared/io_utils.py
+    - scripts/shared/constants.py
     outs:
     - ${tts07.speech_sample_spectrograms}
   download_noise_samples:
@@ -196,25 +224,34 @@ stages:
     outs:
     - ${tts03a.background_noise_samples}
   train_model:
-    cmd: python ${tts08.script} --manifest ${tts05.speech_sample_manifests}/train_manifest.csv 
+    cmd: python ${tts08.script} --manifest ${tts05.speech_sample_manifests}/train_manifest.csv
                                 --vocab ${intent02.vocab_directory}/phoneme_list.txt
                                 --spectrogram-dir ${tts07.speech_sample_spectrograms}
                                 --token-list-dir ${tts06.token_lists}
                                 --output-dir ${tts08.speech_to_text_model}
+    params:
+    - pipeline.n_mels
+    - pipeline.time_steps
+    - pipeline.batch_size
+    - pipeline.epochs
     deps:
     - ${tts05.speech_sample_manifests}/train_manifest.csv
     - ${intent02.vocab_directory}/phoneme_list.txt
     - ${tts07.speech_sample_spectrograms}
     - ${tts08.script}
+    - scripts/shared/io_utils.py
+    - scripts/shared/constants.py
     outs:
     - ${tts08.speech_to_text_model}
   evaluate_model:
-    cmd: python ${tts09.script} --manifest ${tts05.speech_sample_manifests}/val_manifest.csv 
+    cmd: python ${tts09.script} --manifest ${tts05.speech_sample_manifests}/val_manifest.csv
                                 --vocab ${intent02.vocab_directory}/phoneme_list.txt
                                 --model ${tts08.speech_to_text_model}/speech_to_text_model.keras
                                 --spectrogram-dir ${tts07.speech_sample_spectrograms}
                                 --token-list-dir ${tts06.token_lists}
                                 --output-dir ${tts09.evaluation_results}
+    params:
+    - pipeline.batch_size
     deps:
     - ${tts05.speech_sample_manifests}/val_manifest.csv
     - ${intent02.vocab_directory}/phoneme_list.txt
@@ -222,6 +259,9 @@ stages:
     - ${tts08.speech_to_text_model}/speech_to_text_model.keras
     - ${tts06.token_lists}
     - ${tts09.script}
+    - scripts/shared/ctc_utils.py
+    - scripts/shared/io_utils.py
+    - scripts/shared/constants.py
     outs:
     - ${tts09.evaluation_results}
   evaluate_test_samples:
@@ -231,6 +271,8 @@ stages:
                                 --spectrogram-dir ${tts07.speech_sample_spectrograms}
                                 --token-list-dir ${tts06.token_lists}
                                 --output-zip ${tts10.test_samples_zip}
+    params:
+    - pipeline.batch_size
     deps:
     - ${tts05.speech_sample_manifests}/test_manifest.csv
     - ${intent02.vocab_directory}/phoneme_list.txt
@@ -238,5 +280,8 @@ stages:
     - ${tts08.speech_to_text_model}/speech_to_text_model.keras
     - ${tts06.token_lists}
     - ${tts10.script}
+    - scripts/shared/ctc_utils.py
+    - scripts/shared/io_utils.py
+    - scripts/shared/constants.py
     outs:
     - ${tts10.test_samples_zip}

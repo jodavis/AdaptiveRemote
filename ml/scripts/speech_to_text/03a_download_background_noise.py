@@ -27,9 +27,10 @@ for filename, url in noise_samples.items():
         print(f"File {output_path} already exists. Skipping download.")
         continue
     print(f"Downloading {filename} from {url}...")
-    response = requests.get(url)
+    response = requests.get(url, timeout=30, stream=True)
     response.raise_for_status()
     with open(output_path, "wb") as f:
-        f.write(response.content)
+        for chunk in response.iter_content(chunk_size=8192):
+            f.write(chunk)
     print(f"Saved to {output_path}")
 

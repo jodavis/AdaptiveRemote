@@ -5,11 +5,10 @@ from pathlib import Path
 import random
 import csv
 import re
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))  # adds ml/scripts/ to sys.path
 
-# Settings
-training_set_percentage = 80    # Percentage of data for training set
-validation_set_percentage = 10  # Percentage of data for validation set
-test_set_percentage = 10        # Percentage of data for test set
+from shared.constants import TRAINING_SET_PERCENTAGE, VALIDATION_SET_PERCENTAGE, TEST_SET_PERCENTAGE
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Create set manifests for training, validation, and test sets.")
@@ -41,8 +40,8 @@ random.seed(42)
 random.shuffle(all_files)
 
 total_files = len(all_files)
-train_count = int(total_files * training_set_percentage / 100)
-val_count = int(total_files * validation_set_percentage / 100)
+train_count = int(total_files * TRAINING_SET_PERCENTAGE / 100)
+val_count = int(total_files * VALIDATION_SET_PERCENTAGE / 100)
 test_count = total_files - train_count - val_count
 
 train_files = all_files[:train_count]

@@ -1,0 +1,38 @@
+# Pipeline hyperparameters — referenced in dvc.yaml and read by scripts via shared.constants
+pipeline:
+  input_token_length: 20    # max phoneme token sequence length (06, 07, 08, 09, 10)
+  n_mels: 80                # mel spectrogram frequency bins (07, 08, 09, 10)
+  time_steps: 400           # spectrogram time steps (07, 08, 09, 10)
+  batch_size: 32            # training/eval batch size (08, 09, 10)
+  epochs: 10                # training epochs (08)
+  subsample_rate: 10        # Set subsampling rate (e.g., 1 = all, 2 = every other, 3 = every third)
+
+add_delays:
+  prefix_frequency: 5       # Add a prefix delay every N samples
+  suffix_frequency: 5       # Add a suffix delay every N samples
+  min_duration: 0.5         # Minimum delay duration in seconds
+  max_duration: 1.5         # Maximum delay duration in seconds
+
+generate_speech_sample_variations:
+  min_speech_rate: -50      # Minimum TTS speech rate (percentage)
+  max_speech_rate: 80       # Maximum TTS speech rate (percentage)
+
+generate_speech_samples:
+  max_retries: 3            # Maximum TTS generation attempts per sample
+  retry_delay_sec: 2        # Base delay in seconds between retries (exponential backoff)
+
+add_background_noise:
+  noise_frequency: 2        # Add noise every N samples (1 = all, 2 = every other, ...)
+  volume_min: 0.01          # Minimum background noise volume
+  volume_max: 0.3           # Maximum background noise volume
+
+add_microphone_noise:
+  noise_frequency: 2        # Add noise every N samples (1 = all, 2 = every other, ...)
+  volume_min: 0.01          # Minimum microphone noise volume
+  volume_max: 0.05          # Maximum microphone noise volume
+  noise_type: white         # Type of noise to add (currently always white noise)
+
+create_set_manifests:
+  training_set_percentage: 80    # Percentage of data allocated to the training set
+  validation_set_percentage: 10  # Percentage of data allocated to the validation set
+  test_set_percentage: 10        # Percentage of data allocated to the test set

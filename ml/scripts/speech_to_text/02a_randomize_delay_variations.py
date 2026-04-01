@@ -4,14 +4,9 @@ import pandas as pd
 import random
 import os
 
-# Settings
-# Delay frequency
-prefix_delay_frequency = 5  # Add a delay every N samples
-suffix_delay_frequency = 5  # Add a delay every N samples
-
-# Delay duration
-max_delay_duration = 1.5  # Maximum delay duration in seconds
-min_delay_duration = 0.5  # Minimum delay duration in seconds
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))  # adds ml/scripts/ to sys.path
+from shared.constants import PREFIX_DELAY_FREQUENCY, SUFFIX_DELAY_FREQUENCY, MAX_DELAY_DURATION, MIN_DELAY_DURATION
 
 # Read file and directory paths from command line arguments
 parser = argparse.ArgumentParser(description="Generate speech sample variations.")
@@ -25,14 +20,14 @@ records = []
 for file_path in paths.input_dir.glob('*.wav'):
     stem = file_path.stem
 
-    if random.randint(1, prefix_delay_frequency) == 1:
-        prefix_delay = random.uniform(min_delay_duration, max_delay_duration)
+    if random.randint(1, PREFIX_DELAY_FREQUENCY) == 1:
+        prefix_delay = random.uniform(MIN_DELAY_DURATION, MAX_DELAY_DURATION)
         stem = f"{stem}_pre{int(prefix_delay * 1000):04d}"
     else:
         prefix_delay = 0.0
 
-    if random.randint(1, suffix_delay_frequency) == 1:
-        suffix_delay = random.uniform(min_delay_duration, max_delay_duration)
+    if random.randint(1, SUFFIX_DELAY_FREQUENCY) == 1:
+        suffix_delay = random.uniform(MIN_DELAY_DURATION, MAX_DELAY_DURATION)
         stem = f"{stem}_suf{int(suffix_delay * 1000):04d}"
     else:
         suffix_delay = 0.0

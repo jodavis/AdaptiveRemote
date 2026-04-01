@@ -5,15 +5,13 @@ import random
 import numpy as np
 import soundfile as sf
 from tqdm import tqdm
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))  # adds ml/scripts/ to sys.path
 
-# Settings
-# Noise frequency
-microphone_noise_frequency = 2  # Add noise every N samples
-
-# Noise volume
-microphone_noise_volume_min = 0.01  # Minimum noise volume
-microphone_noise_volume_max = 0.05   # Maximum noise volume
-microphone_noise_type = 'white'     # Type of noise (future extension)
+from shared.constants import (
+    MICROPHONE_NOISE_FREQUENCY, MICROPHONE_NOISE_VOLUME_MIN, MICROPHONE_NOISE_VOLUME_MAX,
+    MICROPHONE_NOISE_TYPE,
+)
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Add microphone noise to audio samples.")
@@ -28,12 +26,12 @@ input_files = list(paths.input_dir.glob('*.wav'))
 for file_path in tqdm(input_files, desc="Processing audio files", unit="file", total=len(input_files)):
     stem = file_path.stem
     # Decide randomly whether to add noise
-    add_noise = random.randint(1, microphone_noise_frequency) == 1
+    add_noise = random.randint(1, MICROPHONE_NOISE_FREQUENCY) == 1
     data, samplerate = sf.read(file_path)
     noise_volume = 0.0
     if add_noise:
         # Random noise volume
-        noise_volume = random.uniform(microphone_noise_volume_min, microphone_noise_volume_max)
+        noise_volume = random.uniform(MICROPHONE_NOISE_VOLUME_MIN, MICROPHONE_NOISE_VOLUME_MAX)
         # Generate white noise
         noise = np.random.normal(0, 1, data.shape) * noise_volume
         data_noisy = data + noise

@@ -21,9 +21,9 @@ Each stage in `dvc.yaml` declares the exact command, dependencies, and outputs u
 
 - Intent generation: `01_generate_phrases.py` reads `01_input_phrases.csv`, synthesizes surface-form variations (adding pleasantries, hesitations, spelling variants, and repeats), and writes `training_data.csv` used as input to both intent prediction and speech sample generation.
 - Speech sample generation and augmentation: scripts `01*`–`04*` in speech_to_text generate TTS or synthetic samples, randomize delays, add background and microphone noise, and write clean/noisy audio files into DVC-backed directories.
-- Manifests and vocab: `05_create_set_manifests.py` creates train/val CSV manifests referencing audio filepaths and expected transcripts; `06_create_vocab_list.py` builds `vocab_list.txt`.
-- Featurization: `07_compute_spectrograms.py` reads manifests and `vocab_list.txt`, computes fixed-size log-Mel spectrograms and token arrays (`*.npy`), and stores them in the spectrogram output directory.
-- Training: `08_train_model.py` loads training manifest and spectrogram/token `.npy` files, constructs a Keras model (Conv2D → BiLSTM → Dense), trains with a CTC-style loss loop, and saves `speech_to_text_model.keras`.
+- Manifests and vocab: `05_create_set_manifests.py` creates train/val CSV manifests referencing audio filepaths and expected transcripts; `02_compute_vocab.py` builds `phoneme_list.txt` from the transcripts; `06_compute_token_lists.py` uses the manifests and `phoneme_list.txt` to produce per-utterance token JSON files.
+- Featurization: `07_compute_spectrograms.py` reads manifests, computes fixed-size log-Mel spectrograms (`*.npy`), and stores them in the spectrogram output directory.
+- Training: `08_train_model.py` loads the training manifest, spectrogram `.npy` files, and token JSON files, constructs a Keras model (Conv2D → BiLSTM → Dense), trains with a CTC-style loss loop, and saves `speech_to_text_model.keras`.
 - Evaluation: `09_evaluate_model.py` loads the saved model, runs greedy CTC decoding on eval spectrograms, computes WER using `jiwer`, and writes an `evaluation_predictions.txt` report.
 
 ## Dependencies and environment
