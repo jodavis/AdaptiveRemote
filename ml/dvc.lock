@@ -25,8 +25,8 @@ stages:
     - path: 
         data/speech_to_text/01a_generate_speech_sample_variations/speech_sample_variations.csv
       hash: md5
-      md5: 02da3e5331b9ad71389fe48e7767c50d
-      size: 112781
+      md5: 501539a97ea669e5fd2386ccb9cd11aa
+      size: 1129144
     - path: scripts/shared/constants.py
       hash: md5
       md5: 308cee0f2c1ac4e41926e06e95c56d12
@@ -43,9 +43,9 @@ stages:
     outs:
     - path: data/speech_to_text/01_generate_speech_samples
       hash: md5
-      md5: 5c8577aaabc9ed2fce381d01f4403457.dir
-      size: 13673664
-      nfiles: 1000
+      md5: 84fe70072dec71a96166d85ba68cd109.dir
+      size: 138108960
+      nfiles: 10000
   add_delays:
     cmd: python scripts/speech_to_text/02_add_delays.py --input-file 
       data/speech_to_text/02a_randomize_delay_variations/randomized_delay_variations.csv
@@ -53,14 +53,14 @@ stages:
     deps:
     - path: data/speech_to_text/01_generate_speech_samples
       hash: md5
-      md5: 5c8577aaabc9ed2fce381d01f4403457.dir
-      size: 13673664
-      nfiles: 1000
+      md5: 84fe70072dec71a96166d85ba68cd109.dir
+      size: 138108960
+      nfiles: 10000
     - path: 
         data/speech_to_text/02a_randomize_delay_variations/randomized_delay_variations.csv
       hash: md5
-      md5: 63b7f36aad6ba98c38d37eb7df8ec6f8
-      size: 147286
+      md5: 0f9968051a194190edcc713edaabd6f4
+      size: 1475524
     - path: scripts/speech_to_text/02_add_delays.py
       hash: md5
       md5: b3b64e5cf48d2a1333f8f79b4673269c
@@ -68,9 +68,9 @@ stages:
     outs:
     - path: data/speech_to_text/02_add_delays
       hash: md5
-      md5: bd29f4df0aad73812686bcbbb1cd352c.dir
-      size: 127957274
-      nfiles: 1000
+      md5: f0189d8a747072b7f8cad3da304f7312.dir
+      size: 1299098030
+      nfiles: 10000
   add_noise:
     cmd: python .\ml\scripts\speech_to_text\04_add_microphone_noise.py
     deps:
@@ -97,9 +97,9 @@ stages:
     deps:
     - path: data/speech_to_text/02_add_delays
       hash: md5
-      md5: bd29f4df0aad73812686bcbbb1cd352c.dir
-      size: 127957274
-      nfiles: 1000
+      md5: f0189d8a747072b7f8cad3da304f7312.dir
+      size: 1299098030
+      nfiles: 10000
     - path: data/speech_to_text/03a_download_background_noise
       hash: md5
       md5: 179e24549458b5a33140379d770da95d.dir
@@ -122,9 +122,9 @@ stages:
     outs:
     - path: data/speech_to_text/03_add_background_noise
       hash: md5
-      md5: 9d4b0497ed23a9c826722c01e4ff7ae2.dir
-      size: 127957274
-      nfiles: 1000
+      md5: fa437930757d4fad765461f5ef57875d.dir
+      size: 1299098030
+      nfiles: 10000
   add_microphone_noise:
     cmd: python scripts/speech_to_text/04_add_microphone_noise.py --input-dir 
       data/speech_to_text/03_add_background_noise --output-dir 
@@ -132,9 +132,9 @@ stages:
     deps:
     - path: data/speech_to_text/03_add_background_noise
       hash: md5
-      md5: 9d4b0497ed23a9c826722c01e4ff7ae2.dir
-      size: 127957274
-      nfiles: 1000
+      md5: fa437930757d4fad765461f5ef57875d.dir
+      size: 1299098030
+      nfiles: 10000
     - path: scripts/shared/constants.py
       hash: md5
       md5: 308cee0f2c1ac4e41926e06e95c56d12
@@ -153,9 +153,9 @@ stages:
     outs:
     - path: data/speech_to_text/04_add_microphone_noise
       hash: md5
-      md5: 4be353a8378733afde6f3b6db8d39fe1.dir
-      size: 127957274
-      nfiles: 1000
+      md5: ec3cef576f0aba02e637524fa1ab09fd.dir
+      size: 1299098030
+      nfiles: 10000
   create_zipped_sets:
     cmd: python .\ml\scripts\speech_to_text\05_create_zipped_sets.py
     deps:
@@ -236,18 +236,18 @@ stages:
       size: 128
     - path: data/speech_to_text/01_generate_speech_samples
       hash: md5
-      md5: 5c8577aaabc9ed2fce381d01f4403457.dir
-      size: 13673664
-      nfiles: 1000
+      md5: 84fe70072dec71a96166d85ba68cd109.dir
+      size: 138108960
+      nfiles: 10000
     - path: data/speech_to_text/04_add_microphone_noise
       hash: md5
-      md5: 4be353a8378733afde6f3b6db8d39fe1.dir
-      size: 127957274
-      nfiles: 1000
+      md5: ec3cef576f0aba02e637524fa1ab09fd.dir
+      size: 1299098030
+      nfiles: 10000
     - path: data/speech_to_text/05_create_set_manifests
       hash: md5
-      md5: 4e4a04f5c1474e362481427f2be7822b.dir
-      size: 291969
+      md5: 10b1e707af5746d7c4213cf48dc29b89.dir
+      size: 1427910
       nfiles: 3
     - path: scripts/shared/constants.py
       hash: md5
@@ -268,9 +268,9 @@ stages:
     outs:
     - path: data/speech_to_text/07_compute_spectrograms
       hash: md5
-      md5: 943e717fd5df6531b1ed69d95fbf7e58.dir
-      size: 473324544
-      nfiles: 1848
+      md5: 16bd3e8cd2a8c296f2bcbdb488b01471.dir
+      size: 2561280000
+      nfiles: 10000
   create_set_manifests:
     cmd: python scripts/speech_to_text/05_create_set_manifests.py 
       --input-manifest 
@@ -281,22 +281,22 @@ stages:
     deps:
     - path: data/speech_to_text/01_generate_speech_samples
       hash: md5
-      md5: 5c8577aaabc9ed2fce381d01f4403457.dir
-      size: 13673664
-      nfiles: 1000
+      md5: 84fe70072dec71a96166d85ba68cd109.dir
+      size: 138108960
+      nfiles: 10000
     - path: data/speech_to_text/04_add_microphone_noise
       hash: md5
-      md5: 4be353a8378733afde6f3b6db8d39fe1.dir
-      size: 127957274
-      nfiles: 1000
+      md5: ec3cef576f0aba02e637524fa1ab09fd.dir
+      size: 1299098030
+      nfiles: 10000
     - path: scripts/shared/constants.py
       hash: md5
       md5: 308cee0f2c1ac4e41926e06e95c56d12
       size: 1884
     - path: scripts/speech_to_text/05_create_set_manifests.py
       hash: md5
-      md5: 86b283a629adf085f723b48bdc54e541
-      size: 2850
+      md5: d83ca8b59e50921ec01d27781c717adc
+      size: 2889
     params:
       params.yaml:
         create_set_manifests:
@@ -306,8 +306,8 @@ stages:
     outs:
     - path: data/speech_to_text/05_create_set_manifests
       hash: md5
-      md5: 4e4a04f5c1474e362481427f2be7822b.dir
-      size: 291969
+      md5: 10b1e707af5746d7c4213cf48dc29b89.dir
+      size: 1427910
       nfiles: 3
   download_noise_samples:
     cmd: python scripts/speech_to_text/03a_download_background_noise.py 
@@ -337,13 +337,13 @@ stages:
       size: 128
     - path: data/speech_to_text/05_create_set_manifests/train_manifest.csv
       hash: md5
-      md5: 06cc8d80375ad0d8caa81241167ea17a
-      size: 233530
+      md5: 64d3f4bafaf37db7f0e385919d657340
+      size: 1142131
     - path: data/speech_to_text/07_compute_spectrograms
       hash: md5
-      md5: 943e717fd5df6531b1ed69d95fbf7e58.dir
-      size: 473324544
-      nfiles: 1848
+      md5: 16bd3e8cd2a8c296f2bcbdb488b01471.dir
+      size: 2561280000
+      nfiles: 10000
     - path: scripts/shared/constants.py
       hash: md5
       md5: 308cee0f2c1ac4e41926e06e95c56d12
@@ -365,7 +365,7 @@ stages:
     outs:
     - path: data/speech_to_text/08_train_model
       hash: md5
-      md5: 8a8c93ec18c172799494aeab16f190ec.dir
+      md5: 48eaee10d0af0ce14e02172dc11fc34a.dir
       size: 80640768
       nfiles: 1
   generate_speech_sample_variations:
@@ -391,13 +391,13 @@ stages:
         generate_speech_sample_variations:
           min_speech_rate: -50
           max_speech_rate: 80
-        pipeline.subsample_rate: 10
+        pipeline.subsample_rate: 1
     outs:
     - path: 
         data/speech_to_text/01a_generate_speech_sample_variations/speech_sample_variations.csv
       hash: md5
-      md5: 02da3e5331b9ad71389fe48e7767c50d
-      size: 112781
+      md5: 501539a97ea669e5fd2386ccb9cd11aa
+      size: 1129144
   randomize_delay_variations:
     cmd: python scripts/speech_to_text/02a_randomize_delay_variations.py 
       --input-dir data/speech_to_text/01_generate_speech_samples --output-file 
@@ -405,9 +405,9 @@ stages:
     deps:
     - path: data/speech_to_text/01_generate_speech_samples
       hash: md5
-      md5: 5c8577aaabc9ed2fce381d01f4403457.dir
-      size: 13673664
-      nfiles: 1000
+      md5: 84fe70072dec71a96166d85ba68cd109.dir
+      size: 138108960
+      nfiles: 10000
     - path: scripts/speech_to_text/02a_randomize_delay_variations.py
       hash: md5
       md5: e7bedd0bf4fcea95f5f0eeb8b606dab2
@@ -423,8 +423,8 @@ stages:
     - path: 
         data/speech_to_text/02a_randomize_delay_variations/randomized_delay_variations.csv
       hash: md5
-      md5: 63b7f36aad6ba98c38d37eb7df8ec6f8
-      size: 147286
+      md5: 0f9968051a194190edcc713edaabd6f4
+      size: 1475524
   evaluate_model:
     cmd: python scripts/speech_to_text/09_evaluate_model.py --manifest 
       data/speech_to_text/05_create_set_manifests/val_manifest.csv --vocab 
@@ -440,21 +440,21 @@ stages:
       size: 128
     - path: data/speech_to_text/05_create_set_manifests/val_manifest.csv
       hash: md5
-      md5: b70852e5ea8a5e9a0aba533ff8290ea6
-      size: 29199
+      md5: 965e830a6a9ee29c109fee7e1898a5f7
+      size: 142901
     - path: data/speech_to_text/06_compute_token_lists
       hash: md5
-      md5: 632f58fbbed8048e00ab79b2acd860b9.dir
-      size: 321440
-      nfiles: 1848
+      md5: 8c25005c8aa0b32ea939329e2571958a.dir
+      size: 1743885
+      nfiles: 10000
     - path: data/speech_to_text/07_compute_spectrograms
       hash: md5
-      md5: 943e717fd5df6531b1ed69d95fbf7e58.dir
-      size: 473324544
-      nfiles: 1848
+      md5: 16bd3e8cd2a8c296f2bcbdb488b01471.dir
+      size: 2561280000
+      nfiles: 10000
     - path: data/speech_to_text/08_train_model/speech_to_text_model.keras
       hash: md5
-      md5: 150b33c60c594b369aaaf01831518cab
+      md5: 3dcb8645056f33e951db5c00d0aba65e
       size: 80640768
     - path: scripts/shared/constants.py
       hash: md5
@@ -478,8 +478,8 @@ stages:
     outs:
     - path: data/speech_to_text/09_evaluate_model
       hash: md5
-      md5: 8f2d83548a4aac0c7bc07ff8203cad22.dir
-      size: 10858
+      md5: cd7b6bc4fcfbd4a51a33f78227612952.dir
+      size: 66449
       nfiles: 1
   evaluate_test_samples:
     cmd: python scripts/speech_to_text/10_evaluate_test_samples.py --manifest 
@@ -496,21 +496,21 @@ stages:
       size: 128
     - path: data/speech_to_text/05_create_set_manifests/test_manifest.csv
       hash: md5
-      md5: d3708c30a398a25bd5d2011776dd9776
-      size: 29240
+      md5: f5fbf13e76cf12c830c8661a1f1b87dc
+      size: 142878
     - path: data/speech_to_text/06_compute_token_lists
       hash: md5
-      md5: 632f58fbbed8048e00ab79b2acd860b9.dir
-      size: 321440
-      nfiles: 1848
+      md5: 8c25005c8aa0b32ea939329e2571958a.dir
+      size: 1743885
+      nfiles: 10000
     - path: data/speech_to_text/07_compute_spectrograms
       hash: md5
-      md5: 943e717fd5df6531b1ed69d95fbf7e58.dir
-      size: 473324544
-      nfiles: 1848
+      md5: 16bd3e8cd2a8c296f2bcbdb488b01471.dir
+      size: 2561280000
+      nfiles: 10000
     - path: data/speech_to_text/08_train_model/speech_to_text_model.keras
       hash: md5
-      md5: 150b33c60c594b369aaaf01831518cab
+      md5: 3dcb8645056f33e951db5c00d0aba65e
       size: 80640768
     - path: scripts/shared/constants.py
       hash: md5
@@ -604,16 +604,16 @@ stages:
       size: 3942
     - path: data/speech_to_text/05_create_set_manifests/test_manifest.csv
       hash: md5
-      md5: d3708c30a398a25bd5d2011776dd9776
-      size: 29240
+      md5: f5fbf13e76cf12c830c8661a1f1b87dc
+      size: 142878
     - path: data/speech_to_text/05_create_set_manifests/train_manifest.csv
       hash: md5
-      md5: 06cc8d80375ad0d8caa81241167ea17a
-      size: 233530
+      md5: 64d3f4bafaf37db7f0e385919d657340
+      size: 1142131
     - path: data/speech_to_text/05_create_set_manifests/val_manifest.csv
       hash: md5
-      md5: b70852e5ea8a5e9a0aba533ff8290ea6
-      size: 29199
+      md5: 965e830a6a9ee29c109fee7e1898a5f7
+      size: 142901
     - path: scripts/shared/constants.py
       hash: md5
       md5: 308cee0f2c1ac4e41926e06e95c56d12
@@ -632,6 +632,6 @@ stages:
     outs:
     - path: data/speech_to_text/06_compute_token_lists
       hash: md5
-      md5: 632f58fbbed8048e00ab79b2acd860b9.dir
-      size: 321440
-      nfiles: 1848
+      md5: 8c25005c8aa0b32ea939329e2571958a.dir
+      size: 1743885
+      nfiles: 10000

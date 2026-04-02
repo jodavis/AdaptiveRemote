@@ -5,7 +5,7 @@ pipeline:
   time_steps: 400           # spectrogram time steps (07, 08, 09, 10)
   batch_size: 32            # training/eval batch size (08, 09, 10)
   epochs: 10                # training epochs (08)
-  subsample_rate: 10        # Set subsampling rate (e.g., 1 = all, 2 = every other, 3 = every third)
+  subsample_rate: 1         # Set subsampling rate (e.g., 1 = all, 2 = every other, 3 = every third)
 
 add_delays:
   prefix_frequency: 5       # Add a prefix delay every N samples

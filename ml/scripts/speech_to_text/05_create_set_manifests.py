@@ -29,7 +29,8 @@ with open(paths.input_manifest, newline='', encoding='utf-8') as csvfile:
 
 # Collect all files from clean and noisy dirs
 all_files = []
-for input_dir in [paths.clean_dir, paths.noisy_dir]:
+# for input_dir in [paths.clean_dir, paths.noisy_dir]:
+for input_dir in [paths.clean_dir]:
     for root, _, files in os.walk(input_dir):
         for file in files:
             file_path = Path(root) / file
