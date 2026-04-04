@@ -483,7 +483,7 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
                 packet.HostAddress,
                 _deviceId,
                 emptyPayload,
-                errorCode: -1);
+                errorCode: -5);
 
             await _udpClient.SendAsync(notReadyResponse, notReadyResponse.Length, remoteEndPoint);
 

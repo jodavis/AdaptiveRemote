@@ -67,7 +67,8 @@ internal class DeviceConnection : IDeviceConnection
         CheckLearnedDataPayload payload = new();
         ResponsePacket response = await SendPacketAsync(SendDataCommandCode, payload, cancellationToken);
 
-        if (response.Header.ErrorCode == -1)
+        if (response.Header.ErrorCode == -5 || // Broadlink_StorageError
+            response.Header.ErrorCode == -10)  // Broadlink_ReadError
         {
             return null; // No IR data captured yet; caller should continue polling
         }

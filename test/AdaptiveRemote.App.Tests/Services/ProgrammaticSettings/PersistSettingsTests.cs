@@ -5,7 +5,8 @@ namespace AdaptiveRemote.Services.ProgrammaticSettings;
 [TestClass]
 public class PersistSettingsTests
 {
-    private static readonly string InputSettingsPath = Path.Combine("path", "to", "settings.ini");
+    private static readonly string InputSettingsPath = Path.Combine("%LocalAppData%", "path", "to", "settings.ini");
+    private static readonly string ResolvedSettingsPath = Environment.ExpandEnvironmentVariables(InputSettingsPath);
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
     private readonly MockFileSystem MockFileSystem = new();
@@ -36,26 +37,28 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=123");
+        MockFileSystem.AddFile(ResolvedSettingsPath, "ExistingSetting=123");
 
-        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
-        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenRead_ForPath(ResolvedSettingsPath);
+        MockFileSystem.Expect_OpenRead_IsNotCalledForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath);
+        MockFileSystem.Expect_OpenWrite_IsNotCalledForPath(InputSettingsPath);
 
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, $"ExistingSetting=123{Environment.NewLine}NewSetting=abc{Environment.NewLine}");
+        MockFileSystem.VerifyFileContents(ResolvedSettingsPath, $"ExistingSetting=123{Environment.NewLine}NewSetting=abc{Environment.NewLine}");
 
         MockLogger.VerifyMessages(log =>
         {
-            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
-            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_LoadingExistingSettings(ResolvedSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, ResolvedSettingsPath);
             log.ProgrammaticSettings_AddSetting("NewSetting", "abc");
-            log.ProgrammaticSettings_SavingSettings(2, InputSettingsPath);
-            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+            log.ProgrammaticSettings_SavingSettings(2, ResolvedSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath);
         });
     }
 
@@ -65,36 +68,36 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=123");
+        MockFileSystem.AddFile(ResolvedSettingsPath, "ExistingSetting=123");
 
-        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
-        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath, Times.Between(1, 3, Moq.Range.Inclusive));
+        MockFileSystem.Expect_OpenRead_ForPath(ResolvedSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath, Times.Between(1, 3, Moq.Range.Inclusive));
 
         // Act
         sut.Set("NewSetting1", "abc");
         sut.Set("NewSetting2", "def");
         sut.Set("NewSetting3", "ghi");
 
-        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavingSettings(4, InputSettingsPath));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavingSettings(4, ResolvedSettingsPath));
 
         // Assert
         DateTime startTime = DateTime.Now;
         const int timeout = 1; // second
         while (true)
         {
-            if (MockLogger.Messages.LastOrDefault()?.Contains($"Saved settings to {InputSettingsPath}") == true)
+            if (MockLogger.Messages.LastOrDefault()?.Contains($"Saved settings to {ResolvedSettingsPath}") == true)
             {
                 break;
             }
-            Assert.IsTrue(DateTime.Now - startTime < TimeSpan.FromSeconds(timeout), $"Timed out waiting for final message: ProgrammaticSettings_SavedSettings({InputSettingsPath})");
+            Assert.IsTrue(DateTime.Now - startTime < TimeSpan.FromSeconds(timeout), $"Timed out waiting for final message: ProgrammaticSettings_SavedSettings({ResolvedSettingsPath})");
             await Task.Delay(100);
         }
 
         string[] expectedSettings = ["ExistingSetting=123", "NewSetting3=ghi", "NewSetting2=def", "NewSetting1=abc"];
-        string[] actualSettings = MockFileSystem.GetFileContents(InputSettingsPath).Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries);
+        string[] actualSettings = MockFileSystem.GetFileContents(ResolvedSettingsPath).Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries);
 
-        Assert.IsFalse(expectedSettings.Except(actualSettings).Any(), "Did not find expected settings in {0}: {1}", InputSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
-        Assert.IsFalse(actualSettings.Except(expectedSettings).Any(), "Did not find expected settings in {0}: {1}", InputSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
+        Assert.IsFalse(expectedSettings.Except(actualSettings).Any(), "Did not find expected settings in {0}: {1}", ResolvedSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
+        Assert.IsFalse(actualSettings.Except(expectedSettings).Any(), "Did not find expected settings in {0}: {1}", ResolvedSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
     }
 
     [TestMethod]
@@ -103,26 +106,26 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=123");
+        MockFileSystem.AddFile(ResolvedSettingsPath, "ExistingSetting=123");
 
-        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
-        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenRead_ForPath(ResolvedSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath);
 
         // Act
         sut.Set("ExistingSetting", "ghi");
 
-        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, $"ExistingSetting=ghi{Environment.NewLine}");
+        MockFileSystem.VerifyFileContents(ResolvedSettingsPath, $"ExistingSetting=ghi{Environment.NewLine}");
 
         MockLogger.VerifyMessages(log =>
         {
-            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
-            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_LoadingExistingSettings(ResolvedSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, ResolvedSettingsPath);
             log.ProgrammaticSettings_ReplaceSetting("ExistingSetting", "123", "ghi");
-            log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
-            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+            log.ProgrammaticSettings_SavingSettings(1, ResolvedSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath);
         });
     }
 
@@ -134,9 +137,9 @@ public class PersistSettingsTests
 
         Exception expectedException = new ArgumentOutOfRangeException();
 
-        MockFileSystem.AddFile(InputSettingsPath);
+        MockFileSystem.AddFile(ResolvedSettingsPath);
         MockFileSystem
-            .Setup(x => x.OpenRead(InputSettingsPath))
+            .Setup(x => x.OpenRead(ResolvedSettingsPath))
             .Throws(expectedException)
             .Verifiable(Times.Once);
 
@@ -148,7 +151,7 @@ public class PersistSettingsTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
-            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
+            log.ProgrammaticSettings_LoadingExistingSettings(ResolvedSettingsPath);
             log.ProgrammaticSettings_Error("NewSetting", "abc", expectedException);
         });
     }
@@ -161,11 +164,11 @@ public class PersistSettingsTests
 
         Exception expectedException = new ArgumentOutOfRangeException();
 
-        MockFileSystem.AddFile(InputSettingsPath, "ExistingSetting=123");
+        MockFileSystem.AddFile(ResolvedSettingsPath, "ExistingSetting=123");
 
-        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenRead_ForPath(ResolvedSettingsPath);
         MockFileSystem
-            .Setup(x => x.OpenWrite(InputSettingsPath))
+            .Setup(x => x.OpenWrite(ResolvedSettingsPath))
             .Throws(expectedException)
             .Verifiable(Times.Once);
 
@@ -177,10 +180,10 @@ public class PersistSettingsTests
         // Assert
         MockLogger.VerifyMessages(log =>
         {
-            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
-            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_LoadingExistingSettings(ResolvedSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, ResolvedSettingsPath);
             log.ProgrammaticSettings_AddSetting("NewSetting", "abc");
-            log.ProgrammaticSettings_SavingSettings(2, InputSettingsPath);
+            log.ProgrammaticSettings_SavingSettings(2, ResolvedSettingsPath);
             log.ProgrammaticSettings_Error("NewSetting", "abc", expectedException);
         });
     }
@@ -191,24 +194,24 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddDirectory(Path.GetDirectoryName(InputSettingsPath));
+        MockFileSystem.AddDirectory(Path.GetDirectoryName(ResolvedSettingsPath));
 
         MockFileSystem.Expect_OpenRead_IsNotCalled();
-        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath);
 
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, $"NewSetting=abc{Environment.NewLine}");
+        MockFileSystem.VerifyFileContents(ResolvedSettingsPath, $"NewSetting=abc{Environment.NewLine}");
 
         MockLogger.VerifyMessages(log =>
         {
             log.ProgrammaticSettings_AddSetting("NewSetting", "abc");
-            log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
-            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+            log.ProgrammaticSettings_SavingSettings(1, ResolvedSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath);
         });
     }
 
@@ -218,28 +221,28 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        string rootPath = Path.GetDirectoryName(Path.GetDirectoryName(InputSettingsPath)!) ?? "path";
+        string rootPath = Path.GetDirectoryName(Path.GetDirectoryName(ResolvedSettingsPath)!) ?? "path";
         MockFileSystem.AddDirectory(rootPath);
 
         MockFileSystem.Expect_OpenRead_IsNotCalled();
 
-        MockFileSystem.Expect_CreateDirectory_ForPath(Path.Combine("path", "to"));
+        MockFileSystem.Expect_CreateDirectory_ForPath(Path.Combine(rootPath, "to"));
 
-        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath);
 
         // Act
         sut.Set("NewSetting", "abc");
 
-        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, $"NewSetting=abc{Environment.NewLine}");
+        MockFileSystem.VerifyFileContents(ResolvedSettingsPath, $"NewSetting=abc{Environment.NewLine}");
 
         MockLogger.VerifyMessages(log =>
         {
             log.ProgrammaticSettings_AddSetting("NewSetting", "abc");
-            log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
-            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+            log.ProgrammaticSettings_SavingSettings(1, ResolvedSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath);
         });
     }
 
@@ -263,7 +266,7 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddFile(InputSettingsPath, "");
+        MockFileSystem.AddFile(ResolvedSettingsPath, "");
 
         try
         {
@@ -273,15 +276,15 @@ public class PersistSettingsTests
             // Assert
             Assert.IsTrue(expectedResult, "Expected ArgumentException was not thrown for input:'{0}'.", input);
 
-            await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+            await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
             MockLogger.VerifyMessages(log =>
             {
-                log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
-                log.ProgrammaticSettings_LoadedExistingSettings(0, InputSettingsPath);
+                log.ProgrammaticSettings_LoadingExistingSettings(ResolvedSettingsPath);
+                log.ProgrammaticSettings_LoadedExistingSettings(0, ResolvedSettingsPath);
                 log.ProgrammaticSettings_AddSetting(input, "def");
-                log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
-                log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+                log.ProgrammaticSettings_SavingSettings(1, ResolvedSettingsPath);
+                log.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath);
             });
         }
         catch (ArgumentException result) when (!expectedResult)
@@ -309,7 +312,7 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddFile(InputSettingsPath, "");
+        MockFileSystem.AddFile(ResolvedSettingsPath, "");
 
         try
         {
@@ -319,15 +322,15 @@ public class PersistSettingsTests
             // Assert
             Assert.IsTrue(expectedResult, "Expected ArgumentException was not thrown for input:'{0}'.", input);
 
-            await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+            await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
             MockLogger.VerifyMessages(log =>
             {
-                log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
-                log.ProgrammaticSettings_LoadedExistingSettings(0, InputSettingsPath);
+                log.ProgrammaticSettings_LoadingExistingSettings(ResolvedSettingsPath);
+                log.ProgrammaticSettings_LoadedExistingSettings(0, ResolvedSettingsPath);
                 log.ProgrammaticSettings_AddSetting("TestSetting", input);
-                log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
-                log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+                log.ProgrammaticSettings_SavingSettings(1, ResolvedSettingsPath);
+                log.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath);
             });
         }
         catch (ArgumentException result) when (!expectedResult)
@@ -350,23 +353,23 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddDirectory(Path.GetDirectoryName(InputSettingsPath));
+        MockFileSystem.AddDirectory(Path.GetDirectoryName(ResolvedSettingsPath));
         MockFileSystem.Expect_OpenRead_IsNotCalled();
-        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath);
 
         // Act
         sut.Set("IRData:Power", "AQIDBA==");
 
-        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
         // Assert
-        MockFileSystem.VerifyFileContents(InputSettingsPath, $"[IRData]{Environment.NewLine}Power=AQIDBA=={Environment.NewLine}");
+        MockFileSystem.VerifyFileContents(ResolvedSettingsPath, $"[IRData]{Environment.NewLine}Power=AQIDBA=={Environment.NewLine}");
 
         MockLogger.VerifyMessages(log =>
         {
             log.ProgrammaticSettings_AddSetting("IRData:Power", "AQIDBA==");
-            log.ProgrammaticSettings_SavingSettings(1, InputSettingsPath);
-            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+            log.ProgrammaticSettings_SavingSettings(1, ResolvedSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath);
         });
     }
 
@@ -376,28 +379,28 @@ public class PersistSettingsTests
         // Arrange
         IPersistSettings sut = CreateSut();
 
-        MockFileSystem.AddFile(InputSettingsPath, $"[IRData]{Environment.NewLine}Power=AQIDBA=={Environment.NewLine}");
-        MockFileSystem.Expect_OpenRead_ForPath(InputSettingsPath);
-        MockFileSystem.Expect_OpenWrite_ForPath(InputSettingsPath);
+        MockFileSystem.AddFile(ResolvedSettingsPath, $"[IRData]{Environment.NewLine}Power=AQIDBA=={Environment.NewLine}");
+        MockFileSystem.Expect_OpenRead_ForPath(ResolvedSettingsPath);
+        MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath);
 
         // Act
         sut.Set("IRData:VolumeUp", "BQYHCA==");
 
-        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(InputSettingsPath));
+        await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
         // Assert
-        string contents = MockFileSystem.GetFileContents(InputSettingsPath);
+        string contents = MockFileSystem.GetFileContents(ResolvedSettingsPath);
         Assert.IsTrue(contents.Contains("[IRData]"), "Output should contain [IRData] section header");
         Assert.IsTrue(contents.Contains($"Power=AQIDBA=="), "Output should contain existing Power entry");
         Assert.IsTrue(contents.Contains($"VolumeUp=BQYHCA=="), "Output should contain new VolumeUp entry");
 
         MockLogger.VerifyMessages(log =>
         {
-            log.ProgrammaticSettings_LoadingExistingSettings(InputSettingsPath);
-            log.ProgrammaticSettings_LoadedExistingSettings(1, InputSettingsPath);
+            log.ProgrammaticSettings_LoadingExistingSettings(ResolvedSettingsPath);
+            log.ProgrammaticSettings_LoadedExistingSettings(1, ResolvedSettingsPath);
             log.ProgrammaticSettings_AddSetting("IRData:VolumeUp", "BQYHCA==");
-            log.ProgrammaticSettings_SavingSettings(2, InputSettingsPath);
-            log.ProgrammaticSettings_SavedSettings(InputSettingsPath);
+            log.ProgrammaticSettings_SavingSettings(2, ResolvedSettingsPath);
+            log.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath);
         });
     }
 

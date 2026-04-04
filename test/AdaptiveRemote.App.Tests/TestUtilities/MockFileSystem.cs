@@ -92,6 +92,9 @@ internal class MockFileSystem : Mock<IFileSystem>
         => Setup(x => x.OpenRead(path))
             .Returns(Returns_OpenRead)
             .Verifiable(Times.Once);
+    public void Expect_OpenRead_IsNotCalledForPath(string path)
+        => Setup(x => x.OpenRead(path))
+            .Verifiable(Times.Never);
     public void Expect_OpenRead_IsNotCalled()
         => Setup(x => x.OpenRead(It.IsAny<string>()))
             .Verifiable(Times.Never);
@@ -107,6 +110,9 @@ internal class MockFileSystem : Mock<IFileSystem>
         => Setup(x => x.OpenWrite(path))
             .Returns(Returns_OpenWrite)
             .Verifiable(times ?? Times.Once());
+    public void Expect_OpenWrite_IsNotCalledForPath(string path)
+        => Setup(x => x.OpenWrite(path))
+            .Verifiable(Times.Never);
     public void Expect_OpenWrite_IsNotCalled()
         => Setup(x => x.OpenWrite(It.IsAny<string>()))
             .Returns(Returns_OpenWrite)
