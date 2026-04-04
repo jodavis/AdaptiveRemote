@@ -1,6 +1,6 @@
 # Broadlink RM4 Mini IR Learning Protocol
 
-This document describes the IR learning protocol for the Broadlink RM4 Mini, as implemented in AdaptiveRemote. It is distilled from the [broadlink/broadlink](https://github.com/broadlink/broadlink) Python project and references the C# implementation in `AdaptiveRemote.Services.Broadlink.DeviceConnection`.
+This document describes the IR learning protocol for the Broadlink RM4 Mini, as implemented in AdaptiveRemote. It is distilled from the [mjg59/python-broadlink](https://github.com/mjg59/python-broadlink) Python project and references the C# implementation in `AdaptiveRemote.Services.Broadlink.DeviceConnection`.
 
 ## Overview
 - **Device:** Broadlink RM4 Mini
@@ -49,12 +49,12 @@ graph TD
    - See: `DeviceConnection.CheckError`
 
 ## Notes
-- The polling pattern for IR learning is different from simple command sending. Refer to the [broadlink/broadlink Python implementation](https://github.com/broadlink/broadlink/blob/master/broadlink/remote.py) for details.
+- The polling pattern for IR learning is different from simple command sending. Refer to the [mjg59/python-broadlink Python implementation](https://github.com/mjg59/python-broadlink/blob/master/broadlink/remote.py) for details.
 - The C# implementation may need to be extended to support polling for learned codes as described above.
 - For packet structure and encryption, see the C# code in `DeviceConnection` and related payload classes.
 
 ## References
-- [broadlink/broadlink Python project](https://github.com/broadlink/broadlink)
+- [mjg59/python-broadlink Python project](https://github.com/mjg59/python-broadlink)
 - `AdaptiveRemote.Services.Broadlink.DeviceConnection` (C#)
 
 ---

@@ -34,7 +34,7 @@ internal class PersistSettings : IPersistSettings
     public PersistSettings(IFileSystem fileSystem, IOptions<ProgrammaticSettings> settings, ILogger<PersistSettings> logger)
     {
         _fileSystem = fileSystem;
-        _filePath = settings.Value.ProgrammaticSettingsPath;
+        _filePath = Environment.ExpandEnvironmentVariables(settings.Value.ProgrammaticSettingsPath);
         _logger = new(logger);
 
         _lazyValues = new(LoadExistingSettingsAsync);
