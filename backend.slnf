@@ -1,0 +1,8 @@
+{
+  "solution": {
+    "path": "AdaptiveRemote.sln",
+    "projects": [
+      "src\\AdaptiveRemote.Contracts\\AdaptiveRemote.Contracts.csproj"
+    ]
+  }
+}
