@@ -72,12 +72,14 @@ When the user signals they're ready:
 
 1. Re-read the spec file with the Read tool.
 2. Collect all `> **Review:** ...` markers and note any direct edits.
-3. If any review comment is ambiguous or requires a design decision,
-   ask clarifying questions first (again, all at once).
-   **PAUSE if you asked questions — wait for answers before editing.**
-4. Update the spec: apply changes, resolve review markers by removing them
-   or incorporating the feedback, and update Open Questions accordingly.
-5. Tell the user what changed and invite another review pass.
+3. Address review comments **one at a time** in document order:
+   a. Present your analysis of the comment — the trade-offs, your
+      recommendation, and why.
+   b. **PAUSE — wait for the user's decision before editing.**
+   c. Update the spec to reflect the resolved decision; remove the
+      review marker.
+   d. Tell the user what changed, then move to the next comment.
+4. After all comments are resolved, invite another review pass.
 
 Repeat Phase 3 until the user says the document is ready.
 
@@ -117,16 +119,29 @@ When Phase 4 is complete:
    - Exit criteria as a checkbox list; for tasks that include new E2E tests,
      write those exit criteria as Gherkin-style acceptance scenarios
      (`Given / When / Then`)
-3. Save the updated spec and ask the user to review the task breakdown.
+3. If the spec has a `## Related Epics` section listing features to be
+   spec'd separately, add those as placeholder entries in `## Tasks` as
+   well — titled "Create epic: \<name\>" with a one-line scope description.
+   These will become Jira epics (not tasks) in step 5.
+4. Save the updated spec and ask the user to review the task breakdown.
    **PAUSE — wait for approval or change requests. Apply any changes
    before proceeding.**
-4. Create a Jira task for each item. If the user provided an epic key,
-   assign it as the parent of all tasks. If not, create tasks without a
-   parent — the parent can be added later.
-5. Update the `## Tasks` section: replace each task title with a hyperlink
+5. Create Jira issues for each item:
+   - For tasks: create as Task issues. If the user provided an epic key,
+     assign it as the parent. If not, create without a parent.
+   - For "Create epic" placeholder items: create as Epic issues (no parent).
+     Use the scope description as the epic summary.
+6. Update the `## Tasks` section: replace each item title with a hyperlink
    to its Jira ticket. Keep all descriptions and exit criteria in place.
    The section remains in the spec permanently — future agents may not
    have Jira access.
+7. Update the `## Related Epics` table with the Jira keys assigned to each
+   related epic in step 5.
+8. Update the Jira epic's description with a concise summary of the
+   finalized design decisions from the spec. The original description
+   typically contains early design thoughts that are now superseded; replace
+   it with a brief overview and a bulleted list of the key decisions and
+   their outcomes. Link to the spec file in the repo.
 
 ---
 
@@ -176,6 +191,18 @@ Planned classes, their roles, and important relationships.
 ### Data Flow
 
 How data moves through the feature from trigger to output.
+
+## Related Epics
+
+Features identified during spec drafting that are out of scope here and will
+be spec'd separately. Each row becomes a Jira epic in Phase 5.
+
+| Epic | Scope |
+|------|-------|
+| (this epic) | ... |
+| ADR-XXX | ... |
+
+_(Omit this section if there are no related epics to create.)_
 
 ## Open Questions
 

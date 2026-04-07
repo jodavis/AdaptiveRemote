@@ -6,7 +6,8 @@
       "mcp__jira__getJiraIssue",
       "Bash(xargs:*)",
       "mcp__jira__createJiraIssue",
-      "mcp__jira__editJiraIssue"
+      "mcp__jira__editJiraIssue",
+      "mcp__jira__getJiraProjectIssueTypesMetadata"
     ]
   }
 }
