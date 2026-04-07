@@ -33,6 +33,14 @@ This document describes the high-level organization of the AdaptiveRemote reposi
 	- Minimal code to launch the WPF app with console logging.
 	- No business logic or features.
 
+### AdaptiveRemote.Contracts
+- **Purpose:** Shared class library containing layout definition DTOs, enums, interfaces, and the source-generated `LayoutContractsJsonContext` used by both the client application and backend services.
+- **Guidance:** _No platform-specific dependencies._ Targets `net10.0` only. Contains pure data types (records, enums, interfaces) with no behavior.
+- **Boundaries:**
+	- No WPF, Windows APIs, or Blazor dependencies.
+	- No MVVM or runtime behavior — DTOs only.
+	- Included in both `client.slnf` and `backend.slnf`.
+
 ## Test Projects
 
 ### AdaptiveRemote.App.Tests
