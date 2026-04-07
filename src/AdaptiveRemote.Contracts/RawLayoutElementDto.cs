@@ -9,7 +9,8 @@ namespace AdaptiveRemote.Contracts;
 // the compiler resolves into CssDefinitions and strips from the compiled output.
 // ---------------------------------------------------------------------------
 
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+// "$type" avoids conflict with the behavioral Type property on RawCommandDefinitionDto.
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
 [JsonDerivedType(typeof(RawCommandDefinitionDto), "command")]
 [JsonDerivedType(typeof(RawLayoutGroupDefinitionDto), "group")]
 public abstract record RawLayoutElementDto(
@@ -46,3 +47,18 @@ public record RawLayoutGroupDefinitionDto(
     int GridColumnSpan = 1,
     string? AdditionalCss = null
 ) : RawLayoutElementDto(CssId, GridRow, GridColumn, GridRowSpan, GridColumnSpan, AdditionalCss);
+
+// ---------------------------------------------------------------------------
+// Administrator-editable source format. Elements are typed; no opaque JSON string.
+// ---------------------------------------------------------------------------
+
+public record RawLayout(
+    Guid Id,
+    string UserId,
+    string Name,
+    IReadOnlyList<RawLayoutElementDto> Elements,
+    int Version,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    ValidationResult? ValidationResult    // written by LayoutProcessingService via IRawLayoutStatusWriter
+);

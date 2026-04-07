@@ -9,7 +9,8 @@ namespace AdaptiveRemote.Contracts;
 // compiled into CssDefinitions and are not needed by the client.
 // ---------------------------------------------------------------------------
 
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+// "$type" avoids conflict with the behavioral Type property on CommandDefinitionDto.
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
 [JsonDerivedType(typeof(CommandDefinitionDto), "command")]
 [JsonDerivedType(typeof(LayoutGroupDefinitionDto), "group")]
 public abstract record LayoutElementDto(string CssId);
@@ -33,3 +34,20 @@ public record LayoutGroupDefinitionDto(
     string CssId,
     IReadOnlyList<LayoutElementDto> Children
 ) : LayoutElementDto(CssId);
+
+// ---------------------------------------------------------------------------
+// Client-consumable format produced by LayoutCompilerService.
+// Deserialized directly by the client application — no intermediate parsing model needed.
+// The client maps Elements → runtime Command objects at layout-apply time (client epic).
+// ---------------------------------------------------------------------------
+
+public record CompiledLayout(
+    Guid Id,
+    Guid RawLayoutId,
+    string UserId,
+    bool IsActive,
+    int Version,
+    IReadOnlyList<LayoutElementDto> Elements,
+    string CssDefinitions,                // global CSS for the layout grid
+    DateTimeOffset CompiledAt
+);
