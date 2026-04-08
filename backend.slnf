@@ -2,7 +2,9 @@
   "solution": {
     "path": "AdaptiveRemote.sln",
     "projects": [
-      "src\\AdaptiveRemote.Contracts\\AdaptiveRemote.Contracts.csproj"
+      "src\\AdaptiveRemote.Contracts\\AdaptiveRemote.Contracts.csproj",
+      "src\\AdaptiveRemote.Backend.CompiledLayoutService\\AdaptiveRemote.Backend.CompiledLayoutService.csproj",
+      "test\\AdaptiveRemote.Backend.ApiTests\\AdaptiveRemote.Backend.ApiTests.csproj"
     ]
   }
 }
