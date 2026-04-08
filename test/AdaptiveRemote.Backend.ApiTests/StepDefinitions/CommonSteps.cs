@@ -10,37 +10,40 @@ namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
 [Binding]
 public class CommonSteps : IDisposable
 {
-    private readonly ServiceFixture _fixture = new();
-    private HttpResponseMessage? _response;
-    private string? _responseBody;
+    private readonly ServiceContext _context;
+
+    public CommonSteps(ServiceContext context)
+    {
+        _context = context;
+    }
 
     [Given(@"CompiledLayoutService is running")]
     public void GivenCompiledLayoutServiceIsRunning()
     {
-        _fixture.StartService();
+        _context.Fixture.StartService();
     }
 
     [When(@"a test client calls GET (.*)")]
     public async Task WhenATestClientCallsGet(string endpoint)
     {
-        _response = await _fixture.HttpClient.GetAsync(endpoint);
-        _responseBody = await _response.Content.ReadAsStringAsync();
+        _context.LastResponse = await _context.Fixture.HttpClient.GetAsync(endpoint);
+        _context.LastResponseBody = await _context.LastResponse.Content.ReadAsStringAsync();
     }
 
     [Then(@"the response is (\d+) OK")]
     public void ThenTheResponseIsOk(int statusCode)
     {
-        _response.Should().NotBeNull();
-        ((int)_response!.StatusCode).Should().Be(statusCode);
+        _context.LastResponse.Should().NotBeNull();
+        ((int)_context.LastResponse!.StatusCode).Should().Be(statusCode);
     }
 
     [Then(@"the body deserializes to a valid CompiledLayout using LayoutContractsJsonContext")]
     public void ThenTheBodyDeserializesToValidCompiledLayout()
     {
-        _responseBody.Should().NotBeNullOrEmpty();
+        _context.LastResponseBody.Should().NotBeNullOrEmpty();
 
         CompiledLayout? layout = JsonSerializer.Deserialize<CompiledLayout>(
-            _responseBody!,
+            _context.LastResponseBody!,
             LayoutContractsJsonContext.Default.CompiledLayout);
 
         layout.Should().NotBeNull();
@@ -51,17 +54,17 @@ public class CommonSteps : IDisposable
     [Then(@"the CompiledLayout contains the expected hardcoded commands")]
     public void ThenTheCompiledLayoutContainsExpectedCommands()
     {
-        _responseBody.Should().NotBeNullOrEmpty();
+        _context.LastResponseBody.Should().NotBeNullOrEmpty();
 
         CompiledLayout? layout = JsonSerializer.Deserialize<CompiledLayout>(
-            _responseBody!,
+            _context.LastResponseBody!,
             LayoutContractsJsonContext.Default.CompiledLayout);
 
         layout.Should().NotBeNull();
-        
+
         // Verify key commands from StaticCommandGroupProvider exist
         List<CommandDefinitionDto> commands = ExtractAllCommands(layout!.Elements);
-        
+
         commands.Should().Contain(c => c.Name == "Up" && c.Type == CommandType.TiVo);
         commands.Should().Contain(c => c.Name == "Select" && c.Type == CommandType.TiVo);
         commands.Should().Contain(c => c.Name == "Power" && c.Type == CommandType.IR);
@@ -72,14 +75,14 @@ public class CommonSteps : IDisposable
     [Then(@"the service logs contain a request log entry for GET (.*)")]
     public void ThenTheServiceLogsContainRequestLogEntry(string endpoint)
     {
-        string logs = _fixture.GetLogs();
+        string logs = _context.Fixture.GetLogs();
         logs.Should().Contain(endpoint);
     }
 
     [Then(@"the service logs contain no warnings or errors")]
     public void ThenTheServiceLogsContainNoWarningsOrErrors()
     {
-        string logs = _fixture.GetLogs();
+        string logs = _context.Fixture.GetLogs();
         logs.Should().NotContain("WARNING", "service should not log warnings");
         logs.Should().NotContain("ERROR", "service should not log errors");
         logs.Should().NotContain("Exception", "service should not log exceptions");
@@ -88,10 +91,10 @@ public class CommonSteps : IDisposable
     [Then(@"the body contains the service name and version")]
     public void ThenTheBodyContainsServiceNameAndVersion()
     {
-        _responseBody.Should().NotBeNullOrEmpty();
+        _context.LastResponseBody.Should().NotBeNullOrEmpty();
 
         HealthResponse? healthResponse = JsonSerializer.Deserialize<HealthResponse>(
-            _responseBody!,
+            _context.LastResponseBody!,
             LayoutContractsJsonContext.Default.HealthResponse);
 
         healthResponse.Should().NotBeNull();
@@ -103,7 +106,7 @@ public class CommonSteps : IDisposable
     private static List<CommandDefinitionDto> ExtractAllCommands(IReadOnlyList<LayoutElementDto> elements)
     {
         List<CommandDefinitionDto> commands = new();
-        
+
         foreach (LayoutElementDto element in elements)
         {
             if (element is CommandDefinitionDto command)
@@ -115,14 +118,13 @@ public class CommonSteps : IDisposable
                 commands.AddRange(ExtractAllCommands(group.Children));
             }
         }
-        
+
         return commands;
     }
 
     public void Dispose()
     {
-        _response?.Dispose();
-        _fixture.Dispose();
+        // ServiceContext owns LastResponse and Fixture; nothing to dispose here.
         GC.SuppressFinalize(this);
     }
 }
