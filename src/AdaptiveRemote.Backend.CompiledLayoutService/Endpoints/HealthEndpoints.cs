@@ -1,5 +1,6 @@
 using System.Reflection;
 using AdaptiveRemote.Backend.CompiledLayoutService.Logging;
+using AdaptiveRemote.Contracts;
 
 namespace AdaptiveRemote.Backend.CompiledLayoutService.Endpoints;
 
@@ -8,7 +9,7 @@ public static class HealthEndpoints
     public static void MapHealthEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/health", GetHealth)
-            .WithName("GetHealth")
+            .WithName(nameof(GetHealth))
             .Produces<HealthResponse>(StatusCodes.Status200OK);
     }
 
@@ -31,9 +32,3 @@ public static class HealthEndpoints
         return Results.Ok(response);
     }
 }
-
-public record HealthResponse(
-    string ServiceName,
-    string Version,
-    string Status
-);

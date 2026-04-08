@@ -3,18 +3,17 @@ using AdaptiveRemote.Contracts;
 namespace AdaptiveRemote.Backend.CompiledLayoutService.Services;
 
 /// <summary>
-/// Provides a hardcoded compiled layout matching the current StaticCommandGroupProvider layout.
-/// This is a temporary implementation for ADR-167 Static layout MVP.
+/// Hardcoded implementation of ICompiledLayoutRepository for ADR-167 Static layout MVP.
+/// Returns a fixed layout matching the current StaticCommandGroupProvider.
 /// Will be replaced with real DynamoDB storage in ADR-173.
 /// </summary>
-public class HardcodedLayoutProvider
+public class HardcodedLayoutProvider : ICompiledLayoutRepository
 {
     // Hardcoded layout ID and user ID for MVP
     private static readonly Guid LayoutId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     private static readonly Guid RawLayoutId = Guid.Parse("00000000-0000-0000-0000-000000000002");
-    private const string HardcodedUserId = "mvp-user";
 
-    public CompiledLayout GetActiveLayout()
+    public Task<CompiledLayout?> GetActiveForUserAsync(string userId, CancellationToken cancellationToken = default)
     {
         List<LayoutElementDto> elements = new List<LayoutElementDto>
         {
@@ -74,15 +73,17 @@ public class HardcodedLayoutProvider
             ),
         };
 
-        return new CompiledLayout(
+        CompiledLayout layout = new CompiledLayout(
             Id: LayoutId,
             RawLayoutId: RawLayoutId,
-            UserId: HardcodedUserId,
+            UserId: userId,
             IsActive: true,
             Version: 1,
             Elements: elements.AsReadOnly(),
             CssDefinitions: "/* Placeholder CSS - real CSS generation in ADR-171 */",
             CompiledAt: DateTimeOffset.UtcNow
         );
+
+        return Task.FromResult<CompiledLayout?>(layout);
     }
 }

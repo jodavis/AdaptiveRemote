@@ -27,4 +27,10 @@ public static partial class MessageLogger
 
     [LoggerMessage(EventId = 1105, Level = LogLevel.Information, Message = "Health check successful")]
     public static partial void HealthCheckSuccessful(this ILogger logger);
+
+    [LoggerMessage(EventId = 1106, Level = LogLevel.Error, Message = "Error retrieving active layout for userId={UserId}")]
+    public static partial void ErrorRetrievingActiveLayout(this ILogger logger, string userId, Exception exception);
+
+    [LoggerMessage(EventId = 1107, Level = LogLevel.Error, Message = "Error processing health check request")]
+    public static partial void ErrorProcessingHealthCheck(this ILogger logger, Exception exception);
 }
