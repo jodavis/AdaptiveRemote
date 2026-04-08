@@ -23,16 +23,33 @@ public class ServiceFixture : IDisposable
             return; // Already started
         }
 
+        // Find the repository root by looking for the .git directory
+        string currentDir = Directory.GetCurrentDirectory();
+        string? repoRoot = currentDir;
+        while (repoRoot != null && !Directory.Exists(Path.Combine(repoRoot, ".git")))
+        {
+            repoRoot = Directory.GetParent(repoRoot)?.FullName;
+        }
+
+        if (repoRoot == null)
+        {
+            throw new InvalidOperationException("Could not find repository root (no .git directory found)");
+        }
+
         string projectPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "..", "..", "..", "..",
+            repoRoot,
             "src", "AdaptiveRemote.Backend.CompiledLayoutService",
             "AdaptiveRemote.Backend.CompiledLayoutService.csproj");
+
+        if (!File.Exists(projectPath))
+        {
+            throw new InvalidOperationException($"Project file not found at: {projectPath}");
+        }
 
         ProcessStartInfo startInfo = new()
         {
             FileName = "dotnet",
-            Arguments = $"run --project \"{projectPath}\" --no-build",
+            Arguments = $"run --project \"{projectPath}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -72,10 +89,34 @@ public class ServiceFixture : IDisposable
         _serviceProcess.BeginOutputReadLine();
         _serviceProcess.BeginErrorReadLine();
 
-        // Wait for service to be ready
-        Thread.Sleep(3000);
-
+        // Wait for service to be ready - poll for health endpoint
         HttpClient = new HttpClient { BaseAddress = new Uri(ServiceUrl) };
+
+        bool isReady = false;
+        for (int i = 0; i < 30; i++)
+        {
+            try
+            {
+                HttpResponseMessage response = HttpClient.GetAsync("/health").Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    isReady = true;
+                    break;
+                }
+            }
+            catch
+            {
+                // Service not ready yet
+            }
+
+            Thread.Sleep(1000);
+        }
+
+        if (!isReady)
+        {
+            string logs = GetLogs();
+            throw new InvalidOperationException($"Service failed to start within 30 seconds. Logs:\n{logs}");
+        }
     }
 
     public string GetLogs()

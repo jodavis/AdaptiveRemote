@@ -89,9 +89,9 @@ public class CommonSteps : IDisposable
     public void ThenTheBodyContainsServiceNameAndVersion()
     {
         _responseBody.Should().NotBeNullOrEmpty();
-        _responseBody.Should().Contain("CompiledLayoutService");
-        _responseBody.Should().Contain("Version");
-        _responseBody.Should().Contain("healthy");
+        _responseBody.Should().Contain("CompiledLayoutService", "service name should be present");
+        _responseBody.Should().Contain("version", "version field should be present");
+        _responseBody.Should().Contain("healthy", "status should be healthy");
     }
 
     private static List<CommandDefinitionDto> ExtractAllCommands(IReadOnlyList<LayoutElementDto> elements)
