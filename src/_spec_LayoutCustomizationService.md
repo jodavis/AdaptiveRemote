@@ -309,7 +309,7 @@ Test projects follow the pattern `<ProjectName>.Tests` under `test/`.
 //   IR     — payload programmed via remote, stored in ProgrammaticSettings
 //   Others — keyed by Name
 // Subtypes with additional properties are deferred until a concrete need arises.
-public enum CommandType { Lifecycle, TiVo, IR, Action }
+public enum CommandType { Lifecycle, TiVo, IR }
 
 // Shared behavioral interface — prevents drift between the compiled and raw command types.
 // Adding a new behavioral property means updating this interface first; the compiler

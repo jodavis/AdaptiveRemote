@@ -72,14 +72,18 @@ When the user signals they're ready:
 
 1. Re-read the spec file with the Read tool.
 2. Collect all `> **Review:** ...` markers and note any direct edits.
-3. Address review comments **one at a time** in document order:
-   a. Present your analysis of the comment — the trade-offs, your
-      recommendation, and why.
-   b. **PAUSE — wait for the user's decision before editing.**
-   c. Update the spec to reflect the resolved decision; remove the
-      review marker.
-   d. Tell the user what changed, then move to the next comment.
-4. After all comments are resolved, invite another review pass.
+3. Present the **first unresolved** review comment only:
+   - State the comment and its location.
+   - Give your analysis — trade-offs, recommendation, and why.
+   **PAUSE — wait for the user's decision before doing anything else.**
+4. Once the user decides:
+   a. Update the spec to reflect the decision; remove the review marker.
+   b. Tell the user what changed.
+   c. Present the **next** unresolved review comment (go to step 3).
+5. After all comments are resolved, invite another review pass.
+
+**Never present more than one review comment at a time. Always pause for a
+decision before moving to the next comment or making any edits.**
 
 Repeat Phase 3 until the user says the document is ready.
 
@@ -119,6 +123,13 @@ When Phase 4 is complete:
    - Exit criteria as a checkbox list; for tasks that include new E2E tests,
      write those exit criteria as Gherkin-style acceptance scenarios
      (`Given / When / Then`)
+
+   **Implementation ordering:** Order tasks so that primary consumers are
+   implemented before the dependencies they rely on. For each dependency that
+   isn't ready yet, introduce a stub that provides known-good static data
+   (e.g. hardcoded or serialized from the current implementation). Replace
+   stubs with real implementations one step at a time. Every task's exit
+   criteria must include: all existing unit and E2E tests pass.
 3. If the spec has a `## Related Epics` section listing features to be
    spec'd separately, add those as placeholder entries in `## Tasks` as
    well — titled "Create epic: \<name\>" with a one-line scope description.
