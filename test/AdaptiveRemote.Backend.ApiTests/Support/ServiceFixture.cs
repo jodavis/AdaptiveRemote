@@ -49,7 +49,7 @@ public class ServiceFixture : IDisposable
         ProcessStartInfo startInfo = new()
         {
             FileName = "dotnet",
-            Arguments = $"run --project \"{projectPath}\"",
+            Arguments = $"run --project \"{projectPath}\" --no-build",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -93,8 +93,9 @@ public class ServiceFixture : IDisposable
         HttpClient = new HttpClient { BaseAddress = new Uri(ServiceUrl) };
 
         bool isReady = false;
-        for (int i = 0; i < 30; i++)
+        for (int i = 0; i < 30 && !_serviceProcess.HasExited; i++)
         {
+            DateTime startTime = DateTime.Now;
             try
             {
                 HttpResponseMessage response = HttpClient.GetAsync("/health").Result;
@@ -109,7 +110,11 @@ public class ServiceFixture : IDisposable
                 // Service not ready yet
             }
 
-            Thread.Sleep(1000);
+            TimeSpan sleepTime = TimeSpan.FromSeconds(1000) - (DateTime.Now - startTime);
+            if (sleepTime > TimeSpan.Zero)
+            {
+                Thread.Sleep(sleepTime);
+            }
         }
 
         if (!isReady)
