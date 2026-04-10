@@ -8,6 +8,7 @@
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.6.0" />
     <!-- ASP.NET Core and Web Components -->
     <PackageVersion Include="Markdig" Version="0.40.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="8.0.22" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebView.Wpf" Version="8.0.100" />
     <!-- Microsoft Extensions -->
