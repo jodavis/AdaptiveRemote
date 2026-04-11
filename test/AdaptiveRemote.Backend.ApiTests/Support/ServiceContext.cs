@@ -22,5 +22,6 @@ public class ServiceContext : IDisposable
     {
         LastResponse?.Dispose();
         Fixture.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
