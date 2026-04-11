@@ -18,9 +18,9 @@ public class CommonSteps : IDisposable
     }
 
     [Given(@"CompiledLayoutService is running")]
-    public void GivenCompiledLayoutServiceIsRunning()
+    public async Task GivenCompiledLayoutServiceIsRunning()
     {
-        _context.Fixture.StartService();
+        await _context.Fixture.StartServiceAsync();
     }
 
     [When(@"a test client calls GET (.*)")]

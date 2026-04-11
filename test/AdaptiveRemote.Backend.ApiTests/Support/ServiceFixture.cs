@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Text;
 
 namespace AdaptiveRemote.Backend.ApiTests.Support;
@@ -14,7 +16,7 @@ namespace AdaptiveRemote.Backend.ApiTests.Support;
 /// bearer token. For authentication-specific tests, use
 /// <see cref="CreateToken"/> and <see cref="CreateExpiredToken"/> to build
 /// tokens, and send them via <see cref="CreateAnonymousHttpClient"/> or
-/// <see cref="SendAsync"/> directly.
+/// <see cref="CreateBearerHttpClient"/> directly.
 /// </summary>
 public class ServiceFixture : IDisposable
 {
@@ -23,14 +25,19 @@ public class ServiceFixture : IDisposable
     private readonly object _logLock = new();
     private TestJwtAuthority? _jwtAuthority;
 
-    public string ServiceUrl { get; private set; } = "http://localhost:5000";
+    public string ServiceUrl { get; }
 
     /// <summary>
     /// HttpClient pre-configured with a valid bearer token for the test user.
     /// </summary>
     public HttpClient HttpClient { get; private set; } = null!;
 
-    public void StartService()
+    public ServiceFixture()
+    {
+        ServiceUrl = $"http://localhost:{GetFreePort()}";
+    }
+
+    public async Task StartServiceAsync()
     {
         if (_serviceProcess != null)
         {
@@ -109,15 +116,21 @@ public class ServiceFixture : IDisposable
         _serviceProcess.BeginErrorReadLine();
 
         // Poll /health with a temporary unauthenticated client (/health is open).
-        using HttpClient healthClient = new() { BaseAddress = new Uri(ServiceUrl) };
+        // Use a short per-request timeout so a slow/stuck response doesn't block the loop.
+        using HttpClient healthClient = new()
+        {
+            BaseAddress = new Uri(ServiceUrl),
+            Timeout = TimeSpan.FromSeconds(5),
+        };
 
         bool isReady = false;
         for (int i = 0; i < 30 && !_serviceProcess.HasExited; i++)
         {
-            DateTime startTime = DateTime.Now;
             try
             {
-                HttpResponseMessage response = healthClient.GetAsync("/health").Result;
+                HttpResponseMessage response = await healthClient
+                    .GetAsync("/health")
+                    .ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)
                 {
                     isReady = true;
@@ -129,11 +142,7 @@ public class ServiceFixture : IDisposable
                 // Service not ready yet
             }
 
-            TimeSpan sleepTime = TimeSpan.FromSeconds(1000) - (DateTime.Now - startTime);
-            if (sleepTime > TimeSpan.Zero)
-            {
-                Thread.Sleep(sleepTime);
-            }
+            await Task.Delay(1000).ConfigureAwait(false);
         }
 
         if (!isReady)
@@ -153,7 +162,7 @@ public class ServiceFixture : IDisposable
     {
         if (_jwtAuthority is null)
         {
-            throw new InvalidOperationException("StartService() must be called before CreateToken()");
+            throw new InvalidOperationException("StartServiceAsync() must be called before CreateToken()");
         }
 
         return _jwtAuthority.CreateToken(sub);
@@ -166,7 +175,7 @@ public class ServiceFixture : IDisposable
     {
         if (_jwtAuthority is null)
         {
-            throw new InvalidOperationException("StartService() must be called before CreateExpiredToken()");
+            throw new InvalidOperationException("StartServiceAsync() must be called before CreateExpiredToken()");
         }
 
         return _jwtAuthority.CreateExpiredToken();
@@ -204,6 +213,15 @@ public class ServiceFixture : IDisposable
         HttpClient?.Dispose();
         _jwtAuthority?.Dispose();
         GC.SuppressFinalize(this);
+    }
+
+    private static int GetFreePort()
+    {
+        using TcpListener listener = new(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
     }
 
     /// <summary>
