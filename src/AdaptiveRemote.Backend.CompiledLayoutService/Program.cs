@@ -54,7 +54,11 @@ app.UseAuthorization();
 app.MapHealthEndpoints();
 app.MapLayoutEndpoints();
 
-string listenAddress = app.Urls.FirstOrDefault() ?? "http://localhost:5000";
+// Log the configured listen address; fall back to Kestrel's default.
+// ASPNETCORE_URLS is the standard env-var; "urls" is the equivalent command-line key.
+string listenAddress = app.Configuration["ASPNETCORE_URLS"]
+    ?? app.Configuration["urls"]
+    ?? "http://localhost:5000";
 logger.ServiceStarted(listenAddress);
 
 app.Run();

@@ -73,7 +73,9 @@ public class ServiceFixture : IDisposable
         ProcessStartInfo startInfo = new()
         {
             FileName = "dotnet",
-            Arguments = $"run --project \"{projectPath}\" --no-build",
+            // --no-launch-profile prevents launchSettings.json from overriding
+            // ASPNETCORE_URLS with its applicationUrl setting.
+            Arguments = $"run --project \"{projectPath}\" --no-build --no-launch-profile",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -136,10 +138,18 @@ public class ServiceFixture : IDisposable
                     isReady = true;
                     break;
                 }
+
+                lock (_logLock)
+                {
+                    _logOutput.AppendLine($"[HealthCheck attempt {i + 1}] HTTP {(int)response.StatusCode} from {ServiceUrl}/health");
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                // Service not ready yet
+                lock (_logLock)
+                {
+                    _logOutput.AppendLine($"[HealthCheck attempt {i + 1}] Exception polling {ServiceUrl}/health: {ex.GetType().Name}: {ex.Message}");
+                }
             }
 
             await Task.Delay(1000).ConfigureAwait(false);
@@ -148,7 +158,7 @@ public class ServiceFixture : IDisposable
         if (!isReady)
         {
             string logs = GetLogs();
-            throw new InvalidOperationException($"Service failed to start within 30 seconds. Logs:\n{logs}");
+            throw new InvalidOperationException($"Service failed to start within 30 seconds (polling {ServiceUrl}/health). Logs:\n{logs}");
         }
 
         // Default HttpClient includes a valid bearer token for the standard test user.
