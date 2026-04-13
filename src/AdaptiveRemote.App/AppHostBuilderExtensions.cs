@@ -15,6 +15,7 @@ public static class AppHostBuilderExtensions
             .AddTiVoSupport()
             .AddConversationSystem()
             .AddSystemWrapperServices()
+            .AddBackendSupport()
             .OptionallyAddTestHookEndpoint();
 
     public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, string[] args)

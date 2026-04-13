@@ -10,6 +10,10 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
+      # Set Cognito dev user pool values here or via a .env file.
+      # See _doc_Auth.md for Cognito dev user pool setup instructions.
+      - Cognito__Authority=${COGNITO_AUTHORITY:-}
+      - Cognito__Audience=${COGNITO_AUDIENCE:-}
     networks:
       - backend
 
