@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using AdaptiveRemote.Backend.CompiledLayoutService.Logging;
 using AdaptiveRemote.Contracts;
 
@@ -9,18 +10,26 @@ public static class LayoutEndpoints
     {
         app.MapGet("/layouts/compiled/active", GetActiveLayout)
             .WithName(nameof(GetActiveLayout))
-            .Produces<CompiledLayout>(StatusCodes.Status200OK);
+            .Produces<CompiledLayout>(StatusCodes.Status200OK)
+            .RequireAuthorization();
     }
 
     private static async Task<IResult> GetActiveLayout(
+        ClaimsPrincipal user,
         ILogger<Program> logger,
         ICompiledLayoutRepository repository,
         CancellationToken cancellationToken)
     {
-        logger.GetActiveLayoutRequested();
+        string? userId = user.FindFirst("sub")?.Value;
+        if (userId is null)
+        {
+            // Should not happen when RequireAuthorization() is in effect and the token
+            // is a valid Cognito JWT, but guard defensively.
+            return Results.Unauthorized();
+        }
 
-        // For MVP, we use a hardcoded userId. Auth will provide real userId in ADR-168.
-        string userId = "mvp-user";
+        logger.GetActiveLayoutRequested(userId);
+
         CompiledLayout? layout = await repository.GetActiveForUserAsync(userId, cancellationToken);
 
         if (layout == null)
@@ -30,7 +39,6 @@ public static class LayoutEndpoints
 
         logger.ReturningActiveLayout(layout.Id);
 
-        // Use the LayoutContractsJsonContext for serialization
         return Results.Json(
             layout,
             LayoutContractsJsonContext.Default.CompiledLayout);
