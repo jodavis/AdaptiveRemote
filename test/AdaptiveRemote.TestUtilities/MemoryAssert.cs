@@ -1,8 +1,8 @@
 ﻿namespace AdaptiveRemote.TestUtilities;
 
-internal static class MemoryAssert
+public static class MemoryAssert
 {
-    internal static void AreEqual(ReadOnlyMemory<byte> expected, ReadOnlyMemory<byte> actual, string name)
+    public static void AreEqual(ReadOnlyMemory<byte> expected, ReadOnlyMemory<byte> actual, string name)
     {
         ReadOnlySpan<byte>.Enumerator expectedIter = expected.Span.GetEnumerator();
         ReadOnlySpan<byte>.Enumerator actualIter = actual.Span.GetEnumerator();
@@ -28,10 +28,10 @@ internal static class MemoryAssert
         }
     }
 
-    internal static void WriteTo(TestContext? testContext, ReadOnlyMemory<byte> expected, ReadOnlyMemory<byte> actual)
+    public static void WriteTo(TestContext? testContext, ReadOnlyMemory<byte> expected, ReadOnlyMemory<byte> actual)
         => WriteTo(testContext, string.Empty, expected, actual);
 
-    internal static void WriteTo(TestContext? testContext, string description, ReadOnlyMemory<byte> expected, ReadOnlyMemory<byte> actual)
+    public static void WriteTo(TestContext? testContext, string description, ReadOnlyMemory<byte> expected, ReadOnlyMemory<byte> actual)
     {
         if (testContext is null)
         {

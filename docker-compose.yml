@@ -2,18 +2,19 @@ version: '3.8'
 
 services:
   localstack:
-    image: localstack/localstack:4.8
-    container_name: adaptiveremote-localstack
+    image: localstack/localstack:latest
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=lambda,dynamodb,sqs
+      - SERVICES=dynamodb,sqs,lambda
       - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
       - LAMBDA_EXECUTOR=docker
       - AWS_DEFAULT_REGION=us-east-1
     volumes:
-      - localstack-data:/var/lib/localstack
-      - /var/run/docker.sock:/var/run/docker.sock
+      - "./localstack-init:/etc/localstack/init/ready.d"
+      - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       - backend
 
@@ -30,6 +31,27 @@ services:
       # See _doc_Auth.md for Cognito dev user pool setup instructions.
       - Cognito__Authority=${COGNITO_AUTHORITY:-}
       - Cognito__Audience=${COGNITO_AUDIENCE:-}
+    networks:
+      - backend
+
+  rawlayoutservice:
+    build:
+      context: .
+      dockerfile: src/AdaptiveRemote.Backend.RawLayoutService/Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      # Set Cognito dev user pool values here or via a .env file.
+      - Cognito__Authority=${COGNITO_AUTHORITY:-}
+      - Cognito__Audience=${COGNITO_AUDIENCE:-}
+      # DynamoDB settings for LocalStack
+      - DynamoDB__ServiceUrl=http://localstack:4566
+      - DynamoDB__TableName=RawLayouts
+      - DynamoDB__Region=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
       - LocalStack__BaseUrl=http://localstack:4566
     depends_on:
       - localstack

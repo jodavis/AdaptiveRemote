@@ -17,6 +17,7 @@
     <PackageReference Include="Reqnroll.MSTest" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="AWSSDK.DynamoDBv2" />
   </ItemGroup>
 
   <ItemGroup>
