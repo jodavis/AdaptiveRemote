@@ -12,4 +12,5 @@ namespace AdaptiveRemote.Contracts;
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(IReadOnlyList<RawLayout>))]
 [JsonSerializable(typeof(IReadOnlyList<CompiledLayout>))]
+[JsonSerializable(typeof(IReadOnlyList<RawLayoutElementDto>))]
 public partial class LayoutContractsJsonContext : JsonSerializerContext { }

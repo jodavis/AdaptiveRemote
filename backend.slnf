@@ -4,6 +4,7 @@
     "projects": [
       "src\\AdaptiveRemote.Contracts\\AdaptiveRemote.Contracts.csproj",
       "src\\AdaptiveRemote.Backend.CompiledLayoutService\\AdaptiveRemote.Backend.CompiledLayoutService.csproj",
+      "src\\AdaptiveRemote.Backend.RawLayoutService\\AdaptiveRemote.Backend.RawLayoutService.csproj",
       "test\\AdaptiveRemote.Backend.ApiTests\\AdaptiveRemote.Backend.ApiTests.csproj"
     ]
   }
