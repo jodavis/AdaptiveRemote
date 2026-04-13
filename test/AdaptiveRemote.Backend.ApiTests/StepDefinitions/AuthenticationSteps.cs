@@ -41,14 +41,6 @@ public class AuthenticationSteps : IDisposable
         _context.LastResponseBody = await _context.LastResponse.Content.ReadAsStringAsync();
     }
 
-    [Then(@"the response is (\d+) Unauthorized")]
-    public void ThenTheResponseIsUnauthorized(int statusCode)
-    {
-        _context.LastResponse.Should().NotBeNull();
-        ((int)_context.LastResponse!.StatusCode).Should().Be(statusCode);
-        _context.LastResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
     public void Dispose()
     {
         // ServiceContext owns LastResponse and Fixture; nothing to dispose here.

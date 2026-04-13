@@ -23,7 +23,7 @@ public class CommonSteps : IDisposable
         await _context.Fixture.StartServiceAsync();
     }
 
-    [When(@"a test client calls GET (.*)")]
+    [When(@"a test client calls GET (/\S+)")]
     public async Task WhenATestClientCallsGet(string endpoint)
     {
         _context.LastResponse = await _context.Fixture.HttpClient.GetAsync(endpoint);
@@ -35,6 +35,27 @@ public class CommonSteps : IDisposable
     {
         _context.LastResponse.Should().NotBeNull();
         ((int)_context.LastResponse!.StatusCode).Should().Be(statusCode);
+    }
+
+    [Then(@"the response is 404 Not Found")]
+    public void ThenTheResponseIsNotFound()
+    {
+        _context.LastResponse.Should().NotBeNull();
+        _context.LastResponse!.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Then(@"the response is 400 Bad Request")]
+    public void ThenTheResponseIsBadRequest()
+    {
+        _context.LastResponse.Should().NotBeNull();
+        _context.LastResponse!.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Then(@"the response is 401 Unauthorized")]
+    public void ThenTheResponseIsUnauthorized()
+    {
+        _context.LastResponse.Should().NotBeNull();
+        _context.LastResponse!.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Then(@"the body deserializes to a valid CompiledLayout using LayoutContractsJsonContext")]
@@ -72,7 +93,7 @@ public class CommonSteps : IDisposable
         commands.Should().Contain(c => c.Name == "Exit" && c.Type == CommandType.Lifecycle);
     }
 
-    [Then(@"the service logs contain a request log entry for GET (.*)")]
+    [Then(@"the service logs contain a request log entry for (?:GET|POST|PUT|DELETE|PATCH) (.*)")]
     public void ThenTheServiceLogsContainRequestLogEntry(string endpoint)
     {
         string logs = _context.Fixture.GetLogs();

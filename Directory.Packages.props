@@ -3,6 +3,8 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup Label="Application Packages">
+    <!-- AWS SDK -->
+    <PackageVersion Include="AWSSDK.DynamoDBv2" Version="3.7.406.21" />
     <!-- Azure and Cloud Services -->
     <PackageVersion Include="Azure.Identity" Version="1.17.1" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.6.0" />

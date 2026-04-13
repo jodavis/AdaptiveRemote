@@ -13,7 +13,8 @@
       "test\\AdaptiveRemote.EndToEndTests.Steps\\AdaptiveRemote.EndToEndTests.Steps.csproj",
       "test\\AdaptiveRemote.EndToEndTests.Host.Headless\\AdaptiveRemote.EndToEndTests.Host.Headless.csproj",
       "test\\AdaptiveRemote.EndToEndTests.Host.Wpf\\AdaptiveRemote.EndToEndTests.Host.Wpf.csproj",
-      "test\\AdaptiveRemote.EndtoEndTests.Host.Console\\AdaptiveRemote.EndToEndTests.Host.Console.csproj"
+      "test\\AdaptiveRemote.EndtoEndTests.Host.Console\\AdaptiveRemote.EndToEndTests.Host.Console.csproj",
+      "test\\AdaptiveRemote.TestUtilities\\AdaptiveRemote.TestUtilities.csproj"
     ]
   }
 }
