@@ -18,10 +18,10 @@ public static class HealthEndpoints
     {
         logger.HealthCheckRequested();
 
-        HealthResponse response = new HealthResponse(
+        HealthResponse response = new(
             ServiceName: "RawLayoutService",
             Version: Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown",
-            Status: "healthy"
+            Status: "Healthy"
         );
 
         logger.HealthCheckSuccessful();

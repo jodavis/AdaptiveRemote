@@ -19,16 +19,16 @@ public static partial class MessageLogger
     [LoggerMessage(EventId = 1202, Level = LogLevel.Information, Message = "GET /layouts/raw request received for userId={UserId}")]
     public static partial void ListRawLayoutsRequested(this ILogger logger, string userId);
 
-    [LoggerMessage(EventId = 1203, Level = LogLevel.Information, Message = "GET /layouts/raw/{LayoutId} request received for userId={UserId}, layoutId={LayoutId}")]
+    [LoggerMessage(EventId = 1203, Level = LogLevel.Information, Message = "GET /layouts/raw/{LayoutId} request received for userId={UserId}")]
     public static partial void GetRawLayoutRequested(this ILogger logger, string userId, Guid layoutId);
 
     [LoggerMessage(EventId = 1204, Level = LogLevel.Information, Message = "POST /layouts/raw request received for userId={UserId}")]
     public static partial void CreateRawLayoutRequested(this ILogger logger, string userId);
 
-    [LoggerMessage(EventId = 1205, Level = LogLevel.Information, Message = "PUT /layouts/raw/{LayoutId} request received for userId={UserId}, layoutId={LayoutId}")]
+    [LoggerMessage(EventId = 1205, Level = LogLevel.Information, Message = "PUT /layouts/raw/{LayoutId} request received for userId={UserId}")]
     public static partial void UpdateRawLayoutRequested(this ILogger logger, string userId, Guid layoutId);
 
-    [LoggerMessage(EventId = 1206, Level = LogLevel.Information, Message = "DELETE /layouts/raw/{LayoutId} request received for userId={UserId}, layoutId={LayoutId}")]
+    [LoggerMessage(EventId = 1206, Level = LogLevel.Information, Message = "DELETE /layouts/raw/{LayoutId} request received for userId={UserId}")]
     public static partial void DeleteRawLayoutRequested(this ILogger logger, string userId, Guid layoutId);
 
     [LoggerMessage(EventId = 1207, Level = LogLevel.Information, Message = "Raw layout created successfully: Id={LayoutId}")]

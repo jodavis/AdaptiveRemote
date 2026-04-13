@@ -20,7 +20,7 @@ DynamoDbSettings dynamoDbSettings = builder.Configuration
 builder.Services.Configure<DynamoDbSettings>(builder.Configuration.GetSection("DynamoDB"));
 
 // Create DynamoDB client
-AmazonDynamoDBConfig dynamoDbConfig = new AmazonDynamoDBConfig
+AmazonDynamoDBConfig dynamoDbConfig = new()
 {
     RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(dynamoDbSettings.Region)
 };

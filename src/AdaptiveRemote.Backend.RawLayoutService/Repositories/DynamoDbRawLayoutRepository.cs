@@ -27,7 +27,7 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
     {
         // We need to query by Id across all users. In production, this would require a GSI.
         // For MVP, we'll scan (inefficient but acceptable for low volume).
-        ScanRequest scanRequest = new ScanRequest
+        ScanRequest scanRequest = new()
         {
             TableName = _tableName,
             FilterExpression = "Id = :id",
@@ -49,7 +49,7 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
 
     public async Task<IReadOnlyList<RawLayout>> ListByUserAsync(string userId, CancellationToken ct)
     {
-        QueryRequest queryRequest = new QueryRequest
+        QueryRequest queryRequest = new()
         {
             TableName = _tableName,
             KeyConditionExpression = "UserId = :userId",
@@ -66,7 +66,7 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
 
     public async Task<RawLayout> SaveAsync(RawLayout layout, CancellationToken ct)
     {
-        Dictionary<string, AttributeValue> item = new Dictionary<string, AttributeValue>
+        Dictionary<string, AttributeValue> item = new()
         {
             { "UserId", new AttributeValue { S = layout.UserId } },
             { "Id", new AttributeValue { S = layout.Id.ToString() } },
@@ -85,7 +85,7 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
             };
         }
 
-        PutItemRequest putRequest = new PutItemRequest
+        PutItemRequest putRequest = new()
         {
             TableName = _tableName,
             Item = item
@@ -105,7 +105,7 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
             return; // Already deleted or doesn't exist
         }
 
-        DeleteItemRequest deleteRequest = new DeleteItemRequest
+        DeleteItemRequest deleteRequest = new()
         {
             TableName = _tableName,
             Key = new Dictionary<string, AttributeValue>
@@ -121,10 +121,10 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
     public async Task UpdateValidationResultAsync(Guid rawLayoutId, ValidationResult result, CancellationToken ct)
     {
         // First, get the item to find the UserId (partition key)
-        RawLayout? existingLayout = await GetAsync(rawLayoutId, ct)
+        RawLayout existingLayout = await GetAsync(rawLayoutId, ct)
             ?? throw new InvalidOperationException($"Cannot update validation result: raw layout {rawLayoutId} not found");
 
-        UpdateItemRequest updateRequest = new UpdateItemRequest
+        UpdateItemRequest updateRequest = new()
         {
             TableName = _tableName,
             Key = new Dictionary<string, AttributeValue>
@@ -158,9 +158,9 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
         DateTimeOffset updatedAt = DateTimeOffset.Parse(item["UpdatedAt"].S);
 
         ValidationResult? validationResult = null;
-        if (item.TryGetValue("ValidationResult", out AttributeValue? value))
+        if (item.TryGetValue("ValidationResult", out AttributeValue? validationResultAttr))
         {
-            validationResult = JsonSerializer.Deserialize(value.S, LayoutContractsJsonContext.Default.ValidationResult);
+            validationResult = JsonSerializer.Deserialize(validationResultAttr.S, LayoutContractsJsonContext.Default.ValidationResult);
         }
 
         return new RawLayout(id, userId, name, elements, version, createdAt, updatedAt, validationResult);
