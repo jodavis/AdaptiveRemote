@@ -32,6 +32,7 @@ jobs:
       run: dotnet restore
     
     - name: Build
+      id: build
       run: dotnet build --no-restore /warnaserror
 
     - name: Install Chromium browser for Playwright headless tests
@@ -43,7 +44,7 @@ jobs:
 
     - name: E2E Tests
       run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "FullyQualifiedName~EndToEndTest" -m:1
-      if: always()
+      if: always() && steps.build.outcome == 'success'
 
     - name: Upload E2E Test Logs
       uses: actions/upload-artifact@v6
