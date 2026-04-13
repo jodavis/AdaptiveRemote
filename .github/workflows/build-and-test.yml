@@ -40,7 +40,7 @@ jobs:
       run: pwsh ./src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium
     
     - name: Unit Tests 
-      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "FullyQualifiedName!~EndToEndTest"
+      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "FullyQualifiedName!~EndToEndTest&TestCategory!=ApiIntegrationTest"
 
     - name: E2E Tests
       run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "FullyQualifiedName~EndToEndTest" -m:1
@@ -57,6 +57,43 @@ jobs:
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      if: always()
+      with:
+        files: |
+          TestResults/**/*.trx
+
+  backend-api-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore backend.slnf
+
+    - name: Build
+      run: dotnet build backend.slnf --no-restore /warnaserror
+
+    - name: Pull LocalStack image
+      run: docker pull localstack/localstack:3.0
+
+    - name: API Integration Tests
+      run: dotnet test backend.slnf --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "TestCategory=ApiIntegrationTest" -m:1
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
       with:
         files: |

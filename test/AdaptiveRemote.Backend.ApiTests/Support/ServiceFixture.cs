@@ -7,7 +7,7 @@ using System.Text;
 namespace AdaptiveRemote.Backend.ApiTests.Support;
 
 /// <summary>
-/// Manages the lifecycle of CompiledLayoutService for API integration tests.
+/// Manages the lifecycle of backend services for API integration tests.
 /// Starts the service process and captures structured log output.
 ///
 /// A <see cref="TestJwtAuthority"/> is started before the service so that the
@@ -20,10 +20,20 @@ namespace AdaptiveRemote.Backend.ApiTests.Support;
 /// </summary>
 public class ServiceFixture : IDisposable
 {
+    // LocalStack is shared across all scenarios to avoid repeated slow startups.
+    // Data isolation is achieved via unique per-scenario user IDs.
+    private static LocalStackFixture? _sharedLocalStack;
+    private static readonly SemaphoreSlim _localStackInitLock = new(1, 1);
+
     private Process? _serviceProcess;
     private readonly StringBuilder _logOutput = new();
     private readonly object _logLock = new();
     private TestJwtAuthority? _jwtAuthority;
+    private string? _startedServiceName;
+
+    // Use a unique user ID per fixture so each scenario operates on isolated data
+    // even when DynamoDB is shared across test scenarios via the shared LocalStack.
+    private readonly string _testUserId = $"test-user-{Guid.NewGuid():N}";
 
     public string ServiceUrl { get; }
 
@@ -37,11 +47,26 @@ public class ServiceFixture : IDisposable
         ServiceUrl = $"http://localhost:{GetFreePort()}";
     }
 
-    public async Task StartServiceAsync()
+    public async Task StartServiceAsync(string serviceName = "AdaptiveRemote.Backend.CompiledLayoutService")
     {
         if (_serviceProcess != null)
         {
+            if (_startedServiceName != serviceName)
+            {
+                throw new InvalidOperationException($"Service fixture already started with {_startedServiceName}, cannot start {serviceName}");
+            }
             return; // Already started
+        }
+
+        _startedServiceName = serviceName;
+
+        // Start LocalStack if this is the RawLayoutService (which needs DynamoDB).
+        // A single LocalStack instance is shared across all scenarios.
+        LocalStackFixture? localStack = null;
+        if (serviceName == "AdaptiveRemote.Backend.RawLayoutService")
+        {
+            localStack = await GetSharedLocalStackAsync();
+            await localStack.CreateTableAsync("RawLayouts");
         }
 
         // Start the JWT authority first so its URL is available for service configuration.
@@ -62,8 +87,8 @@ public class ServiceFixture : IDisposable
 
         string projectPath = Path.Combine(
             repoRoot,
-            "src", "AdaptiveRemote.Backend.CompiledLayoutService",
-            "AdaptiveRemote.Backend.CompiledLayoutService.csproj");
+            "src", serviceName,
+            $"{serviceName}.csproj");
 
         if (!File.Exists(projectPath))
         {
@@ -90,6 +115,17 @@ public class ServiceFixture : IDisposable
                 ["LocalStack__BaseUrl"] = _jwtAuthority.Authority,
             }
         };
+
+        // Configure DynamoDB for RawLayoutService
+        if (localStack != null)
+        {
+            startInfo.Environment["DynamoDB__ServiceUrl"] = localStack.ServiceUrl;
+            startInfo.Environment["DynamoDB__Region"] = localStack.Region;
+            startInfo.Environment["DynamoDB__TableName"] = "RawLayouts";
+            // Provide dummy AWS credentials for LocalStack
+            startInfo.Environment["AWS_ACCESS_KEY_ID"] = "test";
+            startInfo.Environment["AWS_SECRET_ACCESS_KEY"] = "test";
+        }
 
         _serviceProcess = new Process { StartInfo = startInfo };
 
@@ -163,21 +199,22 @@ public class ServiceFixture : IDisposable
             throw new InvalidOperationException($"Service failed to start within 30 seconds (polling {ServiceUrl}/health). Logs:\n{logs}");
         }
 
-        // Default HttpClient includes a valid bearer token for the standard test user.
+        // Default HttpClient includes a valid bearer token for the scenario-unique test user.
         HttpClient = CreateBearerHttpClient(CreateToken());
     }
 
     /// <summary>
-    /// Creates a valid JWT for the given subject (default: "test-user").
+    /// Creates a valid JWT for the given subject. Defaults to the scenario-unique test user
+    /// to ensure each scenario operates on isolated DynamoDB data.
     /// </summary>
-    public string CreateToken(string sub = "test-user")
+    public string CreateToken(string? sub = null)
     {
         if (_jwtAuthority is null)
         {
             throw new InvalidOperationException("StartServiceAsync() must be called before CreateToken()");
         }
 
-        return _jwtAuthority.CreateToken(sub);
+        return _jwtAuthority.CreateToken(sub ?? _testUserId);
     }
 
     /// <summary>
@@ -224,6 +261,7 @@ public class ServiceFixture : IDisposable
 
         HttpClient?.Dispose();
         _jwtAuthority?.Dispose();
+        // LocalStack is shared across all scenarios; do not dispose it here.
         GC.SuppressFinalize(this);
     }
 
@@ -234,6 +272,26 @@ public class ServiceFixture : IDisposable
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
         return port;
+    }
+
+    private static async Task<LocalStackFixture> GetSharedLocalStackAsync()
+    {
+        await _localStackInitLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_sharedLocalStack == null)
+            {
+                LocalStackFixture localStack = new();
+                await localStack.StartAsync().ConfigureAwait(false);
+                _sharedLocalStack = localStack;
+            }
+
+            return _sharedLocalStack;
+        }
+        finally
+        {
+            _localStackInitLock.Release();
+        }
     }
 
     /// <summary>

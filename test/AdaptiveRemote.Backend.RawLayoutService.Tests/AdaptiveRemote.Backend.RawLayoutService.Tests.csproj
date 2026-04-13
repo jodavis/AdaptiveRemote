@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -6,21 +6,20 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <RootNamespace>AdaptiveRemote.Backend.ApiTests</RootNamespace>
+    <RootNamespace>AdaptiveRemote.Backend.RawLayoutService.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
     <PackageReference Include="MSTest.TestAdapter" />
     <PackageReference Include="MSTest.TestFramework" />
-    <PackageReference Include="Reqnroll" />
-    <PackageReference Include="Reqnroll.MSTest" />
-    <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
-    <PackageReference Include="AWSSDK.DynamoDBv2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\AdaptiveRemote.Backend.RawLayoutService\AdaptiveRemote.Backend.RawLayoutService.csproj" />
     <ProjectReference Include="..\..\src\AdaptiveRemote.Contracts\AdaptiveRemote.Contracts.csproj" />
   </ItemGroup>
 

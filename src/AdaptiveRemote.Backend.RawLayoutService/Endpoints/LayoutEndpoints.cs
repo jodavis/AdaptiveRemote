@@ -118,6 +118,17 @@ public static class LayoutEndpoints
 
         logger.CreateRawLayoutRequested(userId);
 
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(layout.Name))
+        {
+            return Results.BadRequest(new { error = "Name is required" });
+        }
+
+        if (layout.Elements is null)
+        {
+            return Results.BadRequest(new { error = "Elements is required" });
+        }
+
         try
         {
             // Generate new ID and timestamps if not provided

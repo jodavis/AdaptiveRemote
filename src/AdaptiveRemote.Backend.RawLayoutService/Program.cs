@@ -20,17 +20,45 @@ DynamoDbSettings dynamoDbSettings = builder.Configuration
 builder.Services.Configure<DynamoDbSettings>(builder.Configuration.GetSection("DynamoDB"));
 
 // Create DynamoDB client
-AmazonDynamoDBConfig dynamoDbConfig = new()
-{
-    RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(dynamoDbSettings.Region)
-};
+IAmazonDynamoDB dynamoDbClient;
 
 if (!string.IsNullOrEmpty(dynamoDbSettings.ServiceUrl))
 {
-    dynamoDbConfig.ServiceURL = dynamoDbSettings.ServiceUrl;
+    // LocalStack or custom endpoint - use explicit credentials from environment
+    AmazonDynamoDBConfig dynamoDbConfig = new()
+    {
+        ServiceURL = dynamoDbSettings.ServiceUrl,
+        // Don't set RegionEndpoint when using ServiceURL - it overrides the custom endpoint
+        AuthenticationRegion = dynamoDbSettings.Region
+    };
+
+    string? accessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+    string? secretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+
+    if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(secretKey))
+    {
+        // Use explicit credentials for LocalStack
+        dynamoDbClient = new AmazonDynamoDBClient(
+            new Amazon.Runtime.BasicAWSCredentials(accessKey, secretKey),
+            dynamoDbConfig);
+    }
+    else
+    {
+        // Fall back to default credential chain
+        dynamoDbClient = new AmazonDynamoDBClient(dynamoDbConfig);
+    }
+}
+else
+{
+    // Production AWS - use default credential chain (IAM roles, etc.)
+    AmazonDynamoDBConfig dynamoDbConfig = new()
+    {
+        RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(dynamoDbSettings.Region)
+    };
+    dynamoDbClient = new AmazonDynamoDBClient(dynamoDbConfig);
 }
 
-builder.Services.AddSingleton<IAmazonDynamoDB>(new AmazonDynamoDBClient(dynamoDbConfig));
+builder.Services.AddSingleton(dynamoDbClient);
 
 // Register repositories and services
 builder.Services.AddSingleton<DynamoDbRawLayoutRepository>();
