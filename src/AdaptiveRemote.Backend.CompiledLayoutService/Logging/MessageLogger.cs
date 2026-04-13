@@ -16,8 +16,8 @@ public static partial class MessageLogger
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "CompiledLayoutService started successfully on {ListenAddress}")]
     public static partial void ServiceStarted(this ILogger logger, string listenAddress);
 
-    [LoggerMessage(EventId = 1102, Level = LogLevel.Information, Message = "GET /layouts/compiled/active request received")]
-    public static partial void GetActiveLayoutRequested(this ILogger logger);
+    [LoggerMessage(EventId = 1102, Level = LogLevel.Information, Message = "GET /layouts/compiled/active request received for userId={UserId}")]
+    public static partial void GetActiveLayoutRequested(this ILogger logger, string userId);
 
     [LoggerMessage(EventId = 1103, Level = LogLevel.Information, Message = "Returning active compiled layout Id={LayoutId}")]
     public static partial void ReturningActiveLayout(this ILogger logger, Guid layoutId);
