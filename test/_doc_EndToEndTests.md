@@ -63,11 +63,16 @@ The three host projects are minimal, sharing most of their functionality from ot
 
 **Running Tests:**
 ```bash
+# First-time setup: Install Playwright browsers (required for Headless E2E tests)
+pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium
+
+# Run accessibility tests
 dotnet test test/AdaptiveRemote.EndToEndTests.Host.Headless \
     --filter "FullyQualifiedName~AccessibilityCompliance"
 ```
 
 **Notes:**
+  - **REQUIRED:** Playwright browsers must be installed before running Headless E2E tests. Without them, tests will fail with JSON-RPC connection errors.
   - The color contrast accessibility test is only available in the Headless host. It is not available in WPF or Console hosts due to WebView2 limitations (the accessibility checker crashes WebView2).
   - Headless host is recommended for CI/CD as it requires no graphical environment.
   - Violations include rule ID, impact level, description, help text, and HTML snippet.

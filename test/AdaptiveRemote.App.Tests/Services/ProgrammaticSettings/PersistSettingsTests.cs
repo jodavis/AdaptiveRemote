@@ -5,7 +5,8 @@ namespace AdaptiveRemote.Services.ProgrammaticSettings;
 [TestClass]
 public class PersistSettingsTests
 {
-    private static readonly string InputSettingsPath = Path.Combine("%LocalAppData%", "path", "to", "settings.ini");
+    // Use an environment variable that exists on all platforms (HOME on Linux/Mac, USERPROFILE/HOME on Windows)
+    private static readonly string InputSettingsPath = Path.Combine("%HOME%", "path", "to", "settings.ini");
     private static readonly string ResolvedSettingsPath = Environment.ExpandEnvironmentVariables(InputSettingsPath);
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
