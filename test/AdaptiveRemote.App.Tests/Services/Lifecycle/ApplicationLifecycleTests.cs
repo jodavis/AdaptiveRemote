@@ -22,7 +22,11 @@ public class ApplicationLifecycleTests
 
     public LifecyclePhase LatestLifecyclePhase { get; private set; }
 
-    private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(MockScopeProvider.Object, MockLifecycleViewController.Object, MockLogger);
+    private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(
+        MockScopeProvider.Object,
+        MockLifecycleViewController.Object,
+        [],  // Empty IPreScopeInitializer collection
+        MockLogger);
 
     [TestInitialize]
     public void SetupMocks()

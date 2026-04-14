@@ -9,18 +9,30 @@ internal class ApplicationLifecycle : BackgroundService
 {
     private readonly IApplicationScopeProvider _scopeProvider;
     private readonly ILifecycleViewController _viewController;
+    private readonly IEnumerable<IPreScopeInitializer> _preInitializers;
     private readonly MessageLogger _logger;
     private ScopedLifecycleContainer? _currentContainer;
 
-    public ApplicationLifecycle(IApplicationScopeProvider scopeProvider, ILifecycleViewController viewController, ILogger<ApplicationLifecycle> logger)
+    public ApplicationLifecycle(
+        IApplicationScopeProvider scopeProvider,
+        ILifecycleViewController viewController,
+        IEnumerable<IPreScopeInitializer> preInitializers,
+        ILogger<ApplicationLifecycle> logger)
     {
         _scopeProvider = scopeProvider;
         _viewController = viewController;
+        _preInitializers = preInitializers;
         _logger = new(logger);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Await all IPreScopeInitializer services before creating the first scope
+        foreach (IPreScopeInitializer initializer in _preInitializers)
+        {
+            await initializer.WaitAsync(stoppingToken);
+        }
+
         _logger.ApplicationLifecycle_WaitingForScope();
 
         try

@@ -1,5 +1,7 @@
 ﻿using AdaptiveRemote.Services;
+using AdaptiveRemote.Services.CloudAssets;
 using AdaptiveRemote.Services.Commands;
+using AdaptiveRemote.Services.Layout;
 using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.ProgrammaticSettings;
 using Microsoft.Extensions.Configuration;
@@ -25,10 +27,12 @@ internal static class HostBuilderExtensions
     internal static IServiceCollection AddRemoteServices(this IServiceCollection services, IConfiguration configuration)
         => services
             .AddApplicationLifecycleServices()
+            .AddCloudAssetServices()
             .AddScopedLifecycleService<LifecycleCommandService>()
-            .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
+            .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
             .AddSingleton<IPersistSettings, PersistSettings>()
-            .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings));
+            .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings))
+            .Configure<CloudSettings>(configuration.GetSection("CloudSettings"));
 
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle
@@ -49,4 +53,11 @@ internal static class HostBuilderExtensions
             .AddScoped<Components.BlazorAppScope>()
             .AddSingleton<IApplicationScopeContainer, ApplicationScopeContainer>()
             .AddSingleton(sp => (IApplicationScopeProvider)sp.GetRequiredService<IApplicationScopeContainer>());
+
+    private static IServiceCollection AddCloudAssetServices(this IServiceCollection services)
+        => services
+            .AddSingleton<ICloudAssetStore, CloudAssetStore>()
+            .AddSingleton<CloudAssetOrchestrator>()
+            .AddSingleton<IPreScopeInitializer>(sp => sp.GetRequiredService<CloudAssetOrchestrator>())
+            .AddHostedService(sp => sp.GetRequiredService<CloudAssetOrchestrator>());
 }
