@@ -94,6 +94,7 @@ internal class MockFileSystem : Mock<IFileSystem>
             .Verifiable(Times.Once);
     public void Expect_OpenRead_IsNotCalledForPath(string path)
         => Setup(x => x.OpenRead(path))
+            .Throws(new AssertFailedException($"OpenRead should not be called with path: {path}"))
             .Verifiable(Times.Never);
     public void Expect_OpenRead_IsNotCalled()
         => Setup(x => x.OpenRead(It.IsAny<string>()))
