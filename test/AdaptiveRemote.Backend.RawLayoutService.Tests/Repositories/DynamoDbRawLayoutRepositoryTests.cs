@@ -21,7 +21,7 @@ public class DynamoDbRawLayoutRepositoryTests
     [TestInitialize]
     public void Setup()
     {
-        _mockDynamoDb = new Mock<IAmazonDynamoDB>(MockBehavior.Strict);
+        _mockDynamoDb = new Mock<IAmazonDynamoDB>();
         IOptions<DynamoDbSettings> settings = Options.Create(new DynamoDbSettings
         {
             TableName = TestTableName,
