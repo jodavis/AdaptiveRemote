@@ -82,10 +82,25 @@ public class PlaywrightUITestService : IUITestService
         // if there are no matches or ambiguous matches
         return label switch
         {
-            "Channel Down" => GetButtonLocatorByLabel("Down").Nth(1),
-            "Channel Up" => GetButtonLocatorByLabel("Up").Nth(1),
-            "Volume Down" => GetButtonLocatorByLabel("Down").Nth(2),
-            "Volume Up" => GetButtonLocatorByLabel("Up").Nth(2),
+            // DPAD buttons (Nth(0) - first occurrence)
+            "Up" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Up", Exact = true }).Nth(0)
+                .Describe("button with label 'Up' on DPAD"),
+            "Down" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Down", Exact = true }).Nth(0)
+                .Describe("button with label 'Down' on DPAD"),
+            "Left" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Left", Exact = true }).Nth(0)
+                .Describe("button with label 'Left' on DPAD"),
+            "Right" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Right", Exact = true }).Nth(0)
+                .Describe("button with label 'Right' on DPAD"),
+            // Channel buttons (Nth(1) - second occurrence)
+            "Channel Down" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Down", Exact = true }).Nth(1)
+                .Describe("button with label 'Down' for Channel"),
+            "Channel Up" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Up", Exact = true }).Nth(1)
+                .Describe("button with label 'Up' for Channel"),
+            // Volume buttons (Nth(2) - third occurrence)
+            "Volume Down" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Down", Exact = true }).Nth(2)
+                .Describe("button with label 'Down' for Volume"),
+            "Volume Up" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Up", Exact = true }).Nth(2)
+                .Describe("button with label 'Up' for Volume"),
             _ => CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true })
                 .Describe($"button with label '{label}'")
         };
