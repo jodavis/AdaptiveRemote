@@ -63,23 +63,20 @@ internal class ApplicationLifecycle : BackgroundService
 
     private async Task RunPreInitializersAsync(CancellationToken stoppingToken)
     {
-        List<ILifecycleActivity> activities = [];
+        Task[] initTasks = _preInitializers.Select(init => RunSinglePreInitializerAsync(init, stoppingToken)).ToArray();
+        await Task.WhenAll(initTasks);
+    }
+
+    private async Task RunSinglePreInitializerAsync(IPreScopeInitializer initializer, CancellationToken stoppingToken)
+    {
+        ILifecycleActivity activity = _viewController.StartTask($"Initializing {initializer.GetType().Name}");
         try
         {
-            Task[] initTasks = _preInitializers.Select(init =>
-            {
-                ILifecycleActivity activity = _viewController.StartTask($"Initializing {init.GetType().Name}");
-                activities.Add(activity);
-                return init.WaitAsync(activity, stoppingToken);
-            }).ToArray();
-            await Task.WhenAll(initTasks);
+            await initializer.WaitAsync(activity, stoppingToken);
         }
         finally
         {
-            foreach (ILifecycleActivity activity in activities)
-            {
-                activity.Dispose();
-            }
+            activity.Dispose();
         }
     }
 

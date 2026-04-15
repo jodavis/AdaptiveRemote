@@ -8,6 +8,10 @@ Scenario: All expected buttons from layout are present
 	When I start the application
 	Then I should see the application in the Ready phase
 	# DPAD group
+	And I should see the 'Up' button is enabled
+	And I should see the 'Down' button is enabled
+	And I should see the 'Left' button is enabled
+	And I should see the 'Right' button is enabled
 	And I should see the 'Select' button is enabled
 	And I should see the 'Back' button is enabled
 	And I should see the 'Power' button is enabled
