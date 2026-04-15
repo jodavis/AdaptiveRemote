@@ -27,14 +27,18 @@ internal class ApplicationLifecycle : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Await all IPreScopeInitializer services before creating the first scope
-        Task[] initTasks = _preInitializers.Select(init => init.WaitAsync(stoppingToken)).ToArray();
-        await Task.WhenAll(initTasks);
-
-        _logger.ApplicationLifecycle_WaitingForScope();
-
         try
         {
+            // Await all IPreScopeInitializer services before creating the first scope
+            Task[] initTasks = _preInitializers.Select(init =>
+            {
+                ILifecycleActivity activity = _viewController.StartTask($"Initializing {init.GetType().Name}");
+                return init.WaitAsync(activity, stoppingToken);
+            }).ToArray();
+            await Task.WhenAll(initTasks);
+
+            _logger.ApplicationLifecycle_WaitingForScope();
+
             await _scopeProvider.InvokeInScopeAsync(InitializeLifecycleAsync, stoppingToken);
             _logger.ApplicationLifecycle_ScopeReleased();
         }
@@ -48,7 +52,14 @@ internal class ApplicationLifecycle : BackgroundService
             await CleanUpCurrentContainerAsync(default);
         }
 
-        await stoppingToken.WaitForCancelledAsync();
+        try
+        {
+            await stoppingToken.WaitForCancelledAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when stopping
+        }
 
         _logger.ApplicationLifecycle_ShuttingDown();
 

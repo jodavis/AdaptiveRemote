@@ -72,5 +72,9 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
         return Task.CompletedTask;
     }
 
-    public Task WaitAsync(CancellationToken ct) => _initCompleted.Task.WaitAsync(ct);
+    public Task WaitAsync(ILifecycleActivity activity, CancellationToken ct)
+    {
+        activity.Description = "Loading cloud assets";
+        return _initCompleted.Task.WaitAsync(ct);
+    }
 }

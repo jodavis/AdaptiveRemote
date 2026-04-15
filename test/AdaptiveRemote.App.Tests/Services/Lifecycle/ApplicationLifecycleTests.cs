@@ -640,4 +640,215 @@ public class ApplicationLifecycleTests
             })
             .Verifiable(Times.Exactly(expectedExceptions.Length));
 
+    [TestMethod]
+    public void ApplicationLifecycle_StartAsync_WaitsForPreInitializers()
+    {
+        // Arrange
+        Mock<IPreScopeInitializer> mockPreInit = new();
+        mockPreInit
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, [mockPreInit.Object], MockLogger);
+
+        Expect_InitializeAsyncOn(MockService1);
+        Expect_InitializeAsyncOn(MockService2);
+        Expect_InitializeAsyncOn(MockService3);
+
+        // Act
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Wait for pre-initializer to be called
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_WaitingForScope(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Assert
+        mockPreInit.Verify();
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StartAsync_PreInitializerDelayed_WaitsBeforeStartingScope()
+    {
+        // Arrange
+        TaskCompletionSource preInitTcs = new();
+        Mock<IPreScopeInitializer> mockPreInit = new();
+        mockPreInit
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(preInitTcs.Task)
+            .Verifiable(Times.Once);
+
+        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, [mockPreInit.Object], MockLogger);
+
+        Expect_InitializeAsyncOn(MockService1);
+        Expect_InitializeAsyncOn(MockService2);
+        Expect_InitializeAsyncOn(MockService3);
+
+        // Act
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Pre-initializer hasn't completed, so scope shouldn't be created yet
+        MockLogger.Messages.Should().NotContain(m => m.Contains("WaitingForScope"));
+
+        // Complete pre-initializer
+        preInitTcs.SetResult();
+
+        // Assert
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_WaitingForScope(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+        mockPreInit.Verify();
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StartAsync_MultiplePreInitializers_WaitsForAll()
+    {
+        // Arrange
+        Mock<IPreScopeInitializer> mockPreInit1 = new();
+        Mock<IPreScopeInitializer> mockPreInit2 = new();
+        Mock<IPreScopeInitializer> mockPreInit3 = new();
+
+        mockPreInit1
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+        mockPreInit2
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+        mockPreInit3
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        ApplicationLifecycle sut = new(
+            MockScopeProvider.Object,
+            MockLifecycleViewController.Object,
+            [mockPreInit1.Object, mockPreInit2.Object, mockPreInit3.Object],
+            MockLogger);
+
+        Expect_InitializeAsyncOn(MockService1);
+        Expect_InitializeAsyncOn(MockService2);
+        Expect_InitializeAsyncOn(MockService3);
+
+        // Act
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Wait for scope to be ready
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_WaitingForScope(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Assert
+        mockPreInit1.Verify();
+        mockPreInit2.Verify();
+        mockPreInit3.Verify();
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StartAsync_PreInitializerFails_SetsActivityError()
+    {
+        // Arrange
+        Exception expectedError = new InvalidOperationException("PreInit failed");
+        Mock<IPreScopeInitializer> mockPreInit = new();
+
+        mockPreInit
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.FromException(expectedError))
+            .Verifiable(Times.Once);
+
+        // Don't expect scope to be created when pre-init fails
+        MockServiceProvider
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Verifiable(Times.Never);
+
+        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, [mockPreInit.Object], MockLogger);
+
+        // Act
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Assert - ExecuteTask should fault with unhandled error
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_UnhandledError(expectedError), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+        mockPreInit.Verify();
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StartAsync_LastPreInitializerFails_StopsBeforeScope()
+    {
+        // Arrange
+        Exception expectedError = new InvalidOperationException("Last PreInit failed");
+        Mock<IPreScopeInitializer> mockPreInit1 = new();
+        Mock<IPreScopeInitializer> mockPreInit2 = new();
+
+        mockPreInit1
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+        mockPreInit2
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.FromException(expectedError))
+            .Verifiable(Times.Once);
+
+        // Don't expect scope to be created when pre-init fails
+        MockServiceProvider
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Verifiable(Times.Never);
+
+        ApplicationLifecycle sut = new(
+            MockScopeProvider.Object,
+            MockLifecycleViewController.Object,
+            [mockPreInit1.Object, mockPreInit2.Object],
+            MockLogger);
+
+        // Act
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Assert - execution should fail before creating scope
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_UnhandledError(expectedError), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+        MockLogger.Messages.Should().NotContain(m => m.Contains("WaitingForScope"));
+        mockPreInit1.Verify();
+        mockPreInit2.Verify();
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_StartAsync_PreInitializerCreatesActivityForEach()
+    {
+        // Arrange
+        Mock<IPreScopeInitializer> mockPreInit = new();
+        Mock<ILifecycleActivity> mockActivity = new();
+
+        mockPreInit
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        MockLifecycleViewController
+            .Setup(x => x.StartTask(It.Is<string>(s => s.Contains("CloudAssetOrchestrator") || s.Contains("PreScopeInitializer"))))
+            .Returns(mockActivity.Object)
+            .Verifiable(Times.Once);
+
+        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, [mockPreInit.Object], MockLogger);
+
+        Expect_InitializeAsyncOn(MockService1);
+        Expect_InitializeAsyncOn(MockService2);
+        Expect_InitializeAsyncOn(MockService3);
+
+        // Act
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Wait for pre-initializer to be called
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_WaitingForScope(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Assert - StartTask should have been called for the pre-initializer
+        MockLifecycleViewController.Verify();
+        mockPreInit.Verify();
+    }
+
 }

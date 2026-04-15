@@ -10,6 +10,7 @@ internal interface IPreScopeInitializer
     /// <summary>
     /// Waits for the service to be ready before scope creation can proceed.
     /// </summary>
+    /// <param name="activity">Lifecycle activity for reporting progress and errors</param>
     /// <param name="ct">Cancellation token</param>
-    Task WaitAsync(CancellationToken ct);
+    Task WaitAsync(ILifecycleActivity activity, CancellationToken ct);
 }
