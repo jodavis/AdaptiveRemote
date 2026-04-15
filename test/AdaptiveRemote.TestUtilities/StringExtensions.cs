@@ -3,11 +3,11 @@ using System.Text.RegularExpressions;
 
 namespace AdaptiveRemote.TestUtilities;
 
-internal static class StringExtensions
+public static class StringExtensions
 {
     private static readonly Regex PlaceHolderRegex = new("{\\w+}");
 
-    internal static FormattableString AsMessageTemplate(this string format, params object?[] args)
+    public static FormattableString AsMessageTemplate(this string format, params object?[] args)
     {
         Dictionary<string, string> placeholders = new();
         format = PlaceHolderRegex.Replace(format, match =>

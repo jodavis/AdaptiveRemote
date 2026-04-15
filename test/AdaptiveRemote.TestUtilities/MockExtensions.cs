@@ -5,9 +5,9 @@ using Moq.Language.Flow;
 
 namespace AdaptiveRemote.TestUtilities;
 
-internal static class MockExtensions
+public static class MockExtensions
 {
-    internal static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType>(
+    public static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType>(
         this IReturnsThrows<ContractType, Task> setup,
         Task? returnTask = default)
         where ContractType : class
@@ -38,25 +38,25 @@ internal static class MockExtensions
         });
     }
 
-    internal static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType, ReturnType>(
+    public static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType, ReturnType>(
         this IReturnsThrows<ContractType, Task<ReturnType>> setup,
         ReturnType returnValue)
         where ContractType : class
         => setup.WithStandardTaskBehavior(Task.FromResult(returnValue));
 
-    internal static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType, ReturnType>(
+    public static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType, ReturnType>(
         this IReturnsThrows<ContractType, ValueTask<ReturnType>> setup,
         ReturnType returnValue)
         where ContractType : class
         => setup.WithStandardTaskBehavior(Task.FromResult(returnValue));
 
-    internal static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType, ReturnType>(
+    public static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType, ReturnType>(
         this IReturnsThrows<ContractType, ValueTask<ReturnType>> setup,
         Task<ReturnType> returnValue)
         where ContractType : class
         => setup.Returns(CreateStandardReturnValue(returnValue).AsValueTask());
 
-    internal static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType, ReturnType>(
+    public static IReturnsResult<ContractType> WithStandardTaskBehavior<ContractType, ReturnType>(
         this IReturnsThrows<ContractType, Task<ReturnType>> setup,
         Task<ReturnType> returnTask)
         where ContractType : class
@@ -82,13 +82,13 @@ internal static class MockExtensions
         };
     }
 
-    internal static ICallbackResult WithArgumentValidation<ArgumentType>(
+    public static ICallbackResult WithArgumentValidation<ArgumentType>(
         this ICallback setup,
         string argumentName,
         Action<ArgumentType> validator)
         => setup.Callback(CreateValidatorCallback(argumentName, validator));
 
-    internal static ICallbackResult WithArgumentValidation<ArgumentType>(
+    public static ICallbackResult WithArgumentValidation<ArgumentType>(
         this ICallback setup,
         string argumentName,
         ArgumentType expectedValue)
@@ -97,7 +97,7 @@ internal static class MockExtensions
             Assert.AreEqual(expectedValue, argumentValue, "Argument '{0}' in {1}", argumentName, setup);
         });
 
-    internal static IReturnsThrows<ContractType, ReturnType> WithArgumentValidation<ContractType, ReturnType, ArgumentType>(
+    public static IReturnsThrows<ContractType, ReturnType> WithArgumentValidation<ContractType, ReturnType, ArgumentType>(
         this ICallback<ContractType, ReturnType> setup,
         string argumentName,
         ArgumentType expectedValue)
@@ -107,7 +107,7 @@ internal static class MockExtensions
             Assert.AreEqual(expectedValue, argumentValue, "Argument '{0}' in {1}", argumentName, setup);
         });
 
-    internal static IReturnsThrows<ContractType, ReturnType> WithArgumentValidation<ContractType, ReturnType, ArgumentType>(
+    public static IReturnsThrows<ContractType, ReturnType> WithArgumentValidation<ContractType, ReturnType, ArgumentType>(
         this ICallback<ContractType, ReturnType> setup,
         string argumentName,
         Action<ArgumentType> validator)
@@ -138,7 +138,7 @@ internal static class MockExtensions
         return invocation => new(taskFunc(invocation));
     }
 
-    internal static CancellationToken WithExpectedCancellation<ContractType>(
+    public static CancellationToken WithExpectedCancellation<ContractType>(
         this ISetup<ContractType, Task> setup,
         bool throwWhenCancelled)
         where ContractType : class
@@ -155,7 +155,7 @@ internal static class MockExtensions
         return result;
     }
 
-    internal static CancellationToken WithExpectedCancellation<ContractType, ResultType>(
+    public static CancellationToken WithExpectedCancellation<ContractType, ResultType>(
         this ISetup<ContractType, Task<ResultType>> setup,
         bool throwWhenCancelled)
         where ContractType : class

@@ -2,6 +2,6 @@
 
 namespace AdaptiveRemote.TestUtilities;
 
-internal class MockEndPoint : EndPoint
+public class MockEndPoint : EndPoint
 {
 }

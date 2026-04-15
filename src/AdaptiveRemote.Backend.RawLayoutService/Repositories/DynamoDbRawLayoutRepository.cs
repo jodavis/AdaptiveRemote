@@ -44,7 +44,9 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
             return null;
         }
 
-        return DeserializeRawLayout(response.Items[0]);
+        return response.Items
+            .Select(DeserializeRawLayout)
+            .FirstOrDefault(l => l.Id == id);
     }
 
     public async Task<IReadOnlyList<RawLayout>> ListByUserAsync(string userId, CancellationToken ct)
@@ -61,7 +63,10 @@ public class DynamoDbRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatu
 
         QueryResponse response = await _dynamoDb.QueryAsync(queryRequest, ct);
 
-        return response.Items.Select(DeserializeRawLayout).ToList();
+        return response.Items
+            .Select(DeserializeRawLayout)
+            .Where(l => l.UserId == userId)
+            .ToList();
     }
 
     public async Task<RawLayout> SaveAsync(RawLayout layout, CancellationToken ct)

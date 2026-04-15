@@ -21,9 +21,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\AdaptiveRemote.Backend.RawLayoutService\AdaptiveRemote.Backend.RawLayoutService.csproj" />
     <ProjectReference Include="..\..\src\AdaptiveRemote.Contracts\AdaptiveRemote.Contracts.csproj" />
+    <ProjectReference Include="..\AdaptiveRemote.TestUtilities\AdaptiveRemote.TestUtilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="AdaptiveRemote.TestUtilities" />
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
 
