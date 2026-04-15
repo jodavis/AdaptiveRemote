@@ -849,6 +849,9 @@ public class ApplicationLifecycleTests
         // Assert - StartTask should have been called for the pre-initializer
         MockLifecycleViewController.Verify();
         mockPreInit.Verify();
+
+        // Assert - Activity should be disposed after pre-initializer completes
+        mockActivity.Verify(x => x.Dispose(), Times.Once, "Activity should be disposed after pre-initializer completes");
     }
 
 }

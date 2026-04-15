@@ -30,12 +30,7 @@ internal class ApplicationLifecycle : BackgroundService
         try
         {
             // Await all IPreScopeInitializer services before creating the first scope
-            Task[] initTasks = _preInitializers.Select(init =>
-            {
-                ILifecycleActivity activity = _viewController.StartTask($"Initializing {init.GetType().Name}");
-                return init.WaitAsync(activity, stoppingToken);
-            }).ToArray();
-            await Task.WhenAll(initTasks);
+            await RunPreInitializersAsync(stoppingToken);
 
             _logger.ApplicationLifecycle_WaitingForScope();
 
@@ -64,6 +59,28 @@ internal class ApplicationLifecycle : BackgroundService
         _logger.ApplicationLifecycle_ShuttingDown();
 
         await CleanUpCurrentContainerAsync(default);
+    }
+
+    private async Task RunPreInitializersAsync(CancellationToken stoppingToken)
+    {
+        List<ILifecycleActivity> activities = [];
+        try
+        {
+            Task[] initTasks = _preInitializers.Select(init =>
+            {
+                ILifecycleActivity activity = _viewController.StartTask($"Initializing {init.GetType().Name}");
+                activities.Add(activity);
+                return init.WaitAsync(activity, stoppingToken);
+            }).ToArray();
+            await Task.WhenAll(initTasks);
+        }
+        finally
+        {
+            foreach (ILifecycleActivity activity in activities)
+            {
+                activity.Dispose();
+            }
+        }
     }
 
     private async Task InitializeLifecycleAsync(IServiceProvider provider, CancellationToken cancellationToken)

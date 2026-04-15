@@ -76,8 +76,11 @@ Prefer the Headless host for new E2E tests — cross-platform, no display requir
 
 **IMPORTANT:** Before running E2E tests for the first time, you must install Playwright browsers:
 ```bash
+# Build the Headless host first (required to generate the Playwright installation script)
 dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj
-pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium  # one-time setup
+
+# Install Playwright browsers (one-time setup)
+pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium
 dotnet test --filter "FullyQualifiedName~HeadlessHost"
 ```
 

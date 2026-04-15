@@ -63,7 +63,10 @@ The three host projects are minimal, sharing most of their functionality from ot
 
 **Running Tests:**
 ```bash
-# First-time setup: Install Playwright browsers (required for Headless E2E tests)
+# First-time setup: Build the Headless host so the generated Playwright script exists
+dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj
+
+# Install Playwright browsers (required for Headless E2E tests)
 pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium
 
 # Run accessibility tests
