@@ -53,11 +53,4 @@ internal static class HostBuilderExtensions
             .AddScoped<Components.BlazorAppScope>()
             .AddSingleton<IApplicationScopeContainer, ApplicationScopeContainer>()
             .AddSingleton(sp => (IApplicationScopeProvider)sp.GetRequiredService<IApplicationScopeContainer>());
-
-    private static IServiceCollection AddCloudAssetServices(this IServiceCollection services)
-        => services
-            .AddSingleton<ICloudAssetStore, CloudAssetStore>()
-            .AddSingleton<CloudAssetOrchestrator>()
-            .AddSingleton<IPreScopeInitializer>(sp => sp.GetRequiredService<CloudAssetOrchestrator>())
-            .AddHostedService(sp => sp.GetRequiredService<CloudAssetOrchestrator>());
 }

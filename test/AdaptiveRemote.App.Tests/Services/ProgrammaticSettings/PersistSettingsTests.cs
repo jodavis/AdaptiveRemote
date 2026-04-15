@@ -5,8 +5,9 @@ namespace AdaptiveRemote.Services.ProgrammaticSettings;
 [TestClass]
 public class PersistSettingsTests
 {
-    // Use an environment variable that exists on all platforms (HOME on Linux/Mac, USERPROFILE/HOME on Windows)
-    private static readonly string InputSettingsPath = Path.Combine("%HOME%", "path", "to", "settings.ini");
+    // Use a test-specific environment variable to ensure cross-platform compatibility
+    private const string TestEnvVarName = "ADAPTIVEREMOTE_TEST_SETTINGS_PATH";
+    private static readonly string InputSettingsPath = Path.Combine($"%{TestEnvVarName}%", "path", "to", "settings.ini");
     private static readonly string ResolvedSettingsPath = Environment.ExpandEnvironmentVariables(InputSettingsPath);
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
@@ -25,6 +26,20 @@ public class PersistSettingsTests
     }
 
     private static readonly char[] LineSeparators = ['\r', '\n'];
+
+    [ClassInitialize]
+    public static void ClassInitialize(TestContext context)
+    {
+        // Set the test-specific environment variable for all tests in this class
+        Environment.SetEnvironmentVariable(TestEnvVarName, Path.Combine(Path.GetTempPath(), "AdaptiveRemoteTests"));
+    }
+
+    [ClassCleanup]
+    public static void ClassCleanup()
+    {
+        // Clean up the test-specific environment variable
+        Environment.SetEnvironmentVariable(TestEnvVarName, null);
+    }
 
     [TestCleanup]
     public void VerifyMocks()

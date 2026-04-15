@@ -23,7 +23,7 @@ internal class RemoteLayoutDefinitionService : IRemoteDefinitionService
         {
             try
             {
-                return _store.Get<LayoutGroup>("layout");
+                return _store.GetLayout();
             }
             catch (InvalidOperationException ex)
             {

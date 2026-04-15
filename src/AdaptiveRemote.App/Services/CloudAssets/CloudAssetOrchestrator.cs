@@ -66,7 +66,7 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
             ])
         ]);
 
-        _store.Set("layout", layout);
+        _store.SetLayout(layout);
         _initCompleted.SetResult();
 
         return Task.CompletedTask;

@@ -28,10 +28,8 @@ internal class ApplicationLifecycle : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Await all IPreScopeInitializer services before creating the first scope
-        foreach (IPreScopeInitializer initializer in _preInitializers)
-        {
-            await initializer.WaitAsync(stoppingToken);
-        }
+        Task[] initTasks = _preInitializers.Select(init => init.WaitAsync(stoppingToken)).ToArray();
+        await Task.WhenAll(initTasks);
 
         _logger.ApplicationLifecycle_WaitingForScope();
 
