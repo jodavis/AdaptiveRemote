@@ -9,22 +9,31 @@ internal class ApplicationLifecycle : BackgroundService
 {
     private readonly IApplicationScopeProvider _scopeProvider;
     private readonly ILifecycleViewController _viewController;
+    private readonly IEnumerable<IPreScopeInitializer> _preInitializers;
     private readonly MessageLogger _logger;
     private ScopedLifecycleContainer? _currentContainer;
 
-    public ApplicationLifecycle(IApplicationScopeProvider scopeProvider, ILifecycleViewController viewController, ILogger<ApplicationLifecycle> logger)
+    public ApplicationLifecycle(
+        IApplicationScopeProvider scopeProvider,
+        ILifecycleViewController viewController,
+        IEnumerable<IPreScopeInitializer> preInitializers,
+        ILogger<ApplicationLifecycle> logger)
     {
         _scopeProvider = scopeProvider;
         _viewController = viewController;
+        _preInitializers = preInitializers;
         _logger = new(logger);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.ApplicationLifecycle_WaitingForScope();
-
         try
         {
+            // Await all IPreScopeInitializer services before creating the first scope
+            await RunPreInitializersAsync(stoppingToken);
+
+            _logger.ApplicationLifecycle_WaitingForScope();
+
             await _scopeProvider.InvokeInScopeAsync(InitializeLifecycleAsync, stoppingToken);
             _logger.ApplicationLifecycle_ScopeReleased();
         }
@@ -38,11 +47,37 @@ internal class ApplicationLifecycle : BackgroundService
             await CleanUpCurrentContainerAsync(default);
         }
 
-        await stoppingToken.WaitForCancelledAsync();
+        try
+        {
+            await stoppingToken.WaitForCancelledAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when stopping
+        }
 
         _logger.ApplicationLifecycle_ShuttingDown();
 
         await CleanUpCurrentContainerAsync(default);
+    }
+
+    private async Task RunPreInitializersAsync(CancellationToken stoppingToken)
+    {
+        Task[] initTasks = _preInitializers.Select(init => RunSinglePreInitializerAsync(init, stoppingToken)).ToArray();
+        await Task.WhenAll(initTasks);
+    }
+
+    private async Task RunSinglePreInitializerAsync(IPreScopeInitializer initializer, CancellationToken stoppingToken)
+    {
+        ILifecycleActivity activity = _viewController.StartTask($"Initializing {initializer.GetType().Name}");
+        try
+        {
+            await initializer.WaitAsync(activity, stoppingToken);
+        }
+        finally
+        {
+            activity.Dispose();
+        }
     }
 
     private async Task InitializeLifecycleAsync(IServiceProvider provider, CancellationToken cancellationToken)
