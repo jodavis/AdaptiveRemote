@@ -43,4 +43,8 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="wwwroot\css\layout-grid.css" />
+  </ItemGroup>
+
 </Project>

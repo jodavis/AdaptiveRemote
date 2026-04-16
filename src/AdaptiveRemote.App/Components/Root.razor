@@ -1,5 +1,11 @@
 @inject Models.LifecycleView ViewModel;
 @inject BlazorAppScope AppScope;
+@inject Services.Layout.IDynamicStylesheetProvider DynamicStylesheet;
+
+@if (DynamicStylesheet.GetCss() is { } css)
+{
+    <style>@((MarkupString)css)</style>
+}
 
 @if (ViewModel.CurrentPhase == LifecyclePhase.Ready)
 {
