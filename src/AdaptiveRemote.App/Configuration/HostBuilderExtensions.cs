@@ -30,6 +30,7 @@ internal static class HostBuilderExtensions
             .AddCloudAssetServices()
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
+            .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>()
             .AddSingleton<IPersistSettings, PersistSettings>()
             .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings))
             .Configure<CloudSettings>(configuration.GetSection("CloudSettings"));

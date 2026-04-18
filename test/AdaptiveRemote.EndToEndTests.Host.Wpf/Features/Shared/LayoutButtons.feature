@@ -3,6 +3,16 @@ Feature: Layout button verification
 	I want all expected buttons from the layout to be present and accessible
 	So that I can control my TV and AV equipment
 
+Scenario: Layout CSS rules are present
+	Given the application is in the Ready phase
+	Then the stylesheet selector '#ROOT' should define 'display' as 'grid'
+	And the stylesheet selector '#ROOT' should define 'grid-template-rows' as '6fr 3fr 1fr'
+	And the stylesheet selector '#ROOT' should define 'grid-template-columns' as '3fr 2fr'
+	And the stylesheet selector '#ROOT' should define 'grid-gap' as '20px'
+	When I click on the 'Exit' button
+	And I wait for the application to shut down
+	Then I should not see any error messages in the logs
+
 Scenario: All expected buttons from layout are present
 	Given the application is not running
 	When I start the application
