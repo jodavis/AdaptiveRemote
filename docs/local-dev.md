@@ -2,6 +2,10 @@
 
 This guide covers local backend dependencies for AdaptiveRemote backend services.
 
+> Current repository state: `AdaptiveRemote.Backend.CompiledLayoutService` is the only
+> backend API service currently implemented in `src/`. Apply the same startup and `/scalar`
+> checks to additional backend services as they are added.
+
 ## Prerequisites
 
 1. Install Docker Desktop (or Docker Engine + Docker Compose plugin).
@@ -22,10 +26,22 @@ LocalStack must report `status: running`:
 curl http://localhost:4566/_localstack/health
 ```
 
-Expected response contains:
+Expected response contains LocalStack health JSON with either:
 
 ```json
 { "status": "running" }
+```
+
+or service entries showing required services as available/running, for example:
+
+```json
+{
+  "services": {
+    "dynamodb": "available",
+    "lambda": "available",
+    "sqs": "available"
+  }
+}
 ```
 
 ## Cognito development credentials

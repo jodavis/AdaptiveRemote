@@ -82,6 +82,7 @@ app.Run();
 static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logger)
 {
     const int LocalStackHealthCheckTimeoutSeconds = 5;
+    string[] requiredServices = ["dynamodb", "lambda", "sqs"];
 
     string baseUrl = app.Configuration["LocalStack:BaseUrl"] ?? "http://localhost:4566";
 
@@ -107,13 +108,9 @@ static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logge
         }
 
         using JsonDocument json = JsonDocument.Parse(body);
-        string status = json.RootElement.TryGetProperty("status", out JsonElement statusElement)
-            ? statusElement.GetString() ?? string.Empty
-            : string.Empty;
-
-        if (!string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+        if (!IsLocalStackRunning(json.RootElement, requiredServices, out string failureReason))
         {
-            logger.LocalStackDependencyUnavailable(healthUri.ToString(), $"status='{status}'");
+            logger.LocalStackDependencyUnavailable(healthUri.ToString(), failureReason);
             Environment.Exit(1);
         }
     }
@@ -122,6 +119,48 @@ static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logge
         logger.LocalStackDependencyUnavailable(healthUri.ToString(), ex.Message);
         Environment.Exit(1);
     }
+}
+
+static bool IsLocalStackRunning(JsonElement root, IReadOnlyList<string> requiredServices, out string failureReason)
+{
+    if (root.TryGetProperty("status", out JsonElement statusElement))
+    {
+        string status = statusElement.GetString() ?? string.Empty;
+        if (string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+        {
+            failureReason = string.Empty;
+            return true;
+        }
+
+        failureReason = $"status='{status}'";
+        return false;
+    }
+
+    if (!root.TryGetProperty("services", out JsonElement servicesElement) || servicesElement.ValueKind != JsonValueKind.Object)
+    {
+        failureReason = "health response did not contain a running status or services object";
+        return false;
+    }
+
+    foreach (string service in requiredServices)
+    {
+        if (!servicesElement.TryGetProperty(service, out JsonElement serviceStatusElement))
+        {
+            failureReason = $"service '{service}' was missing from health response";
+            return false;
+        }
+
+        string serviceStatus = serviceStatusElement.GetString() ?? string.Empty;
+        if (!string.Equals(serviceStatus, "available", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(serviceStatus, "running", StringComparison.OrdinalIgnoreCase))
+        {
+            failureReason = $"service '{service}' status was '{serviceStatus}'";
+            return false;
+        }
+    }
+
+    failureReason = string.Empty;
+    return true;
 }
 
 // Make Program visible for testing
