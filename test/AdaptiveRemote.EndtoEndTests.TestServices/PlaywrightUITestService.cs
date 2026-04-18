@@ -191,9 +191,8 @@ public class PlaywrightUITestService : IUITestService
                             continue;
                         }
 
-                        const styleRule = rule;
-                        if (styleRule.selectorText === selector) {
-                            const value = styleRule.style.getPropertyValue(propertyName);
+                        if (rule.selectorText === selector) {
+                            const value = rule.style.getPropertyValue(propertyName);
                             return value ? value.trim() : null;
                         }
                     }
