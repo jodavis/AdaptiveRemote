@@ -14,6 +14,7 @@ namespace AdaptiveRemote.Backend.ApiTests.Support;
 /// Exposes two endpoints on a dynamically-assigned localhost port:
 ///   GET /.well-known/openid-configuration  — OIDC discovery document
 ///   GET /.well-known/jwks.json             — RSA public key in JWK format
+///   GET /_localstack/health                — LocalStack-compatible health response
 ///
 /// The service under test is configured to use this authority via the
 /// Cognito__Authority environment variable so that bearer token validation
@@ -118,6 +119,7 @@ public sealed class TestJwtAuthority : IDisposable
         {
             "/.well-known/openid-configuration" => BuildDiscoveryDocument(),
             "/.well-known/jwks.json" => BuildJwks(),
+            "/_localstack/health" => BuildLocalStackHealth(),
             _ => BuildNotFound(context),
         };
 
@@ -166,6 +168,15 @@ public sealed class TestJwtAuthority : IDisposable
     {
         context.Response.StatusCode = 404;
         return System.Text.Encoding.UTF8.GetBytes("{}");
+    }
+
+    private static byte[] BuildLocalStackHealth()
+    {
+        string json = JsonSerializer.Serialize(new
+        {
+            status = "running",
+        });
+        return System.Text.Encoding.UTF8.GetBytes(json);
     }
 
     private static int GetFreePort()

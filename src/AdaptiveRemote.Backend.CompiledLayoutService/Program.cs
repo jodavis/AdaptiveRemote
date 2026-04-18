@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Scalar.AspNetCore;
+using System.Net.Http;
+using System.Text.Json;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -41,14 +44,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddOpenApi();
 
 WebApplication app = builder.Build();
 
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.ServiceStarting();
 
+if (app.Environment.IsDevelopment())
+{
+    await EnsureLocalStackRunningAsync(app, logger).ConfigureAwait(false);
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapOpenApi();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapScalarApiReference();
+}
 
 // Map endpoints
 app.MapHealthEndpoints();
@@ -62,6 +78,52 @@ string listenAddress = app.Configuration["ASPNETCORE_URLS"]
 logger.ServiceStarted(listenAddress);
 
 app.Run();
+
+static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logger)
+{
+    string baseUrl = app.Configuration["LocalStack:BaseUrl"] ?? "http://localhost:4566";
+
+    if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseUri))
+    {
+        logger.LocalStackDependencyUnavailable(baseUrl, "invalid LocalStack base URL");
+        Environment.Exit(1);
+        return;
+    }
+
+    Uri healthUri = new(baseUri, "/_localstack/health");
+
+    using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(5) };
+
+    try
+    {
+        using HttpResponseMessage response = await client.GetAsync(healthUri).ConfigureAwait(false);
+        string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LocalStackDependencyUnavailable(healthUri.ToString(), $"HTTP {(int)response.StatusCode}");
+            Environment.Exit(1);
+            return;
+        }
+
+        using JsonDocument json = JsonDocument.Parse(body);
+        string status = json.RootElement.TryGetProperty("status", out JsonElement statusElement)
+            ? statusElement.GetString() ?? string.Empty
+            : string.Empty;
+
+        if (!string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+        {
+            logger.LocalStackDependencyUnavailable(healthUri.ToString(), $"status='{status}'");
+            Environment.Exit(1);
+            return;
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LocalStackDependencyUnavailable(healthUri.ToString(), ex.Message);
+        Environment.Exit(1);
+    }
+}
 
 // Make Program visible for testing
 public partial class Program { }
