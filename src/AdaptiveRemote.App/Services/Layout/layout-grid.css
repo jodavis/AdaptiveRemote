@@ -2,7 +2,6 @@
   display: grid;
   grid-template-rows: 6fr 3fr 1fr;
   grid-template-columns: 3fr 2fr;
-  grid-gap: 10px;
   grid-gap: 20px;
   width: 98vw;
   height: 96vh;

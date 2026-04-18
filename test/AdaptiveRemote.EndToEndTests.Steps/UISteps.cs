@@ -60,4 +60,18 @@ public class UISteps : StepsBase
     {
         Host.UI.WaitForNoModalMessage();
     }
+
+    [Then(@"the stylesheet selector {string} should define {string} as {string}")]
+    public void ThenTheStylesheetSelectorShouldDefineAs(string selector, string propertyName, string expectedValue)
+    {
+        string? actualValue = Host.UI.GetStylesheetRulePropertyValue(selector, propertyName);
+        Assert.AreEqual(
+            expectedValue,
+            actualValue,
+            "Expected selector '{0}' to define '{1}' as '{2}', but was '{3}'.",
+            selector,
+            propertyName,
+            expectedValue,
+            actualValue ?? "<null>");
+    }
 }

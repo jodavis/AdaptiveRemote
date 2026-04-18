@@ -53,4 +53,13 @@ public partial interface IUITestService : IDisposable
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The inner HTML of the first matching element, or null if not found or not visible.</returns>
     Task<string?> GetInnerHtmlFromElementWithCssClassAsync(string cssClass, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gets a CSS property value from the first stylesheet rule that matches the provided selector.
+    /// </summary>
+    /// <param name="selector">The exact CSS selector text to match.</param>
+    /// <param name="propertyName">The CSS property name to read (for example, <c>display</c>).</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The matching property value, or null if no matching rule/property exists.</returns>
+    Task<string?> GetStylesheetRulePropertyValueAsync(string selector, string propertyName, CancellationToken cancellationToken);
 }

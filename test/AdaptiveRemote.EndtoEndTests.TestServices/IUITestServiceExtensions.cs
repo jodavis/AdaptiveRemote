@@ -270,6 +270,28 @@ public static class IUITestServiceExtensions
         return WaitHelpers.WaitForState(button.IsProgrammedAsync, programmed, timeout);
     }
 
+    /// <summary>
+    /// Gets a stylesheet rule property value using default timeout.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="selector">The exact CSS selector text to match.</param>
+    /// <param name="propertyName">The CSS property name to read.</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>The property value if found; otherwise null.</returns>
+    public static string? GetStylesheetRulePropertyValue(this IUITestService service, string selector, string propertyName, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.GetStylesheetRulePropertyValue(selector, propertyName, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Gets a stylesheet rule property value using explicit timeout.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="selector">The exact CSS selector text to match.</param>
+    /// <param name="propertyName">The CSS property name to read.</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>The property value if found; otherwise null.</returns>
+    public static string? GetStylesheetRulePropertyValue(this IUITestService service, string selector, string propertyName, TimeSpan timeout)
+        => WaitHelpers.WaitForAsyncTask(ct => service.GetStylesheetRulePropertyValueAsync(selector, propertyName, ct), timeout);
+
     private static IUIButtonTestObject GetButtonByLabel(this IUITestService service, string label, TimeSpan timeout)
     {
         IUIButtonTestObject? button = null;
