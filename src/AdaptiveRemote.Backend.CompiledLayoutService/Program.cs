@@ -81,18 +81,19 @@ app.Run();
 
 static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logger)
 {
+    const int LocalStackHealthCheckTimeoutSeconds = 5;
+
     string baseUrl = app.Configuration["LocalStack:BaseUrl"] ?? "http://localhost:4566";
 
     if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseUri))
     {
-        logger.LocalStackDependencyUnavailable(baseUrl, "invalid LocalStack base URL");
+        logger.LocalStackDependencyUnavailable(baseUrl, "configuration value is not a valid absolute URL");
         Environment.Exit(1);
-        return;
     }
 
     Uri healthUri = new(baseUri, "/_localstack/health");
 
-    using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(5) };
+    using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(LocalStackHealthCheckTimeoutSeconds) };
 
     try
     {
@@ -103,7 +104,6 @@ static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logge
         {
             logger.LocalStackDependencyUnavailable(healthUri.ToString(), $"HTTP {(int)response.StatusCode}");
             Environment.Exit(1);
-            return;
         }
 
         using JsonDocument json = JsonDocument.Parse(body);
@@ -115,7 +115,6 @@ static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logge
         {
             logger.LocalStackDependencyUnavailable(healthUri.ToString(), $"status='{status}'");
             Environment.Exit(1);
-            return;
         }
     }
     catch (Exception ex)
