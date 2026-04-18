@@ -749,7 +749,77 @@ Implement `AdaptiveRemote.Backend.RawLayoutService` with full CRUD backed by Dyn
   And GET /layouts/raw/{id} returns 404 Not Found
   ```
 
-### Task 5 — LayoutProcessingService (with stubs) ([ADR-170](https://jodasoft.atlassian.net/browse/ADR-170))
+### Task 5 — Development environment support ([ADR-187](https://jodasoft.atlassian.net/browse/ADR-187))
+
+Establish a consistent developer experience across all backend services: local launch with a
+separate console window, an interactive API browser (Scalar), startup dependency health checks
+with actionable error messages, and a debuggable local invocation story for Lambda functions.
+Applied retroactively to all services built in Tasks 1–4; required for all subsequent services.
+
+**ECS Fargate services** (CompiledLayoutService, RawLayoutService; pattern required for all
+future Fargate services):
+
+- [ ] `Microsoft.AspNetCore.OpenApi` and `Scalar.AspNetCore` packages added; Scalar UI
+  registered via `app.MapScalarApiReference()` guarded by `app.Environment.IsDevelopment()`;
+  accessible at `/scalar` when running locally; **not** reachable in staging or production
+- [ ] `launchSettings.json` includes a `Development` launch profile with
+  `"outputCapture": "None"` so F5 in VS opens a separate console window (not the VS Output
+  pane); `dotnet run` already outputs to the console natively — no extra config needed
+- [ ] On startup, each service pings `/_localstack/health` on the configured LocalStack base
+  URL; if the request fails or returns a non-`running` status, a `[LoggerMessage]`-defined
+  `Error`-level message is emitted that names LocalStack as the missing dependency and
+  includes `"See docs/local-dev.md for setup instructions"`; `Environment.Exit(1)` is called
+  immediately after
+- [ ] `docs/local-dev.md` created at the repo root; covers: Docker and Docker Compose
+  installation and the `docker-compose up -d` start command, confirming LocalStack is healthy
+  at `/_localstack/health`, and Cognito dev user pool credential setup; referenced from the
+  startup error message above
+
+**Lambda functions** (LayoutCompilerService, LayoutValidationService; pattern required for all
+future Lambda services):
+
+- [ ] `amazon-lambda-testtool` (latest version supporting .NET 10) installed globally;
+  `launchSettings.json` includes a profile that launches the test tool so F5 in VS opens
+  the Lambda Test Tool UI for interactive invocation and debugging
+- [ ] LocalStack Lambda emulation verified: function is deployed to LocalStack via
+  `docker-compose` on `up`, and invokable with
+  `aws lambda invoke --endpoint-url http://localhost:4566 --function-name <name> --payload '<json>' response.json`
+- [ ] Sample invocation commands for each Lambda function (with minimal valid payloads)
+  documented in `docs/local-dev.md`
+
+**Shared — standing pattern for all future tasks:**
+
+- [ ] `src/_doc_BackendDevelopment.md` created; documents the agent verification step:
+  after every change to a backend service, run the service with LocalStack running (confirm
+  clean start) and with LocalStack stopped (confirm the startup error message and non-zero
+  exit); this doc is added to the CLAUDE.md "Read Before Making Changes" table under
+  "Backend services"
+- [ ] All existing backend services (Tasks 1–4 outputs) retrofitted to meet the above
+  checklist; `dotnet build /warnaserror` passes; existing API integration tests pass
+
+```gherkin
+Given LocalStack is not running
+When a developer runs dotnet run for any ECS Fargate backend service
+Then the process exits with a non-zero exit code
+And the console output names LocalStack as the missing dependency
+And the console output includes "See docs/local-dev.md for setup instructions"
+
+Given LocalStack is running
+When a developer runs dotnet run for any ECS Fargate backend service
+Then the service starts successfully
+And navigating to /scalar in a browser shows the Scalar API UI
+And log output is visible in a separate console window
+
+Given LocalStack is running with the Lambda function deployed
+When a developer invokes the Lambda via aws cli with --endpoint-url http://localhost:4566
+Then the Lambda returns a valid response without error
+
+Given the Lambda Test Tool is installed
+When a developer launches the Lambda project with F5 in Visual Studio
+Then the Lambda Test Tool UI opens in a browser for interactive invocation
+```
+
+### Task 6 — LayoutProcessingService (with stubs) ([ADR-170](https://jodasoft.atlassian.net/browse/ADR-170))
 
 Implement `AdaptiveRemote.Backend.LayoutProcessingService` with SQS polling and the full
 orchestration pipeline. `ILayoutCompilerClient` and `ILayoutValidationClient` are backed by
@@ -782,8 +852,12 @@ end-to-end before the real Lambda functions are built in Tasks 6 and 7.
   And GET /layouts/raw/{id} returns a RawLayout with a non-null ValidationResult
   And ValidationResult.IsValid is false
   ```
+- [ ] Follows the dev environment pattern from Task 5: Scalar UI configured and guarded by
+  `IsDevelopment()`, console window launch profile present, LocalStack startup health check
+  implemented, and agent verification step completed (start with LocalStack running; start
+  with LocalStack stopped and confirm startup error)
 
-### Task 6 — LayoutCompilerService (Lambda) ([ADR-171](https://jodasoft.atlassian.net/browse/ADR-171))
+### Task 7 — LayoutCompilerService (Lambda) ([ADR-171](https://jodasoft.atlassian.net/browse/ADR-171))
 
 Implement `AdaptiveRemote.Backend.LayoutCompilerService` as a Native AOT Lambda, replacing
 the stub injected in Task 5.
@@ -813,8 +887,11 @@ the stub injected in Task 5.
   And PreviewLayout.RenderedHtml is non-empty
   And PreviewLayout.RenderedCss is non-empty
   ```
+- [ ] Follows the Lambda dev environment pattern from Task 5: Lambda Test Tool launch profile
+  present, LocalStack deployment verified via `aws lambda invoke`, and agent verification step
+  completed
 
-### Task 7 — LayoutValidationService (Lambda) ([ADR-172](https://jodasoft.atlassian.net/browse/ADR-172))
+### Task 8 — LayoutValidationService (Lambda) ([ADR-172](https://jodasoft.atlassian.net/browse/ADR-172))
 
 Implement `AdaptiveRemote.Backend.LayoutValidationService` as a Native AOT Lambda, replacing
 the stub injected in Task 5.
@@ -849,8 +926,11 @@ the stub injected in Task 5.
   And ValidationResult.IsValid is false
   And ValidationResult.Issues contains one issue referencing the duplicate CssId
   ```
+- [ ] Follows the Lambda dev environment pattern from Task 5: Lambda Test Tool launch profile
+  present, LocalStack deployment verified via `aws lambda invoke`, and agent verification step
+  completed
 
-### Task 8 — CompiledLayoutService with DynamoDB ([ADR-173](https://jodasoft.atlassian.net/browse/ADR-173))
+### Task 9 — CompiledLayoutService with DynamoDB ([ADR-173](https://jodasoft.atlassian.net/browse/ADR-173))
 
 Replace the static hardcoded response in `CompiledLayoutService` with real DynamoDB storage and active layout management.
 
@@ -874,8 +954,12 @@ Replace the static hardcoded response in `CompiledLayoutService` with real Dynam
   And GET /layouts/compiled/active returns layout A
   And layout B is no longer active
   ```
+- [ ] Follows the dev environment pattern from Task 5: Scalar UI configured and guarded by
+  `IsDevelopment()`, console window launch profile present, LocalStack startup health check
+  implemented, and agent verification step completed (start with LocalStack running; start
+  with LocalStack stopped and confirm startup error)
 
-### Task 9 — NotificationService (SSE) ([ADR-174](https://jodasoft.atlassian.net/browse/ADR-174))
+### Task 10 — NotificationService (SSE) ([ADR-174](https://jodasoft.atlassian.net/browse/ADR-174))
 
 Implement `AdaptiveRemote.Backend.NotificationService` with SSE push for `layout-saved` and `layout-ready` events.
 
@@ -898,6 +982,10 @@ Implement `AdaptiveRemote.Backend.NotificationService` with SSE push for `layout
   When one editor saves the layout
   Then both editors receive a layout-saved SSE event
   ```
+- [ ] Follows the dev environment pattern from Task 5: Scalar UI configured and guarded by
+  `IsDevelopment()`, console window launch profile present, LocalStack startup health check
+  implemented, and agent verification step completed (start with LocalStack running; start
+  with LocalStack stopped and confirm startup error)
 
 ---
 
