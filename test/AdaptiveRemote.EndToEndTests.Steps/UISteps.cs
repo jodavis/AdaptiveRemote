@@ -16,13 +16,19 @@ public class UISteps : StepsBase
     [Then(@"I should see the {string} button is enabled")]
     public void ThenIShouldSeeTheButtonIsEnabled(string buttonLabel)
     {
-        Assert.IsTrue(Host.UI.WaitForButtonEnabled(buttonLabel, enabled: true), "Button {0} was not enabled", buttonLabel);
+        Assert.IsTrue(Host.UI.WaitForButtonEnabled(buttonLabel, enabled: true), "Button '{0}' was not enabled", buttonLabel);
     }
 
     [Then(@"I should see the {string} button is disabled")]
     public void ThenIShouldSeeTheButtonIsDisabled(string buttonLabel)
     {
-        Assert.IsTrue(Host.UI.WaitForButtonEnabled(buttonLabel, enabled: false), "Button {0} was not disabled", buttonLabel);
+        Assert.IsTrue(Host.UI.WaitForButtonEnabled(buttonLabel, enabled: false), "Button '{0}' was not disabled", buttonLabel);
+    }
+
+    [Then(@"I should see the {string} button exists")]
+    public void ThenIShouldSeeTheButtonExists(string buttonLabel)
+    {
+        Assert.IsTrue(Host.UI.WaitForButtonExists(buttonLabel), "Button '{0}' did not exist", buttonLabel);
     }
 
     [Then(@"I should see the {string} button is programmed")]
