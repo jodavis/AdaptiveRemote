@@ -171,6 +171,38 @@ public class PlaywrightUITestService : IUITestService
         }
     }
 
+    public async Task<string?> GetStylesheetRulePropertyValueAsync(
+        string selector,
+        string propertyName,
+        CancellationToken cancellationToken = default)
+    {
+        return await CurrentPage.EvaluateAsync<string?>(
+            @"({ selector, propertyName }) => {
+                for (const stylesheet of Array.from(document.styleSheets)) {
+                    let rules;
+                    try {
+                        rules = stylesheet.cssRules;
+                    } catch {
+                        continue;
+                    }
+
+                    for (const rule of Array.from(rules)) {
+                        if (rule.type !== CSSRule.STYLE_RULE) {
+                            continue;
+                        }
+
+                        if (rule.selectorText === selector) {
+                            const value = rule.style.getPropertyValue(propertyName);
+                            return value ? value.trim() : null;
+                        }
+                    }
+                }
+
+                return null;
+            }",
+            new { selector, propertyName });
+    }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);
