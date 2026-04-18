@@ -20,7 +20,7 @@ This guide covers local backend dependencies for AdaptiveRemote backend services
 
 ## Confirm LocalStack health
 
-LocalStack must report `status: running`:
+LocalStack health endpoint must be reachable:
 
 ```bash
 curl http://localhost:4566/_localstack/health
