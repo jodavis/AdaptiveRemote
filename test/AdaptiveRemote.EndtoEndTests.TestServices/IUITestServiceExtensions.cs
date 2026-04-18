@@ -62,6 +62,32 @@ public static class IUITestServiceExtensions
     }
 
     /// <summary>
+    /// Waits for a button with the specified label to exist.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
+    /// <param name="timeoutInSeconds">Optional timeout for the operation.</param>
+    /// <returns>True if the button exists within the timeout, false otherwise.</returns>
+    public static bool WaitForButtonExists(this IUITestService service, string label, int timeoutInSeconds = DefaultUITimeoutInSeconds)
+        => service.WaitForButtonExists(label, TimeSpan.FromSeconds(timeoutInSeconds));
+
+    /// <summary>
+    /// Waits for a button with the specified label to exist.
+    /// </summary>
+    /// <param name="service">The UI test service.</param>
+    /// <param name="label">The exact visible text of the button (case-sensitive, trimmed).</param>
+    /// <param name="timeout">Timeout for the operation.</param>
+    /// <returns>True if the button exists within the timeout, false otherwise.</returns>
+    public static bool WaitForButtonExists(this IUITestService service, string label, TimeSpan timeout)
+    {
+        return WaitHelpers.ExecuteWithRetries(async ct =>
+        {
+            using IUIButtonTestObject? button = await service.FindButtonByLabelAsync(label, ct);
+            return button is not null;
+        }, timeout);
+    }
+
+    /// <summary>
     /// Clicks a button with the specified label in the UI (synchronous wrapper).
     /// </summary>
     /// <param name="service">The UI test service.</param>
