@@ -271,7 +271,7 @@ public static class IUITestServiceExtensions
     }
 
     /// <summary>
-    /// Gets a stylesheet rule property value using default timeout.
+    /// Gets a stylesheet rule property value using default timeout (synchronous wrapper; blocks the calling thread).
     /// </summary>
     /// <param name="service">The UI test service.</param>
     /// <param name="selector">The exact CSS selector text to match.</param>
@@ -282,7 +282,7 @@ public static class IUITestServiceExtensions
         => service.GetStylesheetRulePropertyValue(selector, propertyName, TimeSpan.FromSeconds(timeoutInSeconds));
 
     /// <summary>
-    /// Gets a stylesheet rule property value using explicit timeout.
+    /// Gets a stylesheet rule property value using explicit timeout (synchronous wrapper; blocks the calling thread).
     /// </summary>
     /// <param name="service">The UI test service.</param>
     /// <param name="selector">The exact CSS selector text to match.</param>
