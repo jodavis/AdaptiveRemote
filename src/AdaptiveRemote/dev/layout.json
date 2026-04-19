@@ -9,47 +9,47 @@
       "$type": "group",
       "cssId": "DPAD",
       "children": [
-        { "$type": "command", "type": 1, "name": "Up",       "label": "Up",       "glyph": null, "speakPhrase": "Sent Up",        "reverse": "Down",     "cssId": "Up"       },
-        { "$type": "command", "type": 1, "name": "Down",     "label": "Down",     "glyph": null, "speakPhrase": "Sent Down",      "reverse": "Up",       "cssId": "Down"     },
-        { "$type": "command", "type": 1, "name": "Left",     "label": "Left",     "glyph": null, "speakPhrase": "Sent Left",      "reverse": "Right",    "cssId": "Left"     },
-        { "$type": "command", "type": 1, "name": "Right",    "label": "Right",    "glyph": null, "speakPhrase": "Sent Right",     "reverse": "Left",     "cssId": "Right"    },
-        { "$type": "command", "type": 1, "name": "Select",   "label": "Select",   "glyph": null, "speakPhrase": "Sent Select",    "reverse": null,       "cssId": "Select"   },
-        { "$type": "command", "type": 1, "name": "Back",     "label": "Back",     "glyph": null, "speakPhrase": "Sent Back",      "reverse": null,       "cssId": "Back"     },
-        { "$type": "command", "type": 2, "name": "Power",    "label": "Power",    "glyph": null, "speakPhrase": "Sent Power",     "reverse": "Power",    "cssId": "Power"    },
-        { "$type": "command", "type": 2, "name": "PowerOn",  "label": "PowerOn",  "glyph": null, "speakPhrase": "Sent PowerOn",   "reverse": "PowerOff", "cssId": "PowerOn"  },
-        { "$type": "command", "type": 2, "name": "PowerOff", "label": "PowerOff", "glyph": null, "speakPhrase": "Sent PowerOff",  "reverse": "PowerOn",  "cssId": "PowerOff" }
+        { "$type": "command", "type": "TiVo", "name": "Up",       "label": "Up",       "glyph": null, "speakPhrase": "Sent Up",        "reverse": "Down",     "cssId": "Up"       },
+        { "$type": "command", "type": "TiVo", "name": "Down",     "label": "Down",     "glyph": null, "speakPhrase": "Sent Down",      "reverse": "Up",       "cssId": "Down"     },
+        { "$type": "command", "type": "TiVo", "name": "Left",     "label": "Left",     "glyph": null, "speakPhrase": "Sent Left",      "reverse": "Right",    "cssId": "Left"     },
+        { "$type": "command", "type": "TiVo", "name": "Right",    "label": "Right",    "glyph": null, "speakPhrase": "Sent Right",     "reverse": "Left",     "cssId": "Right"    },
+        { "$type": "command", "type": "TiVo", "name": "Select",   "label": "Select",   "glyph": null, "speakPhrase": "Sent Select",    "reverse": null,       "cssId": "Select"   },
+        { "$type": "command", "type": "TiVo", "name": "Back",     "label": "Back",     "glyph": null, "speakPhrase": "Sent Back",      "reverse": null,       "cssId": "Back"     },
+        { "$type": "command", "type": "IR",   "name": "Power",    "label": "Power",    "glyph": null, "speakPhrase": "Sent Power",     "reverse": "Power",    "cssId": "Power"    },
+        { "$type": "command", "type": "IR",   "name": "PowerOn",  "label": "PowerOn",  "glyph": null, "speakPhrase": "Sent PowerOn",   "reverse": "PowerOff", "cssId": "PowerOn"  },
+        { "$type": "command", "type": "IR",   "name": "PowerOff", "label": "PowerOff", "glyph": null, "speakPhrase": "Sent PowerOff",  "reverse": "PowerOn",  "cssId": "PowerOff" }
       ]
     },
     {
       "$type": "group",
       "cssId": "WELL",
       "children": [
-        { "$type": "command", "type": 1, "name": "TiVo",    "label": "TiVo",    "glyph": null, "speakPhrase": "Sent TiVo",    "reverse": null, "cssId": "TiVo"   },
-        { "$type": "command", "type": 1, "name": "Netflix",  "label": "Netflix",  "glyph": null, "speakPhrase": "Sent Netflix",  "reverse": null, "cssId": "Netflix" },
-        { "$type": "command", "type": 1, "name": "Guide",    "label": "Guide",    "glyph": null, "speakPhrase": "Sent Guide",    "reverse": null, "cssId": "Guide"   },
-        { "$type": "command", "type": 1, "name": "Info",     "label": "Info",     "glyph": null, "speakPhrase": "Sent Info",     "reverse": null, "cssId": "Info"    }
+        { "$type": "command", "type": "TiVo", "name": "TiVo",    "label": "TiVo",    "glyph": null, "speakPhrase": "Sent TiVo",    "reverse": null, "cssId": "TiVo"   },
+        { "$type": "command", "type": "TiVo", "name": "Netflix",  "label": "Netflix",  "glyph": null, "speakPhrase": "Sent Netflix",  "reverse": null, "cssId": "Netflix" },
+        { "$type": "command", "type": "TiVo", "name": "Guide",    "label": "Guide",    "glyph": null, "speakPhrase": "Sent Guide",    "reverse": null, "cssId": "Guide"   },
+        { "$type": "command", "type": "TiVo", "name": "Info",     "label": "Info",     "glyph": null, "speakPhrase": "Sent Info",     "reverse": null, "cssId": "Info"    }
       ]
     },
     {
       "$type": "group",
       "cssId": "PLAYBACK",
       "children": [
-        { "$type": "command", "type": 1, "name": "Play",   "label": "Play",   "glyph": null, "speakPhrase": "Sent Play",   "reverse": "Pause",  "cssId": "Play"   },
-        { "$type": "command", "type": 1, "name": "Pause",  "label": "Pause",  "glyph": null, "speakPhrase": "Sent Pause",  "reverse": "Play",   "cssId": "Pause"  },
-        { "$type": "command", "type": 1, "name": "Record", "label": "Record", "glyph": null, "speakPhrase": "Sent Record", "reverse": null,     "cssId": "Record" },
-        { "$type": "command", "type": 1, "name": "Skip",   "label": "Skip",   "glyph": null, "speakPhrase": "Sent Skip",   "reverse": "Replay", "cssId": "Skip"   },
-        { "$type": "command", "type": 1, "name": "Replay", "label": "Replay", "glyph": null, "speakPhrase": "Sent Replay", "reverse": "Skip",   "cssId": "Replay" }
+        { "$type": "command", "type": "TiVo", "name": "Play",   "label": "Play",   "glyph": null, "speakPhrase": "Sent Play",   "reverse": "Pause",  "cssId": "Play"   },
+        { "$type": "command", "type": "TiVo", "name": "Pause",  "label": "Pause",  "glyph": null, "speakPhrase": "Sent Pause",  "reverse": "Play",   "cssId": "Pause"  },
+        { "$type": "command", "type": "TiVo", "name": "Record", "label": "Record", "glyph": null, "speakPhrase": "Sent Record", "reverse": null,     "cssId": "Record" },
+        { "$type": "command", "type": "TiVo", "name": "Skip",   "label": "Skip",   "glyph": null, "speakPhrase": "Sent Skip",   "reverse": "Replay", "cssId": "Skip"   },
+        { "$type": "command", "type": "TiVo", "name": "Replay", "label": "Replay", "glyph": null, "speakPhrase": "Sent Replay", "reverse": "Skip",   "cssId": "Replay" }
       ]
     },
     {
       "$type": "group",
       "cssId": "CHANNELANDVOLUME",
       "children": [
-        { "$type": "command", "type": 1, "name": "ChannelUp",   "label": "Up",   "glyph": null, "speakPhrase": "Sent Channel Up",   "reverse": "ChannelDown", "cssId": "ChannelUp"   },
-        { "$type": "command", "type": 1, "name": "ChannelDown", "label": "Down", "glyph": null, "speakPhrase": "Sent Channel Down", "reverse": "ChannelUp",   "cssId": "ChannelDown" },
-        { "$type": "command", "type": 2, "name": "VolumeUp",    "label": "Up",   "glyph": null, "speakPhrase": "Sent Volume Up",    "reverse": "VolumeDown",  "cssId": "VolumeUp"    },
-        { "$type": "command", "type": 2, "name": "VolumeDown",  "label": "Down", "glyph": null, "speakPhrase": "Sent Volume Down",  "reverse": "VolumeUp",    "cssId": "VolumeDown"  },
-        { "$type": "command", "type": 2, "name": "Mute",        "label": "Mute", "glyph": null, "speakPhrase": "Sent Mute",         "reverse": "Mute",        "cssId": "Mute"        }
+        { "$type": "command", "type": "TiVo", "name": "ChannelUp",   "label": "Up",   "glyph": null, "speakPhrase": "Sent Channel Up",   "reverse": "ChannelDown", "cssId": "ChannelUp"   },
+        { "$type": "command", "type": "TiVo", "name": "ChannelDown", "label": "Down", "glyph": null, "speakPhrase": "Sent Channel Down", "reverse": "ChannelUp",   "cssId": "ChannelDown" },
+        { "$type": "command", "type": "IR",   "name": "VolumeUp",    "label": "Up",   "glyph": null, "speakPhrase": "Sent Volume Up",    "reverse": "VolumeDown",  "cssId": "VolumeUp"    },
+        { "$type": "command", "type": "IR",   "name": "VolumeDown",  "label": "Down", "glyph": null, "speakPhrase": "Sent Volume Down",  "reverse": "VolumeUp",    "cssId": "VolumeDown"  },
+        { "$type": "command", "type": "IR",   "name": "Mute",        "label": "Mute", "glyph": null, "speakPhrase": "Sent Mute",         "reverse": "Mute",        "cssId": "Mute"        }
       ]
     }
   ],

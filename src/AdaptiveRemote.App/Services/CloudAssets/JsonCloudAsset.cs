@@ -11,7 +11,7 @@ internal sealed class JsonCloudAsset<T>(
     JsonSerializerContext jsonContext)
     : BasicCloudAsset<T>(name, streamUrl, eventName, resourcePath)
 {
-    public override async Task<object> ParseAsync(Stream stream, CancellationToken ct)
+    public override async Task<object> DeserializeAsync(Stream stream, CancellationToken ct)
     {
         object? result = await JsonSerializer.DeserializeAsync(stream, typeof(T), jsonContext, ct);
         return result ?? throw new InvalidOperationException(

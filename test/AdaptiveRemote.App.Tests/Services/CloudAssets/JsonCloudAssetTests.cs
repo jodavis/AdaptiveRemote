@@ -1,51 +1,39 @@
 using System.Text;
 using System.Text.Json;
-using AdaptiveRemote.Contracts;
+using System.Text.Json.Serialization;
 using FluentAssertions;
 
 namespace AdaptiveRemote.Services.CloudAssets;
 
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(TestAsset))]
+internal partial class TestAssetJsonContext : JsonSerializerContext { }
+
+internal record TestAsset(string Name, int Value);
+
 [TestClass]
 public class JsonCloudAssetTests
 {
-    private static JsonCloudAsset<CompiledLayout> MakeSut() =>
-        new("layout", "/stream", "layout-ready", "/layouts/compiled",
-            LayoutContractsJsonContext.Default);
+    private static JsonCloudAsset<TestAsset> MakeSut() =>
+        new("asset", "/stream", "asset-ready", "/assets",
+            TestAssetJsonContext.Default);
 
     [TestMethod]
-    public async Task JsonCloudAsset_ParseAsync_CorrectlyDeserializesCompiledLayoutAsync()
+    public async Task JsonCloudAsset_DeserializeAsync_CorrectlyDeserializesAsync()
     {
         // Arrange
-        CompiledLayout expected = new(
-            Id: Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            RawLayoutId: Guid.Empty,
-            UserId: "test-user",
-            IsActive: true,
-            Version: 42,
-            Elements: [
-                new LayoutGroupDefinitionDto("GROUP", [
-                    new CommandDefinitionDto(CommandType.TiVo, "Play", "Play", null, "Sent Play", "Pause", "Play"),
-                ])
-            ],
-            CssDefinitions: "body { color: red; }",
-            CompiledAt: new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
-
-        string json = JsonSerializer.Serialize(expected, LayoutContractsJsonContext.Default.CompiledLayout);
+        TestAsset expected = new("test-name", 42);
+        string json = JsonSerializer.Serialize(expected, TestAssetJsonContext.Default.TestAsset);
         using MemoryStream stream = new(Encoding.UTF8.GetBytes(json));
-        JsonCloudAsset<CompiledLayout> sut = MakeSut();
+        JsonCloudAsset<TestAsset> sut = MakeSut();
 
         // Act
-        object result = await sut.ParseAsync(stream, CancellationToken.None);
+        object result = await sut.DeserializeAsync(stream, CancellationToken.None);
 
         // Assert
-        result.Should().BeOfType<CompiledLayout>();
-        CompiledLayout layout = (CompiledLayout)result;
-        layout.Id.Should().Be(expected.Id);
-        layout.UserId.Should().Be("test-user");
-        layout.Version.Should().Be(42);
-        layout.CssDefinitions.Should().Be("body { color: red; }");
-        layout.Elements.Should().HaveCount(1);
-        layout.Elements[0].Should().BeOfType<LayoutGroupDefinitionDto>()
-            .Which.CssId.Should().Be("GROUP");
+        result.Should().BeOfType<TestAsset>();
+        TestAsset asset = (TestAsset)result;
+        asset.Name.Should().Be("test-name");
+        asset.Value.Should().Be(42);
     }
 }

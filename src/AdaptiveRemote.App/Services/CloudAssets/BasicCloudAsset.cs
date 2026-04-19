@@ -15,5 +15,5 @@ internal abstract class BasicCloudAsset<T> : ICloudAsset<T>
         ResourcePath = resourcePath;
     }
 
-    public abstract Task<object> ParseAsync(Stream stream, CancellationToken ct);
+    public abstract Task<object> DeserializeAsync(Stream stream, CancellationToken ct);
 }
