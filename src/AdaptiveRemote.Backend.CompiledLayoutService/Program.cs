@@ -82,8 +82,8 @@ app.Run();
 static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logger)
 {
     const int LocalStackHealthCheckTimeoutSeconds = 5;
-    TimeSpan localStackStartupWaitTimeout = TimeSpan.FromSeconds(30);
-    TimeSpan localStackRetryDelay = TimeSpan.FromSeconds(2);
+    TimeSpan LocalStackStartupWaitTimeout = TimeSpan.FromSeconds(30);
+    TimeSpan LocalStackRetryDelay = TimeSpan.FromSeconds(2);
     string[] requiredServices = ["dynamodb", "lambda", "sqs"];
 
     string baseUrl = app.Configuration["LocalStack:BaseUrl"] ?? "http://localhost:4566";
@@ -98,8 +98,8 @@ static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logge
 
     using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(LocalStackHealthCheckTimeoutSeconds) };
     Exception? lastException = null;
-    string lastFailureReason = "unknown health check failure";
-    DateTime deadlineUtc = DateTime.UtcNow.Add(localStackStartupWaitTimeout);
+    string? lastFailureReason = null;
+    DateTime deadlineUtc = DateTime.UtcNow.Add(LocalStackStartupWaitTimeout);
 
     while (DateTime.UtcNow < deadlineUtc)
     {
@@ -131,12 +131,12 @@ static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logge
             lastFailureReason = ex.Message;
         }
 
-        await Task.Delay(localStackRetryDelay).ConfigureAwait(false);
+        await Task.Delay(LocalStackRetryDelay).ConfigureAwait(false);
     }
 
     logger.LocalStackDependencyUnavailable(
         healthUri.ToString(),
-        $"did not become healthy within {localStackStartupWaitTimeout.TotalSeconds:0}s; last check result: {lastFailureReason}",
+        $"did not become healthy within {LocalStackStartupWaitTimeout.TotalSeconds:0}s; last check result: {lastFailureReason ?? "unknown health check failure"}",
         lastException);
     Environment.Exit(1);
 }
