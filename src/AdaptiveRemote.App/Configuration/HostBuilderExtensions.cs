@@ -29,7 +29,12 @@ internal static class HostBuilderExtensions
         => services
             .AddApplicationLifecycleServices()
             .AddCloudAssetServices()
-            .AddScopedCloudAsset<CompiledLayout>("layout")
+            .AddScopedCloudAsset(new JsonCloudAsset<CompiledLayout>(
+                name: "layout",
+                streamUrl: "/notifications/layouts/stream",
+                eventName: "layout-ready",
+                resourcePath: "/layouts/compiled",
+                jsonContext: LayoutContractsJsonContext.Default))
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
             .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>()

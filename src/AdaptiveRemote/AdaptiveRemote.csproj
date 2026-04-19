@@ -23,6 +23,7 @@
   <ItemGroup>
     <Content Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Update="appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Update="dev\layout.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

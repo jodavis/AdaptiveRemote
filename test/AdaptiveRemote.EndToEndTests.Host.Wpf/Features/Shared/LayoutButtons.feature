@@ -29,6 +29,7 @@ Scenario: All expected buttons from layout are present
 	And I should see the 'TiVo' button is enabled
 	And I should see the 'Netflix' button is enabled
 	And I should see the 'Guide' button is enabled
+	And I should see the 'Info' button is enabled
 	# PLAYBACK group
 	And I should see the 'Play' button is enabled
 	And I should see the 'Pause' button is enabled
