@@ -11,37 +11,36 @@ namespace AdaptiveRemote.Services.Layout;
 /// </summary>
 internal class RemoteLayoutDefinitionService : IRemoteDefinitionService
 {
-    private readonly ICloudAssetStore _store;
+    private readonly Lazy<RemoteLayoutElement> _remoteRoot;
 
     public RemoteLayoutDefinitionService(ICloudAssetStore store)
     {
-        _store = store;
+        _remoteRoot = new Lazy<RemoteLayoutElement>(() => BuildRoot(store));
     }
 
-    public RemoteLayoutElement RemoteRoot
+    public RemoteLayoutElement RemoteRoot => _remoteRoot.Value;
+
+    private static RemoteLayoutElement BuildRoot(ICloudAssetStore store)
     {
-        get
+        CompiledLayout layout;
+        try
         {
-            CompiledLayout layout;
-            try
-            {
-                layout = _store.GetLayout();
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException(
-                    "Failed to load layout from CloudAssetStore. " +
-                    "Ensure CloudAssetOrchestrator has completed initialization before the first scope is created.",
-                    ex);
-            }
-
-            List<RemoteLayoutElement> elements = layout.Elements
-                .Select(MapElement)
-                .ToList();
-            elements.Add(BuildGutter());
-
-            return new LayoutGroup("ROOT", elements);
+            layout = store.GetLayout();
         }
+        catch (InvalidOperationException ex)
+        {
+            throw new InvalidOperationException(
+                "Failed to load layout from CloudAssetStore. " +
+                "Ensure CloudAssetOrchestrator has completed initialization before the first scope is created.",
+                ex);
+        }
+
+        List<RemoteLayoutElement> elements = layout.Elements
+            .Select(MapElement)
+            .ToList();
+        elements.Add(BuildGutter());
+
+        return new LayoutGroup("ROOT", elements);
     }
 
     private static RemoteLayoutElement MapElement(LayoutElementDto dto) => dto switch
