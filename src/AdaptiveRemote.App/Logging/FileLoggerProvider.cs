@@ -17,7 +17,7 @@ public sealed class FileLoggerProvider : ILoggerProvider
             Directory.CreateDirectory(dir);
         }
 
-        FileStream stream = new(path, FileMode.Append, FileAccess.Write, FileShare.Read);
+        FileStream stream = new(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
         _writer = new StreamWriter(stream) { AutoFlush = true };
     }
 
