@@ -1,102 +1,194 @@
+using AdaptiveRemote.Contracts;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.Services.CloudAssets;
 using FluentAssertions;
-using Moq;
 
 namespace AdaptiveRemote.Services.Layout;
 
 [TestClass]
 public class RemoteLayoutDefinitionServiceTests
 {
-    private readonly Mock<ICloudAssetStore> _mockStore = new();
-
-    [TestCleanup]
-    public void VerifyMocks()
-    {
-        _mockStore.Verify();
-    }
+    private static CompiledLayout MakeLayout(params LayoutElementDto[] elements) =>
+        new(Guid.Empty, Guid.Empty, "stub", true, 1, elements, "", DateTimeOffset.UtcNow);
 
     [TestMethod]
-    public void RemoteLayoutDefinitionService_RemoteRoot_ReturnsStoreContents()
+    public void RemoteLayoutDefinitionService_RemoteRoot_MapsTiVoCommandCorrectly()
     {
         // Arrange
-        LayoutGroup expectedLayout = new("ROOT", []);
-        _mockStore.Setup(s => s.Get<LayoutGroup>("layout"))
-            .Returns(expectedLayout)
-            .Verifiable();
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("GROUP",
+            [
+                new CommandDefinitionDto(CommandType.TiVo, "Play", "Play", null, "Sent Play", "Pause", "Play"),
+            ]));
 
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
-        RemoteLayoutElement actualRoot = sut.RemoteRoot;
+        LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
+        LayoutGroup group = (LayoutGroup)root.Elements.First();
+        TiVoCommand cmd = (TiVoCommand)group.Elements.First();
 
         // Assert
-        actualRoot.Should().BeSameAs(expectedLayout);
+        cmd.Name.Should().Be("Play");
+        cmd.Reverse.Should().Be("Pause");
+        cmd.SpeakPhrase.Should().Be("Sent Play");
     }
 
     [TestMethod]
-    public void RemoteLayoutDefinitionService_RemoteRoot_EmptyStoreThrowsDescriptiveError()
+    public void RemoteLayoutDefinitionService_RemoteRoot_MapsIRCommandCorrectly()
     {
         // Arrange
-        _mockStore.Setup(s => s.Get<LayoutGroup>("layout"))
-            .Throws(new InvalidOperationException("Asset 'layout' not found in store."))
-            .Verifiable();
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("GROUP",
+            [
+                new CommandDefinitionDto(CommandType.IR, "VolumeUp", "Up", null, "Sent Volume Up", "VolumeDown", "VolumeUp"),
+            ]));
 
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
-        Action act = () => _ = sut.RemoteRoot;
+        LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
+        LayoutGroup group = (LayoutGroup)root.Elements.First();
+        RemoteLayoutElement cmd = group.Elements.First();
+
+        // Assert
+        cmd.Should().BeOfType<IRCommand>();
+        cmd.As<IRCommand>().Name.Should().Be("VolumeUp");
+        cmd.As<IRCommand>().SpeakPhrase.Should().Be("Sent Volume Up");
+    }
+
+    [TestMethod]
+    public void RemoteLayoutDefinitionService_RemoteRoot_MapsLifecycleCommandCorrectly()
+    {
+        // Arrange
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("GROUP",
+            [
+                new CommandDefinitionDto(CommandType.Lifecycle, "Exit", "Exit", null, "Goodbye", null, "Exit"),
+            ]));
+
+        RemoteLayoutDefinitionService sut = new(layout);
+
+        // Act
+        LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
+        LayoutGroup group = (LayoutGroup)root.Elements.First();
+        RemoteLayoutElement cmd = group.Elements.First();
+
+        // Assert
+        cmd.Should().BeOfType<LifecycleCommand>();
+        cmd.As<LifecycleCommand>().Name.Should().Be("Exit");
+    }
+
+    [TestMethod]
+    public void RemoteLayoutDefinitionService_RemoteRoot_MapsLayoutGroupCorrectly()
+    {
+        // Arrange
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("DPAD",
+            [
+                new CommandDefinitionDto(CommandType.TiVo, "Up",   "Up",   null, "Sent Up",   "Down", "Up"),
+                new CommandDefinitionDto(CommandType.TiVo, "Down", "Down", null, "Sent Down", "Up",   "Down"),
+            ]));
+
+        RemoteLayoutDefinitionService sut = new(layout);
+
+        // Act
+        LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
+        LayoutGroup dpad = (LayoutGroup)root.Elements.First();
+
+        // Assert
+        dpad.CSSID.Should().Be("DPAD");
+        dpad.Elements.Should().HaveCount(2);
+    }
+
+    [TestMethod]
+    public void RemoteLayoutDefinitionService_RemoteRoot_GutterAlwaysAppendedAsLastChild()
+    {
+        // Arrange
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("DPAD",
+            [
+                new CommandDefinitionDto(CommandType.TiVo, "Up", "Up", null, "Sent Up", null, "Up"),
+            ]));
+
+        RemoteLayoutDefinitionService sut = new(layout);
+
+        // Act
+        LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
+        RemoteLayoutElement lastChild = root.Elements.Last();
+
+        // Assert
+        lastChild.Should().BeOfType<LayoutGroup>();
+        LayoutGroup gutter = (LayoutGroup)lastChild;
+        gutter.CSSID.Should().Be("GUTTER");
+
+        List<RemoteLayoutElement> gutterElements = gutter.Elements.ToList();
+        gutterElements.Should().HaveCount(3);
+        gutterElements[0].Should().BeOfType<ConversationView>();
+        gutterElements[1].Should().BeOfType<LifecycleCommand>()
+            .Which.Name.Should().Be("Learn");
+        gutterElements[2].Should().BeOfType<LifecycleCommand>()
+            .Which.Name.Should().Be("Exit");
+    }
+
+    [TestMethod]
+    public void RemoteLayoutDefinitionService_RemoteRoot_UnknownCommandTypeThrows()
+    {
+        // Arrange
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("GROUP",
+            [
+                new CommandDefinitionDto((CommandType)99, "Unknown", "Unknown", null, "Unknown", null, "Unknown"),
+            ]));
+
+        // Act
+        Action act = () => _ = new RemoteLayoutDefinitionService(layout);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Failed to load layout from CloudAssetStore.*");
+            .WithMessage("*Unknown CommandType*");
     }
 
     [TestMethod]
-    public void RemoteLayoutDefinitionService_RemoteRoot_WrongTypeThrowsDescriptiveError()
+    public void RemoteLayoutDefinitionService_RemoteRoot_GutterInLayoutThrowsDescriptiveError()
     {
         // Arrange
-        _mockStore.Setup(s => s.Get<LayoutGroup>("layout"))
-            .Throws(new InvalidOperationException("Asset 'layout' is of type 'String', but 'LayoutGroup' was requested."))
-            .Verifiable();
-
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("GUTTER",
+            [
+                new CommandDefinitionDto(CommandType.Lifecycle, "Exit", "Exit", null, "Goodbye", null, "Exit"),
+            ]));
 
         // Act
-        Action act = () => _ = sut.RemoteRoot;
+        Action act = () => _ = new RemoteLayoutDefinitionService(layout);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Failed to load layout from CloudAssetStore.*");
+            .WithMessage("*already contains a GUTTER*");
     }
 
     [TestMethod]
-    public void RemoteLayoutDefinitionService_RemoteRoot_ReturnsComplexLayout()
+    public void RemoteLayoutDefinitionService_RemoteRoot_MapsNestedGroupsRecursively()
     {
         // Arrange
-        LayoutGroup expectedLayout = new("ROOT",
-        [
-            new LayoutGroup("GROUP1",
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("OUTER",
             [
-                new TiVoCommand("Up"),
-                new TiVoCommand("Down"),
-            ]),
-            new LayoutGroup("GROUP2",
-            [
-                new IRCommand("Power"),
-            ])
-        ]);
+                new LayoutGroupDefinitionDto("INNER",
+                [
+                    new CommandDefinitionDto(CommandType.TiVo, "Select", "Select", null, "Sent Select", null, "Select"),
+                ]),
+            ]));
 
-        _mockStore.Setup(s => s.Get<LayoutGroup>("layout"))
-            .Returns(expectedLayout)
-            .Verifiable();
-
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
-        RemoteLayoutElement actualRoot = sut.RemoteRoot;
+        LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
+        LayoutGroup outer = (LayoutGroup)root.Elements.First();
+        LayoutGroup inner = (LayoutGroup)outer.Elements.First();
 
         // Assert
-        actualRoot.Should().BeSameAs(expectedLayout);
+        outer.CSSID.Should().Be("OUTER");
+        inner.CSSID.Should().Be("INNER");
+        inner.Elements.First().Should().BeOfType<TiVoCommand>();
     }
 }
