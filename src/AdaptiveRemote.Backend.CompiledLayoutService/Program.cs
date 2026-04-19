@@ -82,43 +82,63 @@ app.Run();
 static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logger)
 {
     const int LocalStackHealthCheckTimeoutSeconds = 5;
+    TimeSpan localStackStartupWaitTimeout = TimeSpan.FromSeconds(30);
+    TimeSpan localStackRetryDelay = TimeSpan.FromSeconds(2);
     string[] requiredServices = ["dynamodb", "lambda", "sqs"];
 
     string baseUrl = app.Configuration["LocalStack:BaseUrl"] ?? "http://localhost:4566";
 
     if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseUri))
     {
-        logger.LocalStackDependencyUnavailable(baseUrl, "configuration value is not a valid absolute URL");
+        logger.LocalStackDependencyUnavailable(baseUrl, "configuration value is not a valid absolute URL", exception: null);
         Environment.Exit(1);
     }
 
     Uri healthUri = new(baseUri, "/_localstack/health");
 
     using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(LocalStackHealthCheckTimeoutSeconds) };
+    Exception? lastException = null;
+    string lastFailureReason = "unknown health check failure";
+    DateTime deadlineUtc = DateTime.UtcNow.Add(localStackStartupWaitTimeout);
 
-    try
+    while (DateTime.UtcNow < deadlineUtc)
     {
-        using HttpResponseMessage response = await client.GetAsync(healthUri).ConfigureAwait(false);
-        string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            logger.LocalStackDependencyUnavailable(healthUri.ToString(), $"HTTP {(int)response.StatusCode}");
-            Environment.Exit(1);
+            using HttpResponseMessage response = await client.GetAsync(healthUri).ConfigureAwait(false);
+            string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                lastFailureReason = $"HTTP {(int)response.StatusCode}";
+            }
+            else
+            {
+                using JsonDocument json = JsonDocument.Parse(body);
+                if (IsLocalStackRunning(json.RootElement, requiredServices, out string failureReason))
+                {
+                    return;
+                }
+
+                lastFailureReason = failureReason;
+            }
+
+            lastException = null;
+        }
+        catch (Exception ex)
+        {
+            lastException = ex;
+            lastFailureReason = ex.Message;
         }
 
-        using JsonDocument json = JsonDocument.Parse(body);
-        if (!IsLocalStackRunning(json.RootElement, requiredServices, out string failureReason))
-        {
-            logger.LocalStackDependencyUnavailable(healthUri.ToString(), failureReason);
-            Environment.Exit(1);
-        }
+        await Task.Delay(localStackRetryDelay).ConfigureAwait(false);
     }
-    catch (Exception ex)
-    {
-        logger.LocalStackDependencyUnavailable(healthUri.ToString(), ex.Message);
-        Environment.Exit(1);
-    }
+
+    logger.LocalStackDependencyUnavailable(
+        healthUri.ToString(),
+        $"did not become healthy within {localStackStartupWaitTimeout.TotalSeconds:0}s; last check result: {lastFailureReason}",
+        lastException);
+    Environment.Exit(1);
 }
 
 static bool IsLocalStackRunning(JsonElement root, IReadOnlyList<string> requiredServices, out string failureReason)

@@ -38,5 +38,5 @@ public static partial class MessageLogger
         EventId = 1108,
         Level = LogLevel.Error,
         Message = "LocalStack dependency check failed at {HealthUrl}: {FailureReason}. LocalStack is required for local development. See docs/local-dev.md for setup instructions")]
-    public static partial void LocalStackDependencyUnavailable(this ILogger logger, string healthUrl, string failureReason);
+    public static partial void LocalStackDependencyUnavailable(this ILogger logger, string healthUrl, string failureReason, Exception? exception);
 }

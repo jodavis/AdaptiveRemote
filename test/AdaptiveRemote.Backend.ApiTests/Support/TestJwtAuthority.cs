@@ -11,7 +11,7 @@ namespace AdaptiveRemote.Backend.ApiTests.Support;
 /// A minimal local OIDC/JWKS authority used by API integration tests to issue and
 /// validate JWTs without a real Cognito user pool.
 ///
-/// Exposes two endpoints on a dynamically-assigned localhost port:
+/// Exposes three endpoints on a dynamically-assigned localhost port:
 ///   GET /.well-known/openid-configuration  — OIDC discovery document
 ///   GET /.well-known/jwks.json             — RSA public key in JWK format
 ///   GET /_localstack/health                — LocalStack-compatible health response
