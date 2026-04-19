@@ -29,7 +29,7 @@ internal static class HostBuilderExtensions
         => services
             .AddApplicationLifecycleServices()
             .AddCloudAssetServices()
-            .AddScoped(sp => sp.GetRequiredService<ICloudAssetStore>().Get<CompiledLayout>("layout"))
+            .AddScopedCloudAsset<CompiledLayout>("layout")
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
             .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>()

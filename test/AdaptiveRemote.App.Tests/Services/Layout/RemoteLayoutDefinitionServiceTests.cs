@@ -1,22 +1,12 @@
 using AdaptiveRemote.Contracts;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.Services.CloudAssets;
 using FluentAssertions;
-using Moq;
 
 namespace AdaptiveRemote.Services.Layout;
 
 [TestClass]
 public class RemoteLayoutDefinitionServiceTests
 {
-    private readonly Mock<ICloudAssetStore> _mockStore = new();
-
-    [TestCleanup]
-    public void VerifyMocks()
-    {
-        _mockStore.Verify();
-    }
-
     private static CompiledLayout MakeLayout(params LayoutElementDto[] elements) =>
         new(Guid.Empty, Guid.Empty, "stub", true, 1, elements, "", DateTimeOffset.UtcNow);
 
@@ -27,11 +17,10 @@ public class RemoteLayoutDefinitionServiceTests
         CompiledLayout layout = MakeLayout(
             new LayoutGroupDefinitionDto("GROUP",
             [
-                new CommandDefinitionDto(CommandType.TiVo, "Play", "Play", null, "Play", "Pause", "Play"),
+                new CommandDefinitionDto(CommandType.TiVo, "Play", "Play", null, "Sent Play", "Pause", "Play"),
             ]));
-        _mockStore.Setup(s => s.Get<CompiledLayout>("layout")).Returns(layout).Verifiable();
 
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
         LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
@@ -41,6 +30,7 @@ public class RemoteLayoutDefinitionServiceTests
         // Assert
         cmd.Name.Should().Be("Play");
         cmd.Reverse.Should().Be("Pause");
+        cmd.SpeakPhrase.Should().Be("Sent Play");
     }
 
     [TestMethod]
@@ -50,11 +40,10 @@ public class RemoteLayoutDefinitionServiceTests
         CompiledLayout layout = MakeLayout(
             new LayoutGroupDefinitionDto("GROUP",
             [
-                new CommandDefinitionDto(CommandType.IR, "VolumeUp", "Up", null, "Volume Up", "VolumeDown", "VolumeUp"),
+                new CommandDefinitionDto(CommandType.IR, "VolumeUp", "Up", null, "Sent Volume Up", "VolumeDown", "VolumeUp"),
             ]));
-        _mockStore.Setup(s => s.Get<CompiledLayout>("layout")).Returns(layout).Verifiable();
 
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
         LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
@@ -64,6 +53,7 @@ public class RemoteLayoutDefinitionServiceTests
         // Assert
         cmd.Should().BeOfType<IRCommand>();
         cmd.As<IRCommand>().Name.Should().Be("VolumeUp");
+        cmd.As<IRCommand>().SpeakPhrase.Should().Be("Sent Volume Up");
     }
 
     [TestMethod]
@@ -75,9 +65,8 @@ public class RemoteLayoutDefinitionServiceTests
             [
                 new CommandDefinitionDto(CommandType.Lifecycle, "Exit", "Exit", null, "Goodbye", null, "Exit"),
             ]));
-        _mockStore.Setup(s => s.Get<CompiledLayout>("layout")).Returns(layout).Verifiable();
 
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
         LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
@@ -96,12 +85,11 @@ public class RemoteLayoutDefinitionServiceTests
         CompiledLayout layout = MakeLayout(
             new LayoutGroupDefinitionDto("DPAD",
             [
-                new CommandDefinitionDto(CommandType.TiVo, "Up",   "Up",   null, "Up",   "Down", "Up"),
-                new CommandDefinitionDto(CommandType.TiVo, "Down", "Down", null, "Down", "Up",   "Down"),
+                new CommandDefinitionDto(CommandType.TiVo, "Up",   "Up",   null, "Sent Up",   "Down", "Up"),
+                new CommandDefinitionDto(CommandType.TiVo, "Down", "Down", null, "Sent Down", "Up",   "Down"),
             ]));
-        _mockStore.Setup(s => s.Get<CompiledLayout>("layout")).Returns(layout).Verifiable();
 
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
         LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
@@ -119,11 +107,10 @@ public class RemoteLayoutDefinitionServiceTests
         CompiledLayout layout = MakeLayout(
             new LayoutGroupDefinitionDto("DPAD",
             [
-                new CommandDefinitionDto(CommandType.TiVo, "Up", "Up", null, "Up", null, "Up"),
+                new CommandDefinitionDto(CommandType.TiVo, "Up", "Up", null, "Sent Up", null, "Up"),
             ]));
-        _mockStore.Setup(s => s.Get<CompiledLayout>("layout")).Returns(layout).Verifiable();
 
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
         LayoutGroup root = (LayoutGroup)sut.RemoteRoot;
@@ -152,12 +139,9 @@ public class RemoteLayoutDefinitionServiceTests
             [
                 new CommandDefinitionDto((CommandType)99, "Unknown", "Unknown", null, "Unknown", null, "Unknown"),
             ]));
-        _mockStore.Setup(s => s.Get<CompiledLayout>("layout")).Returns(layout).Verifiable();
-
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
 
         // Act
-        Action act = () => _ = sut.RemoteRoot;
+        Action act = () => _ = new RemoteLayoutDefinitionService(layout);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -165,21 +149,21 @@ public class RemoteLayoutDefinitionServiceTests
     }
 
     [TestMethod]
-    public void RemoteLayoutDefinitionService_RemoteRoot_EmptyStoreThrowsDescriptiveError()
+    public void RemoteLayoutDefinitionService_RemoteRoot_GutterInLayoutThrowsDescriptiveError()
     {
         // Arrange
-        _mockStore.Setup(s => s.Get<CompiledLayout>("layout"))
-            .Throws(new InvalidOperationException("Asset 'layout' not found in store."))
-            .Verifiable();
-
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        CompiledLayout layout = MakeLayout(
+            new LayoutGroupDefinitionDto("GUTTER",
+            [
+                new CommandDefinitionDto(CommandType.Lifecycle, "Exit", "Exit", null, "Goodbye", null, "Exit"),
+            ]));
 
         // Act
-        Action act = () => _ = sut.RemoteRoot;
+        Action act = () => _ = new RemoteLayoutDefinitionService(layout);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("Failed to load layout from CloudAssetStore.*");
+            .WithMessage("*already contains a GUTTER*");
     }
 
     [TestMethod]
@@ -191,12 +175,11 @@ public class RemoteLayoutDefinitionServiceTests
             [
                 new LayoutGroupDefinitionDto("INNER",
                 [
-                    new CommandDefinitionDto(CommandType.TiVo, "Select", "Select", null, "Select", null, "Select"),
+                    new CommandDefinitionDto(CommandType.TiVo, "Select", "Select", null, "Sent Select", null, "Select"),
                 ]),
             ]));
-        _mockStore.Setup(s => s.Get<CompiledLayout>("layout")).Returns(layout).Verifiable();
 
-        RemoteLayoutDefinitionService sut = new(_mockStore.Object);
+        RemoteLayoutDefinitionService sut = new(layout);
 
         // Act
         LayoutGroup root = (LayoutGroup)sut.RemoteRoot;

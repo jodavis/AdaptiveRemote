@@ -1,38 +1,24 @@
 using AdaptiveRemote.Contracts;
 using AdaptiveRemote.Models;
-using AdaptiveRemote.Services.CloudAssets;
 
 namespace AdaptiveRemote.Services.Layout;
 
-/// <summary>
-/// RemoteLayoutDefinitionService v2: reads CompiledLayout from ICloudAssetStore,
-/// maps the element tree to runtime types per the DTO mapping table, and appends
-/// a hardcoded GUTTER as the last root child.
-/// </summary>
 internal class RemoteLayoutDefinitionService : IRemoteDefinitionService
 {
-    private readonly Lazy<RemoteLayoutElement> _remoteRoot;
+    public RemoteLayoutElement RemoteRoot { get; }
 
-    public RemoteLayoutDefinitionService(ICloudAssetStore store)
+    public RemoteLayoutDefinitionService(CompiledLayout layout)
     {
-        _remoteRoot = new Lazy<RemoteLayoutElement>(() => BuildRoot(store));
+        RemoteRoot = BuildRoot(layout);
     }
 
-    public RemoteLayoutElement RemoteRoot => _remoteRoot.Value;
-
-    private static RemoteLayoutElement BuildRoot(ICloudAssetStore store)
+    private static RemoteLayoutElement BuildRoot(CompiledLayout layout)
     {
-        CompiledLayout layout;
-        try
-        {
-            layout = store.GetLayout();
-        }
-        catch (InvalidOperationException ex)
+        if (layout.Elements.Any(e => e.CssId == "GUTTER"))
         {
             throw new InvalidOperationException(
-                "Failed to load layout from CloudAssetStore. " +
-                "Ensure CloudAssetOrchestrator has completed initialization before the first scope is created.",
-                ex);
+                "The CompiledLayout already contains a GUTTER element. " +
+                "The client appends its own GUTTER; the server must not include one.");
         }
 
         List<RemoteLayoutElement> elements = layout.Elements
@@ -54,12 +40,12 @@ internal class RemoteLayoutDefinitionService : IRemoteDefinitionService
             CommandType.TiVo => new TiVoCommand(
                 cmd.Name, placement: null, label: cmd.Label,
                 cssid: cmd.CssId, glyph: cmd.Glyph, reverse: cmd.Reverse,
-                speakName: cmd.SpeakPhrase),
+                speakPhrase: cmd.SpeakPhrase),
 
             CommandType.IR => new IRCommand(
                 cmd.Name, placement: null, label: cmd.Label,
                 cssid: cmd.CssId, glyph: cmd.Glyph, reverse: cmd.Reverse,
-                speakName: cmd.SpeakPhrase),
+                speakPhrase: cmd.SpeakPhrase),
 
             CommandType.Lifecycle => new LifecycleCommand(
                 cmd.Name, placement: null, label: cmd.Label,
