@@ -1,4 +1,5 @@
-﻿using AdaptiveRemote.Services;
+﻿using AdaptiveRemote.Contracts;
+using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.CloudAssets;
 using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Layout;
@@ -28,6 +29,7 @@ internal static class HostBuilderExtensions
         => services
             .AddApplicationLifecycleServices()
             .AddCloudAssetServices()
+            .AddScopedCloudAsset<CompiledLayout>("layout")
             .AddScopedLifecycleService<LifecycleCommandService>()
             .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
             .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>()
