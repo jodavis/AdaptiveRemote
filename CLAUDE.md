@@ -75,16 +75,32 @@ mock verification. Group setup calls into `Expect_*` helper methods.
 ### E2E tests
 Prefer the Headless host for new E2E tests — cross-platform, no display required:
 
-**IMPORTANT:** Before running E2E tests for the first time, you must install Playwright browsers:
+**IMPORTANT:** Before running E2E tests for the first time, you must set up Playwright browsers.
+
+**On developer machines (Windows/Mac/Linux with internet access):**
 ```bash
 # Build the Headless host first (required to generate the Playwright installation script)
 dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj
+
+# Install Playwright browsers (one-time setup)
 pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium  # if tests crash at startup with a JSON-RPC disconnect
+
 dotnet test --filter "FullyQualifiedName~Host.Headless"
 ```
 
-If E2E tests fail with JSON-RPC connection errors, the most likely cause is that Playwright browsers
-are not installed. Run the `playwright.ps1 install chromium` command above to fix this.
+**In Claude Code cloud sandbox environments** (where `cdn.playwright.dev` is blocked by network
+policy): browsers are pre-installed at `/opt/pw-browsers` and the environment should be configured to use them automatically,
+but if you encounter JSON-RPC disconnect errors, run the setup script instead:
+```bash
+bash scripts/setup-playwright-sandbox.sh
+```
+Then run E2E tests with:
+```bash
+PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers dotnet test --filter "FullyQualifiedName~Host.Headless"
+```
+
+If Headless E2E tests fail with JSON-RPC connection errors, the most likely cause is that Playwright browsers
+are not set up. Follow the appropriate instructions above for your environment.
 
 ## Documentation
 
