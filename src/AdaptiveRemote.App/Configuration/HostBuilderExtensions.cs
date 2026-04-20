@@ -1,6 +1,5 @@
 ﻿using AdaptiveRemote.Contracts;
 using AdaptiveRemote.Services;
-using AdaptiveRemote.Services.CloudAssets;
 using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Layout;
 using AdaptiveRemote.Services.Lifecycle;
@@ -28,7 +27,7 @@ internal static class HostBuilderExtensions
     internal static IServiceCollection AddRemoteServices(this IServiceCollection services, IConfiguration configuration)
         => services
             .AddApplicationLifecycleServices()
-            .AddCloudAssetServices()
+            .AddCloudAssetServices(configuration.GetSection(SettingsKeys.CloudSettings))
             .AddScopedCloudAsset(new JsonCloudAsset<CompiledLayout>(
                 name: "layout",
                 streamUrl: "/notifications/layouts/stream",
@@ -39,8 +38,7 @@ internal static class HostBuilderExtensions
             .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
             .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>()
             .AddSingleton<IPersistSettings, PersistSettings>()
-            .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings))
-            .Configure<CloudSettings>(configuration.GetSection("CloudSettings"));
+            .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings));
 
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle

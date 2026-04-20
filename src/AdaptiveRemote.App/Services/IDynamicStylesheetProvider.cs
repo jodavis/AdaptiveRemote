@@ -1,4 +1,4 @@
-namespace AdaptiveRemote.Services.Layout;
+namespace AdaptiveRemote.Services;
 
 /// <summary>
 /// Scoped. Returns the CSS for the active layout in this scope.
