@@ -46,4 +46,9 @@ internal class SettingsKeys
     /// Configuration section for <see cref="Services.Backend.BackendSettings"/> backend service settings.
     /// </summary>
     public const string Backend = "backend";
+
+    /// <summary>
+    /// Configuration section for <see cref="Services.CloudAssets.CloudSettings"/> backend service settings.
+    /// </summary>
+    public const string CloudSettings = "cloud";
 }

@@ -80,6 +80,8 @@ public class PlaywrightUITestService : IUITestService
     {
         // Use Playwright's getByRole with exact match - it will throw meaningful errors
         // if there are no matches or ambiguous matches
+        
+        // TODO: Find by aria name instead
         return label switch
         {
             // DPAD buttons (Nth(0) - first occurrence)
