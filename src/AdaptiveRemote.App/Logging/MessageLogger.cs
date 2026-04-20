@@ -349,6 +349,14 @@ internal partial class MessageLogger
 
     // 1600–1699: CognitoTokenService
 
+    // 1700–1799: CloudAssetOrchestrator
+
+    [LoggerMessage(EventId = 1700, Level = LogLevel.Information, Message = "Downloading asset '{AssetName}'")]
+    public partial void CloudAssetOrchestrator_Downloading(string assetName);
+
+    [LoggerMessage(EventId = 1701, Level = LogLevel.Error, Message = "Failed to initialize cloud assets")]
+    public partial void CloudAssetOrchestrator_Failed(Exception error);
+
     [LoggerMessage(EventId = 1600, Level = LogLevel.Information, Message = "Acquiring Cognito access token via Client Credentials flow")]
     public partial void CognitoTokenService_AcquiringToken();
 
