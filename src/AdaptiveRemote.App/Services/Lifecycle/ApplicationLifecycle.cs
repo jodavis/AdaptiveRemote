@@ -1,4 +1,4 @@
-﻿using AdaptiveRemote.Logging;
+using AdaptiveRemote.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -9,6 +9,7 @@ internal class ApplicationLifecycle : BackgroundService
 {
     private readonly IApplicationScopeProvider _scopeProvider;
     private readonly ILifecycleViewController _viewController;
+    private readonly IApplicationRecycleSignal _signal;
     private readonly IEnumerable<IPreScopeInitializer> _preInitializers;
     private readonly MessageLogger _logger;
     private ScopedLifecycleContainer? _currentContainer;
@@ -16,11 +17,13 @@ internal class ApplicationLifecycle : BackgroundService
     public ApplicationLifecycle(
         IApplicationScopeProvider scopeProvider,
         ILifecycleViewController viewController,
+        IApplicationRecycleSignal signal,
         IEnumerable<IPreScopeInitializer> preInitializers,
         ILogger<ApplicationLifecycle> logger)
     {
         _scopeProvider = scopeProvider;
         _viewController = viewController;
+        _signal = signal;
         _preInitializers = preInitializers;
         _logger = new(logger);
     }
@@ -29,13 +32,62 @@ internal class ApplicationLifecycle : BackgroundService
     {
         try
         {
-            // Await all IPreScopeInitializer services before creating the first scope
+            // Await all IPreScopeInitializer services before creating the first scope.
+            // Not re-awaited on scope recycles — the store is already populated.
             await RunPreInitializersAsync(stoppingToken);
 
-            _logger.ApplicationLifecycle_WaitingForScope();
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                using CancellationTokenSource linkedCts =
+                    CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, _signal.Token);
+                bool initCompleted = false;
 
-            await _scopeProvider.InvokeInScopeAsync(InitializeLifecycleAsync, stoppingToken);
-            _logger.ApplicationLifecycle_ScopeReleased();
+                _logger.ApplicationLifecycle_WaitingForScope();
+
+                try
+                {
+                    await _scopeProvider.InvokeInScopeAsync(async (provider, ct) =>
+                    {
+                        bool success = await TryInitializeScopeAsync(provider, ct);
+                        if (!success) return;
+
+                        initCompleted = true;
+                        _logger.ApplicationLifecycle_ScopeReleased();
+
+                        // Steady-state: block until stoppingToken or signal.Token fires.
+                        // Task.Delay throws OperationCanceledException on cancellation,
+                        // which propagates out to the appropriate catch clause in ExecuteAsync.
+                        await Task.Delay(Timeout.Infinite, ct);
+                    }, linkedCts.Token);
+
+                    // Work item returned normally: init failed internally (non-OCE) and
+                    // cleaned up; log ScopeReleased and exit the loop.
+                    _logger.ApplicationLifecycle_ScopeReleased();
+                    break;
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break; // Normal shutdown
+                }
+                catch (OperationCanceledException)
+                {
+                    // Recycle signal fired — fall through to recycle logic below
+                }
+
+                // Recycle path
+                await CleanUpCurrentContainerAsync(default);
+
+                if (initCompleted)
+                {
+                    // Signal fired during steady state: recycle the scope (triggers browser reload).
+                    _logger.ApplicationLifecycle_RecyclingScope();
+                    await _scopeProvider.RecycleScopeAsync();
+                }
+                // else: signal fired during init — no RecycleScopeAsync; the existing scope
+                // TCS is still valid, so the next InvokeInScopeAsync re-enters the same scope.
+
+                _signal.Reset();
+            }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -80,40 +132,40 @@ internal class ApplicationLifecycle : BackgroundService
         }
     }
 
-    private async Task InitializeLifecycleAsync(IServiceProvider provider, CancellationToken cancellationToken)
+    private async Task<bool> TryInitializeScopeAsync(IServiceProvider provider, CancellationToken cancellationToken)
     {
         _currentContainer = SafeGetContainer(provider);
 
-        if (_currentContainer is not null)
-        {
-            try
-            {
-                await _currentContainer.InitializeAllAsync(cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch
-            {
-                // Service initialization failures are already logged in ScopedLifecycleContainer.
-                // Clean up and return normally so ExecuteAsync can log ScopeReleased.
-                await CleanUpCurrentContainerAsync(default);
-            }
-        }
+        if (_currentContainer is null) return false;
 
-        ScopedLifecycleContainer? SafeGetContainer(IServiceProvider provider)
+        try
         {
-            try
-            {
-                return provider.GetRequiredService<ScopedLifecycleContainer>();
-            }
-            catch (Exception ex)
-            {
-                _logger.ApplicationLifecycle_ScopeConstructionFailed(ex);
-                _viewController.SetFatalError(ex);
-                return null;
-            }
+            await _currentContainer.InitializeAllAsync(cancellationToken);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Service initialization failures are already logged in ScopedLifecycleContainer.
+            await CleanUpCurrentContainerAsync(default);
+            return false;
+        }
+    }
+
+    private ScopedLifecycleContainer? SafeGetContainer(IServiceProvider provider)
+    {
+        try
+        {
+            return provider.GetRequiredService<ScopedLifecycleContainer>();
+        }
+        catch (Exception ex)
+        {
+            _logger.ApplicationLifecycle_ScopeConstructionFailed(ex);
+            _viewController.SetFatalError(ex);
+            return null;
         }
     }
 

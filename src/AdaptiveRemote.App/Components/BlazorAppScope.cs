@@ -1,5 +1,7 @@
-﻿using AdaptiveRemote.Services.Lifecycle;
+using AdaptiveRemote.Services.Lifecycle;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace AdaptiveRemote.Components;
 
@@ -47,12 +49,11 @@ internal class BlazorAppScope : IApplicationScope, IAsyncDisposable
         return workItem(_serviceProvider, cancellationToken);
     }
 
-    public Task RecycleAsync()
+    public async Task RecycleAsync()
     {
         _logger.LogInformation("Recycling Blazor application scope.");
 
-        // In a real implementation, this would refresh the browser which should result
-        // in a new scope
-        throw new NotImplementedException();
+        IJSRuntime jsRuntime = (IJSRuntime)_serviceProvider.GetService(typeof(IJSRuntime))!;
+        await jsRuntime.InvokeVoidAsync("location.reload");
     }
 }

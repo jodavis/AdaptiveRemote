@@ -16,6 +16,7 @@ public class ApplicationLifecycleTests
     private readonly Mock<ILifecycleViewController> MockLifecycleViewController = new();
     private readonly Mock<ILifecycleActivity> MockActivity = new();
     private readonly Mock<IServiceProvider> MockServiceProvider = new();
+    private readonly Mock<IApplicationRecycleSignal> MockSignal = new();
     private readonly MockLogger<ApplicationLifecycle, ScopedLifecycleContainer> MockLogger = new();
 
     public TestContext? TestContext { get; set; }
@@ -25,6 +26,7 @@ public class ApplicationLifecycleTests
     private ApplicationLifecycle CreateSut() => new ApplicationLifecycle(
         MockScopeProvider.Object,
         MockLifecycleViewController.Object,
+        MockSignal.Object,
         [],  // Empty IPreScopeInitializer collection
         MockLogger);
 
@@ -84,6 +86,10 @@ public class ApplicationLifecycleTests
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
             .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
 
+        MockSignal
+            .SetupGet(x => x.Token)
+            .Returns(CancellationToken.None); // Never fires; existing tests don't exercise recycle
+
         MockLogger.OutputWriter = TestContext;
     }
 
@@ -92,6 +98,7 @@ public class ApplicationLifecycleTests
     {
         Verify(MockServiceProvider, nameof(MockServiceProvider));
         Verify(MockScopeProvider, nameof(MockScopeProvider));
+        Verify(MockSignal, nameof(MockSignal));
 
         Verify(MockService1, nameof(MockService1));
         Verify(MockService2, nameof(MockService2));
@@ -614,11 +621,23 @@ public class ApplicationLifecycleTests
             .WithStandardTaskBehavior(result)
             .Verifiable(Times.Once);
 
+    private static void Expect_InitializeAsyncAtLeastOnce(Mock<IScopedLifecycle> service, Task? result = default)
+        => service
+            .Setup(x => x.InitializeAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .WithStandardTaskBehavior(result)
+            .Verifiable(Times.AtLeastOnce);
+
     private static void Expect_CleanupAsyncOn(Mock<IScopedLifecycle> service, Task? result = default)
         => service
             .Setup(x => x.CleanUpAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
             .WithStandardTaskBehavior(result)
             .Verifiable(Times.Once);
+
+    private static void Expect_CleanupAsyncAtLeastOnce(Mock<IScopedLifecycle> service, Task? result = default)
+        => service
+            .Setup(x => x.CleanUpAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .WithStandardTaskBehavior(result)
+            .Verifiable(Times.AtLeastOnce);
 
     private static void Expect_SetFatalErrorOn(Mock<ILifecycleActivity> activity, params Exception[] expectedExceptions)
         => activity
@@ -640,6 +659,205 @@ public class ApplicationLifecycleTests
             })
             .Verifiable(Times.Exactly(expectedExceptions.Length));
 
+    private ApplicationLifecycle CreateSutWithSignal(IApplicationRecycleSignal signal, IEnumerable<IPreScopeInitializer>? preInitializers = null)
+        => new ApplicationLifecycle(
+            MockScopeProvider.Object,
+            MockLifecycleViewController.Object,
+            signal,
+            preInitializers ?? [],
+            MockLogger);
+
+    [TestMethod]
+    public void ApplicationLifecycle_RecycleSignal_DuringReadyState_CallsRecycleScope()
+    {
+        // Arrange: allow services to initialize and clean up in two scope iterations
+        MockServiceProvider
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Returns(() => new ScopedLifecycleContainer([MockService1.Object, MockService2.Object, MockService3.Object], MockLifecycleViewController.Object, MockLogger))
+            .Verifiable(Times.AtLeast(1));
+
+        Expect_InitializeAsyncAtLeastOnce(MockService1);
+        Expect_InitializeAsyncAtLeastOnce(MockService2);
+        Expect_InitializeAsyncAtLeastOnce(MockService3);
+        Expect_CleanupAsyncAtLeastOnce(MockService1);
+        Expect_CleanupAsyncAtLeastOnce(MockService2);
+        Expect_CleanupAsyncAtLeastOnce(MockService3);
+
+        MockScopeProvider
+            .Setup(x => x.RecycleScopeAsync())
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        ApplicationRecycleSignal signal = new();
+        ApplicationLifecycle sut = CreateSutWithSignal(signal);
+
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Wait for first scope to enter steady state
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_ScopeReleased(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Act: fire recycle signal during steady state
+        signal.RequestRecycle();
+
+        // Assert: RecycleScopeAsync is called (and RecyclingScope is logged before it)
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_RecyclingScope(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        MockScopeProvider.Verify(x => x.RecycleScopeAsync(), Times.Once);
+
+        // Stop to end the second scope
+        Task stopTask = sut.StopAsync(default);
+        stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(2));
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_RecycleSignal_DuringReadyState_LoopsToNextScope()
+    {
+        // Arrange
+        MockServiceProvider
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Returns(() => new ScopedLifecycleContainer([MockService1.Object, MockService2.Object, MockService3.Object], MockLifecycleViewController.Object, MockLogger))
+            .Verifiable(Times.AtLeast(1));
+
+        Expect_InitializeAsyncAtLeastOnce(MockService1);
+        Expect_InitializeAsyncAtLeastOnce(MockService2);
+        Expect_InitializeAsyncAtLeastOnce(MockService3);
+        Expect_CleanupAsyncAtLeastOnce(MockService1);
+        Expect_CleanupAsyncAtLeastOnce(MockService2);
+        Expect_CleanupAsyncAtLeastOnce(MockService3);
+
+        MockScopeProvider
+            .Setup(x => x.RecycleScopeAsync())
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        ApplicationRecycleSignal signal = new();
+        ApplicationLifecycle sut = CreateSutWithSignal(signal);
+
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Wait for steady state
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_ScopeReleased(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Act: fire recycle
+        signal.RequestRecycle();
+
+        // Assert: loop continues — second scope's ScopeReleased eventually logged
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_RecyclingScope(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // WaitingForScope appears twice: once at start and once after Reset
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_Initializing(MockService1.Object.Name), TimeSpan.FromSeconds(2))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(2), because: "loop should re-enter a new scope and start initializing again");
+
+        Task stopTask = sut.StopAsync(default);
+        stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(2));
+
+        int waitingForScopeCount = MockLogger.Messages.Count(m => m.Contains("Waiting for application scope"));
+        waitingForScopeCount.Should().Be(2, because: "the loop should iterate twice: initial scope and post-recycle scope");
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_RecycleSignal_DuringInit_DoesNotCallRecycleScope()
+    {
+        // Arrange: MockService2 init hangs until the signal fires and cancels it
+        TaskCompletionSource hangingInitTcs = new();
+
+        MockServiceProvider
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Returns(() => new ScopedLifecycleContainer([MockService1.Object, MockService2.Object, MockService3.Object], MockLifecycleViewController.Object, MockLogger))
+            .Verifiable(Times.AtLeast(1));
+
+        Expect_InitializeAsyncAtLeastOnce(MockService1);
+        Expect_InitializeAsyncAtLeastOnce(MockService2, hangingInitTcs.Task);
+        Expect_InitializeAsyncAtLeastOnce(MockService3);
+        Expect_CleanupAsyncAtLeastOnce(MockService1);
+        Expect_CleanupAsyncAtLeastOnce(MockService2);
+        Expect_CleanupAsyncAtLeastOnce(MockService3);
+
+        ApplicationRecycleSignal signal = new();
+        ApplicationLifecycle sut = CreateSutWithSignal(signal);
+
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Wait for MockService2 to start initializing (confirming we are mid-init)
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_Initializing(MockService2.Object.Name), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Act: fire recycle while init is in progress
+        signal.RequestRecycle();
+
+        // Assert: cleanup starts (proves signal was processed)
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_CleaningUp(MockService1.Object.Name), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // RecycleScopeAsync must NOT have been called (init was not complete)
+        MockScopeProvider.Verify(x => x.RecycleScopeAsync(), Times.Never);
+
+        // Stop to end the second scope attempt
+        Task stopTask = sut.StopAsync(default);
+        stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(2));
+    }
+
+    [TestMethod]
+    public void ApplicationLifecycle_RecycleSignal_DoesNotReawaitPreInitializers()
+    {
+        // Arrange
+        Mock<IPreScopeInitializer> mockPreInit = new();
+        mockPreInit
+            .Setup(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once); // Must be called exactly once, even after a recycle
+
+        MockServiceProvider
+            .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
+            .Returns(() => new ScopedLifecycleContainer([MockService1.Object, MockService2.Object, MockService3.Object], MockLifecycleViewController.Object, MockLogger))
+            .Verifiable(Times.AtLeast(1));
+
+        Expect_InitializeAsyncAtLeastOnce(MockService1);
+        Expect_InitializeAsyncAtLeastOnce(MockService2);
+        Expect_InitializeAsyncAtLeastOnce(MockService3);
+        Expect_CleanupAsyncAtLeastOnce(MockService1);
+        Expect_CleanupAsyncAtLeastOnce(MockService2);
+        Expect_CleanupAsyncAtLeastOnce(MockService3);
+
+        MockScopeProvider
+            .Setup(x => x.RecycleScopeAsync())
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
+        ApplicationRecycleSignal signal = new();
+        ApplicationLifecycle sut = CreateSutWithSignal(signal, [mockPreInit.Object]);
+
+        Task startTask = sut.StartAsync(default);
+        startTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Wait for first scope to reach steady state
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_ScopeReleased(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Act: fire recycle signal
+        signal.RequestRecycle();
+
+        // Wait for recycle to complete and loop to continue
+        MockLogger.WaitForMessageAsync(log => log.ApplicationLifecycle_RecyclingScope(), TimeSpan.FromSeconds(1))
+            .Should().BeCompleteWithin(TimeSpan.FromSeconds(1));
+
+        // Give the loop time to start the second scope
+        Thread.Sleep(100);
+
+        // Assert: pre-initializer was called exactly once (Times.Once is verified by VerifyMocks)
+        mockPreInit.Verify(x => x.WaitAsync(It.IsAny<ILifecycleActivity>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        Task stopTask = sut.StopAsync(default);
+        stopTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(2));
+    }
+
     [TestMethod]
     public void ApplicationLifecycle_StartAsync_WaitsForPreInitializers()
     {
@@ -650,7 +868,7 @@ public class ApplicationLifecycleTests
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
-        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, [mockPreInit.Object], MockLogger);
+        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, MockSignal.Object, [mockPreInit.Object], MockLogger);
 
         Expect_InitializeAsyncOn(MockService1);
         Expect_InitializeAsyncOn(MockService2);
@@ -679,7 +897,7 @@ public class ApplicationLifecycleTests
             .Returns(preInitTcs.Task)
             .Verifiable(Times.Once);
 
-        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, [mockPreInit.Object], MockLogger);
+        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, MockSignal.Object, [mockPreInit.Object], MockLogger);
 
         Expect_InitializeAsyncOn(MockService1);
         Expect_InitializeAsyncOn(MockService2);
@@ -725,6 +943,7 @@ public class ApplicationLifecycleTests
         ApplicationLifecycle sut = new(
             MockScopeProvider.Object,
             MockLifecycleViewController.Object,
+            MockSignal.Object,
             [mockPreInit1.Object, mockPreInit2.Object, mockPreInit3.Object],
             MockLogger);
 
@@ -763,7 +982,7 @@ public class ApplicationLifecycleTests
             .Setup(x => x.GetService(typeof(ScopedLifecycleContainer)))
             .Verifiable(Times.Never);
 
-        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, [mockPreInit.Object], MockLogger);
+        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, MockSignal.Object, [mockPreInit.Object], MockLogger);
 
         // Act
         Task startTask = sut.StartAsync(default);
@@ -800,6 +1019,7 @@ public class ApplicationLifecycleTests
         ApplicationLifecycle sut = new(
             MockScopeProvider.Object,
             MockLifecycleViewController.Object,
+            MockSignal.Object,
             [mockPreInit1.Object, mockPreInit2.Object],
             MockLogger);
 
@@ -832,7 +1052,7 @@ public class ApplicationLifecycleTests
             .Returns(mockActivity.Object)
             .Verifiable(Times.Once);
 
-        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, [mockPreInit.Object], MockLogger);
+        ApplicationLifecycle sut = new(MockScopeProvider.Object, MockLifecycleViewController.Object, MockSignal.Object, [mockPreInit.Object], MockLogger);
 
         Expect_InitializeAsyncOn(MockService1);
         Expect_InitializeAsyncOn(MockService2);
@@ -897,6 +1117,7 @@ public class ApplicationLifecycleTests
         ApplicationLifecycle sut = new(
             MockScopeProvider.Object,
             MockLifecycleViewController.Object,
+            MockSignal.Object,
             [fastPreInit.Object, slowPreInit.Object],
             MockLogger);
 
