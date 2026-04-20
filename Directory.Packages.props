@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup Label="Application Packages">
     <!-- Azure and Cloud Services -->
-    <PackageVersion Include="Azure.Identity" Version="1.17.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.21.0" />
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.6.0" />
     <!-- ASP.NET Core and Web Components -->
     <PackageVersion Include="Markdig" Version="0.40.0" />
