@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace AdaptiveRemote.Contracts;
 
 // Identifies the runtime command type. The client uses this to instantiate the correct
@@ -6,4 +8,5 @@ namespace AdaptiveRemote.Contracts;
 //   TiVo   — CommandId = Name.ToUpperInvariant() (existing convention)
 //   IR     — payload programmed via remote, stored in ProgrammaticSettings
 //   Others — keyed by Name
+[JsonConverter(typeof(JsonStringEnumConverter<CommandType>))]
 public enum CommandType { Lifecycle, TiVo, IR }

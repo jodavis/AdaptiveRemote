@@ -9,12 +9,15 @@ internal static class CloudAssetServiceExtensions
     internal static IServiceCollection AddCloudAssetServices(this IServiceCollection services)
         => services
             .AddSingleton<ICloudAssetStore, CloudAssetStore>()
+            .AddSingleton<ICloudAssetDownloader, FileCloudAssetDownloader>()
             .AddSingleton<CloudAssetOrchestrator>()
             .AddSingleton<IPreScopeInitializer>(sp => sp.GetRequiredService<CloudAssetOrchestrator>())
             .AddHostedService(sp => sp.GetRequiredService<CloudAssetOrchestrator>());
 
     internal static IServiceCollection AddScopedCloudAsset<T>(
-        this IServiceCollection services, string name)
+        this IServiceCollection services, ICloudAsset<T> asset)
         where T : class
-        => services.AddScoped(sp => sp.GetRequiredService<ICloudAssetStore>().Get<T>(name));
+        => services
+            .AddSingleton<ICloudAsset>(asset)
+            .AddScoped(sp => sp.GetRequiredService<ICloudAssetStore>().Get<T>(asset.Name));
 }

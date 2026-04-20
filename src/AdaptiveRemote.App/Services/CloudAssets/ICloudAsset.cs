@@ -26,9 +26,9 @@ internal interface ICloudAsset
     string ResourcePath { get; }
 
     /// <summary>
-    /// Parses downloaded or cached bytes into the asset's runtime type.
+    /// Deserializes downloaded or cached bytes into the asset's runtime type.
     /// </summary>
-    Task<object> ParseAsync(Stream stream, CancellationToken ct);
+    Task<object> DeserializeAsync(Stream stream, CancellationToken ct);
 }
 
 /// <summary>
