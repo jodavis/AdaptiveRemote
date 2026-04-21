@@ -7,4 +7,6 @@ public class PlaywrightSettings
     public bool Headless { get; set; } = true;
 
     public string? TracesDir { get; set; } = null;
+
+    public string? ExecutablePath { get; set; } = null;
 }
