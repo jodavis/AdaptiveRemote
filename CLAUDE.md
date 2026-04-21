@@ -76,8 +76,8 @@ Prefer the Headless host for new E2E tests — cross-platform, no display requir
 
 ```bash
 dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj
-pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium  # one-time
-dotnet test --filter "FullyQualifiedName~HeadlessHost"
+pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium  # if tests crash at startup with a JSON-RPC disconnect
+dotnet test --filter "FullyQualifiedName~Host.Headless"
 ```
 
 ## Documentation

@@ -62,6 +62,7 @@ internal class PlaywrightBrowserLifetimeService : BackgroundService, IBrowserUIA
                 Headless = _settings.Headless,
                 Args = ["--no-sandbox", "--disable-dev-shm-usage"],
                 TracesDir = _settings.TracesDir,
+                ExecutablePath = _settings.ExecutablePath,
             };
 
             _browser = await _playwright.Chromium.LaunchAsync(launchOptions);

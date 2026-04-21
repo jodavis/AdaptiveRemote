@@ -224,11 +224,17 @@ public partial class AdaptiveRemoteHost
                 _hostLoggerProvider.AttachTestLoggerProxy(testLogger);
                 logger.LogInformation("Attached RPC test logger");
 
-                return new(_settings, _loggerFactory, process, client, rpc, testEndpoint);
+                return new(_settings, _loggerFactory, process, client, rpc, testEndpoint, standardOutputAndError);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to start the host. {ErrorMessage}", ex.Message);
+
+                string capturedOutput = standardOutputAndError.ToString();
+                if (!string.IsNullOrWhiteSpace(capturedOutput))
+                {
+                    logger.LogError("Host process output:\n{Output}", capturedOutput);
+                }
 
                 try
                 {

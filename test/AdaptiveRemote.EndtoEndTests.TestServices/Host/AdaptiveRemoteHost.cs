@@ -20,13 +20,16 @@ public partial class AdaptiveRemoteHost : IDisposable
     private readonly Process _process;
     private readonly TcpClient _client;
     private readonly JsonRpc _rpc;
+    private readonly StringBuilder _standardOutputAndError;
+    private volatile bool _stopping;
 
     private AdaptiveRemoteHost(AdaptiveRemoteHostSettings settings,
                                ILoggerFactory loggerFactory,
                                Process process,
                                TcpClient client,
                                JsonRpc rpc,
-                               ITestEndpoint testEndpoint)
+                               ITestEndpoint testEndpoint,
+                               StringBuilder standardOutputAndError)
     {
         _settings = settings;
         _loggerFactory = loggerFactory;
@@ -35,6 +38,9 @@ public partial class AdaptiveRemoteHost : IDisposable
         _client = client;
         _rpc = rpc;
         _testEndpoint = testEndpoint;
+        _standardOutputAndError = standardOutputAndError;
+
+        _rpc.Disconnected += OnRpcDisconnected;
 
         _lazyTestService = CreateLazyTestService<ApplicationTestService, IApplicationTestService>();
         _lazySpeechTestService = CreateLazyTestService<SpeechTestService, ISpeechTestService>();
@@ -46,6 +52,31 @@ public partial class AdaptiveRemoteHost : IDisposable
             UIServiceType.BlazorWebView => CreateLazyTestService<BlazorWebViewUITestService, IUITestService>(),
             _ => throw new InvalidOperationException($"Unsupported UIServiceType '{_settings.UIService}'")
         };
+    }
+
+    private void OnRpcDisconnected(object? sender, JsonRpcDisconnectedEventArgs e)
+    {
+        if (_stopping)
+        {
+            return;
+        }
+
+        // Give the process a moment to flush any remaining output
+        if (!_process.HasExited)
+        {
+            _process.WaitForExit(500);
+        }
+
+        string output = _standardOutputAndError.ToString();
+        if (string.IsNullOrWhiteSpace(output))
+        {
+            _logger.LogError("JSON-RPC connection lost unexpectedly ({Reason}): {Description}", e.Reason, e.Description);
+        }
+        else
+        {
+            _logger.LogError("JSON-RPC connection lost unexpectedly ({Reason}). Host process output:\n{Output}",
+                e.Reason, output);
+        }
     }
 
     private Lazy<TInterface> CreateLazyTestService<TImplementation, TInterface>()
@@ -89,6 +120,7 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     public void Stop()
     {
+        _stopping = true;
         if (_process is not null)
         {
             try
@@ -140,6 +172,7 @@ public partial class AdaptiveRemoteHost : IDisposable
 
     public void Dispose()
     {
+        _stopping = true;
         try
         {
             _rpc.Dispose();
