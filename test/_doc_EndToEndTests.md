@@ -105,6 +105,13 @@ Each test run creates a timestamped log file containing:
 
 See `test/AdaptiveRemote.EndtoEndTests.TestServices/Logging/_doc_TestLogging.md` for details.
 
+### JSON-RPC Disconnect Log Scanning
+When the JSON-RPC connection is lost unexpectedly (i.e., not during an intentional shutdown), `AdaptiveRemoteHost` automatically logs all captured stdout/stderr from the host process. This surfaces the root cause — such as a missing Playwright browser, an unhandled exception, or an assertion failure in the host — directly in the test output rather than requiring manual inspection of log files.
+
+Two cases are covered:
+- **Startup failure** (`Builder.StartWithSettings`): if the connection is lost before the host finishes starting, captured output is logged in the startup error handler.
+- **Mid-test failure** (`AdaptiveRemoteHost.OnRpcDisconnected`): if the connection drops during a running test, the `JsonRpc.Disconnected` event handler logs the captured output and waits briefly for the process to flush remaining output before reading.
+
 ## Test Flow
 
 ```
@@ -194,7 +201,6 @@ Test code uses synchronous wrappers (`WaitUtilities`) around async RPC calls to 
 ## Future Enhancements
 
 - **Headless Mode:** Add flag to create scope without UI rendering for testing
-- **Log Verification:** Automated parsing of logs to detect errors/warnings
 - **Performance Metrics:** Capture startup/shutdown times for regression detection
 - **Parallel Execution:** Support running multiple host tests concurrently
 - **Custom Test Services:** Framework for test-specific validation scenarios
