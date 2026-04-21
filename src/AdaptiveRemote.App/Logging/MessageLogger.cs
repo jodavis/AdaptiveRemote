@@ -48,6 +48,9 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 712, Level = LogLevel.Information, Message = "Recycling application scope")]
     public partial void ApplicationLifecycle_RecyclingScope();
 
+    [LoggerMessage(EventId = 713, Level = LogLevel.Information, Message = "Application scope ready")]
+    public partial void ApplicationLifecycle_ScopeReady();
+
     [LoggerMessage(EventId = 205, Level = LogLevel.Warning, Message = "Not restarting after {ErrorCount} error(s)")]
     public partial void ConversationController_RetryLimitReached(int errorCount);
 

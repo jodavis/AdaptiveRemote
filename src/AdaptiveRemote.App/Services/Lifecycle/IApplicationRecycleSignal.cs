@@ -8,7 +8,21 @@ namespace AdaptiveRemote.Services.Lifecycle;
 /// </summary>
 internal interface IApplicationRecycleSignal
 {
+    /// <summary>
+    /// Requests a scope recycle. Cancels <see cref="Token"/>.
+    /// Safe to call from any thread, including concurrently with <see cref="Reset"/>.
+    /// </summary>
     void RequestRecycle();
+
+    /// <summary>
+    /// The cancellation token that fires when <see cref="RequestRecycle"/> is called.
+    /// Linked into the scope work item by ApplicationLifecycle.
+    /// </summary>
     CancellationToken Token { get; }
+
+    /// <summary>
+    /// Resets the signal after cleanup, replacing the cancelled token with a fresh one.
+    /// Called by ApplicationLifecycle before starting the next scope iteration.
+    /// </summary>
     void Reset();
 }

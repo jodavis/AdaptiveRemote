@@ -40,46 +40,35 @@ internal class ApplicationLifecycle : BackgroundService
             {
                 using CancellationTokenSource linkedCts =
                     CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, _signal.Token);
-                bool initCompleted = false;
 
                 _logger.ApplicationLifecycle_WaitingForScope();
 
-                try
+                bool initCompleted = await TryInitializeScopeAsync(linkedCts.Token);
+
+                if (!initCompleted && !linkedCts.Token.IsCancellationRequested)
                 {
-                    await _scopeProvider.InvokeInScopeAsync(async (provider, ct) =>
-                    {
-                        bool success = await TryInitializeScopeAsync(provider, ct);
-                        if (!success) return;
-
-                        initCompleted = true;
-                        _logger.ApplicationLifecycle_ScopeReleased();
-
-                        // Steady-state: block until stoppingToken or signal.Token fires.
-                        // Task.Delay throws OperationCanceledException on cancellation,
-                        // which propagates out to the appropriate catch clause in ExecuteAsync.
-                        await Task.Delay(Timeout.Infinite, ct);
-                    }, linkedCts.Token);
-
-                    // Work item returned normally: init failed internally (non-OCE) and
-                    // cleaned up; log ScopeReleased and exit the loop.
+                    // Construction or init failure — already logged; exit the loop.
                     _logger.ApplicationLifecycle_ScopeReleased();
                     break;
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    break; // Normal shutdown
-                }
-                catch (OperationCanceledException)
-                {
-                    // Recycle signal fired — fall through to recycle logic below
-                }
-
-                // Recycle path
-                await CleanUpCurrentContainerAsync(default);
 
                 if (initCompleted)
                 {
-                    // Signal fired during steady state: recycle the scope (triggers browser reload).
+                    // Scope is ready; block until stoppingToken or signal.Token fires.
+                    _logger.ApplicationLifecycle_ScopeReady();
+                    await linkedCts.Token.WaitForCancelledAsync();
+                }
+
+                await CleanUpCurrentContainerAsync(default);
+
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                if (initCompleted)
+                {
+                    // Signal fired during steady-state: recycle the scope (triggers browser reload).
                     _logger.ApplicationLifecycle_RecyclingScope();
                     await _scopeProvider.RecycleScopeAsync();
                 }
@@ -99,17 +88,8 @@ internal class ApplicationLifecycle : BackgroundService
             await CleanUpCurrentContainerAsync(default);
         }
 
-        try
-        {
-            await stoppingToken.WaitForCancelledAsync();
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected when stopping
-        }
-
+        await stoppingToken.WaitForCancelledAsync();
         _logger.ApplicationLifecycle_ShuttingDown();
-
         await CleanUpCurrentContainerAsync(default);
     }
 
@@ -132,27 +112,32 @@ internal class ApplicationLifecycle : BackgroundService
         }
     }
 
-    private async Task<bool> TryInitializeScopeAsync(IServiceProvider provider, CancellationToken cancellationToken)
+    private async Task<bool> TryInitializeScopeAsync(CancellationToken cancellationToken)
     {
-        _currentContainer = SafeGetContainer(provider);
-
-        if (_currentContainer is null) return false;
-
+        bool initCompleted = false;
         try
         {
-            await _currentContainer.InitializeAllAsync(cancellationToken);
-            return true;
+            await _scopeProvider.InvokeInScopeAsync(async (provider, ct) =>
+            {
+                _currentContainer = SafeGetContainer(provider);
+                if (_currentContainer is null)
+                {
+                    return;
+                }
+                await _currentContainer.InitializeAllAsync(ct);
+                initCompleted = true;
+            }, cancellationToken);
         }
         catch (OperationCanceledException)
         {
-            throw;
+            // Cancelled by stoppingToken or signal
         }
         catch
         {
-            // Service initialization failures are already logged in ScopedLifecycleContainer.
+            // Non-OCE init failure — already logged in ScopedLifecycleContainer
             await CleanUpCurrentContainerAsync(default);
-            return false;
         }
+        return initCompleted;
     }
 
     private ScopedLifecycleContainer? SafeGetContainer(IServiceProvider provider)

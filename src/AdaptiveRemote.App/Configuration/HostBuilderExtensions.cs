@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Contracts;
 using AdaptiveRemote.Services;
+using AdaptiveRemote.Services.CloudAssets;
 using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Layout;
 using AdaptiveRemote.Services.Lifecycle;

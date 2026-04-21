@@ -89,18 +89,15 @@ dotnet test --filter "FullyQualifiedName~Host.Headless"
 ```
 
 **In Claude Code cloud sandbox environments** (where `cdn.playwright.dev` is blocked by network
-policy): browsers are pre-installed at `/opt/pw-browsers` and the environment should be configured to use them automatically,
-but if you encounter JSON-RPC disconnect errors, run the setup script instead:
+policy): browsers are pre-installed at `/opt/pw-browsers` and the environment is configured to point
+Playwright there automatically. No extra setup is required:
 ```bash
-bash scripts/setup-playwright-sandbox.sh
-```
-Then run E2E tests with:
-```bash
-PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers dotnet test --filter "FullyQualifiedName~Host.Headless"
+dotnet test --filter "FullyQualifiedName~Host.Headless"
 ```
 
-If Headless E2E tests fail with JSON-RPC connection errors, the most likely cause is that Playwright browsers
-are not set up. Follow the appropriate instructions above for your environment.
+If Headless E2E tests fail with JSON-RPC connection errors in a cloud sandbox environment, this indicates
+the environment configuration is broken — stop and report the problem rather than working around it with
+the setup script. The goal is to be alerted when the environment stops working, not to silently fall back.
 
 ## Documentation
 

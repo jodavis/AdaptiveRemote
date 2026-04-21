@@ -1,5 +1,5 @@
 using AdaptiveRemote.Services.Lifecycle;
-using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 
@@ -53,7 +53,7 @@ internal class BlazorAppScope : IApplicationScope, IAsyncDisposable
     {
         _logger.LogInformation("Recycling Blazor application scope.");
 
-        IJSRuntime jsRuntime = (IJSRuntime)_serviceProvider.GetService(typeof(IJSRuntime))!;
+        IJSRuntime jsRuntime = _serviceProvider.GetRequiredService<IJSRuntime>();
         await jsRuntime.InvokeVoidAsync("location.reload");
     }
 }

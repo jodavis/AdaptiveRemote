@@ -36,16 +36,21 @@ will execute work using a scoped IServiceProvider. The components involved are:
 `ApplicationLifecycle.ExecuteAsync` runs as a `while` loop. Each iteration:
 
 1. Creates a linked `CancellationToken` from `stoppingToken + signal.Token`.
-2. Calls `InvokeInScopeAsync` with a work item that initializes all scoped services and then blocks in a steady-state wait (`Task.Delay(Timeout.Infinite, ct)`).
-3. When the linked token fires, one of two paths follows:
+2. Calls `TryInitializeScopeAsync`, which invokes `InvokeInScopeAsync` to initialize all scoped services. Returns `true` if initialization completed successfully.
+3. If init succeeded, logs `ScopeReady` and waits for either token to fire via `WaitForCancelledAsync` (returns normally — no exception).
+4. Runs cleanup unconditionally, then branches:
 
-   **Steady-state path** (signal fires after init completes):
-   `signal.Token` cancelled → `Task.Delay` throws `OperationCanceledException` → cleanup → `RecycleScopeAsync()` (triggers browser reload) → `signal.Reset()` → loop awaits new scope.
+   **Steady-state recycle** (signal fires after init completes, `stoppingToken` not set):
+   cleanup → `RecycleScopeAsync()` (triggers browser reload) → `signal.Reset()` → next iteration.
 
-   **Init-phase path** (signal fires while `InitializeAllAsync` is running):
-   `signal.Token` cancelled → `InitializeAllAsync` cancels → cleanup → `signal.Reset()` → loop re-enters the same scope without a browser reload (the scope TCS is still valid).
+   **Init-phase recycle** (signal fires while `InitializeAllAsync` is running):
+   `InitializeAllAsync` cancels → `TryInitializeScopeAsync` returns `false` → cleanup → `signal.Reset()` → next iteration without a browser reload (the scope TCS is still valid).
 
-4. If `stoppingToken` fires: break the loop, log `ShuttingDown`, run final cleanup.
+   **Shutdown** (stoppingToken fires at any point): break the loop.
+
+   **Init failure** (non-OCE exception during init): cleanup → log `ScopeReleased` → break the loop.
+
+5. After the loop: wait for `stoppingToken` (already cancelled), log `ShuttingDown`, run final cleanup.
 
 The **pre-initializers** (`IPreScopeInitializer`) are only awaited once — before the first scope — and are not re-awaited on recycles, since the asset store is already populated after the first successful scope.
 

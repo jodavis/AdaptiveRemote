@@ -26,17 +26,25 @@ if [ ! -f "$PLAYWRIGHT_JS" ]; then
     exit 1
 fi
 
-# Ask Playwright's own registry what version it expects
+# Ask Playwright's own registry what version it expects; exits with error if the result
+# doesn't look like a path under $BROWSERS_PATH (guards against printing exception text).
 get_expected_dir() {
     local browser_name="$1"
-    node -e "
+    local result
+    result=$(node -e "
 process.env.PLAYWRIGHT_BROWSERS_PATH = '$BROWSERS_PATH';
 const { registry } = require('./$PLAYWRIGHT_JS');
 const execs = registry._executables.filter(e => e.name === '$browser_name');
 if (execs.length === 0) { process.exit(1); }
 const exec = execs[0];
-try { console.log(exec.executablePath()); } catch(e) { console.log(e.message); }
-" 2>/dev/null
+try { console.log(exec.executablePath()); } catch(e) { process.exit(1); }
+" 2>/dev/null) || { echo "WARNING: Could not determine expected path for '$browser_name'" >&2; return 1; }
+
+    if [[ "$result" != "$BROWSERS_PATH"/* ]]; then
+        echo "WARNING: Unexpected path for '$browser_name': $result" >&2
+        return 1
+    fi
+    echo "$result"
 }
 
 # Find the highest installed revision directory matching the given prefix
@@ -64,17 +72,15 @@ setup_browser() {
 }
 
 # Chromium (full browser)
-CHROMIUM_EXPECTED=$(get_expected_dir "chromium")
 CHROMIUM_INSTALLED_DIR=$(find_installed "chromium-")  # matches chromium-NNNN dirs only (not chromium_headless_shell-*)
-if [ -n "$CHROMIUM_INSTALLED_DIR" ]; then
+if [ -n "$CHROMIUM_INSTALLED_DIR" ] && CHROMIUM_EXPECTED=$(get_expected_dir "chromium"); then
     CHROMIUM_INSTALLED_BIN=$(find "$CHROMIUM_INSTALLED_DIR" -name "chrome" -not -name "*.sh" | head -1)
     [ -n "$CHROMIUM_INSTALLED_BIN" ] && setup_browser "$CHROMIUM_EXPECTED" "$CHROMIUM_INSTALLED_BIN"
 fi
 
 # Chromium headless shell (used by the .NET Headless host)
-HEADLESS_EXPECTED=$(get_expected_dir "chromium-headless-shell")
 HEADLESS_INSTALLED_DIR=$(find_installed "chromium_headless_shell-")
-if [ -n "$HEADLESS_INSTALLED_DIR" ]; then
+if [ -n "$HEADLESS_INSTALLED_DIR" ] && HEADLESS_EXPECTED=$(get_expected_dir "chromium-headless-shell"); then
     HEADLESS_INSTALLED_BIN=$(find "$HEADLESS_INSTALLED_DIR" -name "headless_shell" -o -name "chrome-headless-shell" 2>/dev/null | head -1)
     [ -n "$HEADLESS_INSTALLED_BIN" ] && setup_browser "$HEADLESS_EXPECTED" "$HEADLESS_INSTALLED_BIN"
 fi
