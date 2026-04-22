@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.Contracts;
 using AdaptiveRemote.Services;
+using AdaptiveRemote.Services.CloudAssets;
 using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Layout;
 using AdaptiveRemote.Services.Lifecycle;
@@ -58,5 +59,6 @@ internal static class HostBuilderExtensions
             .AddScoped<ScopedLifecycleContainer>()
             .AddScoped<Components.BlazorAppScope>()
             .AddSingleton<IApplicationScopeContainer, ApplicationScopeContainer>()
-            .AddSingleton(sp => (IApplicationScopeProvider)sp.GetRequiredService<IApplicationScopeContainer>());
+            .AddSingleton(sp => (IApplicationScopeProvider)sp.GetRequiredService<IApplicationScopeContainer>())
+            .AddSingleton<IApplicationRecycleSignal, ApplicationRecycleSignal>();
 }

@@ -42,15 +42,8 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         OutputWriter?.WriteLine(message);
     }
 
-    public void VerifyMessages(Action<MessageLogger> expected)
-    {
-        MockLogger<LoggerType> expectedLog = new();
-        expectedLog.ReplaceStrings.AddRange(ReplaceStrings);
-        MessageLogger messageLogger = new(expectedLog);
-        expected(messageLogger);
-
-        VerifyMessages(expectedLog._messages.ToArray());
-    }
+    public void VerifyMessages(Action<MessageLogger> expected) 
+        => VerifyMessages(GetMessageLogMessages(expected));
 
     public void VerifyMessages(params string[] expected)
     {
@@ -100,6 +93,16 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
                 "Wrong number of messages. Did not expect to find:\n{0}",
                 string.Join("\n", unexpectedMessages));
         }
+    }
+
+    private string[] GetMessageLogMessages(Action<MessageLogger> expected)
+    {
+        MockLogger<LoggerType> expectedLog = new();
+        expectedLog.ReplaceStrings.AddRange(ReplaceStrings);
+        MessageLogger messageLogger = new(expectedLog);
+        expected(messageLogger);
+
+        return expectedLog._messages.ToArray();
     }
 
     private static List<string> GetRemaining(IEnumerator<string> iter, ref int count)
@@ -159,6 +162,19 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
 
             Assert.IsTrue(DateTime.Now - startTime < timeout, "Timed out waiting for log message '{0}'", expectedMessage);
         }
+    }
+
+    internal int CountMessages(Action<MessageLogger> messages)
+        => CountMessages(GetMessageLogMessages(messages));
+    
+    public int CountMessages(params string[] messages)
+    {
+        int count = 0;
+        foreach (string expected in messages)
+        {
+            count += _messages.Count(m => m.StartsWith(expected));
+        }
+        return count;
     }
 
     internal void ClearMessages()
