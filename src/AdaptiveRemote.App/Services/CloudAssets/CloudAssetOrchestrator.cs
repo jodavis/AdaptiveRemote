@@ -25,6 +25,8 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
         _log = new MessageLogger(logger);
     }
 
+    public string Name => "Loading cloud assets";
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try

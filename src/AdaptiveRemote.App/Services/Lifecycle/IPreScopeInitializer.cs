@@ -8,6 +8,11 @@ namespace AdaptiveRemote.Services.Lifecycle;
 internal interface IPreScopeInitializer
 {
     /// <summary>
+    /// Gets a friendly name for the initializer, used for logging and error messages.
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
     /// Waits for the service to be ready before scope creation can proceed.
     /// </summary>
     /// <param name="activity">Lifecycle activity for reporting progress and errors</param>

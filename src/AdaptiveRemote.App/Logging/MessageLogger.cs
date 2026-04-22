@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Runtime.Intrinsics.Arm;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Logging;
@@ -42,14 +43,17 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 710, Level = LogLevel.Information, Message = "Waiting for application scope")]
     public partial void ApplicationLifecycle_WaitingForScope();
 
-    [LoggerMessage(EventId = 711, Level = LogLevel.Information, Message = "Application scope released, shutting down")]
-    public partial void ApplicationLifecycle_ScopeReleased();
-
     [LoggerMessage(EventId = 712, Level = LogLevel.Information, Message = "Recycling application scope")]
     public partial void ApplicationLifecycle_RecyclingScope();
 
     [LoggerMessage(EventId = 713, Level = LogLevel.Information, Message = "Application scope ready")]
     public partial void ApplicationLifecycle_ScopeReady();
+    
+    [LoggerMessage(EventId = 714, Level = LogLevel.Information, Message = "Waiting for preinitializer: {Name}")]
+    public partial void ApplicationLifecycle_WaitingForPreinitializer(string name);
+    
+    [LoggerMessage(EventId = 715, Level = LogLevel.Error, Message = "Preinitializer failed: {Name}")]
+    public partial void ApplicationLifecycle_PreinitializerFailed(string name, Exception ex);
 
     [LoggerMessage(EventId = 205, Level = LogLevel.Warning, Message = "Not restarting after {ErrorCount} error(s)")]
     public partial void ConversationController_RetryLimitReached(int errorCount);
