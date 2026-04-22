@@ -22,7 +22,8 @@ internal static class ConversationHostBuilderExtensions
             .AddSingleton<IListeningController, ListeningController>()
             .AddScoped(GetConversationViewModel)
             .AddSingleton<Models.ModalMessageView>()
-            .AddSingleton<IModalMessageService, ModalMessageService>();
+            .AddSingleton<IModalMessageService, ModalMessageService>()
+            .AddScoped<IUserActivityDetector, ConversationIdleAdapter>();
 
     internal static IServiceCollection AddConversationServices(this IServiceCollection services, IConfiguration config)
         => services

@@ -1,3 +1,4 @@
+using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.CloudAssets;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +11,7 @@ internal static class CloudAssetServiceExtensions
     internal static IServiceCollection AddCloudAssetServices(this IServiceCollection services, IConfiguration configuration)
         => services
             .AddSingleton<ICloudAssetStore, CloudAssetStore>()
+            .AddSingleton<IIdleDetector, IdleDetector>()
             .AddSingleton<ICloudAssetDownloader, FileCloudAssetDownloader>()
             .AddSingleton<CloudAssetOrchestrator>()
             .AddSingleton<IPreScopeInitializer>(sp => sp.GetRequiredService<CloudAssetOrchestrator>())
