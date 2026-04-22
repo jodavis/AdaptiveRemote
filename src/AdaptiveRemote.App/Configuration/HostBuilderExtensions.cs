@@ -36,6 +36,9 @@ internal static class HostBuilderExtensions
                 resourcePath: "/layouts/compiled",
                 jsonContext: LayoutContractsJsonContext.Default))
             .AddScopedLifecycleService<LifecycleCommandService>()
+            .AddScopedLifecycleService<ConversationIdleAdapter>()
+            .AddScopedLifecycleService<ProgrammingModeIdleAdapter>()
+            .AddScopedLifecycleService<CommandExecutionIdleAdapter>()
             .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
             .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>()
             .AddSingleton<IPersistSettings, PersistSettings>()
