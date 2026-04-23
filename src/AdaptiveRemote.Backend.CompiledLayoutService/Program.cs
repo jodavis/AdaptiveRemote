@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Scalar.AspNetCore;
+using System.Net.Http;
+using System.Text.Json;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -41,14 +44,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddOpenApi();
 
 WebApplication app = builder.Build();
 
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.ServiceStarting();
 
+if (app.Environment.IsDevelopment())
+{
+    await EnsureLocalStackRunningAsync(app, logger).ConfigureAwait(false);
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapOpenApi();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapScalarApiReference();
+}
 
 // Map endpoints
 app.MapHealthEndpoints();
@@ -62,6 +78,112 @@ string listenAddress = app.Configuration["ASPNETCORE_URLS"]
 logger.ServiceStarted(listenAddress);
 
 app.Run();
+
+static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logger)
+{
+    const int LocalStackHealthCheckTimeoutSeconds = 5;
+    const int LocalStackStartupWaitTimeoutSeconds = 30;
+    const int LocalStackRetryDelaySeconds = 2;
+    TimeSpan localStackStartupWaitTimeout = TimeSpan.FromSeconds(LocalStackStartupWaitTimeoutSeconds);
+    TimeSpan localStackRetryDelay = TimeSpan.FromSeconds(LocalStackRetryDelaySeconds);
+    string[] requiredServices = ["dynamodb", "lambda", "sqs"];
+
+    string baseUrl = app.Configuration["LocalStack:BaseUrl"] ?? "http://localhost:4566";
+
+    if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseUri))
+    {
+        logger.LocalStackDependencyUnavailable(baseUrl, "configuration value is not a valid absolute URL", exception: null);
+        Environment.Exit(1);
+    }
+
+    Uri healthUri = new(baseUri, "/_localstack/health");
+
+    using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(LocalStackHealthCheckTimeoutSeconds) };
+    Exception? lastException = null;
+    string? lastFailureReason = null;
+    DateTime deadlineUtc = DateTime.UtcNow.Add(localStackStartupWaitTimeout);
+
+    while (DateTime.UtcNow < deadlineUtc)
+    {
+        try
+        {
+            using HttpResponseMessage response = await client.GetAsync(healthUri).ConfigureAwait(false);
+            string body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                lastFailureReason = $"HTTP {(int)response.StatusCode}";
+            }
+            else
+            {
+                using JsonDocument json = JsonDocument.Parse(body);
+                if (IsLocalStackRunning(json.RootElement, requiredServices, out string failureReason))
+                {
+                    return;
+                }
+
+                lastFailureReason = failureReason;
+            }
+
+            lastException = null;
+        }
+        catch (Exception ex)
+        {
+            lastException = ex;
+            lastFailureReason = ex.Message;
+        }
+
+        await Task.Delay(localStackRetryDelay).ConfigureAwait(false);
+    }
+
+    logger.LocalStackDependencyUnavailable(
+        healthUri.ToString(),
+        $"did not become healthy within {LocalStackStartupWaitTimeoutSeconds}s; last check result: {lastFailureReason ?? "unknown health check failure"}",
+        lastException);
+    Environment.Exit(1);
+}
+
+static bool IsLocalStackRunning(JsonElement root, IReadOnlyList<string> requiredServices, out string failureReason)
+{
+    if (root.TryGetProperty("status", out JsonElement statusElement))
+    {
+        string status = statusElement.GetString() ?? string.Empty;
+        if (string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+        {
+            failureReason = string.Empty;
+            return true;
+        }
+
+        failureReason = $"status='{status}'";
+        return false;
+    }
+
+    if (!root.TryGetProperty("services", out JsonElement servicesElement) || servicesElement.ValueKind != JsonValueKind.Object)
+    {
+        failureReason = "health response did not contain a running status or services object";
+        return false;
+    }
+
+    foreach (string service in requiredServices)
+    {
+        if (!servicesElement.TryGetProperty(service, out JsonElement serviceStatusElement))
+        {
+            failureReason = $"service '{service}' was missing from health response";
+            return false;
+        }
+
+        string serviceStatus = serviceStatusElement.GetString() ?? string.Empty;
+        if (!string.Equals(serviceStatus, "available", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(serviceStatus, "running", StringComparison.OrdinalIgnoreCase))
+        {
+            failureReason = $"service '{service}' status was '{serviceStatus}'";
+            return false;
+        }
+    }
+
+    failureReason = string.Empty;
+    return true;
+}
 
 // Make Program visible for testing
 public partial class Program { }
