@@ -38,7 +38,7 @@ public class BroadlinkCommandServiceTests
             .Verifiable(Times.Never);
         MockInitializeActivity
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
-            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+            .Callback(delegate (Exception ex) { Assert.Fail($"SetFatalError was called on the activity: {ex}"); });
         MockInitializeActivity
             .Setup(x => x.Dispose())
             .Verifiable(Times.Never);
@@ -634,4 +634,3 @@ public class BroadlinkCommandServiceTests
             .SetupSet(x => x.Description = It.IsAny<string>())
             .Callback(delegate (string description) { description.Should().Be(expectedDescription); });
 }
-

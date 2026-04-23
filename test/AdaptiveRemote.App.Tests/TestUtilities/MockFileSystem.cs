@@ -57,12 +57,12 @@ internal class MockFileSystem : Mock<IFileSystem>
             .Verifiable(Times.Never);
     private void Callback_CreateDirectory(string path)
     {
-        Assert.IsFalse(_directories.Contains(path), "Attempted to create a directory that already exists: {0}", path);
+        Assert.IsFalse(_directories.Contains(path), string.Format("Attempted to create a directory that already exists: {0}", path));
 
         string? parent = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(parent))
         {
-            Assert.IsTrue(_directories.Contains(parent), "Parent path '{0}' does not exist when attempting to create '{1}'", parent, path);
+            Assert.IsTrue(_directories.Contains(parent), string.Format("Parent path '{0}' does not exist when attempting to create '{1}'", parent, path));
         }
 
         _directories.Add(path);

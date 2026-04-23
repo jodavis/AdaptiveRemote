@@ -64,10 +64,10 @@ public class TiVoServiceTests
             .Setup(x => x.SendIRCommandAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Callback(delegate (string commandId, CancellationToken cancellation)
             {
-                Assert.Fail("Did not expect {0}.{1}(\"{2}\")",
+                Assert.Fail(string.Format("Did not expect {0}.{1}(\"{2}\")",
                     nameof(ITiVoConnection),
                     nameof(ITiVoConnection.SendIRCommandAsync),
-                    commandId);
+                    commandId));
             });
         MockConnection
             .Setup(x => x.DisposeAsync(It.IsAny<CancellationToken>()))
@@ -86,7 +86,7 @@ public class TiVoServiceTests
             .Verifiable(Times.Once);
         MockInitializeActivity
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
-            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+            .Callback(delegate (Exception ex) { Assert.Fail($"SetFatalError was called on the activity: {ex}"); });
         MockInitializeActivity
             .Setup(x => x.Dispose())
             .Verifiable(Times.Never);
@@ -96,7 +96,7 @@ public class TiVoServiceTests
             .Verifiable(Times.Never);
         MockCleanupActivity
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
-            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+            .Callback(delegate (Exception ex) { Assert.Fail($"SetFatalError was called on the activity: {ex}"); });
         MockCleanupActivity
             .Setup(x => x.Dispose())
             .Verifiable(Times.Never);

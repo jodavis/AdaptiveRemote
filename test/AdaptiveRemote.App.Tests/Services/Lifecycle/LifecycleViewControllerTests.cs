@@ -40,7 +40,7 @@ public class LifecycleViewControllerTests
 
     // ─── SetPhase ────────────────────────────────────────────────────────────────
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(LifecyclePhase.Starting, "Starting application")]
     [DataRow(LifecyclePhase.Building, "Building service graph")]
     [DataRow(LifecyclePhase.SettingUp, "Starting services")]

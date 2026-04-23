@@ -96,8 +96,8 @@ public class PersistSettingsTests
         string[] expectedSettings = ["ExistingSetting=123", "NewSetting3=ghi", "NewSetting2=def", "NewSetting1=abc"];
         string[] actualSettings = MockFileSystem.GetFileContents(ResolvedSettingsPath).Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries);
 
-        Assert.IsFalse(expectedSettings.Except(actualSettings).Any(), "Did not find expected settings in {0}: {1}", ResolvedSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
-        Assert.IsFalse(actualSettings.Except(expectedSettings).Any(), "Did not find expected settings in {0}: {1}", ResolvedSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings)));
+        Assert.IsFalse(expectedSettings.Except(actualSettings).Any(), string.Format("Did not find expected settings in {0}: {1}", ResolvedSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings))));
+        Assert.IsFalse(actualSettings.Except(expectedSettings).Any(), string.Format("Did not find expected settings in {0}: {1}", ResolvedSettingsPath, string.Join(", ", expectedSettings.Except(actualSettings))));
     }
 
     [TestMethod]
@@ -246,7 +246,7 @@ public class PersistSettingsTests
         });
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Hello", true)] // Accepts letters
     [DataRow("this:Valid", true)] // Accepts colons as separators
     [DataRow("this::Invalid", false)] // Rejects double colon
@@ -274,7 +274,7 @@ public class PersistSettingsTests
             sut.Set(input, "def");
 
             // Assert
-            Assert.IsTrue(expectedResult, "Expected ArgumentException was not thrown for input:'{0}'.", input);
+            Assert.IsTrue(expectedResult, string.Format("Expected ArgumentException was not thrown for input:'{0}'.", input));
 
             await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
@@ -291,8 +291,8 @@ public class PersistSettingsTests
         {
             ArgumentException expectedException = (ArgumentException)Errors.PersistSettings_InvalidName("name", input);
 
-            Assert.AreEqual(expectedException.ParamName, result.ParamName, nameof(result.ParamName) + " for input:'{0}'", input);
-            Assert.AreEqual(expectedException.Message, result.Message, nameof(result.Message) + " for input:'{0}'", input);
+            Assert.AreEqual(expectedException.ParamName, result.ParamName, string.Format(nameof(result.ParamName) + " for input:'{0}'", input));
+            Assert.AreEqual(expectedException.Message, result.Message, string.Format(nameof(result.Message) + " for input:'{0}'", input));
 
             MockLogger.VerifyMessages(log =>
             {
@@ -301,7 +301,7 @@ public class PersistSettingsTests
         }
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("Valid", true)]
     [DataRow("Valid with spaces", true)]
     [DataRow("", true)]
@@ -320,7 +320,7 @@ public class PersistSettingsTests
             sut.Set("TestSetting", input);
 
             // Assert
-            Assert.IsTrue(expectedResult, "Expected ArgumentException was not thrown for input:'{0}'.", input);
+            Assert.IsTrue(expectedResult, string.Format("Expected ArgumentException was not thrown for input:'{0}'.", input));
 
             await MockLogger.WaitForMessageAsync(msg => msg.ProgrammaticSettings_SavedSettings(ResolvedSettingsPath));
 
@@ -405,4 +405,3 @@ public class PersistSettingsTests
     }
 
 }
-

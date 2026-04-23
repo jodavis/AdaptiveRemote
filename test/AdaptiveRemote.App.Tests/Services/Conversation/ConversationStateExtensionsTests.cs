@@ -968,7 +968,7 @@ public class ConversationStateExtensionsTests
             ConversationState result = sut.ToggleListening(MockLogger);
 
             // Assert
-            Assert.AreEqual(expected, result, nameof(result) + " when WantsPhrases started as {0}", (PhraseKinds)i);
+            Assert.AreEqual(expected, result, string.Format(nameof(result) + " when WantsPhrases started as {0}", (PhraseKinds)i));
 
             MockLogger.VerifyMessages(log =>
             {

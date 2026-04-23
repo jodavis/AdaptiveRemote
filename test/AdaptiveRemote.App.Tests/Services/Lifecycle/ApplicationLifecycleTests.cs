@@ -78,7 +78,7 @@ public class ApplicationLifecycleTests
             .Callback(delegate (LifecyclePhase phase) { LatestLifecyclePhase = phase; });
         MockActivity
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
-            .Callback(delegate (Exception ex) { Assert.Fail("SetFatalError was called on the activity: {0}", ex); });
+            .Callback(delegate (Exception ex) { Assert.Fail($"SetFatalError was called on the activity: {ex}"); });
 
         MockLogger.OutputWriter = TestContext;
     }
@@ -622,7 +622,7 @@ public class ApplicationLifecycleTests
             .Callback(delegate (Exception ex)
             {
                 Assert.IsTrue(expectedExceptions.Any(x => $"{x.GetType().FullName};{x.Message}" == $"{ex.GetType().FullName};{ex.Message}"),
-                    "Unexpected exception for SetFatalError: {0}", ex);
+                    $"Unexpected exception for SetFatalError: {ex}");
             })
             .Verifiable(Times.Exactly(expectedExceptions.Length));
 
@@ -632,7 +632,7 @@ public class ApplicationLifecycleTests
             .Callback(delegate (Exception ex)
             {
                 Assert.IsTrue(expectedExceptions.Any(x => $"{x.GetType().FullName};{x.Message}" == $"{ex.GetType().FullName};{ex.Message}"),
-                    "Unexpected exception for SetFatalError: {0}", ex);
+                    $"Unexpected exception for SetFatalError: {ex}");
             })
             .Verifiable(Times.Exactly(expectedExceptions.Length));
 

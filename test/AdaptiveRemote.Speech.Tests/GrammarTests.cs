@@ -97,7 +97,7 @@ public class GrammarTests
 
     [TestMethod]
     [Timeout(35000)]
-    [DynamicData(nameof(GetTestSamples), DynamicDataSourceType.Method,
+    [DynamicData(nameof(GetTestSamples),
         DynamicDataDisplayName = nameof(GetTestSampleDisplayName))]
     public async Task StaticGrammar_TestCommandAsync(
         string waveFileName,
@@ -147,13 +147,13 @@ public class GrammarTests
         foreach (string expectedSemantic in expectedSemantics.Split(","))
         {
             string[] parts = expectedSemantic.Split("=");
-            Assert.AreEqual(2, parts.Length, "Invalid semantic format '{0}'", expectedSemantic);
+            Assert.AreEqual(2, parts.Length, string.Format("Invalid semantic format '{0}'", expectedSemantic));
 
             string expectedKey = parts[0];
             string expectedValue = parts[1];
 
-            Assert.IsTrue(result.TryGetSemanticValue(expectedKey, out string? resultValue), "Did not find semantic key '{0}'", expectedKey);
-            Assert.AreEqual(expectedValue, resultValue, "Wrong value for semantic key '{0}'", expectedKey);
+            Assert.IsTrue(result.TryGetSemanticValue(expectedKey, out string? resultValue), string.Format("Did not find semantic key '{0}'", expectedKey));
+            Assert.AreEqual(expectedValue, resultValue, string.Format("Wrong value for semantic key '{0}'", expectedKey));
         }
     }
 
@@ -230,15 +230,15 @@ public class GrammarTests
 
         internal void SetAudioInputToWaveStream(string waveFileName)
         {
-            Assert.IsNotNull(_recognition, "{0}.{1}({2}) was not called",
+            Assert.IsNotNull(_recognition, string.Format("{0}.{1}({2}) was not called",
                 nameof(IAudioConfigurationService),
                 nameof(IAudioConfigurationService.Configure),
-                nameof(SpeechRecognitionEngine));
+                nameof(SpeechRecognitionEngine)));
 
             Stream? waveFile = typeof(GrammarTests).Assembly.GetManifestResourceStream(waveFileName);
-            Assert.IsNotNull(waveFile, "Could not load resource {0}", waveFileName);
+            Assert.IsNotNull(waveFile, string.Format("Could not load resource {0}", waveFileName));
 
-            _recognition.SetInputToWaveStream(waveFile);
+            _recognition!.SetInputToWaveStream(waveFile!);
         }
     }
 }

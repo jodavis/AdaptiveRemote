@@ -12,19 +12,19 @@ internal static class MemoryAssert
         {
             if (!actualIter.MoveNext())
             {
-                Assert.AreEqual(expected.Length, actual.Length, "Number of bytes in {0}", name);
-                Assert.Fail("Same number of bytes were expected, but {0}.MoveNext() returned false", nameof(actualIter));
+                Assert.AreEqual(expected.Length, actual.Length, string.Format("Number of bytes in {0}", name));
+                Assert.Fail(string.Format("Same number of bytes were expected, but {0}.MoveNext() returned false", nameof(actualIter)));
             }
 
-            Assert.AreEqual(expectedIter.Current.ToString("X2"), actualIter.Current.ToString("X2"), "{1}[{0}]", index, name);
+            Assert.AreEqual(expectedIter.Current.ToString("X2"), actualIter.Current.ToString("X2"), string.Format("{1}[{0}]", index, name));
 
             index++;
         }
 
         if (actualIter.MoveNext())
         {
-            Assert.AreEqual(expected.Length, actual.Length, "Number of bytes in {0}", name);
-            Assert.Fail("Same number of bytes were expected, but {0}.MoveNext() returned true", nameof(actualIter));
+            Assert.AreEqual(expected.Length, actual.Length, string.Format("Number of bytes in {0}", name));
+            Assert.Fail(string.Format("Same number of bytes were expected, but {0}.MoveNext() returned true", nameof(actualIter)));
         }
     }
 

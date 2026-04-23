@@ -129,10 +129,10 @@ public class UdpServiceTests
             .WithArgumentValidation("buffer", delegate (Memory<byte> responseBuffer)
             {
                 Assert.IsNotNull(responseBuffer, nameof(responseBuffer));
-                Assert.IsTrue(responseBuffer.Length >= responseBytes.Length, "Response buffer for {0} must be at least {1} bytes, but was only {2} bytes",
+                Assert.IsTrue(responseBuffer.Length >= responseBytes.Length, string.Format("Response buffer for {0} must be at least {1} bytes, but was only {2} bytes",
                     nameof(ISocket.ReceiveFromAsync),
                     responseBytes.Length,
-                    responseBuffer.Length);
+                    responseBuffer.Length));
 
                 responseBytes.CopyTo(responseBuffer);
             })

@@ -94,7 +94,7 @@ internal static class MockExtensions
         ArgumentType expectedValue)
         => setup.WithArgumentValidation(argumentName, delegate (ArgumentType argumentValue)
         {
-            Assert.AreEqual(expectedValue, argumentValue, "Argument '{0}' in {1}", argumentName, setup);
+            Assert.AreEqual(expectedValue, argumentValue, string.Format("Argument '{0}' in {1}", argumentName, setup));
         });
 
     internal static IReturnsThrows<ContractType, ReturnType> WithArgumentValidation<ContractType, ReturnType, ArgumentType>(
@@ -104,7 +104,7 @@ internal static class MockExtensions
         where ContractType : class
         => setup.WithArgumentValidation(argumentName, delegate (ArgumentType argumentValue)
         {
-            Assert.AreEqual(expectedValue, argumentValue, "Argument '{0}' in {1}", argumentName, setup);
+            Assert.AreEqual(expectedValue, argumentValue, string.Format("Argument '{0}' in {1}", argumentName, setup));
         });
 
     internal static IReturnsThrows<ContractType, ReturnType> WithArgumentValidation<ContractType, ReturnType, ArgumentType>(
@@ -129,7 +129,7 @@ internal static class MockExtensions
                 }
             }
 
-            Assert.Fail("Did not find an argument '{0}' in call to {1}", argumentName, invocation.MatchingSetup.Expression);
+            Assert.Fail(string.Format("Did not find an argument '{0}' in call to {1}", argumentName, invocation.MatchingSetup.Expression));
         };
     }
 
