@@ -11,10 +11,30 @@ public class IdleDetectorTests
         => new(new MockOptions<CloudSettings>(new() { IdleCooldownSeconds = cooldownSeconds }));
 
     [TestMethod]
-    public void IdleDetector_IsIdle_TrueByDefault()
+    public void IdleDetector_IsIdle_FalseByDefault()
     {
-        IdleDetector sut = MakeSut();
+        // Construction schedules the initial cooldown; system is not idle yet.
+        IdleDetector sut = MakeSut(cooldownSeconds: 30);
 
+        sut.IsIdle.Should().BeFalse();
+    }
+
+    [TestMethod]
+    public void IdleDetector_Construction_BecomesIdleAfterInitialCooldown()
+    {
+        // Arrange
+        IdleDetector sut = MakeSut(cooldownSeconds: 0);
+        TaskCompletionSource becameIdle = new();
+        sut.BecameIdle += (_, _) => becameIdle.TrySetResult();
+
+        // Handle the race where the timer fires before we subscribed.
+        if (sut.IsIdle)
+        {
+            becameIdle.TrySetResult();
+        }
+
+        // Assert
+        becameIdle.Task.Should().BeCompleteWithin(Timeout);
         sut.IsIdle.Should().BeTrue();
     }
 
@@ -75,7 +95,7 @@ public class IdleDetectorTests
     [TestMethod]
     public void IdleDetector_StartNonIdleDuringCooldown_ResetsTimer()
     {
-        // Arrange: use a long cooldown so the test can reliably acquire a token before it fires
+        // Arrange: use a long cooldown so we can reliably acquire a token before it fires
         IdleDetector sut = MakeSut(cooldownSeconds: 30);
         int becameIdleCount = 0;
         sut.BecameIdle += (_, _) => Interlocked.Increment(ref becameIdleCount);
@@ -92,25 +112,37 @@ public class IdleDetectorTests
 
         token2.Dispose();
 
-        // After releasing, BecameIdle should not have fired yet (new 30-second cooldown just started)
+        // After releasing token2, a new 30-second cooldown starts — BecameIdle has still not fired
         becameIdleCount.Should().Be(0, "BecameIdle should not fire immediately after token2 disposed (cooldown still running)");
     }
 
     [TestMethod]
     public void IdleDetector_DisposeToken_IdempotentDispose()
     {
-        // Arrange
+        // Arrange: let the initial construction cooldown settle before counting.
         IdleDetector sut = MakeSut(cooldownSeconds: 0);
+        TaskCompletionSource initialIdle = new();
+        sut.BecameIdle += (_, _) => initialIdle.TrySetResult();
+        if (sut.IsIdle)
+        {
+            initialIdle.TrySetResult();
+        }
+
+        initialIdle.Task.Should().BeCompleteWithin(Timeout);
+
+        int becameIdleCount = 0;
+        sut.BecameIdle += (_, _) => Interlocked.Increment(ref becameIdleCount);
         TaskCompletionSource becameIdle = new();
         sut.BecameIdle += (_, _) => becameIdle.TrySetResult();
         IDisposable token = sut.StartNonIdle();
 
-        // Act: dispose twice — should not decrement count below zero
+        // Act: dispose twice — should not decrement count below zero or double-fire
         token.Dispose();
         token.Dispose();
 
         // Assert: BecameIdle fires exactly once
         becameIdle.Task.Should().BeCompleteWithin(Timeout);
+        becameIdleCount.Should().Be(1);
         sut.IsIdle.Should().BeTrue();
     }
 }

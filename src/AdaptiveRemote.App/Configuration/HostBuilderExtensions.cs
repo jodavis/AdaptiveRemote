@@ -2,6 +2,7 @@
 using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.CloudAssets;
 using AdaptiveRemote.Services.Commands;
+using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.Services.Layout;
 using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.ProgrammaticSettings;

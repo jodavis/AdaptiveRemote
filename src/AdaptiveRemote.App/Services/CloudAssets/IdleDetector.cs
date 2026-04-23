@@ -1,3 +1,4 @@
+using AdaptiveRemote.Services;
 using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.CloudAssets;
@@ -11,10 +12,12 @@ internal class IdleDetector : IIdleDetector
 
     public IdleDetector(IOptions<CloudSettings> settings)
     {
-        _cooldown = TimeSpan.FromSeconds(settings.Value.IdleCooldownSeconds);
+        _cooldown = TimeSpan.FromSeconds(Math.Max(0, settings.Value.IdleCooldownSeconds));
+        // Start non-idle; the initial cooldown brings the system to idle for the first time.
+        ScheduleCooldown();
     }
 
-    public bool IsIdle { get; private set; } = true;
+    public bool IsIdle { get; private set; }
     public event EventHandler? BecameIdle;
 
     public IDisposable StartNonIdle()
@@ -42,7 +45,7 @@ internal class IdleDetector : IIdleDetector
 
     private void ScheduleCooldown()
     {
-        // Called while _lock is held.
+        // Called while _lock is held (or from the constructor before any other thread can access).
         _cooldownTimer?.Dispose();
         _cooldownTimer = new Timer(OnCooldownElapsed, null, _cooldown, Timeout.InfiniteTimeSpan);
     }
