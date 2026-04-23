@@ -230,15 +230,21 @@ public class GrammarTests
 
         internal void SetAudioInputToWaveStream(string waveFileName)
         {
-            Assert.IsNotNull(_recognition, string.Format("{0}.{1}({2}) was not called",
-                nameof(IAudioConfigurationService),
-                nameof(IAudioConfigurationService.Configure),
-                nameof(SpeechRecognitionEngine)));
+            if (_recognition is null)
+            {
+                Assert.Fail(string.Format("{0}.{1}({2}) was not called",
+                    nameof(IAudioConfigurationService),
+                    nameof(IAudioConfigurationService.Configure),
+                    nameof(SpeechRecognitionEngine)));
+            }
 
             Stream? waveFile = typeof(GrammarTests).Assembly.GetManifestResourceStream(waveFileName);
-            Assert.IsNotNull(waveFile, string.Format("Could not load resource {0}", waveFileName));
+            if (waveFile is null)
+            {
+                Assert.Fail(string.Format("Could not load resource {0}", waveFileName));
+            }
 
-            _recognition!.SetInputToWaveStream(waveFile!);
+            _recognition.SetInputToWaveStream(waveFile);
         }
     }
 }

@@ -279,8 +279,11 @@ public static class IUITestServiceExtensions
             return button is not null;
         }, timeout);
 
-        Assert.IsNotNull(button, string.Format("Button with label '{0}' was not found. (Waited {1}s)", label, timeout.TotalSeconds));
+        if (button is null)
+        {
+            Assert.Fail(string.Format("Button with label '{0}' was not found. (Waited {1}s)", label, timeout.TotalSeconds));
+        }
 
-        return button!;
+        return button;
     }
 }

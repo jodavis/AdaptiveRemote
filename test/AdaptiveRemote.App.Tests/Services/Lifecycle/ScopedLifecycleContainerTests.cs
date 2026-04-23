@@ -35,7 +35,7 @@ public class ScopedLifecycleContainerTests
             .Callback<LifecyclePhase>(phase => LatestLifecyclePhase = phase);
         MockActivity
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
-            .Callback<Exception>(ex => Assert.Fail($"SetFatalError was called on the activity: {ex}"));
+            .Callback<Exception>(ex => Assert.Fail(string.Format("SetFatalError was called on the activity: {0}", ex)));
 
         MockLogger.OutputWriter = TestContext;
     }
@@ -102,7 +102,7 @@ public class ScopedLifecycleContainerTests
 
         ScopedLifecycleContainer sut = CreateSut();
 
-        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => sut.InitializeAllAsync(default));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.InitializeAllAsync(default));
 
         MockLogger.VerifyMessages(log =>
         {
@@ -137,7 +137,7 @@ public class ScopedLifecycleContainerTests
 
         tcs.SetException(expected);
 
-        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => initTask);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => initTask);
 
         MockLogger.VerifyMessages(log =>
         {
@@ -168,7 +168,7 @@ public class ScopedLifecycleContainerTests
 
         ScopedLifecycleContainer sut = CreateSut();
 
-        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => sut.InitializeAllAsync(default));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.InitializeAllAsync(default));
 
         MockLogger.VerifyMessages(log =>
         {
@@ -278,7 +278,7 @@ public class ScopedLifecycleContainerTests
             .Callback<Exception>(ex =>
             {
                 Assert.IsTrue(expectedExceptions.Any(x => $"{x.GetType().FullName};{x.Message}" == $"{ex.GetType().FullName};{ex.Message}"),
-                    $"Unexpected exception for SetFatalError: {ex}");
+                    string.Format("Unexpected exception for SetFatalError: {0}", ex));
             })
             .Verifiable(Times.Exactly(expectedExceptions.Length));
 

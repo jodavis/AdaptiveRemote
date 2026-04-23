@@ -86,7 +86,7 @@ public class TiVoServiceTests
             .Verifiable(Times.Once);
         MockInitializeActivity
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
-            .Callback(delegate (Exception ex) { Assert.Fail($"SetFatalError was called on the activity: {ex}"); });
+            .Callback(delegate (Exception ex) { Assert.Fail(string.Format("SetFatalError was called on the activity: {0}", ex)); });
         MockInitializeActivity
             .Setup(x => x.Dispose())
             .Verifiable(Times.Never);
@@ -96,7 +96,7 @@ public class TiVoServiceTests
             .Verifiable(Times.Never);
         MockCleanupActivity
             .Setup(x => x.SetFatalError(It.IsAny<Exception>()))
-            .Callback(delegate (Exception ex) { Assert.Fail($"SetFatalError was called on the activity: {ex}"); });
+            .Callback(delegate (Exception ex) { Assert.Fail(string.Format("SetFatalError was called on the activity: {0}", ex)); });
         MockCleanupActivity
             .Setup(x => x.Dispose())
             .Verifiable(Times.Never);
