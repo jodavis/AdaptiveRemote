@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  localstack:
+    image: localstack/localstack:4.8
+    container_name: adaptiveremote-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=lambda,dynamodb,sqs
+      - DEBUG=1
+      - LAMBDA_EXECUTOR=docker
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - backend
+
   compiledlayoutservice:
     build:
       context: .
@@ -14,9 +30,15 @@ services:
       # See _doc_Auth.md for Cognito dev user pool setup instructions.
       - Cognito__Authority=${COGNITO_AUTHORITY:-}
       - Cognito__Audience=${COGNITO_AUDIENCE:-}
+      - LocalStack__BaseUrl=http://localstack:4566
+    depends_on:
+      - localstack
     networks:
       - backend
 
 networks:
   backend:
     driver: bridge
+
+volumes:
+  localstack-data:

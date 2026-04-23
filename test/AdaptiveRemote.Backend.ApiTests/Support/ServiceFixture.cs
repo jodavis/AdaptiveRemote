@@ -86,6 +86,8 @@ public class ServiceFixture : IDisposable
                 ["ASPNETCORE_URLS"] = ServiceUrl,
                 // Point the service at the local test JWT authority.
                 ["Cognito__Authority"] = _jwtAuthority.Authority,
+                // Use the same local test authority host for LocalStack health checks.
+                ["LocalStack__BaseUrl"] = _jwtAuthority.Authority,
             }
         };
 
@@ -148,7 +150,7 @@ public class ServiceFixture : IDisposable
             {
                 lock (_logLock)
                 {
-                    _logOutput.AppendLine($"[HealthCheck attempt {i + 1}] Exception polling {ServiceUrl}/health: {ex.GetType().Name}: {ex.Message}");
+                    _logOutput.AppendLine($"[HealthCheck attempt {i + 1}] Request failed polling {ServiceUrl}/health: {ex.Message}");
                 }
             }
 
