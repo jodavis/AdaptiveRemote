@@ -5,7 +5,7 @@ argument-hint: <Jira task key, e.g. ADR-123>
 
 ## Task to implement
 
-$ARGUMENTS
+Jira Task $ARGUMENTS
 
 ## Available spec files
 
@@ -69,7 +69,7 @@ Read the `_doc_*.md` files relevant to the areas the spec touches. At minimum re
 
 ### Phase 3 — Create or switch to branch
 
-Derive a branch slug (5–6 words, kebab-case) from the spec filename or the spec's title.
+Derive a branch slug (5–6 words, kebab-case) from the task title listed in the spec.
 
 Branch name format: `dev/claude/TASK_KEY-slug`
 Example: `dev/claude/ADR-123-programmable-commands`
@@ -81,10 +81,10 @@ git branch --list "dev/claude/TASK_KEY*"
 ```
 
 - **If it exists:** switch to it with `git checkout`.
-- **If it does not exist:** create it from the latest `main`:
+- **If it does not exist:** create it from the working branch:
   ```
-  git fetch origin main
-  git checkout -b dev/claude/TASK_KEY-slug origin/main
+  git fetch origin WORKING_BRANCH
+  git checkout -b dev/claude/TASK_KEY-slug WORKING_BRANCH
   ```
 
 **Optional Jira status update:** Attempt to set the Jira issue status to "In Progress" using
@@ -145,8 +145,6 @@ commands pass cleanly.
 Invoke `/simplify` to review the changed code for reuse, quality, and efficiency. Address
 all findings. Then invoke `/security-review` to check for security issues. Address all
 findings.
-
-After each fix, verify the build and Headless tests still pass.
 
 ---
 
