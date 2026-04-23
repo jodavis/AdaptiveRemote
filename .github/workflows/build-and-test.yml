@@ -39,10 +39,10 @@ jobs:
       run: pwsh ./src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium
     
     - name: Unit Tests 
-      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "FullyQualifiedName!~EndToEndTest"
+      run: dotnet test --solution AdaptiveRemote.sln --no-build --verbosity normal --report-trx --results-directory "TestResults" --filter "FullyQualifiedName!~EndToEndTest"
 
     - name: E2E Tests
-      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" --filter "FullyQualifiedName~EndToEndTest" -m:1
+      run: dotnet test --solution AdaptiveRemote.sln --no-build --verbosity normal --results-directory "TestResults" --filter "FullyQualifiedName~EndToEndTest" --max-parallel-test-modules 1
       if: always()
 
     - name: Upload E2E Test Logs

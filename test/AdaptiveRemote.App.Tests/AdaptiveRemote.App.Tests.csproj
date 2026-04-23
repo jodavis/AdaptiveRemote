@@ -7,16 +7,17 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <IsTestingPlatformApplication>true</IsTestingPlatformApplication>
+    <OutputType>Exe</OutputType>
     <RootNamespace>AdaptiveRemote</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="MSTest" />
     <PackageReference Include="Moq" />
-    <PackageReference Include="MSTest.TestAdapter" />
-    <PackageReference Include="MSTest.TestFramework" />
   </ItemGroup>
 
   <ItemGroup>
