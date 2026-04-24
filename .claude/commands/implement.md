@@ -7,14 +7,6 @@ argument-hint: <Jira task key, e.g. ADR-123>
 
 Jira Task $ARGUMENTS
 
-## Available spec files
-
-!`find . -name "_spec_*.md" -not -path "./.git/*" | sort`
-
-## Available architecture docs
-
-!`find . -name "_doc_*.md" -not -path "./.git/*" | sort`
-
 ## Workflow
 
 Follow the phases below in order. Each phase has explicit pause points — do not skip ahead without user confirmation.
@@ -114,6 +106,8 @@ If plan mode is active, call `ExitPlanMode` here to present the plan for approva
 
 ### Phase 5 — Implement
 
+Before writing tests, read `test/_doc_UnitTesting.md` for naming, structure, and async/mock patterns.
+
 Follow the plan and spec. Apply conventions from `CLAUDE.md`:
 
 - Log messages must be defined as `[LoggerMessage]` source-generated methods in
@@ -126,17 +120,11 @@ Follow the plan and spec. Apply conventions from `CLAUDE.md`:
 
 ### Phase 6 — Quality check (first pass)
 
-Run all Linux-compatible quality gates. The following projects target Windows and cannot run
-on Linux — do not attempt them: `Speech.Tests`, `Host.Wpf`, `Host.Console`.
-
 ```
-dotnet build /warnaserror
-dotnet test test/AdaptiveRemote.App.Tests/AdaptiveRemote.App.Tests.csproj
-dotnet test test/AdaptiveRemote.EndToEndTests.Host.Headless/AdaptiveRemote.EndToEndTests.Host.Headless.csproj
+bash scripts/quality-check.sh
 ```
 
-Fix every warning, error, and test failure before continuing. Repeat until all three
-commands pass cleanly.
+Fix every warning, error, and test failure before continuing. Re-run until it exits cleanly.
 
 ---
 
@@ -150,7 +138,11 @@ findings.
 
 ### Phase 8 — Quality check (second pass)
 
-Re-run all three commands from Phase 6. All must pass before continuing.
+```
+bash scripts/quality-check.sh
+```
+
+All gates must pass before continuing.
 
 ---
 
@@ -206,7 +198,7 @@ When review activity arrives:
    - Implement the requested change, OR
    - Explain clearly why the comment doesn't apply or is incorrect — but only when
      genuinely wrong, not to avoid work.
-3. Re-run all three quality gate commands from Phase 6.
+3. Re-run `bash scripts/quality-check.sh` and fix any failures.
 4. Commit and push the fixes with a clear message referencing the review round.
 5. Reply to each addressed comment confirming what was done.
 
