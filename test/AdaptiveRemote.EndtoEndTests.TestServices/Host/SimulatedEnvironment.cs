@@ -31,6 +31,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     private string? _currentLogLocation;
     // Settings file path is determined lazily from the TestResults directory when SetLogLocation is first called.
     private string? _testSettingsPath;
+    private string? _cloudCachePath;
+    private string? _cloudStubFilePath;
 
     public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder)
     {
@@ -67,6 +69,12 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, byte[]> TestIrPayloads => _testIrPayloads;
+
+    /// <inheritdoc/>
+    public string? CloudCachePath => _cloudCachePath;
+
+    /// <inheritdoc/>
+    public string? CloudStubFilePath => _cloudStubFilePath;
 
     public AdaptiveRemoteHost Host
     {
@@ -144,6 +152,27 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             runningHost.Stop();
             runningHost.Dispose();
         }
+    }
+
+    public void SetCloudAssetPaths(string cachePath, string stubFilePath)
+    {
+        _cloudCachePath = cachePath;
+        _cloudStubFilePath = stubFilePath;
+
+        _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs(
+            $"--cloud:CachePath=\"{cachePath}\" --cloud:StubFilePath=\"{stubFilePath}\" --cloud:IdleCooldownSeconds=0"));
+    }
+
+    public void SetIdleCooldownSeconds(int seconds)
+    {
+        if (seconds < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(seconds), seconds, "Idle cooldown must be non-negative.");
+        }
+
+        // Appends the arg; the configuration system uses last-wins for duplicate keys,
+        // so this overrides the value set in SetCloudAssetPaths.
+        _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs($"--cloud:IdleCooldownSeconds={seconds}"));
     }
 
     public void SetLogLocation(string logLocation)

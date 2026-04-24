@@ -12,7 +12,12 @@ internal static class CloudAssetServiceExtensions
         => services
             .AddSingleton<ICloudAssetStore, CloudAssetStore>()
             .AddSingleton<IIdleDetector, IdleDetector>()
+            .AddScopedLifecycleService<IdleDetector.ScopedIdleDetector>()
+            .AddSingleton<ICloudAssetCache, CloudAssetCache>()
             .AddSingleton<ICloudAssetDownloader, FileCloudAssetDownloader>()
+            .AddSingleton<FileSystemCloudAssetWatchService>()
+            .AddSingleton<IAssetChangeNotifier>(sp => sp.GetRequiredService<FileSystemCloudAssetWatchService>())
+            .AddHostedService(sp => sp.GetRequiredService<FileSystemCloudAssetWatchService>())
             .AddSingleton<CloudAssetOrchestrator>()
             .AddSingleton<IPreScopeInitializer>(sp => sp.GetRequiredService<CloudAssetOrchestrator>())
             .AddHostedService(sp => sp.GetRequiredService<CloudAssetOrchestrator>())

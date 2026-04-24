@@ -4,7 +4,7 @@ namespace AdaptiveRemote.Services.Lifecycle;
 
 internal class ProgrammingModeIdleAdapter : MvvmPropertyIdleAdapter
 {
-    public ProgrammingModeIdleAdapter(LifecycleView lifecycleView, IIdleDetector idleDetector)
+    public ProgrammingModeIdleAdapter(LifecycleView lifecycleView)
         : base(lifecycleView, LifecycleView.IsProgrammingModeProperty)
     {
     }

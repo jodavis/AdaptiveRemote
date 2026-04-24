@@ -11,6 +11,7 @@ public class LogVerificationSteps : StepsBase
     private static readonly Dictionary<string, int> _lastLineRead = new();
 
     [Then("I should not see any warning or error messages in the logs")]
+    [Then("I should not see any warnings or errors in the logs")]
     public void ThenIShouldNotSeeAnyWarningsOrErrorsInTheLogFile()
     {
         IEnumerable<string> warningAndErrorLines = FilterLogLines(IsWarningOrError);
@@ -50,6 +51,64 @@ public class LogVerificationSteps : StepsBase
             string.Join("\n", errorLines));
         StringAssert.Contains(errorLines.First(), expectedErrorMessage,
             "Host log error message does not match the expected text");
+    }
+
+    [Then("I should see a message in the logs:")]
+    public void ThenIShouldSeeAMessageInTheLogs(string expectedMessage)
+    {
+        string? matchingLine = null;
+
+        WaitHelpers.ExecuteWithRetries(() =>
+        {
+            Assert.IsNotNull(Environment.HostLogs, "Host log path was not set.");
+
+            using Stream logStream = File.Open(Environment.HostLogs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using StreamReader reader = new(logStream);
+            string logContent = reader.ReadToEnd();
+            string[] logLines = logContent.Split(System.Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+            matchingLine = logLines.FirstOrDefault(l => l.Contains(expectedMessage, StringComparison.Ordinal));
+            return matchingLine is not null;
+        });
+
+        Assert.IsNotNull(matchingLine, "Host log does not contain the expected message: {0}", expectedMessage);
+    }
+
+    [Then(@"I should not see a message containing '(.*)' in the logs")]
+    public void ThenIShouldNotSeeAMessageContainingInTheLogs(string fragment)
+    {
+        Assert.IsNotNull(Environment.HostLogs, "Host log path was not set.");
+
+        string logContent;
+        using (Stream logStream = File.Open(Environment.HostLogs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            logContent = new StreamReader(logStream).ReadToEnd();
+        }
+
+        string[] logLines = logContent.Split(System.Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        IEnumerable<string> matching = logLines.Where(l => l.Contains(fragment, StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(
+            matching.Any(),
+            "Host log unexpectedly contains '{0}':\n{1}",
+            fragment,
+            string.Join("\n", matching));
+    }
+
+    [Then(@"I should see the application recycle")]
+    public void ThenIShouldSeeTheApplicationRecycle()
+    {
+        Assert.IsNotNull(Environment.HostLogs, "Host log path was not set.");
+
+        string? matchingLine = null;
+        WaitHelpers.ExecuteWithRetries(() =>
+        {
+            using Stream logStream = File.Open(Environment.HostLogs, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            string logContent = new StreamReader(logStream).ReadToEnd();
+            string[] logLines = logContent.Split(System.Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+            matchingLine = logLines.FirstOrDefault(l => l.Contains("Recycling application scope", StringComparison.Ordinal));
+            return matchingLine is not null;
+        });
+
+        Assert.IsNotNull(matchingLine, "Host log does not contain 'Recycling application scope'.");
     }
 
     private IEnumerable<string> FilterLogLines(Func<string, bool> lineFilter)
@@ -97,3 +156,4 @@ public class LogVerificationSteps : StepsBase
             || line.Contains("] Warning [", StringComparison.Ordinal);
     }
 }
+

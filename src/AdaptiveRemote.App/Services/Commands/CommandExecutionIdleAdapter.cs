@@ -7,10 +7,10 @@ internal class CommandExecutionIdleAdapter : IUserActivityDetector
 
     public DateTime LastActivityTime => _adapters.Select(x => x.LastActivityTime).Max();
 
-    public CommandExecutionIdleAdapter(IRemoteDefinitionService remoteDefinition, IIdleDetector idleDetector)
+    public CommandExecutionIdleAdapter(IRemoteDefinitionService remoteDefinition)
     {
         _adapters = remoteDefinition.GetCommands()
-            .Select(cmd => new CommandIdleAdapter(cmd, idleDetector))
+            .Select(cmd => new CommandIdleAdapter(cmd))
             .ToList();
     }
 }

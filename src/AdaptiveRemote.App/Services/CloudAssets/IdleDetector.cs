@@ -5,34 +5,65 @@ namespace AdaptiveRemote.Services.CloudAssets;
 
 internal class IdleDetector : IIdleDetector
 {
-    private readonly TimeSpan _cooldown;
-    private readonly IEnumerable<IUserActivityDetector> _userActivityDetectors;
-
-    public IdleDetector(IEnumerable<IUserActivityDetector> userActivityDetectors, IOptions<CloudSettings> settings)
-    {
-        _cooldown = TimeSpan.FromSeconds(Math.Max(.1, settings.Value.IdleCooldownSeconds));
-        _userActivityDetectors = userActivityDetectors.ToImmutableList();
-    }
+    private TaskCompletionSource<ScopedIdleDetector> _scopedIdleDetectorTask = new();
 
     public async Task WaitForIdleAsync(CancellationToken cancellationToken)
     {
-        while (true)
+#pragma warning disable VSTHRD003 // Avoid awaiting foreign Tasks
+        ScopedIdleDetector scoped = await _scopedIdleDetectorTask.Task;
+#pragma warning restore VSTHRD003 // Avoid awaiting foreign Tasks
+
+        await scoped.WaitForIdleAsync(cancellationToken);
+    }
+
+    internal class ScopedIdleDetector : IScopedLifecycle
+    {
+        private readonly TimeSpan _cooldown;
+        private readonly IEnumerable<IUserActivityDetector> _userActivityDetectors;
+        private readonly IdleDetector _globalIdleDetector;
+
+        public ScopedIdleDetector(IEnumerable<IUserActivityDetector> userActivityDetectors, IIdleDetector globalIdleDetector, IOptions<CloudSettings> settings)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            _cooldown = TimeSpan.FromSeconds(Math.Max(.1, settings.Value.IdleCooldownSeconds));
+            _userActivityDetectors = userActivityDetectors.ToImmutableList();
+            _globalIdleDetector = globalIdleDetector as IdleDetector
+                ?? throw new ArgumentException("Wrong type was injected for IIdleDetector", nameof(globalIdleDetector));
+        }
 
-            DateTime mostRecentActivity = _userActivityDetectors
-                .Select(x => x.LastActivityTime)
-                .DefaultIfEmpty(DateTime.MinValue)
-                .Max();
+        public string Name => "Idle Detection";
 
-            TimeSpan timeUntilIdle = (mostRecentActivity + _cooldown) - DateTime.Now;
+        public Task CleanUpAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
+        {
+            _globalIdleDetector._scopedIdleDetectorTask = new();
+            return Task.CompletedTask;
+        }
 
-            if (timeUntilIdle <= TimeSpan.Zero)
+        public Task InitializeAsync(ILifecycleActivity activity, CancellationToken cancellationToken)
+        {
+            _globalIdleDetector._scopedIdleDetectorTask.TrySetResult(this);
+            return Task.CompletedTask;
+        }
+
+        public async Task WaitForIdleAsync(CancellationToken cancellationToken)
+        {
+            while (true)
             {
-                break;
-            }
+                cancellationToken.ThrowIfCancellationRequested();
 
-            await Task.Delay(timeUntilIdle, cancellationToken);
+                DateTime mostRecentActivity = _userActivityDetectors
+                    .Select(x => x.LastActivityTime)
+                    .DefaultIfEmpty(DateTime.MinValue)
+                    .Max();
+
+                TimeSpan timeUntilIdle = (mostRecentActivity + _cooldown) - DateTime.Now;
+
+                if (timeUntilIdle <= TimeSpan.Zero)
+                {
+                    break;
+                }
+
+                await Task.Delay(timeUntilIdle, cancellationToken);
+            }
         }
     }
 }

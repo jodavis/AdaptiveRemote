@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 using Reqnroll.BoDi;
+using System.Reflection;
 
 namespace AdaptiveRemote.EndToEndTests.Steps.Hooks;
 
@@ -18,7 +19,21 @@ internal class EnvironmentSetupHooks
     {
         _lazyLogger = new Lazy<ILogger>(() => loggerFactory.CreateLogger<EnvironmentSetupHooks>());
 
-        container.RegisterInstanceAs<ISimulatedEnvironment>(_startedEnvironment ??= container.Resolve<SimulatedEnvironment>());
+        _startedEnvironment ??= container.Resolve<SimulatedEnvironment>();
+        container.RegisterInstanceAs<ISimulatedEnvironment>(_startedEnvironment);
+
+        // Configure cloud asset paths once for the entire test run.
+        string assemblyDir = Path.GetDirectoryName(typeof(EnvironmentSetupHooks).Assembly.Location)!;
+        string testRunTempDir = Path.Combine(assemblyDir, "cloud-test-run");
+        string cachePath = Path.Combine(testRunTempDir, "cache");
+        string stubFilePath = Path.Combine(testRunTempDir, "stub.json");
+
+        Directory.CreateDirectory(testRunTempDir);
+        // Write the full layout so non-cloud scenarios see the complete button set.
+        string updatedLayout = File.ReadAllText(Path.Combine(assemblyDir, "Layout", "updated-layout.json"));
+        File.WriteAllText(stubFilePath, updatedLayout);
+
+        _startedEnvironment.SetCloudAssetPaths(cachePath, stubFilePath);
     }
 
     [AfterTestRun]

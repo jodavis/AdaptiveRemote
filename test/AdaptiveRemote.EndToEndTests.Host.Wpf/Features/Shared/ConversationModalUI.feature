@@ -5,6 +5,7 @@ Feature: Conversation Modal UI
 
 Scenario: Speech synthesis displays modal message box
 	Given the application is in the Ready phase
+	Then I should not see a modal message
 	When I say "Hey Remote"
 	Then I should see a modal message containing
 		"""

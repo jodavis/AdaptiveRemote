@@ -23,7 +23,6 @@ Scenario: All expected buttons from layout are present
 	# WELL group
 	And I should see the 'TiVo' button exists
 	And I should see the 'Netflix' button exists
-	And I should see the 'Guide' button exists
 	And I should see the 'Info' button exists
 	# PLAYBACK group
 	And I should see the 'Play' button exists
