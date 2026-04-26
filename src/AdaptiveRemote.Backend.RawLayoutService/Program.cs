@@ -159,6 +159,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
 
+// Register the source-generated JSON context so minimal-API model binding can
+// deserialize request bodies (e.g. RawLayout on POST/PUT) without reflection.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, LayoutContractsJsonContext.Default);
+});
+
 WebApplication app = builder.Build();
 
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
