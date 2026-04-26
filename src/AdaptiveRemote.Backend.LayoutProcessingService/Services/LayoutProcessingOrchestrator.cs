@@ -112,7 +112,7 @@ public class LayoutProcessingOrchestrator : BackgroundService
             }
         }
 
-        _logger.SqsPollingStoped();
+        _logger.SqsPollingStopped();
     }
 
     private async Task ProcessMessageAsync(Message message, CancellationToken ct)
@@ -134,7 +134,7 @@ public class LayoutProcessingOrchestrator : BackgroundService
             && int.TryParse(receiveCountStr, out int receiveCount)
             && receiveCount > 1)
         {
-            _logger.SqsMessageArrivedInDlq(rawLayoutId, receiveCount);
+            _logger.SqsMessageRetry(rawLayoutId, receiveCount);
         }
 
         _logger.SqsMessageReceived(rawLayoutId, receiptHandle);

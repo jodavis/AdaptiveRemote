@@ -35,7 +35,7 @@ public static partial class MessageLogger
     public static partial void SqsPollingStarted(this ILogger logger, string queueUrl);
 
     [LoggerMessage(EventId = 1307, Level = LogLevel.Information, Message = "SQS polling loop stopped")]
-    public static partial void SqsPollingStoped(this ILogger logger);
+    public static partial void SqsPollingStopped(this ILogger logger);
 
     [LoggerMessage(EventId = 1308, Level = LogLevel.Information, Message = "SQS message received; rawLayoutId={RawLayoutId} receiptHandle={ReceiptHandle}")]
     public static partial void SqsMessageReceived(this ILogger logger, Guid rawLayoutId, string receiptHandle);
@@ -61,8 +61,8 @@ public static partial class MessageLogger
     [LoggerMessage(EventId = 1315, Level = LogLevel.Error, Message = "Failed to process SQS message; rawLayoutId={RawLayoutId} receiptHandle={ReceiptHandle}")]
     public static partial void ErrorProcessingSqsMessage(this ILogger logger, Guid rawLayoutId, string receiptHandle, Exception exception);
 
-    [LoggerMessage(EventId = 1316, Level = LogLevel.Error, Message = "SQS message arrived in DLQ; rawLayoutId={RawLayoutId} approximateReceiveCount={ApproximateReceiveCount}")]
-    public static partial void SqsMessageArrivedInDlq(this ILogger logger, Guid rawLayoutId, int approximateReceiveCount);
+    [LoggerMessage(EventId = 1316, Level = LogLevel.Warning, Message = "SQS message is being retried; rawLayoutId={RawLayoutId} approximateReceiveCount={ApproximateReceiveCount}")]
+    public static partial void SqsMessageRetry(this ILogger logger, Guid rawLayoutId, int approximateReceiveCount);
 
     [LoggerMessage(EventId = 1317, Level = LogLevel.Error, Message = "SQS polling error; will retry")]
     public static partial void SqsPollingError(this ILogger logger, Exception exception);

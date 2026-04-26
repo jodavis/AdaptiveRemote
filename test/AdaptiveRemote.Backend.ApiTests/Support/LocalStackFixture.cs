@@ -49,11 +49,31 @@ public class LocalStackFixture : IDisposable
 
         if (!string.IsNullOrWhiteSpace(existingContainer))
         {
-            // Container already running, just mark as started (we don't own it)
-            _isStarted = true;
-            _ownsContainer = false;
+            // Container already running — verify that SQS is enabled before reusing it.
+            // An older container may have been started with SERVICES=dynamodb only.
             await WaitForLocalStackReadyAsync();
-            return;
+            if (await IsSqsEnabledAsync())
+            {
+                _isStarted = true;
+                _ownsContainer = false;
+                return;
+            }
+
+            // SQS not available — stop the stale container so we can start a fresh one
+            // with the correct SERVICES configuration.
+            Process stopOldProcess = new()
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "docker",
+                    Arguments = "stop localstack-test",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            stopOldProcess.Start();
+            await stopOldProcess.WaitForExitAsync();
+            stopOldProcess.Dispose();
         }
 
         // Start LocalStack container
@@ -63,7 +83,7 @@ public class LocalStackFixture : IDisposable
             Arguments = "run --rm -d " +
                        "--name localstack-test " +
                        "-p 4566:4566 " +
-                       "-e SERVICES=dynamodb " +
+                       "-e SERVICES=dynamodb,sqs " +
                        "localstack/localstack:3.0",
             UseShellExecute = false,
             RedirectStandardOutput = true,
@@ -210,6 +230,51 @@ public class LocalStackFixture : IDisposable
     /// </summary>
     public string GetSqsQueueUrl(string queueName)
         => $"http://sqs.{Region}.localhost.localstack.cloud:4566/000000000000/{queueName}";
+
+    /// <summary>
+    /// Returns true if SQS is enabled in the running LocalStack instance.
+    /// </summary>
+    private async Task<bool> IsSqsEnabledAsync()
+    {
+        try
+        {
+            using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(5) };
+            HttpResponseMessage response = await client.GetAsync($"{ServiceUrl}/_localstack/health");
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            string body = await response.Content.ReadAsStringAsync();
+            using System.Text.Json.JsonDocument json = System.Text.Json.JsonDocument.Parse(body);
+
+            // Top-level "status": "running" means all services are implicitly available
+            if (json.RootElement.TryGetProperty("status", out System.Text.Json.JsonElement statusEl))
+            {
+                string status = statusEl.GetString() ?? string.Empty;
+                if (string.Equals(status, "running", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            if (json.RootElement.TryGetProperty("services", out System.Text.Json.JsonElement servicesEl))
+            {
+                if (servicesEl.TryGetProperty("sqs", out System.Text.Json.JsonElement sqsEl))
+                {
+                    string sqsStatus = sqsEl.GetString() ?? string.Empty;
+                    return string.Equals(sqsStatus, "available", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(sqsStatus, "running", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     private async Task WaitForLocalStackReadyAsync()
     {

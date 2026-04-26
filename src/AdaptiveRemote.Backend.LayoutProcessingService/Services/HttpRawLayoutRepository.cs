@@ -1,16 +1,13 @@
-using AdaptiveRemote.Backend.LayoutProcessingService.Configuration;
 using AdaptiveRemote.Contracts;
-using Microsoft.Extensions.Options;
-using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace AdaptiveRemote.Backend.LayoutProcessingService.Services;
 
 /// <summary>
-/// HTTP client implementation of IRawLayoutRepository and IRawLayoutStatusWriter.
-/// Calls RawLayoutService over HTTP to fetch raw layouts and write back validation results.
+/// HTTP client implementation of IRawLayoutRepository.
+/// Calls RawLayoutService over HTTP to fetch and manage raw layouts.
 /// </summary>
-public class HttpRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatusWriter
+public class HttpRawLayoutRepository : IRawLayoutRepository
 {
     private readonly HttpClient _httpClient;
 
@@ -69,18 +66,6 @@ public class HttpRawLayoutRepository : IRawLayoutRepository, IRawLayoutStatusWri
     {
         HttpResponseMessage response = await _httpClient
             .DeleteAsync($"/layouts/raw/{id}", ct)
-            .ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
-    }
-
-    public async Task UpdateValidationResultAsync(Guid rawLayoutId, ValidationResult result, CancellationToken ct)
-    {
-        string json = JsonSerializer.Serialize(result, LayoutContractsJsonContext.Default.ValidationResult);
-        StringContent content = new(json, System.Text.Encoding.UTF8, "application/json");
-
-        HttpResponseMessage response = await _httpClient
-            .PatchAsync($"/layouts/raw/{rawLayoutId}/validation-result", content, ct)
             .ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
