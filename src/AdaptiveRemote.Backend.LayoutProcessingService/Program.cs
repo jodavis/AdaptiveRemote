@@ -1,10 +1,8 @@
-using AdaptiveRemote.Backend.RawLayoutService.Configuration;
-using AdaptiveRemote.Backend.RawLayoutService.Endpoints;
-using AdaptiveRemote.Backend.RawLayoutService.Logging;
-using AdaptiveRemote.Backend.RawLayoutService.Repositories;
-using AdaptiveRemote.Backend.RawLayoutService.Services;
+using AdaptiveRemote.Backend.LayoutProcessingService.Configuration;
+using AdaptiveRemote.Backend.LayoutProcessingService.Endpoints;
+using AdaptiveRemote.Backend.LayoutProcessingService.Logging;
+using AdaptiveRemote.Backend.LayoutProcessingService.Services;
 using AdaptiveRemote.Contracts;
-using Amazon.DynamoDBv2;
 using Amazon.SQS;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -16,55 +14,7 @@ using System.Text.Json;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Configure DynamoDB
-DynamoDbSettings dynamoDbSettings = builder.Configuration
-    .GetSection("DynamoDB")
-    .Get<DynamoDbSettings>() ?? new DynamoDbSettings();
-
-builder.Services.Configure<DynamoDbSettings>(builder.Configuration.GetSection("DynamoDB"));
-
-// Create DynamoDB client
-IAmazonDynamoDB dynamoDbClient;
-
-if (!string.IsNullOrEmpty(dynamoDbSettings.ServiceUrl))
-{
-    // LocalStack or custom endpoint - use explicit credentials from environment
-    AmazonDynamoDBConfig dynamoDbConfig = new()
-    {
-        ServiceURL = dynamoDbSettings.ServiceUrl,
-        // Don't set RegionEndpoint when using ServiceURL - it overrides the custom endpoint
-        AuthenticationRegion = dynamoDbSettings.Region
-    };
-
-    string? accessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
-    string? secretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
-
-    if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(secretKey))
-    {
-        // Use explicit credentials for LocalStack
-        dynamoDbClient = new AmazonDynamoDBClient(
-            new Amazon.Runtime.BasicAWSCredentials(accessKey, secretKey),
-            dynamoDbConfig);
-    }
-    else
-    {
-        // Fall back to default credential chain
-        dynamoDbClient = new AmazonDynamoDBClient(dynamoDbConfig);
-    }
-}
-else
-{
-    // Production AWS - use default credential chain (IAM roles, etc.)
-    AmazonDynamoDBConfig dynamoDbConfig = new()
-    {
-        RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(dynamoDbSettings.Region)
-    };
-    dynamoDbClient = new AmazonDynamoDBClient(dynamoDbConfig);
-}
-
-builder.Services.AddSingleton(dynamoDbClient);
-
-// Configure SQS for the layout processing trigger
+// Configure SQS settings
 SqsSettings sqsSettings = builder.Configuration
     .GetSection("Sqs")
     .Get<SqsSettings>() ?? new SqsSettings();
@@ -83,13 +33,13 @@ if (!string.IsNullOrEmpty(sqsSettings.ServiceUrl))
         AuthenticationRegion = sqsSettings.Region
     };
 
-    string? sqsAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
-    string? sqsSecretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+    string? accessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+    string? secretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
 
-    if (!string.IsNullOrEmpty(sqsAccessKey) && !string.IsNullOrEmpty(sqsSecretKey))
+    if (!string.IsNullOrEmpty(accessKey) && !string.IsNullOrEmpty(secretKey))
     {
         sqsClient = new AmazonSQSClient(
-            new Amazon.Runtime.BasicAWSCredentials(sqsAccessKey, sqsSecretKey),
+            new Amazon.Runtime.BasicAWSCredentials(accessKey, secretKey),
             sqsConfig);
     }
     else
@@ -99,7 +49,7 @@ if (!string.IsNullOrEmpty(sqsSettings.ServiceUrl))
 }
 else
 {
-    // Production AWS — use default credential chain
+    // Production AWS — use default credential chain (IAM roles, etc.)
     AmazonSQSConfig sqsConfig = new()
     {
         RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(sqsSettings.Region)
@@ -109,25 +59,54 @@ else
 
 builder.Services.AddSingleton(sqsClient);
 
-// Register repositories and services
-builder.Services.AddSingleton<DynamoDbRawLayoutRepository>();
-builder.Services.AddSingleton<IRawLayoutRepository>(sp => sp.GetRequiredService<DynamoDbRawLayoutRepository>());
-builder.Services.AddSingleton<IRawLayoutStatusWriter>(sp => sp.GetRequiredService<DynamoDbRawLayoutRepository>());
+// Configure HTTP client for RawLayoutService
+RawLayoutServiceSettings rawLayoutSettings = builder.Configuration
+    .GetSection("RawLayoutService")
+    .Get<RawLayoutServiceSettings>() ?? new RawLayoutServiceSettings();
 
-// Register the layout processing trigger: use SQS if configured, otherwise fall back to no-op stub.
-// SQS wiring requires a QueueUrl; environments without SQS (e.g. integration tests without LocalStack)
-// continue using the stub so CRUD endpoints remain functional.
-if (!string.IsNullOrEmpty(sqsSettings.QueueUrl))
-{
-    builder.Services.AddSingleton<ILayoutProcessingTrigger, SqsLayoutProcessingTrigger>();
-}
-else
-{
-    builder.Services.AddSingleton<ILayoutProcessingTrigger, StubLayoutProcessingTrigger>();
-}
+builder.Services.Configure<RawLayoutServiceSettings>(builder.Configuration.GetSection("RawLayoutService"));
 
-// Register stub notification publisher (to be replaced in Task 9)
+builder.Services.AddHttpClient<HttpRawLayoutRepository>(client =>
+{
+    if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
+    {
+        client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
+    }
+});
+
+builder.Services.AddSingleton<IRawLayoutRepository>(sp =>
+    sp.GetRequiredService<HttpRawLayoutRepository>());
+builder.Services.AddSingleton<IRawLayoutStatusWriter>(sp =>
+    sp.GetRequiredService<HttpRawLayoutRepository>());
+
+// Configure HTTP client for CompiledLayoutService
+CompiledLayoutServiceSettings compiledLayoutSettings = builder.Configuration
+    .GetSection("CompiledLayoutService")
+    .Get<CompiledLayoutServiceSettings>() ?? new CompiledLayoutServiceSettings();
+
+builder.Services.Configure<CompiledLayoutServiceSettings>(builder.Configuration.GetSection("CompiledLayoutService"));
+
+builder.Services.AddHttpClient<HttpCompiledLayoutRepository>(client =>
+{
+    if (!string.IsNullOrEmpty(compiledLayoutSettings.BaseUrl))
+    {
+        client.BaseAddress = new Uri(compiledLayoutSettings.BaseUrl);
+    }
+});
+
+builder.Services.AddSingleton<ICompiledLayoutRepository>(sp =>
+    sp.GetRequiredService<HttpCompiledLayoutRepository>());
+
+// Register stub implementations (to be replaced in later tasks)
+builder.Services.AddSingleton<ILayoutCompilerClient, StubLayoutCompilerClient>();
+builder.Services.AddSingleton<ILayoutValidationClient, StubLayoutValidationClient>();
 builder.Services.AddSingleton<INotificationPublisher, StubNotificationPublisher>();
+
+// Register the SQS trigger (used by RawLayoutService to enqueue requests into this service)
+builder.Services.AddSingleton<ILayoutProcessingTrigger, SqsLayoutProcessingTrigger>();
+
+// Register the orchestration background service
+builder.Services.AddHostedService<LayoutProcessingOrchestrator>();
 
 // Configure JWT Bearer authentication with AWS Cognito
 CognitoSettings cognitoSettings = builder.Configuration
@@ -181,10 +160,8 @@ if (app.Environment.IsDevelopment())
 
 // Map endpoints
 app.MapHealthEndpoints();
-app.MapLayoutEndpoints();
 
 // Log the configured listen address; fall back to Kestrel's default.
-// ASPNETCORE_URLS is the standard env-var; "urls" is the equivalent command-line key.
 string listenAddress = app.Configuration["ASPNETCORE_URLS"]
     ?? app.Configuration["urls"]
     ?? "http://localhost:5000";
@@ -199,7 +176,7 @@ static async Task EnsureLocalStackRunningAsync(WebApplication app, ILogger logge
     const int LocalStackRetryDelaySeconds = 2;
     TimeSpan localStackStartupWaitTimeout = TimeSpan.FromSeconds(LocalStackStartupWaitTimeoutSeconds);
     TimeSpan localStackRetryDelay = TimeSpan.FromSeconds(LocalStackRetryDelaySeconds);
-    string[] requiredServices = ["dynamodb"];
+    string[] requiredServices = ["sqs"];
 
     string baseUrl = app.Configuration["LocalStack:BaseUrl"] ?? "http://localhost:4566";
 

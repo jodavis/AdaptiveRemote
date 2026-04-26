@@ -4,15 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>AdaptiveRemote.Backend.RawLayoutService</RootNamespace>
-    <UserSecretsId>7c4a1f2e-b839-4d6a-9e0c-f521da3b8c47</UserSecretsId>
+    <RootNamespace>AdaptiveRemote.Backend.LayoutProcessingService</RootNamespace>
+    <UserSecretsId>3d8a2e1f-c947-4b5a-8d0e-g632eb4c9f58</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
-    <PackageReference Include="AWSSDK.DynamoDBv2" />
     <PackageReference Include="AWSSDK.SQS" />
   </ItemGroup>
 

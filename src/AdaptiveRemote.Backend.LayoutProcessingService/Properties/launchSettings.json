@@ -1,0 +1,23 @@
+{
+  "profiles": {
+    "Development": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "scalar",
+      "outputCapture": "None",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:54437;http://localhost:54438"
+    },
+    "AdaptiveRemote.Backend.LayoutProcessingService": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "scalar",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:54437;http://localhost:54438"
+    }
+  }
+}
