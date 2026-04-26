@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using Amazon.SQS;
+using Amazon.SQS.Model;
 
 namespace AdaptiveRemote.Backend.ApiTests.Support;
 
@@ -117,7 +119,7 @@ public class LocalStackFixture : IDisposable
             // Table exists, no need to create
             return;
         }
-        catch (ResourceNotFoundException)
+        catch (Amazon.DynamoDBv2.Model.ResourceNotFoundException)
         {
             // Table doesn't exist, proceed to create
         }
@@ -153,7 +155,7 @@ public class LocalStackFixture : IDisposable
                     await Task.Delay(500, cancellationToken);
                 }
             }
-            catch (ResourceNotFoundException)
+            catch (Amazon.DynamoDBv2.Model.ResourceNotFoundException)
             {
                 await Task.Delay(500, cancellationToken);
             }
@@ -164,6 +166,50 @@ public class LocalStackFixture : IDisposable
             throw new InvalidOperationException($"Table {tableName} did not become active within 15 seconds");
         }
     }
+
+    /// <summary>
+    /// Creates an SQS queue in LocalStack for testing. Idempotent: returns existing queue URL if already present.
+    /// </summary>
+    public async Task<string> CreateSqsQueueAsync(string queueName, CancellationToken cancellationToken = default)
+    {
+        if (!_isStarted)
+        {
+            throw new InvalidOperationException("LocalStack must be started before creating queues");
+        }
+
+        Amazon.Runtime.BasicAWSCredentials credentials = new("test", "test");
+
+        AmazonSQSConfig config = new()
+        {
+            ServiceURL = ServiceUrl,
+            AuthenticationRegion = Region
+        };
+
+        using AmazonSQSClient client = new(credentials, config);
+
+        try
+        {
+            GetQueueUrlResponse existingQueue = await client.GetQueueUrlAsync(queueName, cancellationToken);
+            return existingQueue.QueueUrl;
+        }
+        catch (QueueDoesNotExistException)
+        {
+            // Queue doesn't exist, proceed to create
+        }
+
+        CreateQueueResponse response = await client.CreateQueueAsync(new CreateQueueRequest
+        {
+            QueueName = queueName
+        }, cancellationToken);
+
+        return response.QueueUrl;
+    }
+
+    /// <summary>
+    /// Returns the SQS queue URL for the given queue name in LocalStack format.
+    /// </summary>
+    public string GetSqsQueueUrl(string queueName)
+        => $"http://sqs.{Region}.localhost.localstack.cloud:4566/000000000000/{queueName}";
 
     private async Task WaitForLocalStackReadyAsync()
     {

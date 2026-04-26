@@ -86,4 +86,29 @@ public class HardcodedLayoutProvider : ICompiledLayoutRepository
 
         return Task.FromResult<CompiledLayout?>(layout);
     }
+
+    public Task<IReadOnlyList<CompiledLayout>> ListByUserAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        // Hardcoded MVP — real DynamoDB implementation in ADR-173
+        IReadOnlyList<CompiledLayout> empty = Array.Empty<CompiledLayout>();
+        return Task.FromResult(empty);
+    }
+
+    public Task<CompiledLayout?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        // Hardcoded MVP — real DynamoDB implementation in ADR-173
+        return Task.FromResult<CompiledLayout?>(null);
+    }
+
+    public Task<CompiledLayout> SaveAsync(CompiledLayout layout, CancellationToken cancellationToken = default)
+    {
+        // Hardcoded MVP — real DynamoDB implementation in ADR-173
+        return Task.FromResult(layout);
+    }
+
+    public Task SetActiveAsync(Guid id, string userId, CancellationToken cancellationToken = default)
+    {
+        // Hardcoded MVP — real DynamoDB implementation in ADR-173
+        return Task.CompletedTask;
+    }
 }

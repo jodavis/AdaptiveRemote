@@ -60,13 +60,23 @@ public class ServiceFixture : IDisposable
 
         _startedServiceName = serviceName;
 
-        // Start LocalStack if this is the RawLayoutService (which needs DynamoDB).
+        // Start LocalStack if this is a service that needs AWS resources (DynamoDB, SQS).
         // A single LocalStack instance is shared across all scenarios.
         LocalStackFixture? localStack = null;
-        if (serviceName == "AdaptiveRemote.Backend.RawLayoutService")
+        if (serviceName == "AdaptiveRemote.Backend.RawLayoutService"
+            || serviceName == "AdaptiveRemote.Backend.LayoutProcessingService")
         {
             localStack = await GetSharedLocalStackAsync();
-            await localStack.CreateTableAsync("RawLayouts");
+
+            if (serviceName == "AdaptiveRemote.Backend.RawLayoutService")
+            {
+                await localStack.CreateTableAsync("RawLayouts");
+            }
+
+            if (serviceName == "AdaptiveRemote.Backend.LayoutProcessingService")
+            {
+                await localStack.CreateSqsQueueAsync("LayoutProcessingQueue");
+            }
         }
 
         // Start the JWT authority first so its URL is available for service configuration.
@@ -116,15 +126,31 @@ public class ServiceFixture : IDisposable
             }
         };
 
-        // Configure DynamoDB for RawLayoutService
+        // Configure AWS resources for services that need LocalStack
         if (localStack != null)
+        {
+            // Provide dummy AWS credentials for LocalStack
+            startInfo.Environment["AWS_ACCESS_KEY_ID"] = "test";
+            startInfo.Environment["AWS_SECRET_ACCESS_KEY"] = "test";
+        }
+
+        // Configure DynamoDB for RawLayoutService
+        if (serviceName == "AdaptiveRemote.Backend.RawLayoutService" && localStack != null)
         {
             startInfo.Environment["DynamoDB__ServiceUrl"] = localStack.ServiceUrl;
             startInfo.Environment["DynamoDB__Region"] = localStack.Region;
             startInfo.Environment["DynamoDB__TableName"] = "RawLayouts";
-            // Provide dummy AWS credentials for LocalStack
-            startInfo.Environment["AWS_ACCESS_KEY_ID"] = "test";
-            startInfo.Environment["AWS_SECRET_ACCESS_KEY"] = "test";
+            startInfo.Environment["Sqs__ServiceUrl"] = localStack.ServiceUrl;
+            startInfo.Environment["Sqs__QueueUrl"] = localStack.GetSqsQueueUrl("LayoutProcessingQueue");
+            startInfo.Environment["Sqs__Region"] = localStack.Region;
+        }
+
+        // Configure SQS for LayoutProcessingService
+        if (serviceName == "AdaptiveRemote.Backend.LayoutProcessingService" && localStack != null)
+        {
+            startInfo.Environment["Sqs__ServiceUrl"] = localStack.ServiceUrl;
+            startInfo.Environment["Sqs__QueueUrl"] = localStack.GetSqsQueueUrl("LayoutProcessingQueue");
+            startInfo.Environment["Sqs__Region"] = localStack.Region;
         }
 
         _serviceProcess = new Process { StartInfo = startInfo };

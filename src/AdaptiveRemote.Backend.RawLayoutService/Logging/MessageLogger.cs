@@ -69,4 +69,10 @@ public static partial class MessageLogger
         Level = LogLevel.Error,
         Message = "LocalStack dependency check failed at {HealthUrl}: {FailureReason}. LocalStack is required for local development. See docs/local-dev.md for setup instructions")]
     public static partial void LocalStackDependencyUnavailable(this ILogger logger, string healthUrl, string failureReason, Exception? exception);
+
+    [LoggerMessage(EventId = 1219, Level = LogLevel.Information, Message = "SQS trigger enqueued; rawLayoutId={RawLayoutId} queueUrl={QueueUrl}")]
+    public static partial void SqsTriggerEnqueued(this ILogger logger, Guid rawLayoutId, string queueUrl);
+
+    [LoggerMessage(EventId = 1220, Level = LogLevel.Error, Message = "Failed to enqueue SQS trigger; rawLayoutId={RawLayoutId}")]
+    public static partial void ErrorEnqueuingSqsTrigger(this ILogger logger, Guid rawLayoutId, Exception exception);
 }
