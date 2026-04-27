@@ -300,7 +300,16 @@ Optional (silent fail): set Jira status to "In Review" via `mcp__jira__editJiraI
 
 ---
 
-### Phase 5 — Reviewer (Sonnet)
+### Phase 5 — Reviewer, first pass (Sonnet)
+
+Before spawning the Reviewer, capture the current commit SHA — this is the **reviewer baseline**
+used by all subsequent scoped Reviewer passes:
+
+```
+git rev-parse HEAD
+```
+
+Store this as `REVIEWER_BASELINE`.
 
 Spawn a Reviewer agent with `model: sonnet`. Pass it the PR URL, branch, and base branch.
 
@@ -395,10 +404,54 @@ Developer instructions:
 >
 > Return: `{ "status": "done", "branch": "BRANCH_NAME" }`
 
-After Developer finishes:
-- Re-run **Tester** (Phase 3) — if failures, back to Developer; apply same-failure-3x guard
-- If no failures, re-run **Reviewer** (Phase 5)
-- Loop until Reviewer returns an empty JSON array
+After Developer finishes, update `REVIEWER_BASELINE` to the current HEAD commit:
+
+```
+git rev-parse HEAD
+```
+
+Then spawn **Tester and scoped Reviewer in parallel** and wait for both.
+
+**Tester** (Haiku) — same instructions as Phase 3.
+
+**Scoped Reviewer** (Sonnet) instructions:
+
+> You are the Reviewer performing a follow-up review.
+>
+> **PR URL:** PR_URL
+> **Branch:** BRANCH_NAME
+> **Reviewer baseline commit:** REVIEWER_BASELINE
+>
+> This is not a full re-review. Focus only on:
+>
+> 1. **Previous comments** — read the PR comments (`gh pr view PR_URL --comments`) and verify
+>    every previously-raised issue is either fixed or has an accepted rebuttal. If any remain
+>    unaddressed without a rebuttal, include them in your output.
+>
+> 2. **Changed files** — review only files that changed since the baseline commit:
+>    ```
+>    git checkout BRANCH_NAME
+>    git diff REVIEWER_BASELINE..HEAD
+>    ```
+>    Raise new issues only if they are **significant**: correctness bugs, security problems,
+>    accessibility regressions, or clear spec non-compliance. Do not raise style, naming,
+>    or minor cleanup issues.
+>
+> For each issue, post a comment directly to the PR:
+> ```
+> gh pr review PR_URL --comment -b "path/to/File.cs:LINE — your comment"
+> ```
+>
+> Return a JSON array (same schema as before). Return only the JSON — no other text.
+> An empty array means all previous comments are resolved and no new significant issues exist.
+
+**Routing after both complete:**
+- If Tester has failures → re-spawn Developer with failure list (same-failure-3x guard applies)
+- If scoped Reviewer has issues → re-spawn Developer with PR URL to address them
+- If both have issues → re-spawn Developer once with both sets
+- If both are clean → go to Completion
+
+Loop, updating `REVIEWER_BASELINE` each time before the parallel spawn.
 
 ---
 
