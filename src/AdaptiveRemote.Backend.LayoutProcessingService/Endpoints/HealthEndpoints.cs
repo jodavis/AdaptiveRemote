@@ -21,16 +21,24 @@ public static class HealthEndpoints
     {
         logger.HealthCheckRequested();
 
-        HealthResponse response = new(
-            ServiceName: "LayoutProcessingService",
-            Version: Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown",
-            Status: "Healthy"
-        );
+        try
+        {
+            HealthResponse response = new(
+                ServiceName: "LayoutProcessingService",
+                Version: Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown",
+                Status: "Healthy"
+            );
 
-        logger.HealthCheckSuccessful();
+            logger.HealthCheckSuccessful();
 
-        return Results.Json(
-            response,
-            LayoutContractsJsonContext.Default.HealthResponse);
+            return Results.Json(
+                response,
+                LayoutContractsJsonContext.Default.HealthResponse);
+        }
+        catch (Exception ex)
+        {
+            logger.ErrorProcessingHealthCheck(ex);
+            return Results.Problem("Health check failed");
+        }
     }
 }

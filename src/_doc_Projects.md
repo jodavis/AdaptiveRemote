@@ -50,6 +50,16 @@ Backend services live under `src/` alongside client projects. Use `backend.slnf`
 - **Authentication:** JWT Bearer via AWS Cognito. See [`AdaptiveRemote.Backend.CompiledLayoutService/_doc_Auth.md`](AdaptiveRemote.Backend.CompiledLayoutService/_doc_Auth.md).
 - **Pattern:** All backend services follow the logging, health endpoint, and structured log patterns established here (see ADR-167/ADR-168).
 
+### AdaptiveRemote.Backend.RawLayoutService
+- **Purpose:** Stores and manages raw (user-authored) layout definitions. Accepts layout saves from the client, persists them to DynamoDB, and enqueues a processing request to SQS when a layout is ready for compilation.
+- **Authentication:** JWT Bearer via AWS Cognito.
+- **Pattern:** Follows the same logging, health endpoint, and structured log patterns as CompiledLayoutService (ADR-167/ADR-168).
+
+### AdaptiveRemote.Backend.LayoutProcessingService
+- **Purpose:** Background processing service that polls an SQS queue for layout compilation requests, runs each raw layout through the compile → validate → store pipeline, and publishes a layout-ready notification on success.
+- **Authentication:** Service-to-service (no user-facing endpoints); communicates with RawLayoutService and CompiledLayoutService over HTTP using a service account token.
+- **Pattern:** Follows the same logging and health endpoint patterns as the other backend services. Orchestration logic lives in `LayoutProcessingOrchestrator` (a `BackgroundService`).
+
 ## Test Projects
 
 ### AdaptiveRemote.App.Tests

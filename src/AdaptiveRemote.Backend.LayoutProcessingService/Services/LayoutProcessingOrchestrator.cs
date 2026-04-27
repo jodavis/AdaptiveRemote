@@ -128,16 +128,16 @@ public class LayoutProcessingOrchestrator : BackgroundService
             return;
         }
 
-        // Log DLQ warning: if ApproximateReceiveCount is at or near the max, the next
-        // failure will move the message to DLQ. We log at receive count > 1 to surface retries.
+        _logger.SqsMessageReceived(rawLayoutId, receiptHandle);
+
+        // Log retry warning after establishing message identity: if ApproximateReceiveCount > 1
+        // the message has already been attempted; the next failure will route it to the DLQ.
         if (message.Attributes.TryGetValue("ApproximateReceiveCount", out string? receiveCountStr)
             && int.TryParse(receiveCountStr, out int receiveCount)
             && receiveCount > 1)
         {
             _logger.SqsMessageRetry(rawLayoutId, receiveCount);
         }
-
-        _logger.SqsMessageReceived(rawLayoutId, receiptHandle);
 
         try
         {
