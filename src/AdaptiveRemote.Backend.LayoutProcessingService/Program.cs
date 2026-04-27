@@ -102,8 +102,13 @@ builder.Services.AddSingleton<ILayoutCompilerClient, StubLayoutCompilerClient>()
 builder.Services.AddSingleton<ILayoutValidationClient, StubLayoutValidationClient>();
 builder.Services.AddSingleton<INotificationPublisher, StubNotificationPublisher>();
 
-// Register the orchestration background service
-builder.Services.AddHostedService<LayoutProcessingOrchestrator>();
+// Register the orchestration background service.
+// Set Orchestrator:Enabled=false to skip registration (e.g. health-check-only E2E tests).
+bool orchestratorEnabled = builder.Configuration.GetValue("Orchestrator:Enabled", defaultValue: true);
+if (orchestratorEnabled)
+{
+    builder.Services.AddHostedService<LayoutProcessingOrchestrator>();
+}
 
 // Configure JWT Bearer authentication with AWS Cognito
 CognitoSettings cognitoSettings = builder.Configuration
