@@ -18,11 +18,6 @@ public class SqsSettings
     public string QueueUrl { get; set; } = string.Empty;
 
     /// <summary>
-    /// The URL of the dead letter queue. Used for DLQ arrival logging.
-    /// </summary>
-    public string DlqUrl { get; set; } = string.Empty;
-
-    /// <summary>
     /// AWS region (e.g. "us-east-1").
     /// </summary>
     public string Region { get; set; } = "us-east-1";
