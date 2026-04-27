@@ -354,6 +354,84 @@ public class LayoutProcessingOrchestratorTests
             Times.Never);
     }
 
+    // ─── Unrecognized message body ─────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task LayoutProcessingOrchestrator_ProcessMessageAsync_UnrecognizedMessageBody_DeletesMessageWithoutPipelineSteps()
+    {
+        // Arrange — message body is not a valid GUID
+        const string InvalidBody = "not-a-guid";
+        string receiptHandle = $"receipt-{Guid.NewGuid():N}";
+
+        SemaphoreSlim messageProcessed = new(0, 1);
+        int receiveCount = 0;
+
+        _mockSqs
+            .Setup(s => s.ReceiveMessageAsync(It.IsAny<ReceiveMessageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() =>
+            {
+                if (receiveCount++ == 0)
+                {
+                    return new ReceiveMessageResponse
+                    {
+                        Messages =
+                        [
+                            new Message
+                            {
+                                MessageId = Guid.NewGuid().ToString(),
+                                ReceiptHandle = receiptHandle,
+                                Body = InvalidBody,
+                                Attributes = new Dictionary<string, string>
+                                {
+                                    ["ApproximateReceiveCount"] = "1"
+                                }
+                            }
+                        ]
+                    };
+                }
+
+                messageProcessed.Release();
+                return new ReceiveMessageResponse { Messages = [] };
+            });
+
+        _mockSqs
+            .Setup(s => s.DeleteMessageAsync(It.IsAny<DeleteMessageRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DeleteMessageResponse());
+
+        // Act
+        LayoutProcessingOrchestrator orchestrator = CreateOrchestrator();
+        CancellationTokenSource cts = new();
+        await orchestrator.StartAsync(cts.Token);
+
+        bool processed = await messageProcessed.WaitAsync(TimeSpan.FromSeconds(10));
+        processed.Should().BeTrue(because: "unrecognized message should be deleted within 10 seconds");
+
+        await cts.CancelAsync();
+        await orchestrator.StopAsync(CancellationToken.None);
+
+        // Assert — message is deleted and no pipeline steps are invoked
+        _mockSqs.Verify(
+            s => s.DeleteMessageAsync(
+                It.Is<DeleteMessageRequest>(r => r.ReceiptHandle == receiptHandle),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mockRawLayoutRepository.Verify(
+            r => r.GetAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _mockCompilerClient.Verify(
+            c => c.CompileAsync(It.IsAny<RawLayout>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _mockValidationClient.Verify(
+            v => v.ValidateAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _mockCompiledLayoutRepository.Verify(
+            r => r.SaveAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _mockNotificationPublisher.Verify(
+            p => p.PublishLayoutReadyAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────────────
 
     private LayoutProcessingOrchestrator CreateOrchestrator()

@@ -1,3 +1,7 @@
 @echo off
-powershell -ExecutionPolicy Bypass -File "%~dp0validate-tests.ps1"
-exit /b %ERRORLEVEL%
+pushd %~dp0..
+dotnet test --no-build "%~dp0validate-unit-tests.proj"
+if %ERRORLEVEL% neq 0 ( popd & exit /b %ERRORLEVEL% )
+dotnet test --no-build "%~dp0validate-e2e-tests.proj"
+if %ERRORLEVEL% neq 0 ( popd & exit /b %ERRORLEVEL% )
+popd

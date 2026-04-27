@@ -166,14 +166,16 @@ Developer instructions:
 >   relying on the build to catch it.
 > - Update any affected `_doc_*.md` files.
 >
-> **Step 4 — Stage and build**
+> **Step 4 — Build**
+>
+> Do not run tests — that is the Tester agent's responsibility. Only run the build:
 >
 > ```
-> scripts/validate-build
+> scripts/validate-build.sh
 > ```
 >
-> Fix all warnings and errors. Re-run as many times as needed until the build
-> is clean.
+> The script stages new files and cleans before building — do not run `git add -A`
+> separately. Fix all warnings and errors and re-run until the build is clean.
 >
 > **Step 5 — Commit and push**
 >
@@ -210,7 +212,7 @@ Tester instructions:
 >
 > ```
 > git checkout BRANCH_NAME
-> scripts/validate-tests
+> scripts/validate-tests.sh
 > ```
 >
 > For each failing test, investigate the root cause by reading the relevant test file and
@@ -246,12 +248,14 @@ Tester instructions:
 > **Failing tests:**
 > FAILURE_JSON
 >
-> Check out the branch, fix each failure, re-run the failed tests to confirm no
-> new build breakage, then commit and push:
+> Check out the branch and fix each failure. You may re-run individual tests to
+> verify a specific fix (e.g. `dotnet test --filter "FullyQualifiedName~TEST_NAME"`),
+> but do not run the full suite — that is the Tester agent's job. When done, confirm
+> the build is still clean, then commit and push:
 >
 > ```
 > git checkout BRANCH_NAME
-> dotnet test --filter "FullyQualifiedName~TEST_NAME"
+> scripts/validate-build.sh
 > git commit -m "fix: address test failures [TASK_KEY]"
 > git push
 > ```
@@ -382,9 +386,9 @@ Developer instructions:
 >    gh pr review PR_URL --comment -b "File.cs:LINE — [your rebuttal]"
 >    ```
 >
-> **Step 4** — Stage, build, commit, and push:
+> **Step 4** — Build, commit, and push:
 > ```
-> scripts/validate-build
+> scripts/validate-build.sh
 > git commit -m "review: address feedback [TASK_KEY]"
 > git push
 > ```

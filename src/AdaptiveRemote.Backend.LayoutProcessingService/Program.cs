@@ -66,7 +66,7 @@ RawLayoutServiceSettings rawLayoutSettings = builder.Configuration
 
 builder.Services.Configure<RawLayoutServiceSettings>(builder.Configuration.GetSection("RawLayoutService"));
 
-builder.Services.AddHttpClient<HttpRawLayoutRepository>(client =>
+builder.Services.AddHttpClient<IRawLayoutRepository, HttpRawLayoutRepository>(client =>
 {
     if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
     {
@@ -74,10 +74,13 @@ builder.Services.AddHttpClient<HttpRawLayoutRepository>(client =>
     }
 });
 
-builder.Services.AddSingleton<IRawLayoutRepository>(sp =>
-    sp.GetRequiredService<HttpRawLayoutRepository>());
-builder.Services.AddSingleton<IRawLayoutStatusWriter>(sp =>
-    sp.GetRequiredService<HttpRawLayoutRepository>());
+builder.Services.AddHttpClient<IRawLayoutStatusWriter, HttpRawLayoutStatusWriter>(client =>
+{
+    if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
+    {
+        client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
+    }
+});
 
 // Configure HTTP client for CompiledLayoutService
 CompiledLayoutServiceSettings compiledLayoutSettings = builder.Configuration
@@ -86,7 +89,7 @@ CompiledLayoutServiceSettings compiledLayoutSettings = builder.Configuration
 
 builder.Services.Configure<CompiledLayoutServiceSettings>(builder.Configuration.GetSection("CompiledLayoutService"));
 
-builder.Services.AddHttpClient<HttpCompiledLayoutRepository>(client =>
+builder.Services.AddHttpClient<ICompiledLayoutRepository, HttpCompiledLayoutRepository>(client =>
 {
     if (!string.IsNullOrEmpty(compiledLayoutSettings.BaseUrl))
     {
@@ -94,16 +97,10 @@ builder.Services.AddHttpClient<HttpCompiledLayoutRepository>(client =>
     }
 });
 
-builder.Services.AddSingleton<ICompiledLayoutRepository>(sp =>
-    sp.GetRequiredService<HttpCompiledLayoutRepository>());
-
 // Register stub implementations (to be replaced in later tasks)
 builder.Services.AddSingleton<ILayoutCompilerClient, StubLayoutCompilerClient>();
 builder.Services.AddSingleton<ILayoutValidationClient, StubLayoutValidationClient>();
 builder.Services.AddSingleton<INotificationPublisher, StubNotificationPublisher>();
-
-// Register the SQS trigger (used by RawLayoutService to enqueue requests into this service)
-builder.Services.AddSingleton<ILayoutProcessingTrigger, SqsLayoutProcessingTrigger>();
 
 // Register the orchestration background service
 builder.Services.AddHostedService<LayoutProcessingOrchestrator>();

@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-pwsh "$(dirname "$0")/validate.ps1"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+"$SCRIPT_DIR/validate-build.sh"
+"$SCRIPT_DIR/validate-tests.sh"

@@ -1,3 +1,9 @@
 @echo off
-powershell -ExecutionPolicy Bypass -File "%~dp0validate-build.ps1"
-exit /b %ERRORLEVEL%
+pushd %~dp0..
+git add -A
+if %ERRORLEVEL% neq 0 ( popd & exit /b %ERRORLEVEL% )
+git clean -xdf src test
+if %ERRORLEVEL% neq 0 ( popd & exit /b %ERRORLEVEL% )
+dotnet build /warnaserror
+if %ERRORLEVEL% neq 0 ( popd & exit /b %ERRORLEVEL% )
+popd

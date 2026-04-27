@@ -151,6 +151,10 @@ public class ServiceFixture : IDisposable
             startInfo.Environment["Sqs__ServiceUrl"] = localStack.ServiceUrl;
             startInfo.Environment["Sqs__QueueUrl"] = localStack.GetSqsQueueUrl("LayoutProcessingQueue");
             startInfo.Environment["Sqs__Region"] = localStack.Region;
+            // Set dummy upstream BaseUrls so the background orchestrator does not attempt
+            // real HTTP calls to unconfigured services during the health check test.
+            startInfo.Environment["RawLayoutService__BaseUrl"] = "http://localhost:0";
+            startInfo.Environment["CompiledLayoutService__BaseUrl"] = "http://localhost:0";
         }
 
         _serviceProcess = new Process { StartInfo = startInfo };
