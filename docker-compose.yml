@@ -77,7 +77,6 @@ services:
       # SQS settings for LocalStack
       - Sqs__ServiceUrl=http://localstack:4566
       - Sqs__QueueUrl=http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/LayoutProcessingQueue
-      - Sqs__DlqUrl=http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/LayoutProcessingDLQ
       - Sqs__Region=us-east-1
       # Upstream service URLs (Docker Compose DNS)
       - RawLayoutService__BaseUrl=http://rawlayoutservice:8080

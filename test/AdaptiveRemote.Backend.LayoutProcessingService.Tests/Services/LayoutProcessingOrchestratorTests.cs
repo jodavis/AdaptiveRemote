@@ -4,7 +4,6 @@ using AdaptiveRemote.Contracts;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -26,7 +25,7 @@ public class LayoutProcessingOrchestratorTests
     private Mock<ILayoutValidationClient> _mockValidationClient = null!;
     private Mock<ICompiledLayoutRepository> _mockCompiledLayoutRepository = null!;
     private Mock<INotificationPublisher> _mockNotificationPublisher = null!;
-    private Mock<ILogger<LayoutProcessingOrchestrator>> _mockLogger = null!;
+    private MockLogger<LayoutProcessingOrchestrator> _mockLogger = null!;
 
     private static readonly string TestQueueUrl = "http://localhost:4566/000000000000/TestQueue";
     private static readonly string TestUserId = "user-123";
@@ -42,7 +41,7 @@ public class LayoutProcessingOrchestratorTests
         _mockValidationClient = new Mock<ILayoutValidationClient>();
         _mockCompiledLayoutRepository = new Mock<ICompiledLayoutRepository>();
         _mockNotificationPublisher = new Mock<INotificationPublisher>();
-        _mockLogger = new Mock<ILogger<LayoutProcessingOrchestrator>>();
+        _mockLogger = new MockLogger<LayoutProcessingOrchestrator>();
     }
 
     [TestCleanup]
@@ -132,6 +131,17 @@ public class LayoutProcessingOrchestratorTests
         _mockCompiledLayoutRepository.Verify(r => r.SaveAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockNotificationPublisher.Verify(p => p.PublishLayoutReadyAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockSqs.Verify(s => s.DeleteMessageAsync(It.IsAny<DeleteMessageRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        // Verify key log messages for the success pipeline were emitted.
+        // Polling infrastructure messages (SqsPollingError, SqsPollingStopped) are not asserted
+        // here because they can appear non-deterministically depending on cancellation timing.
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1706]: SQS polling loop started; queue={TestQueueUrl}"), "polling should start");
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1708]: SQS message received; rawLayoutId={TestRawLayoutId}"), "message identity should be logged first");
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1709]: Layout compiled successfully; rawLayoutId={TestRawLayoutId}"), "compile should be logged");
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1710]: Layout validation passed; rawLayoutId={TestRawLayoutId}"), "validation pass should be logged");
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1712]: Compiled layout stored; rawLayoutId={TestRawLayoutId}"), "store should be logged");
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1713]: Layout-ready notification published; userId={TestUserId}"), "notify should be logged");
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1714]: SQS message processed successfully; rawLayoutId={TestRawLayoutId}"), "success should be logged");
     }
 
     [TestMethod]
@@ -272,6 +282,11 @@ public class LayoutProcessingOrchestratorTests
         _mockSqs.Verify(
             s => s.DeleteMessageAsync(It.IsAny<DeleteMessageRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
+
+        // Verify validation failure logs were emitted
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1708]: SQS message received; rawLayoutId={TestRawLayoutId}"), "message identity should be established");
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Warning[1711]: Layout validation failed; rawLayoutId={TestRawLayoutId} issueCount=1"), "validation failure should be logged as warning");
+        _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1719]: Validation result written back to raw layout; rawLayoutId={TestRawLayoutId}"), "write-back should be confirmed");
     }
 
     // ─── SQS retry behavior ────────────────────────────────────────────────────────
@@ -466,6 +481,11 @@ public class LayoutProcessingOrchestratorTests
         _mockNotificationPublisher.Verify(
             p => p.PublishLayoutReadyAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
+
+        // Verify the unrecognized message warning was logged
+        _mockLogger.Messages.Should().Contain(
+            m => m.StartsWith($"Warning[1720]: SQS message unrecognized and deleted; receiptHandle={receiptHandle}"),
+            "unrecognized message body should be logged as a warning");
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -490,7 +510,7 @@ public class LayoutProcessingOrchestratorTests
             _mockValidationClient.Object,
             _mockCompiledLayoutRepository.Object,
             _mockNotificationPublisher.Object,
-            _mockLogger.Object);
+            _mockLogger);
     }
 
     private static ReceiveMessageResponse CreateReceiveMessageResponse(Guid rawLayoutId)
