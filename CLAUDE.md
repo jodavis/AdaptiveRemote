@@ -48,6 +48,10 @@ Event IDs are organized in ranges by subsystem:
 | 800–899 | TiVoConnection |
 | 900–999 | UdpService |
 | 1000–1099 | BroadlinkCommandService |
+| 1100–1199 | CompiledLayoutService (backend) |
+| 1200–1299 | RawLayoutService (backend) |
+| 1300–1699 | (reserved — App subsystems: ProgrammaticSettings, ScopedBackgroundProcess, ConversationState, SamplesRecorder, TestEndpointService, CognitoTokenService) |
+| 1700–1799 | LayoutProcessingService (backend) |
 
 Assign new log messages the next unused ID in the appropriate range. When replacing an existing
 message, use exact text including whitespace, newlines, and punctuation.

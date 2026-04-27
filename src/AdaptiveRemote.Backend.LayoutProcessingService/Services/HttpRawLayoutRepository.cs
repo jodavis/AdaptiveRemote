@@ -35,6 +35,11 @@ public class HttpRawLayoutRepository : IRawLayoutRepository
 
     public async Task<IReadOnlyList<RawLayout>> ListByUserAsync(string userId, CancellationToken ct)
     {
+        // userId is intentionally not passed as a query parameter here. LayoutProcessingService
+        // authenticates with a service account JWT, and RawLayoutService derives the caller identity
+        // from that token rather than from a userId parameter. The userId parameter exists on the
+        // interface for use by other callers (e.g. the app front-end) where per-user scoping is
+        // driven by a user JWT instead.
         HttpResponseMessage response = await _httpClient
             .GetAsync("/layouts/raw", ct)
             .ConfigureAwait(false);

@@ -121,7 +121,7 @@ public class LayoutProcessingOrchestrator : BackgroundService
 
         if (!Guid.TryParse(message.Body, out Guid rawLayoutId))
         {
-            _logger.SqsUnrecognizedMessageError(receiptHandle, new FormatException($"Message body is not a valid GUID: '{message.Body}'"));
+            _logger.SqsUnrecognizedMessageWarning(receiptHandle, new FormatException($"Message body is not a valid GUID: '{message.Body}'"));
 
             // Delete unrecognized messages to avoid them blocking the queue.
             await DeleteMessageAsync(receiptHandle, ct).ConfigureAwait(false);

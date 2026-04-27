@@ -20,6 +20,9 @@ public class HttpCompiledLayoutRepository : ICompiledLayoutRepository
 
     public async Task<CompiledLayout?> GetActiveForUserAsync(string userId, CancellationToken cancellationToken = default)
     {
+        // TODO: Pass userId as a query parameter (e.g. ?userId={userId}) once the real DynamoDB backend
+        // lands in CompiledLayoutService. The current stub ignores userId, so this is harmless for now,
+        // but will silently return wrong-user data if left unwired when real storage is in place.
         HttpResponseMessage response = await _httpClient
             .GetAsync("/layouts/compiled/active", cancellationToken)
             .ConfigureAwait(false);
@@ -37,6 +40,9 @@ public class HttpCompiledLayoutRepository : ICompiledLayoutRepository
 
     public async Task<IReadOnlyList<CompiledLayout>> ListByUserAsync(string userId, CancellationToken cancellationToken = default)
     {
+        // TODO: Pass userId as a query parameter (e.g. ?userId={userId}) once the real DynamoDB backend
+        // lands in CompiledLayoutService. The current stub ignores userId, so this is harmless for now,
+        // but will silently return wrong-user data if left unwired when real storage is in place.
         HttpResponseMessage response = await _httpClient
             .GetAsync("/layouts/compiled", cancellationToken)
             .ConfigureAwait(false);

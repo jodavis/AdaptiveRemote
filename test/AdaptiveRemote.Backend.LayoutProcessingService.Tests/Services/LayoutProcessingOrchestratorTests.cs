@@ -45,6 +45,21 @@ public class LayoutProcessingOrchestratorTests
         _mockLogger = new Mock<ILogger<LayoutProcessingOrchestrator>>();
     }
 
+    [TestCleanup]
+    public void Cleanup()
+    {
+        // VerifyNoOtherCalls is not applied to _mockSqs because ReceiveMessageAsync is called
+        // on every poll iteration and the exact call count is non-deterministic in tests that
+        // use a semaphore to signal completion. DeleteMessageAsync and other SQS calls are
+        // asserted explicitly in each test.
+        _mockRawLayoutRepository.VerifyNoOtherCalls();
+        _mockRawLayoutStatusWriter.VerifyNoOtherCalls();
+        _mockCompilerClient.VerifyNoOtherCalls();
+        _mockValidationClient.VerifyNoOtherCalls();
+        _mockCompiledLayoutRepository.VerifyNoOtherCalls();
+        _mockNotificationPublisher.VerifyNoOtherCalls();
+    }
+
     // ─── Success path ──────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -175,6 +190,11 @@ public class LayoutProcessingOrchestratorTests
         await orchestrator.StopAsync(CancellationToken.None);
 
         // Assert — IRawLayoutStatusWriter must NOT be called on success
+        _mockRawLayoutRepository.Verify(r => r.GetAsync(TestRawLayoutId, It.IsAny<CancellationToken>()), Times.Once);
+        _mockCompilerClient.Verify(c => c.CompileAsync(It.IsAny<RawLayout>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockValidationClient.Verify(v => v.ValidateAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockCompiledLayoutRepository.Verify(r => r.SaveAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockNotificationPublisher.Verify(p => p.PublishLayoutReadyAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockRawLayoutStatusWriter.Verify(
             w => w.UpdateValidationResultAsync(It.IsAny<Guid>(), It.IsAny<ValidationResult>(), It.IsAny<CancellationToken>()),
             Times.Never);
@@ -237,6 +257,9 @@ public class LayoutProcessingOrchestratorTests
         await orchestrator.StopAsync(CancellationToken.None);
 
         // Assert
+        _mockRawLayoutRepository.Verify(r => r.GetAsync(TestRawLayoutId, It.IsAny<CancellationToken>()), Times.Once);
+        _mockCompilerClient.Verify(c => c.CompileAsync(It.IsAny<RawLayout>(), It.IsAny<CancellationToken>()), Times.Once);
+        _mockValidationClient.Verify(v => v.ValidateAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockRawLayoutStatusWriter.Verify(
             w => w.UpdateValidationResultAsync(TestRawLayoutId, It.IsAny<ValidationResult>(), It.IsAny<CancellationToken>()),
             Times.Once);
@@ -295,14 +318,20 @@ public class LayoutProcessingOrchestratorTests
         await orchestrator.StopAsync(CancellationToken.None);
 
         // Assert — message is NOT deleted on error; SQS will retry
+        _mockRawLayoutRepository.Verify(r => r.GetAsync(TestRawLayoutId, It.IsAny<CancellationToken>()), Times.Once);
+        _mockCompilerClient.Verify(c => c.CompileAsync(It.IsAny<RawLayout>(), It.IsAny<CancellationToken>()), Times.Once);
         _mockSqs.Verify(
             s => s.DeleteMessageAsync(It.IsAny<DeleteMessageRequest>(), It.IsAny<CancellationToken>()),
             Times.Never);
+        _mockValidationClient.Verify(v => v.ValidateAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()), Times.Never);
         _mockCompiledLayoutRepository.Verify(
             r => r.SaveAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _mockNotificationPublisher.Verify(
             p => p.PublishLayoutReadyAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _mockRawLayoutStatusWriter.Verify(
+            w => w.UpdateValidationResultAsync(It.IsAny<Guid>(), It.IsAny<ValidationResult>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -346,11 +375,18 @@ public class LayoutProcessingOrchestratorTests
         await orchestrator.StopAsync(CancellationToken.None);
 
         // Assert
+        _mockRawLayoutRepository.Verify(r => r.GetAsync(TestRawLayoutId, It.IsAny<CancellationToken>()), Times.Once);
         _mockSqs.Verify(
             s => s.DeleteMessageAsync(It.IsAny<DeleteMessageRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _mockCompilerClient.Verify(
             c => c.CompileAsync(It.IsAny<RawLayout>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _mockValidationClient.Verify(v => v.ValidateAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockCompiledLayoutRepository.Verify(r => r.SaveAsync(It.IsAny<CompiledLayout>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockNotificationPublisher.Verify(p => p.PublishLayoutReadyAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _mockRawLayoutStatusWriter.Verify(
+            w => w.UpdateValidationResultAsync(It.IsAny<Guid>(), It.IsAny<ValidationResult>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
