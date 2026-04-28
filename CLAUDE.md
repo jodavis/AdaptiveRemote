@@ -106,10 +106,9 @@ significantly change a design, create or update the relevant `_doc_*.md`:
 
 A change is not complete until all of the following pass:
 
-1. `dotnet build /warnaserror` — zero warnings
-2. `dotnet test` — all unit tests pass
-3. Headless E2E tests pass
-4. Affected `_doc_*.md` files are updated
+1. `scripts/validate-build` — clean build, zero warnings (`dotnet build /warnaserror` is the underlying command but the script also cleans first)
+2. `scripts/validate-tests` — all unit and headless E2E tests pass
+3. Affected `_doc_*.md` files are updated
 
 ## Accessibility
 
