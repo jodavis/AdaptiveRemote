@@ -18,12 +18,12 @@ public static class AppHostBuilderExtensions
             .AddSystemWrapperServices()
             .OptionallyAddTestHookEndpoint();
 
-    public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, AcceleratedServices acceleratedServices)
+    public static IHostBuilder ConfigureAppSettings(this IHostBuilder hostBuilder, IConfiguration startupConfiguration)
         => hostBuilder
             .ConfigureAppConfiguration(config =>
             {
                 // Add startup configuration sources to maintain consistency between startup and host
-                config.AddConfiguration(acceleratedServices.StartupConfig);
+                config.AddConfiguration(startupConfiguration);
 
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {

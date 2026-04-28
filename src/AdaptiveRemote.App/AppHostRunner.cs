@@ -20,7 +20,7 @@ public abstract class AppHostRunner
         {
             IHostBuilder hostBuilder = ConfigureHostBuilder()
                 .ConfigureServices(acceleratedServices.AddPrecreatedServices)
-                .ConfigureAppSettings(acceleratedServices)
+                .ConfigureAppSettings(acceleratedServices.StartupConfig)
                 .ConfigureApp();
 
             // Allow tests to inject services before the host is built

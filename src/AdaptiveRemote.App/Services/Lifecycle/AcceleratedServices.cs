@@ -16,12 +16,8 @@ public class AcceleratedServices
     internal ITestEndpointHooks TestEndpoint { get; }
 
     /// <summary>
-    /// Raw command-line arguments passed to the application.
-    /// </summary>
-    internal string[] Args { get; }
-
-    /// <summary>
-    /// Startup configuration built from appsettings.json, environment variables, and command-line args.
+    /// Bootstrap configuration built from appsettings.json, environment-specific appsettings,
+    /// environment variables, and command-line args (in ascending override order).
     /// Available for any startup services that need settings before the host is configured.
     /// </summary>
     public IConfigurationRoot StartupConfig { get; }
@@ -34,43 +30,35 @@ public class AcceleratedServices
 
     public AcceleratedServices(string[] args)
     {
-        Args = args;
 
-        // Build startup configuration from appsettings.json, environment variables, and command line args
-        string environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
-        string basePath = AppContext.BaseDirectory;
+        string env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+        StartupConfig = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile($"appsettings.{env}.json", optional: true)
+            .AddEnvironmentVariables()
+            .AddCommandLine(args)
+            .Build();
 
-        ConfigurationBuilder configBuilder = new();
-        configBuilder.SetBasePath(basePath);
-        configBuilder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-        configBuilder.AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: false);
-        configBuilder.AddEnvironmentVariables();
-        configBuilder.AddCommandLine(args);
-        StartupConfig = configBuilder.Build();
-
-        // Create logger factory for startup processes, configured from StartupConfig
+        // Create logger factory for startup processes, respecting configured log levels and file sink
         LoggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
         {
             builder.AddConsole();
-            builder.AddConfiguration(StartupConfig.GetSection("Logging"));
+            builder.AddConfiguration(StartupConfig.GetSection(SettingsKeys.Logging));
 
-            // Add file logging if configured
-            LoggingSettings loggingSettings = StartupConfig.GetSection(SettingsKeys.Logging).Get<LoggingSettings>()
-                ?? new LoggingSettings();
-            if (loggingSettings.FilePath is not null)
-            {
-                builder.AddProvider(new FileLoggerProvider(loggingSettings.FilePath));
-            }
+            LoggingSettings loggingSettings = GetStartupSettings<LoggingSettings>(SettingsKeys.Logging);
+            builder.LogToFile(loggingSettings.FilePath);
         });
 
         ViewModel = new();
         Controller = new LifecycleViewController(ViewModel);
         DiagnosticAdapter = new(Controller);
 
+        // Create TestingSettings from startup config
+        TestingSettings testSettings = GetStartupSettings<TestingSettings>(SettingsKeys.Testing);
+
         // Check if test control port is configured
-        TestingSettings testingSettings = StartupConfig.GetSection(SettingsKeys.Testing).Get<TestingSettings>()
-            ?? new TestingSettings();
-        if (testingSettings.ControlPort.HasValue)
+        if (testSettings.ControlPort.HasValue)
         {
             // Create and start the test endpoint service
             TestEndpointService testEndpointService = new(testingSettings, LoggerFactory);
@@ -84,6 +72,10 @@ public class AcceleratedServices
 
         Controller.SetPhase(LifecyclePhase.Waiting);
     }
+
+    public SettingsType GetStartupSettings<SettingsType>(string settingsKey)
+        where SettingsType : class, new() 
+        => StartupConfig.GetSection(settingsKey).Get<SettingsType>() ?? new();
 
     public virtual void AddPrecreatedServices(IServiceCollection services)
     {
