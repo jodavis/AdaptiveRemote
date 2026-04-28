@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.Build.Traversal">
+  <ItemGroup>
+    <ProjectReference Include="../test/**/*.csproj" />
+    <ProjectReference Remove="../test/*EndToEndTests*/*.csproj" />
+    <ProjectReference Remove="../test/*EndtoEndTests*/*.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOsPlatform('Linux'))">
+    <ProjectReference Remove="../test/*Speech*/*.csproj" />
+  </ItemGroup>
+</Project>

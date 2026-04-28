@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.Build.Traversal">
+  <ItemGroup>
+    <ProjectReference Include="../test/*Host*/*.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$([MSBuild]::IsOsPlatform('Linux'))">
+    <ProjectReference Remove="../test/*Wpf*/*.csproj" />
+    <ProjectReference Remove="../test/*Console*/*.csproj" />
+  </ItemGroup>
+</Project>
