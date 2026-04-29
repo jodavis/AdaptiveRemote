@@ -1,4 +1,4 @@
-namespace AdaptiveRemote.Services.CloudAssets;
+namespace AdaptiveRemote.Models.CloudAssets;
 
 /// <summary>
 /// Per-asset capability bundle. One implementation per cloud-fetched asset type.

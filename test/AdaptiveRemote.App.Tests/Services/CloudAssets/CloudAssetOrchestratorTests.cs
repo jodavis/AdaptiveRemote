@@ -1,3 +1,4 @@
+using AdaptiveRemote.Models.CloudAssets;
 using AdaptiveRemote.Services.Lifecycle;
 using FluentAssertions;
 using Moq;
@@ -17,7 +18,7 @@ public class CloudAssetOrchestratorTests
     private readonly Mock<ICloudAssetCache> MockCache = new();
     private readonly Mock<IApplicationRecycleSignal> MockSignal = new();
     private readonly Mock<IIdleDetector> MockIdleDetector = new();
-    private readonly Mock<IAssetChangeNotifier> MockChangeNotifier = new();
+    private readonly Mock<ICloudAssetChangeNotifier> MockChangeNotifier = new();
     private readonly MockLogger<CloudAssetOrchestrator> MockLogger = new();
     private readonly Mock<ILifecycleActivity> MockActivity = new();
 

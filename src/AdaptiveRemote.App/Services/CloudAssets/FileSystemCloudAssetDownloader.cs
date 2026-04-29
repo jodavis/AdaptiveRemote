@@ -3,12 +3,12 @@ using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.CloudAssets;
 
-internal sealed class FileCloudAssetDownloader : ICloudAssetDownloader
+internal sealed class FileSystemCloudAssetDownloader : ICloudAssetDownloader
 {
     private readonly CloudSettings _settings;
     private readonly IFileSystem _fileSystem;
 
-    public FileCloudAssetDownloader(IOptions<CloudSettings> options, IFileSystem fileSystem)
+    public FileSystemCloudAssetDownloader(IOptions<CloudSettings> options, IFileSystem fileSystem)
     {
         _settings = options.Value;
         _fileSystem = fileSystem;

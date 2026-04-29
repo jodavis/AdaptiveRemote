@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using AdaptiveRemote.Services.IdleDetection;
 using FluentAssertions;
 
 namespace AdaptiveRemote.Services.CloudAssets;

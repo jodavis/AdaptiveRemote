@@ -1,10 +1,11 @@
 using AdaptiveRemote.Models;
+using AdaptiveRemote.Mvvm;
 
 namespace AdaptiveRemote.Services.Conversation;
 
-internal class ConversationIdleAdapter : MvvmPropertyIdleAdapter
+internal class ConversationActivityDetector : MvvmPropertyActivityDetector
 {
-    public ConversationIdleAdapter(IRemoteDefinitionService remoteDefinition)
+    public ConversationActivityDetector(IRemoteDefinitionService remoteDefinition)
         : base(remoteDefinition.GetElement<ConversationView>(), ConversationView.IsListeningProperty)
     {
     }

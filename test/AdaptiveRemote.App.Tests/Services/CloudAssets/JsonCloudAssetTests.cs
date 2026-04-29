@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AdaptiveRemote.Models.CloudAssets;
 using FluentAssertions;
 
 namespace AdaptiveRemote.Services.CloudAssets;

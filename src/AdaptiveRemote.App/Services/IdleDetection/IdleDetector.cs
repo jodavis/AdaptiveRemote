@@ -1,7 +1,8 @@
 using System.Collections.Immutable;
+using AdaptiveRemote.Services.CloudAssets;
 using Microsoft.Extensions.Options;
 
-namespace AdaptiveRemote.Services.CloudAssets;
+namespace AdaptiveRemote.Services.IdleDetection;
 
 internal class IdleDetector : IIdleDetector
 {

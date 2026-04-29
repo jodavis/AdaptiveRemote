@@ -1,6 +1,6 @@
 ﻿using AdaptiveRemote.Contracts;
+using AdaptiveRemote.Models.CloudAssets;
 using AdaptiveRemote.Services;
-using AdaptiveRemote.Services.CloudAssets;
 using AdaptiveRemote.Services.Commands;
 using AdaptiveRemote.Services.Layout;
 using AdaptiveRemote.Services.Lifecycle;
@@ -35,13 +35,8 @@ internal static class HostBuilderExtensions
                 eventName: "layout-ready",
                 resourcePath: "/layouts/compiled",
                 jsonContext: LayoutContractsJsonContext.Default))
-            .AddScopedLifecycleService<LifecycleCommandService>()
-            .AddScoped<IUserActivityDetector, ProgrammingModeIdleAdapter>()
-            .AddScoped<IUserActivityDetector, CommandExecutionIdleAdapter>()
-            .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
-            .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>()
-            .AddSingleton<IPersistSettings, PersistSettings>()
-            .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings));
+            .AddCommandSystemServices()
+            .AddProgrammaticSettingsServices(configuration.GetSection(SettingsKeys.ProgrammaticSettings));
 
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle
@@ -62,5 +57,18 @@ internal static class HostBuilderExtensions
             .AddScoped<Components.BlazorAppScope>()
             .AddSingleton<IApplicationScopeContainer, ApplicationScopeContainer>()
             .AddSingleton(sp => (IApplicationScopeProvider)sp.GetRequiredService<IApplicationScopeContainer>())
-            .AddSingleton<IApplicationRecycleSignal, ApplicationRecycleSignal>();
+            .AddSingleton<IApplicationRecycleSignal, ApplicationRecycleSignal>()
+            .AddScopedLifecycleService<LifecycleCommandService>()
+            .AddScoped<IUserActivityDetector, ProgrammingModeActivityDetector>();
+
+    private static IServiceCollection AddCommandSystemServices(this IServiceCollection services)
+        => services
+            .AddScoped<IUserActivityDetector, CommandsActivityDetector>()
+            .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
+            .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>();
+
+    private static IServiceCollection AddProgrammaticSettingsServices(this IServiceCollection services, IConfiguration configuration)
+        => services
+            .AddSingleton<IPersistSettings, PersistSettings>()
+            .Configure<ProgrammaticSettings>(configuration);
 }

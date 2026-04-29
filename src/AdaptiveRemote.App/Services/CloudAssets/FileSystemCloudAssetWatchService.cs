@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace AdaptiveRemote.Services.CloudAssets;
 
-internal sealed class FileSystemCloudAssetWatchService : BackgroundService, IAssetChangeNotifier
+internal sealed class FileSystemCloudAssetWatchService : BackgroundService, ICloudAssetChangeNotifier
 {
     private readonly CloudSettings _settings;
     private readonly SemaphoreSlim _semaphore = new(0, 1);

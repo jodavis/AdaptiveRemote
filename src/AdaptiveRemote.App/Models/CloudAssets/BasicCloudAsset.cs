@@ -1,4 +1,4 @@
-namespace AdaptiveRemote.Services.CloudAssets;
+namespace AdaptiveRemote.Models.CloudAssets;
 
 internal abstract class BasicCloudAsset<T> : ICloudAsset<T>
 {

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using AdaptiveRemote.Logging;
+using AdaptiveRemote.Models.CloudAssets;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
     private readonly ICloudAssetCache _cache;
     private readonly IApplicationRecycleSignal _signal;
     private readonly IIdleDetector _idleDetector;
-    private readonly IAssetChangeNotifier _changeNotifier;
+    private readonly ICloudAssetChangeNotifier _changeNotifier;
     private readonly MessageLogger _log;
     private readonly TaskCompletionSource _initCompleted = new();
 
@@ -33,7 +34,7 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
         ICloudAssetCache cache,
         IApplicationRecycleSignal signal,
         IIdleDetector idleDetector,
-        IAssetChangeNotifier changeNotifier,
+        ICloudAssetChangeNotifier changeNotifier,
         ILogger<CloudAssetOrchestrator> logger)
     {
         _assets = assets;
