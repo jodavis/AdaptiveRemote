@@ -1,19 +1,20 @@
-using System.Reflection;
+using AdaptiveRemote.Contracts;
+using AdaptiveRemote.Services.CloudAssets;
 
 namespace AdaptiveRemote.Services.Layout;
 
 internal sealed class LayoutStylesheetProvider : IDynamicStylesheetProvider
 {
-    private static readonly string _css = LoadCss();
+    private readonly ICloudAssetStore _store;
 
-    public string? GetCss() => _css;
-
-    private static string LoadCss()
+    public LayoutStylesheetProvider(ICloudAssetStore store)
     {
-        Assembly assembly = typeof(LayoutStylesheetProvider).Assembly;
-        using Stream stream = assembly.GetManifestResourceStream(
-            "AdaptiveRemote.Services.Layout.layout-grid.css")!;
-        using StreamReader reader = new(stream);
-        return reader.ReadToEnd();
+        _store = store;
+    }
+
+    public string? GetCss()
+    {
+        CompiledLayout layout = _store.Get<CompiledLayout>("layout");
+        return layout.CssDefinitions;
     }
 }
