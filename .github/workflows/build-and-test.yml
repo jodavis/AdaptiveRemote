@@ -90,7 +90,7 @@ jobs:
       run: docker pull localstack/localstack:3.0
 
     - name: API Integration Tests
-      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" ./scripts/validate-unit-tests.proj --filter "TestCategory=ApiIntegrationTest" -m:1
+      run: dotnet test --no-build --verbosity normal --logger trx --results-directory "TestResults" backend.slnf --filter "TestCategory=ApiIntegrationTest" -m:1
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
