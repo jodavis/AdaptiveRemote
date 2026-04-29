@@ -23,6 +23,7 @@ internal static class Phrases
     public static string Startup_BuildingServiceGraph => "Building service graph";
     public static string Startup_StartingServices => "Starting services";
     public static string Startup_Preinitializing(string initializer) => $"Waiting for preinitializer {initializer}";
+    public static string Startup_LoadingCloudAssets => "Loading cloud assets";
     public static string Startup_ConnectingToBroadlink => "Connecting to Broadlink device";
     public static string Startup_ConnectingToTiVo => "Connecting to TiVo";
     public static string Startup_Starting(string service) => $"Starting {service}";

@@ -22,6 +22,8 @@ public class CloudAssetOrchestratorTests
     private readonly MockLogger<CloudAssetOrchestrator> MockLogger = new();
     private readonly Mock<ILifecycleActivity> MockActivity = new();
 
+    public TestContext TestContext { get; set; } = null!;
+
     [TestInitialize]
     public void SetupMocks()
     {
@@ -35,11 +37,21 @@ public class CloudAssetOrchestratorTests
 
         // Default: block forever on change notifier (prevents Phase 3 interference)
         MockChangeNotifier.Setup(n => n.WaitForChangeAsync(It.IsAny<CancellationToken>()))
-            .Returns<CancellationToken>(ct => Task.Delay(Timeout.Multiply(10), ct).ContinueWith(_ => AssetName, ct, TaskContinuationOptions.None, TaskScheduler.Default));
+            .Returns<CancellationToken>(ct => Task.Delay(Timeout.Multiply(10), ct).ContinueWith(_ => MockAsset.Object, ct, TaskContinuationOptions.None, TaskScheduler.Default));
 
         // Default: cache miss
         MockCache.Setup(c => c.LoadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Stream?)null);
+    }
+
+    [TestCleanup]
+    public void LogMockLoggerMessages()
+    {
+        // Log all captured messages for easier debugging of test failures; in a real test suite we might want to be more selective about this
+        foreach (string log in MockLogger.Messages)
+        {
+            TestContext.WriteLine(log.ToString());
+        }
     }
 
     private CloudAssetOrchestrator MakeSut(IEnumerable<ICloudAsset>? assets = null)
@@ -76,7 +88,13 @@ public class CloudAssetOrchestratorTests
         waitTask.Should().BeSuccessful();
         MockStore.Verify(s => s.Set(AssetName, parsedValue), Times.Once);
         MockCache.Verify(c => c.SaveAsync(AssetName, It.IsAny<Stream>(), It.IsAny<CancellationToken>()), Times.Once);
-        MockLogger.VerifyMessages(log => { log.CloudAssetOrchestrator_Downloading(AssetName); });
+        MockLogger.VerifyMessages(
+            log =>
+            {
+                log.CloudAssetOrchestrator_NotFoundInCache(AssetName);
+                log.CloudAssetOrchestrator_Downloading(AssetName);
+                log.CloudAssetOrchestrator_Downloaded(AssetName);
+            });
     }
 
     [TestMethod]
@@ -96,7 +114,9 @@ public class CloudAssetOrchestratorTests
         waitTask.Should().BeFaultedWith(expectedException, within: Timeout);
         MockLogger.VerifyMessages(log =>
         {
+            log.CloudAssetOrchestrator_NotFoundInCache(AssetName);
             log.CloudAssetOrchestrator_Downloading(AssetName);
+            log.CloudAssetOrchestrator_BackgroundFetchFailed(AssetName, null);
             log.CloudAssetOrchestrator_Failed(expectedException);
         });
     }
@@ -105,7 +125,7 @@ public class CloudAssetOrchestratorTests
     public void CloudAssetOrchestrator_ExecuteAsync_CacheMiss_FaultsWhenDownloaderThrows()
     {
         // Arrange
-        InvalidOperationException downloadException = new("download failed");
+        InvalidOperationException downloadException = new($"Failed to download asset '{AssetName}'.");
         MockDownloader.Setup(d => d.GetActiveAsync(ResourcePath, It.IsAny<CancellationToken>()))
             .ThrowsAsync(downloadException);
         CloudAssetOrchestrator sut = MakeSut();
@@ -118,7 +138,9 @@ public class CloudAssetOrchestratorTests
         waitTask.Should().BeFaultedWith(downloadException, within: Timeout);
         MockLogger.VerifyMessages(log =>
         {
+            log.CloudAssetOrchestrator_NotFoundInCache(AssetName);
             log.CloudAssetOrchestrator_Downloading(AssetName);
+            log.CloudAssetOrchestrator_BackgroundFetchFailed(AssetName, downloadException);
             log.CloudAssetOrchestrator_Failed(downloadException);
         });
     }
@@ -142,7 +164,9 @@ public class CloudAssetOrchestratorTests
         waitTask.Should().BeFaultedWith(parseException, within: Timeout);
         MockLogger.VerifyMessages(log =>
         {
+            log.CloudAssetOrchestrator_NotFoundInCache(AssetName);
             log.CloudAssetOrchestrator_Downloading(AssetName);
+            log.CloudAssetOrchestrator_Downloaded(AssetName);
             log.CloudAssetOrchestrator_Failed(parseException);
         });
     }
@@ -315,6 +339,8 @@ public class CloudAssetOrchestratorTests
         MockLogger.VerifyMessages(log =>
         {
             log.CloudAssetOrchestrator_LoadedFromCache(AssetName);
+            log.CloudAssetOrchestrator_Downloading(AssetName);
+            log.CloudAssetOrchestrator_Downloaded(AssetName);
             log.CloudAssetOrchestrator_AssetUpdated(AssetName);
         });
     }
@@ -346,6 +372,8 @@ public class CloudAssetOrchestratorTests
         MockLogger.VerifyMessages(log =>
         {
             log.CloudAssetOrchestrator_LoadedFromCache(AssetName);
+            log.CloudAssetOrchestrator_Downloading(AssetName);
+            log.CloudAssetOrchestrator_Downloaded(AssetName);
             log.CloudAssetOrchestrator_AssetUpToDate(AssetName);
         });
     }
@@ -374,6 +402,7 @@ public class CloudAssetOrchestratorTests
         MockLogger.VerifyMessages(log =>
         {
             log.CloudAssetOrchestrator_LoadedFromCache(AssetName);
+            log.CloudAssetOrchestrator_Downloading(AssetName);
             log.CloudAssetOrchestrator_BackgroundFetchFailed(AssetName, null);
         });
     }
@@ -403,6 +432,7 @@ public class CloudAssetOrchestratorTests
         MockLogger.VerifyMessages(log =>
         {
             log.CloudAssetOrchestrator_LoadedFromCache(AssetName);
+            log.CloudAssetOrchestrator_Downloading(AssetName);
             log.CloudAssetOrchestrator_BackgroundFetchFailed(AssetName, networkException);
         });
     }
@@ -422,8 +452,8 @@ public class CloudAssetOrchestratorTests
                 await notificationSource.Task.WaitAsync(ct);
                 // Block subsequent calls so only one Phase 3 cycle runs
                 MockChangeNotifier.Setup(n => n.WaitForChangeAsync(It.IsAny<CancellationToken>()))
-                    .Returns<CancellationToken>(ct2 => Task.Delay(Timeout.Multiply(10), ct2).ContinueWith(_ => AssetName, ct2, TaskContinuationOptions.None, TaskScheduler.Default));
-                return AssetName;
+                    .Returns<CancellationToken>(ct2 => Task.Delay(Timeout.Multiply(10), ct2).ContinueWith(_ => MockAsset.Object, ct2, TaskContinuationOptions.None, TaskScheduler.Default));
+                return MockAsset.Object;
             });
 
         object updatedValue = new();
@@ -453,6 +483,8 @@ public class CloudAssetOrchestratorTests
         MockLogger.VerifyMessages(log =>
         {
             log.CloudAssetOrchestrator_FileChangeDetected(AssetName);
+            log.CloudAssetOrchestrator_Downloading(AssetName);
+            log.CloudAssetOrchestrator_Downloaded(AssetName);
             log.CloudAssetOrchestrator_AssetUpdated(AssetName);
         });
     }
@@ -467,8 +499,8 @@ public class CloudAssetOrchestratorTests
             {
                 await notificationSource.Task.WaitAsync(ct);
                 MockChangeNotifier.Setup(n => n.WaitForChangeAsync(It.IsAny<CancellationToken>()))
-                    .Returns<CancellationToken>(ct2 => Task.Delay(Timeout.Multiply(10), ct2).ContinueWith(_ => AssetName, ct2, TaskContinuationOptions.None, TaskScheduler.Default));
-                return AssetName;
+                    .Returns<CancellationToken>(ct2 => Task.Delay(Timeout.Multiply(10), ct2).ContinueWith(_ => MockAsset.Object, ct2, TaskContinuationOptions.None, TaskScheduler.Default));
+                return MockAsset.Object;
             });
 
         // Phase 1 (cache miss): downloader returns content so startup succeeds
@@ -495,6 +527,7 @@ public class CloudAssetOrchestratorTests
         MockLogger.VerifyMessages(log =>
         {
             log.CloudAssetOrchestrator_FileChangeDetected(AssetName);
+            log.CloudAssetOrchestrator_Downloading(AssetName);
             log.CloudAssetOrchestrator_BackgroundFetchFailed(AssetName, null);
         });
     }
@@ -505,7 +538,7 @@ public class CloudAssetOrchestratorTests
         // Arrange — change notifier blocks until cancelled
         CancellationTokenSource cts = new();
         MockChangeNotifier.Setup(n => n.WaitForChangeAsync(It.IsAny<CancellationToken>()))
-            .Returns<CancellationToken>(ct => Task.Delay(Timeout.Multiply(10), ct).ContinueWith(_ => AssetName, ct, TaskContinuationOptions.None, TaskScheduler.Default));
+            .Returns<CancellationToken>(ct => Task.Delay(Timeout.Multiply(10), ct).ContinueWith(_ => MockAsset.Object, ct, TaskContinuationOptions.None, TaskScheduler.Default));
 
         MockDownloader.Setup(d => d.GetActiveAsync(ResourcePath, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Stream?)null);

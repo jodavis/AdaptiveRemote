@@ -359,6 +359,15 @@ internal partial class MessageLogger
 
     // 1600–1699: CognitoTokenService
 
+    [LoggerMessage(EventId = 1600, Level = LogLevel.Information, Message = "Acquiring Cognito access token via Client Credentials flow")]
+    public partial void CognitoTokenService_AcquiringToken();
+
+    [LoggerMessage(EventId = 1601, Level = LogLevel.Information, Message = "Cognito access token acquired successfully")]
+    public partial void CognitoTokenService_TokenAcquired();
+
+    [LoggerMessage(EventId = 1602, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
+    public partial void CognitoTokenService_AcquireTokenFailed(Exception exception);
+
     // 1700–1799: CloudAssetOrchestrator
 
     [LoggerMessage(EventId = 1700, Level = LogLevel.Information, Message = "Downloading asset '{AssetName}'")]
@@ -385,12 +394,9 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 1707, Level = LogLevel.Warning, Message = "Received change notification for unknown asset '{AssetName}'; ignoring")]
     public partial void CloudAssetOrchestrator_UnknownAssetChange(string assetName);
 
-    [LoggerMessage(EventId = 1600, Level = LogLevel.Information, Message = "Acquiring Cognito access token via Client Credentials flow")]
-    public partial void CognitoTokenService_AcquiringToken();
+    [LoggerMessage(EventId = 1708, Level = LogLevel.Information, Message = "Asset '{AssetName}' not found in cache")]
+    public partial void CloudAssetOrchestrator_NotFoundInCache(string assetName);
 
-    [LoggerMessage(EventId = 1601, Level = LogLevel.Information, Message = "Cognito access token acquired successfully")]
-    public partial void CognitoTokenService_TokenAcquired();
-
-    [LoggerMessage(EventId = 1602, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
-    public partial void CognitoTokenService_AcquireTokenFailed(Exception exception);
+    [LoggerMessage(EventId = 1709, Level = LogLevel.Information, Message = "Downloaded asset '{AssetName}'")]
+    public partial void CloudAssetOrchestrator_Downloaded(string assetName);
 }

@@ -1,3 +1,4 @@
+using AdaptiveRemote.Models.CloudAssets;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -6,19 +7,24 @@ namespace AdaptiveRemote.Services.CloudAssets;
 internal sealed class FileSystemCloudAssetWatchService : BackgroundService, ICloudAssetChangeNotifier
 {
     private readonly CloudSettings _settings;
+    private readonly ICloudAsset _asset;
     private readonly SemaphoreSlim _semaphore = new(0, 1);
     private readonly object _debounceLock = new();
     private CancellationTokenSource? _debounceCts;
 
-    public FileSystemCloudAssetWatchService(IOptions<CloudSettings> options)
+    public FileSystemCloudAssetWatchService(IEnumerable<ICloudAsset> assets, IOptions<CloudSettings> options)
     {
         _settings = options.Value;
+
+        // The real implementation will need to support multiple assets, but for now we only have one and this 
+        // is just for short-term testing.
+        _asset = assets.First();
     }
 
-    public async Task<string> WaitForChangeAsync(CancellationToken ct)
+    public async Task<ICloudAsset> WaitForChangeAsync(CancellationToken ct)
     {
         await _semaphore.WaitAsync(ct);
-        return _settings.AssetName;
+        return _asset;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)

@@ -1,4 +1,6 @@
+using AdaptiveRemote.Models.CloudAssets;
 using FluentAssertions;
+using Moq;
 
 namespace AdaptiveRemote.Services.CloudAssets;
 
@@ -6,9 +8,10 @@ namespace AdaptiveRemote.Services.CloudAssets;
 public class FileSystemCloudAssetWatchServiceTests
 {
     private static readonly TimeSpan WatchTimeout = TimeSpan.FromSeconds(5);
+    private readonly Mock<ICloudAsset> MockAsset = new();
 
-    private static FileSystemCloudAssetWatchService MakeSut(string stubFilePath)
-        => new(new MockOptions<CloudSettings>(new CloudSettings { StubFilePath = stubFilePath }));
+    private FileSystemCloudAssetWatchService MakeSut(string stubFilePath)
+        => new([MockAsset.Object], new MockOptions<CloudSettings>(new CloudSettings { StubFilePath = stubFilePath }));
 
     [TestMethod]
     public async Task FileSystemCloudAssetWatchService_WaitForChangeAsync_UnblocksOnFileWriteAsync()

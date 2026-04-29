@@ -1,5 +1,7 @@
+using System.Runtime.InteropServices.Marshalling;
 using System.Security.Cryptography;
 using AdaptiveRemote.Logging;
+using AdaptiveRemote.Models;
 using AdaptiveRemote.Models.CloudAssets;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Hosting;
@@ -84,7 +86,7 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
 
     public Task WaitAsync(ILifecycleActivity activity, CancellationToken ct)
     {
-        activity.Description = "Loading cloud assets";
+        activity.Description = Phrases.Startup_LoadingCloudAssets;
         return _initCompleted.Task.WaitAsync(ct);
     }
 
@@ -96,48 +98,44 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
 
     private async Task LoadAssetAsync(ICloudAsset asset, CancellationToken ct)
     {
+        byte[]? cachedBytes = await LoadAssetFromCacheAsync(asset, ct);
+        if (cachedBytes != null)
+        {
+            await ApplyAssetAsync(asset, cachedBytes, fromCache: true, ct);
+            _log.CloudAssetOrchestrator_LoadedFromCache(asset.Name);
+            return;
+        }
+        else
+        {
+            _log.CloudAssetOrchestrator_NotFoundInCache(asset.Name);
+        }
+
+        byte[] serverBytes = await DownloadAssetAsync(asset, ct)
+            ?? throw new InvalidOperationException($"Failed to download asset '{asset.Name}'.");
+
+        await ApplyAssetAsync(asset, serverBytes, ct);
+    }
+
+    private async Task<byte[]?> LoadAssetFromCacheAsync(ICloudAsset asset, CancellationToken ct)
+    {
         Stream? cachedStream = await _cache.LoadAsync(asset.Name, ct);
         if (cachedStream != null)
         {
-            byte[] cachedBytes;
-            await using (cachedStream)
-            {
-                cachedBytes = await ReadAllBytesAsync(cachedStream, ct);
-            }
-            object value = await asset.DeserializeAsync(new MemoryStream(cachedBytes), ct);
-            _store.Set(asset.Name, value);
-            _log.CloudAssetOrchestrator_LoadedFromCache(asset.Name);
-            lock (_cacheHashes)
-            {
-                _cacheHashes[asset.Name] = SHA256.HashData(cachedBytes);
-            }
-            return;
+            return await ReadAllBytesAndDisposeAsync(cachedStream, ct);
         }
 
-        _log.CloudAssetOrchestrator_Downloading(asset.Name);
-        Stream serverStream = await _downloader.GetActiveAsync(asset.ResourcePath, ct)
-            ?? throw new InvalidOperationException($"Failed to download asset '{asset.Name}'.");
-
-        byte[] serverBytes;
-        await using (serverStream)
-        {
-            serverBytes = await ReadAllBytesAsync(serverStream, ct);
-        }
-        object serverValue = await asset.DeserializeAsync(new MemoryStream(serverBytes), ct);
-        await _cache.SaveAsync(asset.Name, new MemoryStream(serverBytes), ct);
-        _store.Set(asset.Name, serverValue);
+        return null;
     }
 
     private async Task Phase2Async(CancellationToken ct)
     {
         // Only check assets that were loaded from cache in Phase 1 (present in _cacheHashes).
-        ICloudAsset[] allAssets = _assets.ToArray();
         HashSet<string> cacheLoadedNames;
         lock (_cacheHashes)
         {
-            cacheLoadedNames = [.._cacheHashes.Keys];
+            cacheLoadedNames = [.. _cacheHashes.Keys];
         }
-        ICloudAsset[] toCheck = allAssets.Where(a => cacheLoadedNames.Contains(a.Name)).ToArray();
+        ICloudAsset[] toCheck = _assets.Where(a => cacheLoadedNames.Contains(a.Name)).ToArray();
 
         foreach (ICloudAsset asset in toCheck)
         {
@@ -146,48 +144,16 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
                 return;
             }
 
-            Stream? serverStream;
-            try
+            byte[]? serverBytes = await DownloadAssetAsync(asset, ct);
+            ct.ThrowIfCancellationRequested();
+
+            if (serverBytes == null)
             {
-                serverStream = await _downloader.GetActiveAsync(asset.ResourcePath, ct);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
-            }
-            catch (Exception ex)
-            {
-                _log.CloudAssetOrchestrator_BackgroundFetchFailed(asset.Name, ex);
                 continue;
             }
 
-            if (serverStream == null)
-            {
-                _log.CloudAssetOrchestrator_BackgroundFetchFailed(asset.Name, null);
-                continue;
-            }
-
-            byte[] serverBytes;
-            try
-            {
-                await using (serverStream)
-                {
-                    serverBytes = await ReadAllBytesAsync(serverStream, ct);
-                }
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
-            }
-
-            try
-            {
-                await ApplyServerUpdateAsync(asset, serverBytes, ct);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
-            }
+            await ApplyAssetAsync(asset, serverBytes, ct);
+            ct.ThrowIfCancellationRequested();
         }
     }
 
@@ -195,95 +161,106 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
     {
         while (!ct.IsCancellationRequested)
         {
-            string changedAssetName;
-            try
-            {
-                changedAssetName = await _changeNotifier.WaitForChangeAsync(ct);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
-            }
-
-            ICloudAsset? asset = _assets.FirstOrDefault(a => a.Name == changedAssetName);
-            if (asset is null)
-            {
-                _log.CloudAssetOrchestrator_UnknownAssetChange(changedAssetName);
-                continue;
-            }
-
-            if (ct.IsCancellationRequested)
-            {
-                continue;
-            }
+            ICloudAsset asset = await _changeNotifier.WaitForChangeAsync(ct);
+            ct.ThrowIfCancellationRequested();
 
             _log.CloudAssetOrchestrator_FileChangeDetected(asset.Name);
 
-            Stream? serverStream;
-            try
-            {
-                serverStream = await _downloader.GetActiveAsync(asset.ResourcePath, ct);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
-            }
-            catch (Exception ex)
-            {
-                _log.CloudAssetOrchestrator_BackgroundFetchFailed(asset.Name, ex);
-                continue;
-            }
+            byte[]? serverBytes = await DownloadAssetAsync(asset, ct);
+            ct.ThrowIfCancellationRequested();
 
-            if (serverStream == null)
+            if (serverBytes is not null)
             {
-                _log.CloudAssetOrchestrator_BackgroundFetchFailed(asset.Name, null);
-                continue;
-            }
-
-            try
-            {
-                byte[] serverBytes;
-                await using (serverStream)
-                {
-                    serverBytes = await ReadAllBytesAsync(serverStream, ct);
-                }
-                await ApplyServerUpdateAsync(asset, serverBytes, ct);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
+                await ApplyAssetAsync(asset, serverBytes, ct);
             }
         }
     }
 
-    /// <summary>
-    /// Compares <paramref name="serverBytes"/> against the cached hash for the asset.
-    /// If the content differs (or has no cached hash), deserializes, saves to cache,
-    /// updates the store, and schedules an idle-deferred recycle.
-    /// </summary>
-    private async Task ApplyServerUpdateAsync(ICloudAsset asset, byte[] serverBytes, CancellationToken ct)
+    private static async Task<byte[]> ReadAllBytesAndDisposeAsync(Stream stream, CancellationToken ct)
     {
-        byte[] serverHash = SHA256.HashData(serverBytes);
+        await using (stream)
+        {
+            using MemoryStream ms = new();
+            await stream.CopyToAsync(ms, ct);
+            return ms.ToArray();
+        }
+    }
 
+    private Task ApplyAssetAsync(ICloudAsset asset, byte[] bytes, CancellationToken ct = default)
+        => ApplyAssetAsync(asset, bytes, fromCache: false, ct);
+
+    private async Task ApplyAssetAsync(ICloudAsset asset, byte[] bytes, bool fromCache, CancellationToken ct = default)
+    {
+        byte[] assetHash = SHA256.HashData(bytes);
+        if (ShouldApply(asset, assetHash))
+        {
+            object value = await asset.DeserializeAsync(new MemoryStream(bytes), ct);
+            _store.Set(asset.Name, value);
+
+            if (fromCache)
+            {
+                _cacheHashes[asset.Name] = assetHash;
+            }
+            else
+            {
+                await _cache.SaveAsync(asset.Name, new MemoryStream(bytes), ct);
+            }
+
+            if (_initCompleted.Task.IsCompleted)
+            {
+                // Only need to recycle if we've already signaled that initialization is complete,
+                // otherwise the initialization sequence will take care of applying the assets.
+                _log.CloudAssetOrchestrator_AssetUpdated(asset.Name);
+
+                IdleDeferRecycle();
+            }
+        }
+    }
+
+    private bool ShouldApply(ICloudAsset asset, byte[] assetHash)
+    {
         lock (_cacheHashes)
         {
             if (_cacheHashes.TryGetValue(asset.Name, out byte[]? cachedHash)
-                && serverHash.AsSpan().SequenceEqual(cachedHash))
+                && assetHash.AsSpan().SequenceEqual(cachedHash))
             {
                 _log.CloudAssetOrchestrator_AssetUpToDate(asset.Name);
-                return;
+                return false;
             }
         }
 
-        object value = await asset.DeserializeAsync(new MemoryStream(serverBytes), ct);
-        await _cache.SaveAsync(asset.Name, new MemoryStream(serverBytes), ct);
-        _store.Set(asset.Name, value);
-        lock (_cacheHashes)
+        return true;
+    }
+
+    private async Task<byte[]?> DownloadAssetAsync(ICloudAsset asset, CancellationToken ct)
+    {
+        _log.CloudAssetOrchestrator_Downloading(asset.Name);
+
+        Stream? serverStream;
+        try
         {
-            _cacheHashes[asset.Name] = serverHash;
+            serverStream = await _downloader.GetActiveAsync(asset.ResourcePath, ct);
         }
-        _log.CloudAssetOrchestrator_AssetUpdated(asset.Name);
-        IdleDeferRecycle();
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _log.CloudAssetOrchestrator_BackgroundFetchFailed(asset.Name, ex);
+            return null;
+        }
+
+        if (serverStream == null)
+        {
+            _log.CloudAssetOrchestrator_BackgroundFetchFailed(asset.Name, null);
+            return null;
+        }
+
+        byte[] bytes = await ReadAllBytesAndDisposeAsync(serverStream, ct);
+        _log.CloudAssetOrchestrator_Downloaded(asset.Name);
+
+        return bytes;
     }
 
     private void IdleDeferRecycle()
@@ -299,13 +276,6 @@ internal class CloudAssetOrchestrator : BackgroundService, IPreScopeInitializer
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnRanToCompletion,
                 TaskScheduler.Default);
-    }
-
-    private static async Task<byte[]> ReadAllBytesAsync(Stream stream, CancellationToken ct)
-    {
-        using MemoryStream ms = new();
-        await stream.CopyToAsync(ms, ct);
-        return ms.ToArray();
     }
 }
 

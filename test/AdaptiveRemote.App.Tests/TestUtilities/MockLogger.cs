@@ -31,10 +31,16 @@ internal class MockLogger<LoggerType> : ILogger<LoggerType>
         }
 
         string message = $"{logLevel}[{eventId.Id}]: {formatter(state, exception)}";
+        if (exception is not null)
+        {
+            message += $"\n  {exception.GetType().Name}: {exception.Message}";
+        }
+
         foreach ((string find, string replace) in ReplaceStrings)
         {
             message = message.Replace(find, replace);
         }
+
         lock (_lock)
         {
             _messages.Add(message);
