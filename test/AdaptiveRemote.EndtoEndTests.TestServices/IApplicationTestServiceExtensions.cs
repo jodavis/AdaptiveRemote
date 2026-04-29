@@ -11,7 +11,7 @@ public static class IApplicationTestServiceExtensions
         bool result = WaitHelpers.ExecuteWithRetries(() =>
         {
             currentPhase = testService.GetCurrentPhase();
-            return currentPhase >= expectedPhase;
+            return currentPhase == expectedPhase || currentPhase == LifecyclePhase.FatalError;
         }, timeout);
 
         currentPhase.Should().Be(expectedPhase,

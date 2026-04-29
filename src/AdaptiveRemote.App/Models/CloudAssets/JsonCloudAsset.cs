@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace AdaptiveRemote.Services.CloudAssets;
+namespace AdaptiveRemote.Models.CloudAssets;
 
 internal sealed class JsonCloudAsset<T>(
     string name,

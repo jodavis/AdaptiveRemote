@@ -113,13 +113,13 @@ public class MvvmPropertyIdleAdapterTests
         }
     }
 
-    private sealed class TestIdleAdapter : MvvmPropertyIdleAdapter
+    private sealed class TestIdleAdapter : MvvmPropertyActivityDetector
     {
         public TestIdleAdapter(TestTarget target)
             : base(target, TestTarget.IsActiveProperty) { }
     }
 
-    private sealed class BrokenIdleAdapter : MvvmPropertyIdleAdapter
+    private sealed class BrokenIdleAdapter : MvvmPropertyActivityDetector
     {
         public BrokenIdleAdapter(TestTarget target)
             : base(target, null!) { }

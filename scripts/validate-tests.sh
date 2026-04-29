@@ -5,4 +5,4 @@ cd "$SCRIPT_DIR/.."
 echo 'Testing unit test projects...'
 dotnet test --no-build "$SCRIPT_DIR/validate-unit-tests.proj"
 echo 'Testing E2E test projects...'
-dotnet test --no-build "$SCRIPT_DIR/validate-e2e-tests.proj"
+dotnet test --no-build "$SCRIPT_DIR/validate-e2e-tests.proj" -m:1

@@ -23,7 +23,7 @@ internal static class ConversationHostBuilderExtensions
             .AddScoped(GetConversationViewModel)
             .AddSingleton<Models.ModalMessageView>()
             .AddSingleton<IModalMessageService, ModalMessageService>()
-            .AddScoped<IUserActivityDetector, ConversationIdleAdapter>();
+            .AddScoped<IUserActivityDetector, ConversationActivityDetector>();
 
     internal static IServiceCollection AddConversationServices(this IServiceCollection services, IConfiguration config)
         => services

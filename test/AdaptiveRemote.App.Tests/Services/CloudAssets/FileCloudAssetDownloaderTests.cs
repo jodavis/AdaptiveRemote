@@ -8,7 +8,7 @@ public class FileCloudAssetDownloaderTests
     private const string FilePath = "dev/layout.json";
     private const string ResourcePath = "/layouts/compiled";
 
-    private static FileCloudAssetDownloader MakeSut(
+    private static FileSystemCloudAssetDownloader MakeSut(
         string stubFilePath, MockFileSystem fileSystem) =>
         new(new MockOptions<CloudSettings>(new CloudSettings { StubFilePath = stubFilePath }),
             fileSystem.Object);
@@ -19,7 +19,7 @@ public class FileCloudAssetDownloaderTests
         // Arrange
         MockFileSystem fileSystem = new();
         fileSystem.AddFile(FilePath, "{}");
-        FileCloudAssetDownloader sut = MakeSut(FilePath, fileSystem);
+        FileSystemCloudAssetDownloader sut = MakeSut(FilePath, fileSystem);
 
         // Act
         Stream? result = await sut.GetActiveAsync(ResourcePath, CancellationToken.None);
@@ -33,7 +33,7 @@ public class FileCloudAssetDownloaderTests
     {
         // Arrange
         MockFileSystem fileSystem = new();
-        FileCloudAssetDownloader sut = MakeSut("nonexistent/layout.json", fileSystem);
+        FileSystemCloudAssetDownloader sut = MakeSut("nonexistent/layout.json", fileSystem);
 
         // Act
         Stream? result = await sut.GetActiveAsync(ResourcePath, CancellationToken.None);
@@ -48,7 +48,7 @@ public class FileCloudAssetDownloaderTests
         // Arrange
         MockFileSystem fileSystem = new();
         fileSystem.AddFile(FilePath, "{}");
-        FileCloudAssetDownloader sut = MakeSut(FilePath, fileSystem);
+        FileSystemCloudAssetDownloader sut = MakeSut(FilePath, fileSystem);
 
         // Act
         Stream? result = await sut.GetByIdAsync(ResourcePath, Guid.NewGuid(), CancellationToken.None);

@@ -1,5 +1,7 @@
+using AdaptiveRemote.Models.CloudAssets;
 using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.CloudAssets;
+using AdaptiveRemote.Services.IdleDetection;
 using AdaptiveRemote.Services.Lifecycle;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +14,12 @@ internal static class CloudAssetServiceExtensions
         => services
             .AddSingleton<ICloudAssetStore, CloudAssetStore>()
             .AddSingleton<IIdleDetector, IdleDetector>()
-            .AddSingleton<ICloudAssetDownloader, FileCloudAssetDownloader>()
+            .AddScopedLifecycleService<IdleDetector.ScopedIdleDetector>()
+            .AddSingleton<ICloudAssetCache, CloudAssetCache>()
+            .AddSingleton<ICloudAssetDownloader, FileSystemCloudAssetDownloader>()
+            .AddSingleton<FileSystemCloudAssetWatchService>()
+            .AddSingleton<ICloudAssetChangeNotifier>(sp => sp.GetRequiredService<FileSystemCloudAssetWatchService>())
+            .AddHostedService(sp => sp.GetRequiredService<FileSystemCloudAssetWatchService>())
             .AddSingleton<CloudAssetOrchestrator>()
             .AddSingleton<IPreScopeInitializer>(sp => sp.GetRequiredService<CloudAssetOrchestrator>())
             .AddHostedService(sp => sp.GetRequiredService<CloudAssetOrchestrator>())
