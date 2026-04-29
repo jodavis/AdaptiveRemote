@@ -31,7 +31,7 @@ public class LayoutStylesheetProviderTests
     }
 
     [TestMethod]
-    public void LayoutStylesheetProvider_GetCss_EmptyStoreThrowsDescriptiveError()
+    public void LayoutStylesheetProvider_GetCss_PropagatesStoreException()
     {
         // Arrange
         Mock<ICloudAssetStore> storeMock = new(MockBehavior.Strict);
