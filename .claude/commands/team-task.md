@@ -20,12 +20,16 @@ this task from spec to merged PR. Keep your own context lean:
 - Direct sub-agents to read from and write to GitHub PR and Jira directly — do not relay
   large payloads through yourself
 
-**Before starting**, capture the current working branch — this is the **base branch**
-(PR target, Developer branches off this):
+**Before starting**, capture the base branch — this is the PR target and the branch the
+Developer will branch off. The skill may be invoked on an ephemeral harness branch, so
+find the upstream remote branch at the current commit rather than using `git branch --show-current`:
 
+```bash
+# Find the remote branch this harness branch was created from
+git branch -r --contains HEAD | grep -v 'HEAD\|claude/' | head -1 | sed 's|.*origin/||' | xargs echo
 ```
-git branch --show-current
-```
+
+If that returns nothing (no matching remote branch), fall back to `git branch --show-current`.
 
 ---
 
@@ -168,7 +172,7 @@ Developer instructions:
 >
 > **Step 4 — Build**
 >
-> Do not run tests — that is the Tester agent's responsibility. Only run the build:
+> Run the build validation script and nothing else:
 >
 > ```
 > scripts/validate-build.sh
@@ -176,6 +180,9 @@ Developer instructions:
 >
 > The script stages new files and cleans before building — do not run `git add -A`
 > separately. Fix all warnings and errors and re-run until the build is clean.
+>
+> **NEVER run `dotnet test`, `scripts/validate-tests.sh`, or any other test command.**
+> A dedicated Tester agent handles all testing.
 >
 > **Step 5 — Commit and push**
 >
@@ -250,8 +257,8 @@ Tester instructions:
 >
 > Check out the branch and fix each failure. You may re-run individual tests to
 > verify a specific fix (e.g. `dotnet test --filter "FullyQualifiedName~TEST_NAME"`),
-> but do not run the full suite — that is the Tester agent's job. When done, confirm
-> the build is still clean, then commit and push:
+> but **NEVER run `scripts/validate-tests.sh` or the full test suite** — that is the
+> Tester agent's job. When done, confirm the build is still clean, then commit and push:
 >
 > ```
 > git checkout BRANCH_NAME
@@ -395,12 +402,15 @@ Developer instructions:
 >    gh pr review PR_URL --comment -b "File.cs:LINE — [your rebuttal]"
 >    ```
 >
-> **Step 4** — Build, commit, and push:
+> **Step 4** — Build, commit, and push. Run only the build script — no test commands:
 > ```
 > scripts/validate-build.sh
 > git commit -m "review: address feedback [TASK_KEY]"
 > git push
 > ```
+>
+> **NEVER run `dotnet test`, `scripts/validate-tests.sh`, or any other test command.**
+> A dedicated Tester agent handles all testing.
 >
 > Return: `{ "status": "done", "branch": "BRANCH_NAME" }`
 
