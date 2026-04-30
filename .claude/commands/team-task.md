@@ -350,12 +350,32 @@ Reviewer instructions:
 >   headless E2E coverage
 > - `.editorconfig` compliance
 >
-> For each issue found, post a comment **directly to the PR**:
-> ```
-> gh pr review PR_URL --comment -b "path/to/File.cs:LINE — your comment"
+> Collect all issues into a JSON array (schema below). If the array is non-empty,
+> post them as a **single formal PR review** with line-anchored comments so each
+> becomes a resolvable discussion thread:
+>
+> ```bash
+> # Extract PR number from PR_URL (e.g. .../pull/171 → 171)
+> PR_NUMBER=<number>
+> COMMIT_SHA=$(git rev-parse HEAD)
+>
+> # Write review payload to a temp file
+> cat > /tmp/review.json << EOF
+> {
+>   "commit_id": "$COMMIT_SHA",
+>   "event": "COMMENT",
+>   "body": "Automated review — see inline comments.",
+>   "comments": [
+>     { "path": "relative/path/to/File.cs", "line": 42, "body": "your comment" }
+>   ]
+> }
+> EOF
+>
+> gh api repos/jodavis/adaptiveremote/pulls/$PR_NUMBER/reviews \
+>   -X POST --input /tmp/review.json
 > ```
 >
-> After posting all comments, return a JSON array. Return only the JSON — no other text.
+> Return a JSON array. Return only the JSON — no other text.
 > An empty array means no issues.
 >
 > ```json
@@ -457,12 +477,27 @@ Then spawn **Tester and scoped Reviewer in parallel** and wait for both.
 >    accessibility regressions, or clear spec non-compliance. Do not raise style, naming,
 >    or minor cleanup issues.
 >
-> For each issue, post a comment directly to the PR:
-> ```
-> gh pr review PR_URL --comment -b "path/to/File.cs:LINE — your comment"
+> Collect all issues into a JSON array (same schema as Phase 5). If non-empty,
+> post them as a single formal PR review with line-anchored comments:
+>
+> ```bash
+> PR_NUMBER=<number>
+> COMMIT_SHA=$(git rev-parse HEAD)
+> cat > /tmp/review.json << EOF
+> {
+>   "commit_id": "$COMMIT_SHA",
+>   "event": "COMMENT",
+>   "body": "Follow-up review — see inline comments.",
+>   "comments": [
+>     { "path": "relative/path/to/File.cs", "line": 42, "body": "your comment" }
+>   ]
+> }
+> EOF
+> gh api repos/jodavis/adaptiveremote/pulls/$PR_NUMBER/reviews \
+>   -X POST --input /tmp/review.json
 > ```
 >
-> Return a JSON array (same schema as before). Return only the JSON — no other text.
+> Return a JSON array. Return only the JSON — no other text.
 > An empty array means all previous comments are resolved and no new significant issues exist.
 
 **Routing after both complete:**
