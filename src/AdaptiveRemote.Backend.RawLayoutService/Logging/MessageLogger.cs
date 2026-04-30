@@ -75,4 +75,13 @@ public static partial class MessageLogger
 
     [LoggerMessage(EventId = 1220, Level = LogLevel.Error, Message = "Failed to enqueue SQS trigger; rawLayoutId={RawLayoutId}")]
     public static partial void ErrorEnqueuingSqsTrigger(this ILogger logger, Guid rawLayoutId, Exception exception);
+
+    [LoggerMessage(EventId = 1221, Level = LogLevel.Information, Message = "PATCH /layouts/raw/{LayoutId}/validation-result request received")]
+    public static partial void UpdateValidationResultRequested(this ILogger logger, Guid layoutId);
+
+    [LoggerMessage(EventId = 1222, Level = LogLevel.Information, Message = "Validation result updated for raw layout Id={LayoutId}")]
+    public static partial void ValidationResultUpdated(this ILogger logger, Guid layoutId);
+
+    [LoggerMessage(EventId = 1223, Level = LogLevel.Error, Message = "Error updating validation result for raw layout Id={LayoutId}")]
+    public static partial void ErrorUpdatingValidationResult(this ILogger logger, Guid layoutId, Exception exception);
 }

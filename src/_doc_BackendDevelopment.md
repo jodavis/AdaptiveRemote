@@ -3,6 +3,43 @@
 This document defines the standing development pattern for backend services introduced by
 Task 5 ([ADR-187](https://jodasoft.atlassian.net/browse/ADR-187)).
 
+## Services
+
+| Service | Port (dev) | Notes |
+|---------|------------|-------|
+| `AdaptiveRemote.Backend.CompiledLayoutService` | 54433 (HTTPS) / 54434 (HTTP) | Compiled layout storage and retrieval |
+| `AdaptiveRemote.Backend.RawLayoutService` | 54435 (HTTPS) / 54436 (HTTP) | Raw layout CRUD; enqueues SQS trigger on save |
+| `AdaptiveRemote.Backend.LayoutProcessingService` | 54437 (HTTPS) / 54438 (HTTP) | SQS polling; orchestrates compile → validate → store → notify pipeline |
+
+### LayoutProcessingService
+
+`AdaptiveRemote.Backend.LayoutProcessingService` is the orchestration service for the layout
+compilation pipeline. It polls an SQS queue (`LayoutProcessingQueue`) for raw layout IDs,
+then drives: fetch raw layout → compile → validate → store compiled layout → publish notification.
+
+**Pipeline steps:**
+
+1. Dequeue SQS message containing `rawLayoutId`
+2. Fetch `RawLayout` from `RawLayoutService` via `IRawLayoutRepository`
+3. Compile via `ILayoutCompilerClient` (stub: `StubLayoutCompilerClient`)
+4. Validate via `ILayoutValidationClient` (stub: `StubLayoutValidationClient`)
+5a. On validation failure: write result back via `IRawLayoutStatusWriter`; delete message
+5b. On success: store compiled layout via `ICompiledLayoutRepository`; publish notification via `INotificationPublisher`; delete message
+5c. On error: do NOT delete message; SQS retry → DLQ (max receive count = 3; DLQ retention = 14 days)
+
+**Stub implementations (current task):**
+
+- `StubLayoutCompilerClient` — derives a `CompiledLayout` from `RawLayout` elements; no real CSS
+- `StubLayoutValidationClient` — always returns `IsValid=true`; set `Validation:ForceInvalid=true` to exercise the failure path
+- `StubNotificationPublisher` — no-op
+
+**Service-to-service auth:** When calling `RawLayoutService`, the HTTP clients attach a bearer
+token if `RawLayoutService:ServiceAccountToken` is configured. In production this will be
+replaced by Cognito M2M or IAM-signed requests.
+
+**SQS queue config (LocalStack):** provisioned by `docker-compose`; max receive count = 3;
+DLQ retention = 14 days; DLQ name = `LayoutProcessingQueue-dlq`.
+
 ## ECS/Fargate-style API services
 
 All backend API services must follow this local development pattern:

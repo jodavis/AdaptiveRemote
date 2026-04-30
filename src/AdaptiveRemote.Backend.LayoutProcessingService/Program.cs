@@ -66,21 +66,47 @@ RawLayoutServiceSettings rawLayoutSettings = builder.Configuration
 
 builder.Services.Configure<RawLayoutServiceSettings>(builder.Configuration.GetSection("RawLayoutService"));
 
-builder.Services.AddHttpClient<IRawLayoutRepository, HttpRawLayoutRepository>(client =>
+// If a service account token is configured, attach it as a bearer token on outgoing requests.
+// In production this will be replaced by IAM-signed requests or a Cognito M2M token.
+if (!string.IsNullOrEmpty(rawLayoutSettings.ServiceAccountToken))
 {
-    if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
-    {
-        client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
-    }
-});
+    builder.Services.AddTransient(_ =>
+        new ServiceAccountTokenHandler(rawLayoutSettings.ServiceAccountToken));
 
-builder.Services.AddHttpClient<IRawLayoutStatusWriter, HttpRawLayoutStatusWriter>(client =>
-{
-    if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
+    builder.Services.AddHttpClient<IRawLayoutRepository, HttpRawLayoutRepository>(client =>
     {
-        client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
-    }
-});
+        if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
+        {
+            client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
+        }
+    }).AddHttpMessageHandler<ServiceAccountTokenHandler>();
+
+    builder.Services.AddHttpClient<IRawLayoutStatusWriter, HttpRawLayoutStatusWriter>(client =>
+    {
+        if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
+        {
+            client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
+        }
+    }).AddHttpMessageHandler<ServiceAccountTokenHandler>();
+}
+else
+{
+    builder.Services.AddHttpClient<IRawLayoutRepository, HttpRawLayoutRepository>(client =>
+    {
+        if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
+        {
+            client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
+        }
+    });
+
+    builder.Services.AddHttpClient<IRawLayoutStatusWriter, HttpRawLayoutStatusWriter>(client =>
+    {
+        if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
+        {
+            client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
+        }
+    });
+}
 
 // Configure HTTP client for CompiledLayoutService
 CompiledLayoutServiceSettings compiledLayoutSettings = builder.Configuration

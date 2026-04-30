@@ -35,6 +35,12 @@ public static class LayoutEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .RequireAuthorization();
+
+        app.MapPatch("/layouts/raw/{id:guid}/validation-result", UpdateValidationResult)
+            .WithName(nameof(UpdateValidationResult))
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization();
     }
 
     private static async Task<IResult> ListRawLayouts(
@@ -254,6 +260,32 @@ public static class LayoutEndpoints
         {
             logger.ErrorDeletingRawLayout(id, userId, ex);
             return Results.Problem("Error deleting raw layout");
+        }
+    }
+
+    private static async Task<IResult> UpdateValidationResult(
+        Guid id,
+        ValidationResult result,
+        ILogger<Program> logger,
+        IRawLayoutStatusWriter statusWriter,
+        CancellationToken cancellationToken)
+    {
+        logger.UpdateValidationResultRequested(id);
+
+        try
+        {
+            await statusWriter.UpdateValidationResultAsync(id, result, cancellationToken);
+            logger.ValidationResultUpdated(id);
+            return Results.NoContent();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            return Results.NotFound();
+        }
+        catch (Exception ex)
+        {
+            logger.ErrorUpdatingValidationResult(id, ex);
+            return Results.Problem("Error updating validation result");
         }
     }
 }
