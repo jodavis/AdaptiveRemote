@@ -130,6 +130,11 @@ Developer instructions:
 > **Task key:** TASK_KEY
 > **Base branch:** BASE_BRANCH
 >
+> **Non-negotiable build rule:** After making any changes, you MUST run
+> `scripts/validate-build.sh` before committing. Never run `dotnet build` directly.
+> Never run `dotnet test`, `scripts/validate-tests.sh`, or any test command — a
+> dedicated Tester agent handles all testing.
+>
 > **Task brief:**
 > TASK_BRIEF
 >
@@ -380,6 +385,11 @@ Developer instructions:
 > **Task key:** TASK_KEY
 > **Branch:** BRANCH_NAME
 > **PR URL:** PR_URL
+>
+> **Non-negotiable build rule:** After making any changes, you MUST run
+> `scripts/validate-build.sh` before committing. Never run `dotnet build` directly.
+> Never run `dotnet test`, `scripts/validate-tests.sh`, or any test command — a
+> dedicated Tester agent handles all testing.
 >
 > **Task brief:**
 > TASK_BRIEF
