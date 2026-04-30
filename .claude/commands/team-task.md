@@ -114,7 +114,7 @@ Researcher instructions:
 
 ### Phase 2 — Developer, first pass (Sonnet)
 
-Spawn a Developer agent with `model: sonnet`. Pass it:
+Spawn a Developer agent with `model: claude-sonnet-4-6`. Pass it:
 
 - The task brief (full text from Researcher)
 - Task key, base branch
@@ -311,7 +311,7 @@ git rev-parse HEAD
 
 Store this as `REVIEWER_BASELINE`.
 
-Spawn a Reviewer agent with `model: sonnet`. Pass it the PR URL, branch, and base branch.
+Spawn a Reviewer agent with `model: claude-sonnet-4-6`. Pass it the PR URL, branch, and base branch.
 
 Reviewer instructions:
 
@@ -364,7 +364,7 @@ Reviewer instructions:
 
 ### Phase 6 — Developer, review pass (Sonnet)
 
-Spawn a Developer agent with `model: sonnet`. Pass it the PR URL, branch, and task brief.
+Spawn a Developer agent with `model: claude-sonnet-4-6`. Pass it the PR URL, branch, and task brief.
 
 Developer instructions:
 

@@ -118,7 +118,7 @@ namespace AdaptiveRemote.Backend.ApiTests.Features
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/LayoutProcessingServiceEndpoints.feature.ndjson", 3);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/LayoutProcessingServiceEndpoints.feature.ndjson", 5);
         }
         
         [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute("Health check returns 200 OK")]
@@ -157,6 +157,92 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
 #line 9
     await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute("End-to-end layout processing success path")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("End-to-end layout processing success path")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "LayoutProcessingService Endpoints")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestCategoryAttribute("ApiIntegrationTest")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestCategoryAttribute("PipelineTest")]
+        public async global::System.Threading.Tasks.Task End_To_EndLayoutProcessingSuccessPath()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "PipelineTest"};
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "1";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("End-to-end layout processing success path", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 12
+this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 13
+    await testRunner.GivenAsync("the layout processing pipeline is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 14
+    await testRunner.WhenAsync("a raw layout is created via RawLayoutService", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 15
+    await testRunner.ThenAsync("the processing service logs show the layout was compiled and validated", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 16
+    await testRunner.AndAsync("the processing service logs show the compiled layout was stored", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 17
+    await testRunner.AndAsync("the processing service logs show no unhandled errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute("End-to-end layout processing validation failure path")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("End-to-end layout processing validation failure path")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "LayoutProcessingService Endpoints")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestCategoryAttribute("ApiIntegrationTest")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestCategoryAttribute("PipelineTest")]
+        public async global::System.Threading.Tasks.Task End_To_EndLayoutProcessingValidationFailurePath()
+        {
+            string[] tagsOfScenario = new string[] {
+                    "PipelineTest"};
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "2";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("End-to-end layout processing validation failure path", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 20
+this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 21
+    await testRunner.GivenAsync("the layout processing pipeline is running with forced validation failure", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 22
+    await testRunner.WhenAsync("a raw layout is created via RawLayoutService", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 23
+    await testRunner.ThenAsync("the processing service logs show the layout failed validation", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 24
+    await testRunner.AndAsync("the processing service logs show the validation result was written back", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 25
+    await testRunner.AndAsync("the processing service logs show no unhandled errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
