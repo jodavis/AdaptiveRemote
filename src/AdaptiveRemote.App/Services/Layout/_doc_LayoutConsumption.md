@@ -59,11 +59,14 @@ Gutter CSS remains in `wwwroot` and is unaffected by the compiled layout's `CssD
 
 ### CSS injected as inline `<style>` block
 
-`CompiledLayout.CssDefinitions` contains the grid CSS for the downloaded layout.
-`LayoutStylesheetProvider` reads this value from `ICloudAssetStore` and the Blazor root
-component injects it as an inline `<style>` block via `IDynamicStylesheetProvider`. This
-avoids file serving or WebView2 virtual host mapping (both platform-specific). CSS is
-cleanly re-injected on every scope recycle.
+`CompiledLayout.CssDefinitions` contains the grid CSS for the downloaded layout elements
+(`#DPAD`, `#WELL`, `#PLAYBACK`, `#CHANNELANDVOLUME`). Structural layout rules (`#ROOT`, `#GUTTER`)
+are static and live in `wwwroot/css/app.less` rather than in `CssDefinitions`.
+`LayoutStylesheetProvider` is a scoped service that receives `CompiledLayout` by direct
+constructor injection (possible because `CompiledLayout` is itself registered as scoped via
+`AddScopedCloudAsset`). The Blazor root component injects the CSS as an inline `<style>`
+block via `IDynamicStylesheetProvider`. This avoids file serving or WebView2 virtual host
+mapping (both platform-specific). CSS is cleanly re-injected on every scope recycle.
 
 ### Layout update deferred until user is idle
 

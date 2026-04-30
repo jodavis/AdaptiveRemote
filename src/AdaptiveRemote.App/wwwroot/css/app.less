@@ -8,6 +8,26 @@ html, body {
 @import "conversation_ui.less";
 @import "loading_screen.less";
 
+#ROOT {
+    display: grid;
+    grid-template-rows: 6fr 3fr 1fr;
+    grid-template-columns: 3fr 2fr;
+    grid-gap: 20px;
+    width: 98vw;
+    height: 96vh;
+    padding: 2vh 1vw;
+
+    #GUTTER {
+        grid-row: 3;
+        grid-column-start: 1;
+        grid-column-end: span 2;
+        display: grid;
+        grid-template-rows: 1fr;
+        grid-template-columns: 6fr 1fr 1fr;
+        grid-gap: 10px;
+    }
+}
+
 #blazor-error-ui {
     background: lightyellow;
     bottom: 0;

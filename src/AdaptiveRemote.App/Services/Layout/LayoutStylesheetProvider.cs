@@ -1,20 +1,18 @@
 using AdaptiveRemote.Contracts;
-using AdaptiveRemote.Services.CloudAssets;
 
 namespace AdaptiveRemote.Services.Layout;
 
 internal sealed class LayoutStylesheetProvider : IDynamicStylesheetProvider
 {
-    private readonly ICloudAssetStore _store;
+    private readonly CompiledLayout _layout;
 
-    public LayoutStylesheetProvider(ICloudAssetStore store)
+    public LayoutStylesheetProvider(CompiledLayout layout)
     {
-        _store = store;
+        _layout = layout;
     }
 
     public string? GetCss()
     {
-        CompiledLayout layout = _store.Get<CompiledLayout>("layout");
-        return layout.CssDefinitions;
+        return _layout.CssDefinitions;
     }
 }
