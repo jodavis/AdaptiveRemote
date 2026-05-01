@@ -85,7 +85,7 @@ public static class LayoutEndpoints
         {
             RawLayout? layout = await repository.GetAsync(id, cancellationToken);
 
-            if (layout == null || layout.UserId != userId)
+            if (layout is null)
             {
                 return Results.NotFound();
             }

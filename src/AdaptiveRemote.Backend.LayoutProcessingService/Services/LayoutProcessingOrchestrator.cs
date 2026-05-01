@@ -178,6 +178,8 @@ public class LayoutProcessingOrchestrator : BackgroundService
                 // Delete the message — failure is recorded on the raw layout; retrying the
                 // same layout without changes will produce the same result.
                 await DeleteMessageAsync(receiptHandle, ct).ConfigureAwait(false);
+
+                _logger.SqsMessageProcessedSuccessfully(rawLayoutId);
                 return;
             }
 
