@@ -133,8 +133,13 @@ public class LayoutProcessingOrchestratorTests
         _mockSqs.Verify(s => s.DeleteMessageAsync(It.IsAny<DeleteMessageRequest>(), It.IsAny<CancellationToken>()), Times.Once);
 
         // Verify key log messages for the success pipeline were emitted.
-        // Polling infrastructure messages (SqsPollingError, SqsPollingStopped) are not asserted
-        // here because they can appear non-deterministically depending on cancellation timing.
+        //
+        // NOTE: MockLogger.VerifyMessages(params string[]) enforces ordered, exact-count matching,
+        // which is not appropriate here. This is a BackgroundService test: the polling loop emits
+        // infrastructure messages (SqsPollingStarted, SqsPollingStopped, possibly SqsPollingError)
+        // at non-deterministic positions relative to pipeline messages, and the exact total message
+        // count varies with cancellation timing. Containment-based assertions are the correct
+        // approach for background-service log verification.
         _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1706]: SQS polling loop started; queue={TestQueueUrl}"), "polling should start");
         _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1708]: SQS message received; rawLayoutId={TestRawLayoutId}"), "message identity should be logged first");
         _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1709]: Layout compiled successfully; rawLayoutId={TestRawLayoutId}"), "compile should be logged");
@@ -283,7 +288,10 @@ public class LayoutProcessingOrchestratorTests
             s => s.DeleteMessageAsync(It.IsAny<DeleteMessageRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
 
-        // Verify validation failure logs were emitted
+        // Verify validation failure logs were emitted.
+        // Containment assertions are used rather than MockLogger.VerifyMessages because this is a
+        // BackgroundService test where polling infrastructure messages appear at non-deterministic
+        // positions — see the success-path test for a detailed explanation.
         _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1708]: SQS message received; rawLayoutId={TestRawLayoutId}"), "message identity should be established");
         _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Warning[1711]: Layout validation failed; rawLayoutId={TestRawLayoutId} issueCount=1"), "validation failure should be logged as warning");
         _mockLogger.Messages.Should().Contain(m => m.StartsWith($"Information[1719]: Validation result written back to raw layout; rawLayoutId={TestRawLayoutId}"), "write-back should be confirmed");
@@ -482,7 +490,10 @@ public class LayoutProcessingOrchestratorTests
             p => p.PublishLayoutReadyAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
             Times.Never);
 
-        // Verify the unrecognized message warning was logged
+        // Verify the unrecognized message warning was logged.
+        // Containment assertions are used rather than MockLogger.VerifyMessages because this is a
+        // BackgroundService test where polling infrastructure messages appear at non-deterministic
+        // positions — see the success-path test for a detailed explanation.
         _mockLogger.Messages.Should().Contain(
             m => m.StartsWith($"Warning[1720]: SQS message unrecognized and deleted; receiptHandle={receiptHandle}"),
             "unrecognized message body should be logged as a warning");

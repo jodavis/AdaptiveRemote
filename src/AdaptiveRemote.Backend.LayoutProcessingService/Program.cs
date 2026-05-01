@@ -68,44 +68,30 @@ builder.Services.Configure<RawLayoutServiceSettings>(builder.Configuration.GetSe
 
 // If a service account token is configured, attach it as a bearer token on outgoing requests.
 // In production this will be replaced by IAM-signed requests or a Cognito M2M token.
-if (!string.IsNullOrEmpty(rawLayoutSettings.ServiceAccountToken))
+bool hasServiceAccountToken = !string.IsNullOrEmpty(rawLayoutSettings.ServiceAccountToken);
+if (hasServiceAccountToken)
 {
     builder.Services.AddTransient(_ =>
-        new ServiceAccountTokenHandler(rawLayoutSettings.ServiceAccountToken));
-
-    builder.Services.AddHttpClient<IRawLayoutRepository, HttpRawLayoutRepository>(client =>
-    {
-        if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
-        {
-            client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
-        }
-    }).AddHttpMessageHandler<ServiceAccountTokenHandler>();
-
-    builder.Services.AddHttpClient<IRawLayoutStatusWriter, HttpRawLayoutStatusWriter>(client =>
-    {
-        if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
-        {
-            client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
-        }
-    }).AddHttpMessageHandler<ServiceAccountTokenHandler>();
+        new ServiceAccountTokenHandler(rawLayoutSettings.ServiceAccountToken!));
 }
-else
-{
-    builder.Services.AddHttpClient<IRawLayoutRepository, HttpRawLayoutRepository>(client =>
-    {
-        if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
-        {
-            client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
-        }
-    });
 
-    builder.Services.AddHttpClient<IRawLayoutStatusWriter, HttpRawLayoutStatusWriter>(client =>
+void ConfigureRawLayoutClient(HttpClient client)
+{
+    if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
     {
-        if (!string.IsNullOrEmpty(rawLayoutSettings.BaseUrl))
-        {
-            client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
-        }
-    });
+        client.BaseAddress = new Uri(rawLayoutSettings.BaseUrl);
+    }
+}
+
+IHttpClientBuilder rawLayoutRepoBuilder =
+    builder.Services.AddHttpClient<IRawLayoutRepository, HttpRawLayoutRepository>(ConfigureRawLayoutClient);
+IHttpClientBuilder rawLayoutWriterBuilder =
+    builder.Services.AddHttpClient<IRawLayoutStatusWriter, HttpRawLayoutStatusWriter>(ConfigureRawLayoutClient);
+
+if (hasServiceAccountToken)
+{
+    rawLayoutRepoBuilder.AddHttpMessageHandler<ServiceAccountTokenHandler>();
+    rawLayoutWriterBuilder.AddHttpMessageHandler<ServiceAccountTokenHandler>();
 }
 
 // Configure HTTP client for CompiledLayoutService

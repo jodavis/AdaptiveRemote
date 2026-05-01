@@ -67,7 +67,7 @@ public static partial class MessageLogger
     [LoggerMessage(EventId = 1717, Level = LogLevel.Error, Message = "SQS polling error; will retry")]
     public static partial void SqsPollingError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(EventId = 1718, Level = LogLevel.Error, Message = "Raw layout not found; rawLayoutId={RawLayoutId}")]
+    [LoggerMessage(EventId = 1718, Level = LogLevel.Warning, Message = "Raw layout not found; rawLayoutId={RawLayoutId}")]
     public static partial void RawLayoutNotFound(this ILogger logger, Guid rawLayoutId);
 
     [LoggerMessage(EventId = 1719, Level = LogLevel.Information, Message = "Validation result written back to raw layout; rawLayoutId={RawLayoutId}")]
