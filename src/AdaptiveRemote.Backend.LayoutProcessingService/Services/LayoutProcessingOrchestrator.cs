@@ -179,6 +179,7 @@ public class LayoutProcessingOrchestrator : BackgroundService
                 // same layout without changes will produce the same result.
                 await DeleteMessageAsync(receiptHandle, ct).ConfigureAwait(false);
 
+                // Log success only after the message is confirmed deleted.
                 _logger.SqsMessageProcessedSuccessfully(rawLayoutId);
                 return;
             }
@@ -199,10 +200,11 @@ public class LayoutProcessingOrchestrator : BackgroundService
 
             _logger.LayoutReadyPublished(rawLayout.UserId, savedLayout.Id);
 
-            _logger.SqsMessageProcessedSuccessfully(rawLayoutId);
-
             // Delete the message only on full success.
             await DeleteMessageAsync(receiptHandle, ct).ConfigureAwait(false);
+
+            // Log success only after the message is confirmed deleted.
+            _logger.SqsMessageProcessedSuccessfully(rawLayoutId);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

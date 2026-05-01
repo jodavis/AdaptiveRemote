@@ -36,6 +36,11 @@ public static class LayoutEndpoints
             .Produces(StatusCodes.Status404NotFound)
             .RequireAuthorization();
 
+        // NOTE: This endpoint is intended for machine-to-machine calls from LayoutProcessingService.
+        // RequireAuthorization() enforces that a valid JWT is present, but does not currently
+        // restrict callers to a service-account identity. A dedicated authorization policy
+        // (e.g., checking a Cognito M2M client_credentials claim) will be added when Cognito M2M
+        // token support is implemented in a later task.
         app.MapPatch("/layouts/raw/{id:guid}/validation-result", UpdateValidationResult)
             .WithName(nameof(UpdateValidationResult))
             .Produces(StatusCodes.Status204NoContent)
