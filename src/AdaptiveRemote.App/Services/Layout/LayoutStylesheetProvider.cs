@@ -1,19 +1,18 @@
-using System.Reflection;
+using AdaptiveRemote.Contracts;
 
 namespace AdaptiveRemote.Services.Layout;
 
 internal sealed class LayoutStylesheetProvider : IDynamicStylesheetProvider
 {
-    private static readonly string _css = LoadCss();
+    private readonly CompiledLayout _layout;
 
-    public string? GetCss() => _css;
-
-    private static string LoadCss()
+    public LayoutStylesheetProvider(CompiledLayout layout)
     {
-        Assembly assembly = typeof(LayoutStylesheetProvider).Assembly;
-        using Stream stream = assembly.GetManifestResourceStream(
-            "AdaptiveRemote.Services.Layout.layout-grid.css")!;
-        using StreamReader reader = new(stream);
-        return reader.ReadToEnd();
+        _layout = layout;
+    }
+
+    public string? GetCss()
+    {
+        return _layout.CssDefinitions;
     }
 }
