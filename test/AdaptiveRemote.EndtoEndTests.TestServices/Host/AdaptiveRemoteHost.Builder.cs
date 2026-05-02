@@ -13,6 +13,9 @@ public partial class AdaptiveRemoteHost
 {
     public class Builder
     {
+        private const string ResourceInUseExceptionMessage = "The requested resource is in use.";
+        private const int StartupRetryCount = 3;
+
         private AdaptiveRemoteHostSettings _settings;
         private readonly ILoggerFactory _loggerFactory;
         private readonly HostApplicationLoggerProvider _hostLoggerProvider;
@@ -48,7 +51,35 @@ public partial class AdaptiveRemoteHost
             Thread.Sleep(Random.Shared.Next(100, 500)); 
 
             AdaptiveRemoteHostSettings effectiveSettings = overrideSettings?.Invoke(_settings) ?? _settings;
-            return StartWithSettings(effectiveSettings);
+
+            ILogger<AdaptiveRemoteHost> retryLogger = _loggerFactory.CreateLogger<AdaptiveRemoteHost>();
+
+            // Only HostStartupException instances whose CapturedOutput contains ResourceInUseExceptionMessage
+            // are retried. Any other exception (e.g. Inconclusive, process-launch failure) propagates immediately.
+            for (int attempt = 1; attempt <= StartupRetryCount; attempt++)
+            {
+                try
+                {
+                    return StartWithSettings(effectiveSettings);
+                }
+                catch (HostStartupException ex) when (ex.CapturedOutput.Contains(ResourceInUseExceptionMessage, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (attempt == StartupRetryCount)
+                    {
+                        throw;
+                    }
+
+                    retryLogger.LogWarning(
+                        "Host startup attempt {Attempt}/{MaxAttempts} failed with '{ExceptionMessage}'. Retrying...",
+                        attempt, StartupRetryCount, ResourceInUseExceptionMessage);
+                    Thread.Sleep(Random.Shared.Next(1000, 3000));
+                }
+            }
+
+            // Unreachable: the loop always exits via return (success) or throw (final-attempt failure
+            // re-throws via the catch block, or a non-retryable exception propagates immediately).
+            // Required by the compiler since it cannot prove the loop body always returns or throws.
+            throw new InvalidOperationException("Unexpected state: startup retry loop exited without returning or throwing.");
         }
 
         private AdaptiveRemoteHost StartWithSettings(AdaptiveRemoteHostSettings _settings)
@@ -268,7 +299,7 @@ public partial class AdaptiveRemoteHost
                     logger.LogError(processException, "Failed to kill the host process. {ErrorMessage}", processException.Message);
                 }
 
-                throw;
+                throw new HostStartupException(ex.Message, ex, standardOutputAndError.ToString());
             }
         }
 
@@ -279,6 +310,16 @@ public partial class AdaptiveRemoteHost
             int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
             listener.Stop();
             return port;
+        }
+
+        private sealed class HostStartupException(string message, Exception innerException, string capturedOutput)
+            : Exception(message, innerException)
+        {
+            /// <summary>
+            /// The captured stdout/stderr from the host process at the time of the startup failure.
+            /// Used by <see cref="Start"/> to identify retryable crashes (e.g., WebView2 resource-in-use).
+            /// </summary>
+            internal string CapturedOutput { get; } = capturedOutput;
         }
     }
 }
