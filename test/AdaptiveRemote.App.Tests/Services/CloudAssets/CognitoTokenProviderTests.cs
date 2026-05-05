@@ -141,7 +141,8 @@ public class CognitoTokenProviderTests
         MockLogger.VerifyMessages(log =>
         {
             log.CognitoTokenProvider_AcquiringToken();
-            log.CognitoTokenProvider_AcquireTokenFailed(new HttpRequestException());
+            log.CognitoTokenProvider_AcquireTokenFailed(
+                new HttpRequestException("Response status code does not indicate success: 401 (Unauthorized)."));
         });
     }
 
