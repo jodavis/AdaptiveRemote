@@ -282,14 +282,18 @@ Re-run Tester. Repeat until no failures.
 
 ### Phase 4 — Create PR
 
-Create the pull request. Substitute actual values for all placeholders:
+Create the pull request **as a draft**. Use `mcp__github__create_pull_request` with `draft: true`.
+Substitute actual values for all placeholders:
 
 ```
-gh pr create \
-  --base BASE_BRANCH \
-  --head BRANCH_NAME \
-  --title "[TASK_KEY] <concise description from task brief>" \
-  --body "$(cat <<'EOF'
+mcp__github__create_pull_request(
+  owner="jodavis",
+  repo="adaptiveremote",
+  base=BASE_BRANCH,
+  head=BRANCH_NAME,
+  title="[TASK_KEY] <concise description from task brief>",
+  draft=true,
+  body="""
 Jira: https://jodasoft.atlassian.net/browse/TASK_KEY
 
 ## What changed
@@ -301,11 +305,11 @@ Jira: https://jodasoft.atlassian.net/browse/TASK_KEY
 `scripts/validate-tests` passes — unit tests and headless E2E tests.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
+"""
+)
 ```
 
-Capture the PR URL from the output.
+Capture the PR URL and PR number from the output.
 
 Optional (silent fail): `mcp__github__request_copilot_review`
 Optional (silent fail): set Jira status to "In Review" via `mcp__jira__editJiraIssue`
@@ -512,8 +516,17 @@ Loop, updating `REVIEWER_BASELINE` each time before the parallel spawn.
 
 ## Completion
 
-When the Reviewer returns an empty array, tell the user:
+When the Reviewer returns an empty array:
+
+1. **Mark the PR ready for review** using `mcp__github__update_pull_request` with `draft: false`
+   (owner="jodavis", repo="adaptiveremote", pullNumber=PR_NUMBER).
+
+2. **Request a review from @jodavis** using `mcp__github__update_pull_request` with
+   `reviewers: ["jodavis"]` (owner="jodavis", repo="adaptiveremote", pullNumber=PR_NUMBER).
+
+3. Tell the user:
 
 > Implementation complete.
 > PR: PR_URL
 > All tests pass and all review comments have been addressed or rebutted on the PR.
+> The PR has been marked ready for review and @jodavis has been requested as a reviewer.
