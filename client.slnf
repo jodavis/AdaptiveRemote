@@ -1,0 +1,20 @@
+{
+  "solution": {
+    "path": "AdaptiveRemote.sln",
+    "projects": [
+      "src\\AdaptiveRemote.Contracts\\AdaptiveRemote.Contracts.csproj",
+      "src\\AdaptiveRemote.App\\AdaptiveRemote.App.csproj",
+      "src\\AdaptiveRemote\\AdaptiveRemote.csproj",
+      "src\\AdaptiveRemote.Console\\AdaptiveRemote.Console.csproj",
+      "src\\AdaptiveRemote.Headless\\AdaptiveRemote.Headless.csproj",
+      "test\\AdaptiveRemote.App.Tests\\AdaptiveRemote.App.Tests.csproj",
+      "test\\AdaptiveRemote.Speech.Tests\\AdaptiveRemote.Speech.Tests.csproj",
+      "test\\AdaptiveRemote.EndtoEndTests.TestServices\\AdaptiveRemote.EndtoEndTests.TestServices.csproj",
+      "test\\AdaptiveRemote.EndToEndTests.Steps\\AdaptiveRemote.EndToEndTests.Steps.csproj",
+      "test\\AdaptiveRemote.EndToEndTests.Host.Headless\\AdaptiveRemote.EndToEndTests.Host.Headless.csproj",
+      "test\\AdaptiveRemote.EndToEndTests.Host.Wpf\\AdaptiveRemote.EndToEndTests.Host.Wpf.csproj",
+      "test\\AdaptiveRemote.EndtoEndTests.Host.Console\\AdaptiveRemote.EndToEndTests.Host.Console.csproj",
+      "test\\AdaptiveRemote.TestUtilities\\AdaptiveRemote.TestUtilities.csproj"
+    ]
+  }
+}

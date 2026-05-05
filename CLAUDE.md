@@ -18,6 +18,7 @@ Read the `_doc_*.md` file for any area you plan to modify:
 | UI components | `src/AdaptiveRemote.App/Components/_doc_UI.md` |
 | E2E test architecture | `test/_doc_EndToEndTests.md` |
 | Simulated devices | `test/AdaptiveRemote.EndToEndTests.TestServices/_doc_SimulatedDevices.md` |
+| Backend services | `src/_doc_BackendDevelopment.md` |
 
 ## Tech Stack
 

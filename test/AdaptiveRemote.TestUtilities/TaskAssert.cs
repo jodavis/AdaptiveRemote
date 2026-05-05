@@ -4,7 +4,7 @@ using FluentAssertions.Primitives;
 
 namespace AdaptiveRemote.TestUtilities;
 
-internal static class TaskAssert
+public static class TaskAssert
 {
     public static TaskAssertions Should(this Task? task)
         => new(task);

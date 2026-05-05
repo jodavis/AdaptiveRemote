@@ -346,4 +346,15 @@ internal partial class MessageLogger
 
     [LoggerMessage(EventId = 1516, Level = LogLevel.Information, Message = "Registering test service {ServiceName} implementing {ContractType} in DI container")]
     public partial void TestEndpointHooksService_RegisteringTestServiceInDI(string serviceName, string contractType);
+
+    // 1600–1699: CognitoTokenService
+
+    [LoggerMessage(EventId = 1600, Level = LogLevel.Information, Message = "Acquiring Cognito access token via Client Credentials flow")]
+    public partial void CognitoTokenService_AcquiringToken();
+
+    [LoggerMessage(EventId = 1601, Level = LogLevel.Information, Message = "Cognito access token acquired successfully")]
+    public partial void CognitoTokenService_TokenAcquired();
+
+    [LoggerMessage(EventId = 1602, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
+    public partial void CognitoTokenService_AcquireTokenFailed(Exception exception);
 }

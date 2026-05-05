@@ -33,6 +33,23 @@ This document describes the high-level organization of the AdaptiveRemote reposi
 	- Minimal code to launch the WPF app with console logging.
 	- No business logic or features.
 
+### AdaptiveRemote.Contracts
+- **Purpose:** Shared class library containing layout definition DTOs, enums, interfaces, and the source-generated `LayoutContractsJsonContext` used by both the client application and backend services.
+- **Guidance:** _No platform-specific dependencies._ Targets `net10.0` only. Contains pure data types (records, enums, interfaces) with no behavior.
+- **Boundaries:**
+	- No WPF, Windows APIs, or Blazor dependencies.
+	- No MVVM or runtime behavior — DTOs only.
+	- Included in both `client.slnf` and `backend.slnf`.
+
+## Backend Projects
+
+Backend services live under `src/` alongside client projects. Use `backend.slnf` to build only the backend set. See [`_spec_LayoutCustomizationService.md`](_spec_LayoutCustomizationService.md) for the full architecture.
+
+### AdaptiveRemote.Backend.CompiledLayoutService
+- **Purpose:** Serves compiled layouts to the client application via REST API.
+- **Authentication:** JWT Bearer via AWS Cognito. See [`AdaptiveRemote.Backend.CompiledLayoutService/_doc_Auth.md`](AdaptiveRemote.Backend.CompiledLayoutService/_doc_Auth.md).
+- **Pattern:** All backend services follow the logging, health endpoint, and structured log patterns established here (see ADR-167/ADR-168).
+
 ## Test Projects
 
 ### AdaptiveRemote.App.Tests
