@@ -53,6 +53,24 @@ When an update is detected, the orchestrator calls `IdleDeferRecycle`:
 
 The idle cooldown in tests is set to 0 seconds via `--cloud:IdleCooldownSeconds=0`.
 
+## OAuth2 token provider
+
+[`ICloudAuthTokenProvider`](ICloudAuthTokenProvider.cs) exposes a single method,
+`GetTokenAsync(ct)`, that returns a valid Bearer token. Callers attach it to requests;
+they never manage token expiry themselves.
+
+[`CognitoTokenProvider`](CognitoTokenProvider.cs) is the production singleton implementation:
+- POSTs to `CloudSettings.CognitoTokenEndpointUrl` using the OAuth2 Client Credentials grant,
+  sending `ClientId` and `ClientSecret` from `CloudSettings`.
+- Caches the token in memory with its expiry time; serves it on subsequent calls.
+- Proactively refreshes when fewer than 60 seconds remain before expiry, making expired tokens
+  invisible to callers.
+- Uses a `SemaphoreSlim(1,1)` to prevent concurrent fetches (only one refresh in flight at a time).
+- Exceptions propagate to the caller so failures surface in logs at the download layer.
+
+`ClientId`, `ClientSecret`, and `CognitoTokenEndpointUrl` default to empty string. Supply them
+via user secrets or environment variables — never commit credentials.
+
 ## Adding a new asset type
 
 1. Create a class implementing `ICloudAsset<T>` (or use [`JsonCloudAsset<T>`](JsonCloudAsset.cs)).
