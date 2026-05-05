@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -81,6 +82,11 @@ public class CognitoTokenProviderTests
         first.Should().Be("cached-token");
         second.Should().Be("cached-token");
         handler.CallCount.Should().Be(1);
+        MockLogger.VerifyMessages(log =>
+        {
+            log.CognitoTokenProvider_AcquiringToken();
+            log.CognitoTokenProvider_TokenAcquired();
+        });
     }
 
     [TestMethod]
@@ -152,26 +158,26 @@ public class CognitoTokenProviderTests
 
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
-        private readonly Queue<HttpResponseMessage> _responses;
+        private readonly ConcurrentQueue<HttpResponseMessage> _responses;
         private int _callCount;
 
         public int CallCount => _callCount;
 
         public FakeHttpMessageHandler(params HttpResponseMessage[] responses)
         {
-            _responses = new Queue<HttpResponseMessage>(responses);
+            _responses = new ConcurrentQueue<HttpResponseMessage>(responses);
         }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Interlocked.Increment(ref _callCount);
+            int callNumber = Interlocked.Increment(ref _callCount);
 
             if (!_responses.TryDequeue(out HttpResponseMessage? response))
             {
                 throw new InvalidOperationException(
-                    $"FakeHttpMessageHandler: no response configured for call #{_callCount}");
+                    $"FakeHttpMessageHandler: no response configured for call #{callNumber}");
             }
 
             return Task.FromResult(response);

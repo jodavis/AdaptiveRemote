@@ -187,15 +187,15 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 1009, Level = LogLevel.Warning, Message = "IR learning already in progress; ignoring request to program {Command}")]
     public partial void BroadlinkCommandService_LearningAlreadyInProgress(Models.Command command);
 
-    // 1010–1099: CognitoTokenProvider (CloudAssets)
+    // 1800–1899: CognitoTokenProvider (CloudAssets)
 
-    [LoggerMessage(EventId = 1010, Level = LogLevel.Information, Message = "Acquiring Cognito access token via Client Credentials flow")]
+    [LoggerMessage(EventId = 1800, Level = LogLevel.Information, Message = "Acquiring Cognito access token via Client Credentials flow")]
     public partial void CognitoTokenProvider_AcquiringToken();
 
-    [LoggerMessage(EventId = 1011, Level = LogLevel.Information, Message = "Cognito access token acquired successfully")]
+    [LoggerMessage(EventId = 1801, Level = LogLevel.Information, Message = "Cognito access token acquired successfully")]
     public partial void CognitoTokenProvider_TokenAcquired();
 
-    [LoggerMessage(EventId = 1012, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
+    [LoggerMessage(EventId = 1802, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
     public partial void CognitoTokenProvider_AcquireTokenFailed(Exception exception);
 
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Loading existing settings from {FilePath}")]
