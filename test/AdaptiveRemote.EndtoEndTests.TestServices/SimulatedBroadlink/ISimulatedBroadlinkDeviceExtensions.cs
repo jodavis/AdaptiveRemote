@@ -1,3 +1,5 @@
+using AdaptiveRemote.TestUtilities;
+
 namespace AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 
 /// <summary>

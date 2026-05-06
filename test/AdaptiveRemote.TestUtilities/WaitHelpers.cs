@@ -1,4 +1,4 @@
-﻿namespace AdaptiveRemote.EndtoEndTests;
+﻿namespace AdaptiveRemote.TestUtilities;
 
 public static class WaitHelpers
 {

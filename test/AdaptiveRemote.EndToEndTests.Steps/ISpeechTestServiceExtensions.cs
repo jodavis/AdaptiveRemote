@@ -1,5 +1,6 @@
 ﻿using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.Services.Testing;
+using AdaptiveRemote.TestUtilities;
 using FluentAssertions;
 
 namespace AdaptiveRemote.EndToEndTests.Steps;

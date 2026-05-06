@@ -1,49 +1,36 @@
-using System.Net;
 using AdaptiveRemote.Backend.ApiTests.Support;
-using FluentAssertions;
+using AdaptiveRemote.TestUtilities;
 using Reqnroll;
 
 namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
 
 [Binding]
-public class AuthenticationSteps : IDisposable
+public class AuthenticationSteps
 {
     private readonly ServiceContext _context;
+    private readonly TestClient _testClient;
 
-    public AuthenticationSteps(ServiceContext context)
+    public AuthenticationSteps(ServiceContext context, TestClient testClient)
     {
         _context = context;
+        _testClient = testClient;
     }
 
-    [When(@"a test client with no Authorization header calls GET (.*)")]
-    public async Task WhenAnonymousClientCallsGet(string endpoint)
+    [Given("the client has a valid Authorization token")]
+    public void GivenClientHasValidAuthenticationToken()
     {
-        using HttpClient client = _context.Fixture.CreateAnonymousHttpClient();
-        _context.LastResponse = await client.GetAsync(endpoint);
-        _context.LastResponseBody = await _context.LastResponse.Content.ReadAsStringAsync();
+        _testClient.AuthorizationToken = _context.Fixture.CreateToken();
     }
 
-    [When(@"a test client with a valid JWT calls GET (.*)")]
-    public async Task WhenAuthenticatedClientCallsGet(string endpoint)
+    [Given("the client has a no Authorization token")]
+    public void GivenClientHasNoAuthorizationToken()
     {
-        string token = _context.Fixture.CreateToken();
-        using HttpClient client = _context.Fixture.CreateBearerHttpClient(token);
-        _context.LastResponse = await client.GetAsync(endpoint);
-        _context.LastResponseBody = await _context.LastResponse.Content.ReadAsStringAsync();
+        _testClient.AuthorizationToken = string.Empty;
     }
 
-    [When(@"a test client with an expired JWT calls GET (.*)")]
-    public async Task WhenExpiredJwtClientCallsGet(string endpoint)
+    [Given("the client has an expired Authorization token")]
+    public void GivenClientHasExpiredAuthorizationToken()
     {
-        string token = _context.Fixture.CreateExpiredToken();
-        using HttpClient client = _context.Fixture.CreateBearerHttpClient(token);
-        _context.LastResponse = await client.GetAsync(endpoint);
-        _context.LastResponseBody = await _context.LastResponse.Content.ReadAsStringAsync();
-    }
-
-    public void Dispose()
-    {
-        // ServiceContext owns LastResponse and Fixture; nothing to dispose here.
-        GC.SuppressFinalize(this);
+        _testClient.AuthorizationToken = _context.Fixture.CreateExpiredToken();
     }
 }

@@ -147,13 +147,16 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 6
-    await testRunner.WhenAsync("a test client calls GET /layouts/raw", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 7
-    await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.WhenAsync("the client calls GET /layouts/raw on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 8
-    await testRunner.AndAsync("the body is an empty RawLayout array", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 9
+    await testRunner.AndAsync("the response body is \"[]\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -171,7 +174,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Create a new raw layout", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 10
+#line 11
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -181,22 +184,52 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 11
+#line 12
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 12
-    await testRunner.WhenAsync("a test client calls POST /layouts/raw with a valid RawLayout body", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
 #line 13
-    await testRunner.ThenAsync("the response is 201 Created", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 14
-    await testRunner.AndAsync("the body contains the created RawLayout with a generated Id", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.WhenAsync("the client calls POST /layouts/raw on the RawLayoutService endpoint with", @"{
+    ""userId"": ""test-user"",
+    ""name"": ""New Test Layout"",
+    ""elements"": [
+        {
+            ""$type"": ""command"",
+            ""type"": 1,
+            ""name"": ""Up"",
+            ""label"": ""Up"",
+            ""glyph"": ""↑"",
+            ""speakPhrase"": ""up"",
+            ""reverse"": ""Down"",
+            ""cssId"": ""up-btn"",
+            ""gridRow"": 0,
+            ""gridColumn"": 1
+        }
+    ],
+    ""version"": 1,
+    ""createdAt"": ""2026-05-06T08:30:00Z"",
+    ""updatedAt"": ""2026-05-06T08:30:00Z"",
+    ""validationResult"": null
+}", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 15
+#line 39
+ await testRunner.ThenAsync("the response is 201 Created", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 40
+    await testRunner.AndAsync("the response body is valid JSON", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 41
+    await testRunner.AndAsync("the response body represents a RawLayout", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 42
+    await testRunner.AndAsync("the RawLayout in the response body has a valid Id property", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 43
     await testRunner.AndAsync("the service logs contain a request log entry for POST /layouts/raw", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 16
+#line 44
     await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
@@ -215,7 +248,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Get raw layout by ID", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 18
+#line 46
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -225,20 +258,32 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 19
+#line 47
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 20
-    await testRunner.AndAsync("a raw layout exists with name \"Test Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 48
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 21
-    await testRunner.WhenAsync("a test client calls GET /layouts/raw/{id} for the created layout", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 49
+    await testRunner.AndAsync("RawLayoutService has a raw layout with the name \"Test Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 22
+#line 50
+    await testRunner.WhenAsync("the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 51
     await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 23
-    await testRunner.AndAsync("the body deserializes to the created RawLayout", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 52
+    await testRunner.AndAsync("the response body is valid JSON", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 53
+    await testRunner.AndAsync("the response body represents a RawLayout", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 54
+    await testRunner.AndAsync("the RawLayout in the response body has \"name\"=\"Test Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 55
+    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -256,7 +301,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Update an existing raw layout", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 25
+#line 57
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -266,23 +311,68 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 26
+#line 58
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 27
-    await testRunner.AndAsync("a raw layout exists with name \"Original Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 59
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 28
-    await testRunner.WhenAsync("a test client calls PUT /layouts/raw/{id} with updated name \"Updated Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 60
+    await testRunner.AndAsync("RawLayoutService has a raw layout with the name \"Original Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 29
+#line 61
+    await testRunner.WhenAsync("the client calls PUT /layouts/raw/{id} on the RawLayoutService endpoint with", @"{
+    ""userId"": ""test-user"",
+    ""name"": ""Updated Layout"",
+    ""elements"": [
+        {
+            ""$type"": ""command"",
+            ""type"": 1,
+            ""name"": ""Up"",
+            ""label"": ""Up"",
+            ""glyph"": ""↑"",
+            ""speakPhrase"": ""up"",
+            ""reverse"": ""Down"",
+            ""cssId"": ""up-btn"",
+            ""gridRow"": 0,
+            ""gridColumn"": 1
+        }
+    ],
+    ""version"": 1,
+    ""createdAt"": ""2026-05-06T08:30:00Z"",
+    ""updatedAt"": ""2026-05-06T08:30:00Z"",
+    ""validationResult"": null
+}", ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 86
     await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 30
-    await testRunner.AndAsync("the returned layout has name \"Updated Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 87
+    await testRunner.AndAsync("the response body is valid JSON", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 31
-    await testRunner.AndAsync("the layout version is incremented", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 88
+    await testRunner.AndAsync("the response body represents a RawLayout", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 89
+    await testRunner.AndAsync("the RawLayout in the response body has \"name\"=\"Updated Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 90
+    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 93
+    await testRunner.WhenAsync("the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 94
+    await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 95
+ await testRunner.AndAsync("the response body represents a RawLayout", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 96
+    await testRunner.AndAsync("the RawLayout in the response body has \"name\"=\"Updated Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 97
+    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -300,7 +390,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Delete a raw layout", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 33
+#line 99
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -310,20 +400,29 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 34
+#line 100
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 35
-    await testRunner.AndAsync("a raw layout exists with name \"Layout to Delete\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 101
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 36
-    await testRunner.WhenAsync("a test client calls DELETE /layouts/raw/{id} for the created layout", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 102
+    await testRunner.AndAsync("RawLayoutService has a raw layout with the name \"Layout to Delete\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 37
+#line 103
+    await testRunner.WhenAsync("the client calls DELETE /layouts/raw/{id} on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 104
     await testRunner.ThenAsync("the response is 204 No Content", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 38
-    await testRunner.AndAsync("getting the layout by ID returns 404 Not Found", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 105
+    await testRunner.AndAsync("the response body is \"\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 108
+    await testRunner.WhenAsync("the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 109
+    await testRunner.ThenAsync("the response is 404 Not Found", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -341,7 +440,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Access raw layouts without authentication", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 40
+#line 111
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -351,13 +450,16 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 41
+#line 112
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 42
-    await testRunner.WhenAsync("an unauthenticated client calls GET /layouts/raw", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 113
+    await testRunner.AndAsync("the client has a no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 43
+#line 114
+ await testRunner.WhenAsync("the client calls GET /layouts/raw on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 115
     await testRunner.ThenAsync("the response is 401 Unauthorized", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -376,7 +478,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Get non-existent layout by ID", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 45
+#line 117
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -386,13 +488,16 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 46
+#line 118
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 47
-    await testRunner.WhenAsync("a test client calls GET /layouts/raw/{id} with a random GUID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 119
+ await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 48
+#line 120
+ await testRunner.WhenAsync("the client calls GET /layouts/raw/{random} on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 121
     await testRunner.ThenAsync("the response is 404 Not Found", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -411,7 +516,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Update non-existent layout", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 50
+#line 123
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -421,13 +526,37 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 51
+#line 124
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 52
-    await testRunner.WhenAsync("a test client calls PUT /layouts/raw/{id} with a random GUID and name \"Updated\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 125
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 53
+#line 126
+ await testRunner.WhenAsync("the client calls PUT /layouts/raw/{random} on the RawLayoutService endpoint with", @"{
+    ""userId"": ""test-user"",
+    ""name"": ""Non-existent Layout"",
+    ""elements"": [
+        {
+            ""$type"": ""command"",
+            ""type"": 1,
+            ""name"": ""Up"",
+            ""label"": ""Up"",
+            ""glyph"": ""↑"",
+            ""speakPhrase"": ""up"",
+            ""reverse"": ""Down"",
+            ""cssId"": ""up-btn"",
+            ""gridRow"": 0,
+            ""gridColumn"": 1
+        }
+    ],
+    ""version"": 1,
+    ""createdAt"": ""2026-05-06T08:30:00Z"",
+    ""updatedAt"": ""2026-05-06T08:30:00Z"",
+    ""validationResult"": null
+}", ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 151
     await testRunner.ThenAsync("the response is 404 Not Found", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -446,7 +575,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Delete non-existent layout", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 55
+#line 153
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -456,13 +585,16 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 56
+#line 154
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 57
-    await testRunner.WhenAsync("a test client calls DELETE /layouts/raw/{id} with a random GUID", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 155
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 58
+#line 156
+    await testRunner.WhenAsync("the client calls DELETE /layouts/raw/{random} on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 157
     await testRunner.ThenAsync("the response is 404 Not Found", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -481,7 +613,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Create layout with invalid data", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 60
+#line 159
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -491,14 +623,41 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 61
+#line 160
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 62
-    await testRunner.WhenAsync("a test client calls POST /layouts/raw with an invalid RawLayout body", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 161
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 63
+#line 162
+    await testRunner.WhenAsync("the client calls POST /layouts/raw on the RawLayoutService endpoint with", @"{
+    ""userId"": ""test-user"",
+    ""name"": ""Updated Layout"",
+    ""elements"": [
+        {
+            ""$type"": ""command"",
+            ""type"": 1,
+            ""name"": ""Up"",
+            ""label"": ""Up"",
+            ""glyph"": ""↑"" 
+            ""speakPhrase"": ""up"",
+            ""reverse"": ""Down"",
+            ""cssId"": ""up-btn"",
+            ""gridRow"": 0,
+            ""gridColumn"": 1
+        }
+    ],
+    ""version"": 1,
+    ""createdAt"": ""2026-05-06T08:30:00Z"",
+    ""updatedAt"": ""2026-05-06T08:30:00Z"",
+    ""validationResult"": null
+}", ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 188
     await testRunner.ThenAsync("the response is 400 Bad Request", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 189
+    await testRunner.AndAsync("the response body contains \"Expected either \',\', \'}\', or \']\'.\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -516,7 +675,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Create layout with missing required fields", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 65
+#line 191
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -526,14 +685,42 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 66
+#line 192
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 67
-    await testRunner.WhenAsync("a test client calls POST /layouts/raw with a RawLayout missing required fields", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 193
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 68
-    await testRunner.ThenAsync("the response is 400 Bad Request", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 194
+    await testRunner.WhenAsync("the client calls POST /layouts/raw on the RawLayoutService endpoint with", @"{
+    ""userId"": ""test-user"",
+    ""name"": ""Updated Layout"",
+    ""elements"": [
+        {
+            ""type"": 1,
+            ""name"": ""Up"",
+            ""label"": ""Up"",
+            ""glyph"": ""↑"", 
+            ""speakPhrase"": ""up"",
+            ""reverse"": ""Down"",
+            ""cssId"": ""up-btn"",
+            ""gridRow"": 0,
+            ""gridColumn"": 1
+        }
+    ],
+    ""version"": 1,
+    ""createdAt"": ""2026-05-06T08:30:00Z"",
+    ""updatedAt"": ""2026-05-06T08:30:00Z"",
+    ""validationResult"": null
+}", ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 220
+    await testRunner.ThenAsync("the response is 500 Internal Server Error", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 221
+    await testRunner.AndAsync("the response body contains \"The JSON payload for polymorphic interface or abstrac" +
+                        "t type \'AdaptiveRemote.Contracts.RawLayoutElementDto\' must specify a type discri" +
+                        "minator.\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

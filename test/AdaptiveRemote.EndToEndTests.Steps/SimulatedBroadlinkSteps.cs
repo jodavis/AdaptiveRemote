@@ -1,5 +1,6 @@
 using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
+using AdaptiveRemote.TestUtilities;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using AdaptiveRemote.Services.Testing;
+using AdaptiveRemote.TestUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AdaptiveRemote.EndtoEndTests;

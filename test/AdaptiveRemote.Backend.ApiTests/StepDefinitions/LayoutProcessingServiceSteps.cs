@@ -20,6 +20,10 @@ public class LayoutProcessingServiceSteps
         _pipelineContext = pipelineContext;
     }
 
+    [StepArgumentTransformation("LayoutProcessingService")]
+    public Uri LayoutProcessingServiceToEndpointUri()
+        => new(_context.Fixture.ServiceUrl);
+
     [Given(@"LayoutProcessingService is running")]
     public async Task GivenLayoutProcessingServiceIsRunning()
     {
@@ -93,6 +97,14 @@ public class LayoutProcessingServiceSteps
 
         _pipelineContext.LastResponse.StatusCode.Should().Be(HttpStatusCode.Created,
             "RawLayoutService must accept the layout before the pipeline can run");
+    }
+
+    [Then(@"the LayoutProcessingService logs contain the message {string}")]
+    public async Task ThenTheProcessingLogsContainMessage(string expectedMessage)
+    {
+        bool found = await _pipelineContext.Fixture
+            .WaitForLogAsync(expectedMessage, TimeSpan.FromSeconds(30));
+        found.Should().BeTrue($"LayoutProcessingService should log message '{expectedMessage}' within 30s");
     }
 
     [Then(@"the processing service logs show the layout was compiled and validated")]
