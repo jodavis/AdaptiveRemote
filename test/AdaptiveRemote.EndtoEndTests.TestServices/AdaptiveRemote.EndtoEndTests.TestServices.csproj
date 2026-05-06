@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AdaptiveRemote.App\AdaptiveRemote.App.csproj" />
+    <ProjectReference Include="..\AdaptiveRemote.TestUtilities\AdaptiveRemote.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>

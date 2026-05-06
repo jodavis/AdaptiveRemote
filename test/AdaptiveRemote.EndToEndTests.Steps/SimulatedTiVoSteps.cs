@@ -1,5 +1,5 @@
-using AdaptiveRemote.EndtoEndTests;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;

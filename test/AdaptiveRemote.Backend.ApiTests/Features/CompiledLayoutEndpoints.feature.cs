@@ -145,21 +145,40 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.GivenAsync("CompiledLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 5
-    await testRunner.WhenAsync("a test client calls GET /layouts/compiled/active", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 6
-    await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+ await testRunner.WhenAsync("the client calls GET /layouts/compiled/active on the CompiledLayoutService endpoi" +
+                        "nt", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 7
-    await testRunner.AndAsync("the body deserializes to a valid CompiledLayout using LayoutContractsJsonContext", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 8
-    await testRunner.AndAsync("the CompiledLayout contains the expected hardcoded commands", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the response body is valid JSON", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 9
-    await testRunner.AndAsync("the service logs contain a request log entry for GET /layouts/compiled/active", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the response body represents a CompiledLayout", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 10
+    await testRunner.AndAsync("the CompiledLayout in the response body has a TiVo command named \"Up\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 11
+    await testRunner.AndAsync("the CompiledLayout in the response body has a TiVo command named \"Select\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 12
+    await testRunner.AndAsync("the CompiledLayout in the response body has a IR command named \"Power\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 13
+    await testRunner.AndAsync("the CompiledLayout in the response body has a Lifecycle command named \"Learn\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 14
+    await testRunner.AndAsync("the CompiledLayout in the response body has a Lifecycle command named \"Exit\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 15
+    await testRunner.AndAsync("the service logs contain a request log entry for GET /layouts/compiled/active", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 16
     await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }

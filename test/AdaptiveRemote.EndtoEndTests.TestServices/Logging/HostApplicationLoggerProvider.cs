@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using AdaptiveRemote.Services.Testing;
+using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.Logging;
