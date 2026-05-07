@@ -7,19 +7,19 @@ namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 [Binding]
 public class AuthenticationSteps
 {
-    private readonly ServiceContext _context;
+    private readonly ServiceFixture _fixture;
     private readonly TestClient _testClient;
 
-    public AuthenticationSteps(ServiceContext context, TestClient testClient)
+    public AuthenticationSteps(ServiceFixture fixture, TestClient testClient)
     {
-        _context = context;
+        _fixture = fixture;
         _testClient = testClient;
     }
 
     [Given("the client has a valid Authorization token")]
     public void GivenClientHasValidAuthenticationToken()
     {
-        _testClient.AuthorizationToken = _context.Fixture.CreateToken();
+        _testClient.AuthorizationToken = _fixture.CreateToken();
     }
 
     [Given("the client has a no Authorization token")]
@@ -31,6 +31,6 @@ public class AuthenticationSteps
     [Given("the client has an expired Authorization token")]
     public void GivenClientHasExpiredAuthorizationToken()
     {
-        _testClient.AuthorizationToken = _context.Fixture.CreateExpiredToken();
+        _testClient.AuthorizationToken = _fixture.CreateExpiredToken();
     }
 }

@@ -11,38 +11,23 @@ namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 [Binding]
 public class LayoutProcessingServiceSteps
 {
-    private readonly ServiceContext _context;
+    private readonly ServiceFixture _fixture;
     private readonly PipelineContext _pipelineContext;
 
-    public LayoutProcessingServiceSteps(ServiceContext context, PipelineContext pipelineContext)
+    public LayoutProcessingServiceSteps(ServiceFixture fixture, PipelineContext pipelineContext)
     {
-        _context = context;
+        _fixture = fixture;
         _pipelineContext = pipelineContext;
     }
 
     [StepArgumentTransformation("LayoutProcessingService")]
     public Uri LayoutProcessingServiceToEndpointUri()
-        => new(_context.Fixture.ServiceUrl);
+        => new(_fixture.ServiceUrl);
 
     [Given(@"LayoutProcessingService is running")]
     public async Task GivenLayoutProcessingServiceIsRunningAsync()
     {
-        await _context.Fixture.StartServiceAsync("AdaptiveRemote.Backend.LayoutProcessingService");
-    }
-
-    [Then(@"the body contains the LayoutProcessingService name and version")]
-    public void ThenTheBodyContainsLayoutProcessingServiceNameAndVersion()
-    {
-        _context.LastResponseBody.Should().NotBeNullOrEmpty();
-
-        HealthResponse? healthResponse = JsonSerializer.Deserialize<HealthResponse>(
-            _context.LastResponseBody!,
-            LayoutContractsJsonContext.Default.HealthResponse);
-
-        healthResponse.Should().NotBeNull();
-        healthResponse!.ServiceName.Should().Be("LayoutProcessingService");
-        healthResponse.Version.Should().NotBeNullOrEmpty();
-        healthResponse.Status.Should().Be("Healthy");
+        await _fixture.StartServiceAsync("AdaptiveRemote.Backend.LayoutProcessingService");
     }
 
     // -------------------------------------------------------------------------
