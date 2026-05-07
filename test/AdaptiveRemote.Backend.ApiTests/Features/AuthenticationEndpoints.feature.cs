@@ -145,7 +145,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.GivenAsync("CompiledLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 5
-    await testRunner.AndAsync("the client has a no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the client has no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 6
     await testRunner.WhenAsync("the client calls GET /layouts/compiled/active on the CompiledLayoutService endpoi" +
@@ -259,7 +259,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.GivenAsync("CompiledLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 23
-    await testRunner.AndAsync("the client has a no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the client has no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 24
     await testRunner.WhenAsync("the client calls GET /health on the CompiledLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");

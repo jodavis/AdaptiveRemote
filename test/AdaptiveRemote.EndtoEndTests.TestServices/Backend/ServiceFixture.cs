@@ -9,14 +9,6 @@ namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 /// <summary>
 /// Manages the lifecycle of backend services for API integration tests.
 /// Starts the service process and captures structured log output.
-///
-/// A <see cref="TestJwtAuthority"/> is started before the service so that the
-/// service can be configured with a real (but local) JWT authority. The
-/// <see cref="HttpClient"/> exposed to tests automatically includes a valid
-/// bearer token. For authentication-specific tests, use
-/// <see cref="CreateToken"/> and <see cref="CreateExpiredToken"/> to build
-/// tokens, and send them via <see cref="CreateAnonymousHttpClient"/> or
-/// <see cref="CreateBearerHttpClient"/> directly.
 /// </summary>
 public class ServiceFixture : IDisposable
 {
@@ -28,26 +20,18 @@ public class ServiceFixture : IDisposable
     private Process? _serviceProcess;
     private readonly StringBuilder _logOutput = new();
     private readonly object _logLock = new();
-    private TestJwtAuthority? _jwtAuthority;
+    private readonly TestJwtAuthority _jwtAuthority;
     private string? _startedServiceName;
-
-    // Use a unique user ID per fixture so each scenario operates on isolated data
-    // even when DynamoDB is shared across test scenarios via the shared LocalStack.
-    private readonly string _testUserId = $"test-user-{Guid.NewGuid():N}";
 
     public string ServiceUrl { get; }
 
-    /// <summary>
-    /// HttpClient pre-configured with a valid bearer token for the test user.
-    /// </summary>
-    public HttpClient HttpClient { get; private set; } = null!;
-
-    public ServiceFixture()
+    public ServiceFixture(TestJwtAuthority jwtAuthority)
     {
         ServiceUrl = $"http://localhost:{GetFreePort()}";
+        _jwtAuthority = jwtAuthority;
     }
 
-    public async Task StartServiceAsync(string serviceName = "AdaptiveRemote.Backend.CompiledLayoutService")
+    public async Task StartServiceAsync(string serviceName)
     {
         if (_serviceProcess != null)
         {
@@ -78,9 +62,6 @@ public class ServiceFixture : IDisposable
                 await localStack.CreateSqsQueueAsync("LayoutProcessingQueue");
             }
         }
-
-        // Start the JWT authority first so its URL is available for service configuration.
-        _jwtAuthority = new TestJwtAuthority();
 
         // Find the repository root by looking for the .git directory
         string currentDir = Directory.GetCurrentDirectory();
@@ -227,49 +208,7 @@ public class ServiceFixture : IDisposable
             string logs = GetLogs();
             throw new InvalidOperationException($"Service failed to start within 30 seconds (polling {ServiceUrl}/health). Logs:\n{logs}");
         }
-
-        // Default HttpClient includes a valid bearer token for the scenario-unique test user.
-        HttpClient = CreateBearerHttpClient(CreateToken());
     }
-
-    /// <summary>
-    /// Creates a valid JWT for the given subject. Defaults to the scenario-unique test user
-    /// to ensure each scenario operates on isolated DynamoDB data.
-    /// </summary>
-    public string CreateToken(string? sub = null)
-    {
-        if (_jwtAuthority is null)
-        {
-            throw new InvalidOperationException("StartServiceAsync() must be called before CreateToken()");
-        }
-
-        return _jwtAuthority.CreateToken(sub ?? _testUserId);
-    }
-
-    /// <summary>
-    /// Creates an expired JWT.
-    /// </summary>
-    public string CreateExpiredToken()
-    {
-        if (_jwtAuthority is null)
-        {
-            throw new InvalidOperationException("StartServiceAsync() must be called before CreateExpiredToken()");
-        }
-
-        return _jwtAuthority.CreateExpiredToken();
-    }
-
-    /// <summary>
-    /// Creates an HttpClient with no Authorization header (for testing 401 responses).
-    /// </summary>
-    public HttpClient CreateAnonymousHttpClient()
-        => new() { BaseAddress = new Uri(ServiceUrl) };
-
-    /// <summary>
-    /// Creates an HttpClient that sends the given bearer token on every request.
-    /// </summary>
-    public HttpClient CreateBearerHttpClient(string token)
-        => new(new BearerTokenHandler(token)) { BaseAddress = new Uri(ServiceUrl) };
 
     public string GetLogs()
     {
@@ -288,8 +227,6 @@ public class ServiceFixture : IDisposable
             _serviceProcess.Dispose();
         }
 
-        HttpClient?.Dispose();
-        _jwtAuthority?.Dispose();
         // LocalStack is shared across all scenarios; do not dispose it here.
         GC.SuppressFinalize(this);
     }
@@ -320,28 +257,6 @@ public class ServiceFixture : IDisposable
         finally
         {
             _localStackInitLock.Release();
-        }
-    }
-
-    /// <summary>
-    /// Adds a bearer token to every outgoing request.
-    /// </summary>
-    private sealed class BearerTokenHandler : DelegatingHandler
-    {
-        private readonly string _token;
-
-        public BearerTokenHandler(string token)
-            : base(new HttpClientHandler())
-        {
-            _token = token;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _token);
-            return base.SendAsync(request, cancellationToken);
         }
     }
 }

@@ -147,7 +147,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.GivenAsync("LayoutProcessingService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 6
-    await testRunner.AndAsync("the client has a no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the client has no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 7
  await testRunner.WhenAsync("the client calls GET /health on the LayoutProcessingService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
@@ -172,7 +172,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.AndAsync("the HealthResponse in the response body has a \"version\" property", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 14
-    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the RawLayoutService logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

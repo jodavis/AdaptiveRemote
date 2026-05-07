@@ -227,10 +227,10 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.AndAsync("the RawLayout in the response body has a valid Id property", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 43
-    await testRunner.AndAsync("the service logs contain a request log entry for POST /layouts/raw", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the RawLayoutService logs contain a request log entry for POST /layouts/raw", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 44
-    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the RawLayoutService logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -283,7 +283,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.AndAsync("the RawLayout in the response body has \"name\"=\"Test Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 55
-    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the RawLayoutService logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -357,7 +357,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.AndAsync("the RawLayout in the response body has \"name\"=\"Updated Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 90
-    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the RawLayoutService logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 93
     await testRunner.WhenAsync("the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
@@ -372,7 +372,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.AndAsync("the RawLayout in the response body has \"name\"=\"Updated Layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 97
-    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the RawLayoutService logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -454,7 +454,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.GivenAsync("RawLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 113
-    await testRunner.AndAsync("the client has a no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the client has no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 114
  await testRunner.WhenAsync("the client calls GET /layouts/raw on the RawLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
