@@ -8,34 +8,34 @@ namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 [Binding]
 public class CommonSteps : IDisposable
 {
-    private readonly ServiceContext _context;
+    private readonly ServiceFixture _fixture;
 
-    public CommonSteps(ServiceContext context)
+    public CommonSteps(ServiceFixture fixture)
     {
-        _context = context;
+        _fixture = fixture;
     }
 
     [StepArgumentTransformation("CompiledLayoutService")]
     public Uri CompiledLayoutServiceToEndpointUri()
-        => new(_context.Fixture.ServiceUrl);
+        => new(_fixture.ServiceUrl);
 
     [Given(@"CompiledLayoutService is running")]
     public async Task GivenCompiledLayoutServiceIsRunning()
     {
-        await _context.Fixture.StartServiceAsync();
+        await _fixture.StartServiceAsync();
     }
 
     [Then(@"the service logs contain a request log entry for (?:GET|POST|PUT|DELETE|PATCH) (.*)")]
     public void ThenTheServiceLogsContainRequestLogEntry(string endpoint)
     {
-        string logs = _context.Fixture.GetLogs();
+        string logs = _fixture.GetLogs();
         logs.Should().Contain(endpoint);
     }
 
     [Then(@"the service logs contain no warnings or errors")]
     public void ThenTheServiceLogsContainNoWarningsOrErrors()
     {
-        string logs = _context.Fixture.GetLogs();
+        string logs = _fixture.GetLogs();
         logs.Should().NotContain("WARNING", "service should not log warnings");
         logs.Should().NotContain("ERROR", "service should not log errors");
         logs.Should().NotContain("Exception", "service should not log exceptions");
