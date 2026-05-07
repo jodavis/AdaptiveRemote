@@ -1,15 +1,15 @@
 ﻿using System.Net.Http.Headers;
 using AdaptiveRemote.TestUtilities;
 
-namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
+namespace AdaptiveRemote.EndToEndTests.TestServices;
 
 public class TestClient
 {
     private HttpClient _httpClient = new();
 
-    public string AuthorizationToken { get; internal set; } = string.Empty;
+    public string AuthorizationToken { get; set; } = string.Empty;
 
-    internal HttpResponseMessage? SendRequest(HttpMethod method, Uri url, string? body = null)
+    public HttpResponseMessage? SendRequest(HttpMethod method, Uri url, string? body = null)
     {
         HttpRequestMessage request = new(method, url);
 

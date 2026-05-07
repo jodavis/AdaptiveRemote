@@ -1,8 +1,8 @@
-using AdaptiveRemote.Backend.ApiTests.Support;
 using AdaptiveRemote.Contracts;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using Reqnroll;
 
-namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
+namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 
 [Binding]
 public class RawLayoutSteps
@@ -18,7 +18,7 @@ public class RawLayoutSteps
     public Uri RawLayoutServiceToEndpointUri() => new(_context.Fixture.ServiceUrl);
 
     [Given(@"RawLayoutService is running")]
-    public async Task GivenRawLayoutServiceIsRunning()
+    public async Task GivenRawLayoutServiceIsRunningAsync()
     {
         await _context.Fixture.StartServiceAsync("AdaptiveRemote.Backend.RawLayoutService");
     }

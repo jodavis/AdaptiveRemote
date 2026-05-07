@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 
-namespace AdaptiveRemote.EndToEndTests.Steps;
+namespace AdaptiveRemote.EndToEndTests.Steps.Application;
 
 [Binding]
 public class SimulatedTiVoSteps : StepsBase

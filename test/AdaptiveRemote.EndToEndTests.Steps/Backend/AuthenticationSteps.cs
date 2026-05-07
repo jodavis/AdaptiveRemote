@@ -1,8 +1,8 @@
-using AdaptiveRemote.Backend.ApiTests.Support;
-using AdaptiveRemote.TestUtilities;
+using AdaptiveRemote.EndToEndTests.TestServices;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using Reqnroll;
 
-namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
+namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 
 [Binding]
 public class AuthenticationSteps

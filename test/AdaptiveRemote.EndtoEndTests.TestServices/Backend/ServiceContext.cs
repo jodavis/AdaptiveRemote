@@ -1,4 +1,4 @@
-namespace AdaptiveRemote.Backend.ApiTests.Support;
+namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
 /// <summary>
 /// Reqnroll context-injection container shared across all step definition classes

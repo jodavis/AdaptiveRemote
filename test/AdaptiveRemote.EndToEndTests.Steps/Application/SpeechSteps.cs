@@ -1,7 +1,7 @@
 using AdaptiveRemote.EndtoEndTests;
 using Reqnroll;
 
-namespace AdaptiveRemote.EndToEndTests.Steps;
+namespace AdaptiveRemote.EndToEndTests.Steps.Application;
 
 [Binding]
 public class SpeechSteps : StepsBase

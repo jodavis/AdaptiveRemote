@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using AdaptiveRemote.Contracts;
 
-namespace AdaptiveRemote.Backend.ApiTests.Support;
+namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
 /// <summary>
 /// Minimal in-process HTTP stub that stands in for CompiledLayoutService during pipeline

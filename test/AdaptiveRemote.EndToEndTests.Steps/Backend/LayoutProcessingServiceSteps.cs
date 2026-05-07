@@ -1,12 +1,12 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using AdaptiveRemote.Backend.ApiTests.Support;
 using AdaptiveRemote.Contracts;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using FluentAssertions;
 using Reqnroll;
 
-namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
+namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 
 [Binding]
 public class LayoutProcessingServiceSteps
@@ -25,7 +25,7 @@ public class LayoutProcessingServiceSteps
         => new(_context.Fixture.ServiceUrl);
 
     [Given(@"LayoutProcessingService is running")]
-    public async Task GivenLayoutProcessingServiceIsRunning()
+    public async Task GivenLayoutProcessingServiceIsRunningAsync()
     {
         await _context.Fixture.StartServiceAsync("AdaptiveRemote.Backend.LayoutProcessingService");
     }
@@ -50,19 +50,19 @@ public class LayoutProcessingServiceSteps
     // -------------------------------------------------------------------------
 
     [Given(@"the layout processing pipeline is running")]
-    public async Task GivenThePipelineIsRunning()
+    public async Task GivenThePipelineIsRunningAsync()
     {
         await _pipelineContext.Fixture.StartAsync(forceValidationInvalid: false);
     }
 
     [Given(@"the layout processing pipeline is running with forced validation failure")]
-    public async Task GivenThePipelineIsRunningWithForcedValidationFailure()
+    public async Task GivenThePipelineIsRunningWithForcedValidationFailureAsync()
     {
         await _pipelineContext.Fixture.StartAsync(forceValidationInvalid: true);
     }
 
     [When(@"a raw layout is created via RawLayoutService")]
-    public async Task WhenARawLayoutIsCreatedViaRawLayoutService()
+    public async Task WhenARawLayoutIsCreatedViaRawLayoutServiceAsync()
     {
         RawLayout layout = new(
             Id: Guid.Empty,
@@ -100,7 +100,7 @@ public class LayoutProcessingServiceSteps
     }
 
     [Then(@"the LayoutProcessingService logs contain the message {string}")]
-    public async Task ThenTheProcessingLogsContainMessage(string expectedMessage)
+    public async Task ThenTheProcessingLogsContainMessageAsync(string expectedMessage)
     {
         bool found = await _pipelineContext.Fixture
             .WaitForLogAsync(expectedMessage, TimeSpan.FromSeconds(30));
@@ -108,7 +108,7 @@ public class LayoutProcessingServiceSteps
     }
 
     [Then(@"the processing service logs show the layout was compiled and validated")]
-    public async Task ThenProcessingLogsShowCompiledAndValidated()
+    public async Task ThenProcessingLogsShowCompiledAndValidatedAsync()
     {
         bool compiled = await _pipelineContext.Fixture
             .WaitForLogAsync("Layout compiled successfully", TimeSpan.FromSeconds(30));
@@ -120,7 +120,7 @@ public class LayoutProcessingServiceSteps
     }
 
     [Then(@"the processing service logs show the compiled layout was stored")]
-    public async Task ThenProcessingLogsShowCompiledLayoutStored()
+    public async Task ThenProcessingLogsShowCompiledLayoutStoredAsync()
     {
         bool stored = await _pipelineContext.Fixture
             .WaitForLogAsync("Compiled layout stored", TimeSpan.FromSeconds(10));
@@ -141,7 +141,7 @@ public class LayoutProcessingServiceSteps
     }
 
     [Then(@"the processing service logs show the layout failed validation")]
-    public async Task ThenProcessingLogsShowValidationFailed()
+    public async Task ThenProcessingLogsShowValidationFailedAsync()
     {
         bool failed = await _pipelineContext.Fixture
             .WaitForLogAsync("Layout validation failed", TimeSpan.FromSeconds(30));
@@ -149,7 +149,7 @@ public class LayoutProcessingServiceSteps
     }
 
     [Then(@"the processing service logs show the validation result was written back")]
-    public async Task ThenProcessingLogsShowValidationResultWrittenBack()
+    public async Task ThenProcessingLogsShowValidationResultWrittenBackAsync()
     {
         bool writtenBack = await _pipelineContext.Fixture
             .WaitForLogAsync("Validation result written back to raw layout", TimeSpan.FromSeconds(10));

@@ -1,14 +1,13 @@
 ﻿using System.Net;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using AdaptiveRemote.Contracts;
+using AdaptiveRemote.EndToEndTests.TestServices;
 using AdaptiveRemote.TestUtilities;
-using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
-using Reqnroll.Formatters.PayloadProcessing.Cucumber;
 
-namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
+namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 
 [Binding]
 public class TestClientSteps
