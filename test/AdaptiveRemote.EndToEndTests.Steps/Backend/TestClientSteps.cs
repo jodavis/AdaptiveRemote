@@ -4,6 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 using AdaptiveRemote.Contracts;
 using AdaptiveRemote.EndToEndTests.TestServices;
 using AdaptiveRemote.TestUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 
@@ -18,7 +19,7 @@ public class TestClientSteps
     private object? _lastDeserializedObject;
     private Guid _existingRawLayoutId;
 
-    public TestClientSteps(TestClient client)
+    public TestClientSteps(TestClient client, ILoggerFactory loggerFactory)
     {
         _client = client;
     }
@@ -153,7 +154,7 @@ public class TestClientSteps
         }
     }
 
-    [Then(@"the CompiledLayout in the response body has a {CommandType} command named {string}")]
+    [Then(@"the CompiledLayout in the response body has a(n) {CommandType} command named {string}")]
     public void ThenTheCompiledLayoutInTheResponseBodyHasACommandOfTypeWithName(CommandType expectedType, string expectedName)
     {
         Assert.IsNotNull(_lastDeserializedObject, "The response body has not been deserialized yet. Ensure that the step 'the response body represents a CompiledLayout' is called before this step.");

@@ -167,7 +167,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.AndAsync("the CompiledLayout in the response body has a TiVo command named \"Select\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 12
-    await testRunner.AndAsync("the CompiledLayout in the response body has a IR command named \"Power\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the CompiledLayout in the response body has an IR command named \"Power\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 13
     await testRunner.AndAsync("the CompiledLayout in the response body has a Lifecycle command named \"Learn\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
@@ -176,10 +176,11 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.AndAsync("the CompiledLayout in the response body has a Lifecycle command named \"Exit\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 15
-    await testRunner.AndAsync("the service logs contain a request log entry for GET /layouts/compiled/active", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the CompiledLayoutService logs contain a request log entry for GET /layouts/compi" +
+                        "led/active", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 16
-    await testRunner.AndAsync("the service logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the CompiledLayoutService logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

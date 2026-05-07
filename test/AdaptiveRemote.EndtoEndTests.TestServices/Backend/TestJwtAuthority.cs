@@ -60,7 +60,7 @@ public sealed class TestJwtAuthority : IDisposable
     /// <summary>
     /// Creates a signed JWT that is already expired (issued/expiry in the past).
     /// </summary>
-    public string CreateExpiredToken(string sub = "test-user")
+    public string CreateExpiredToken(string sub)
         => CreateTokenCore(sub, expired: true);
 
     private string CreateTokenCore(string sub, bool expired)

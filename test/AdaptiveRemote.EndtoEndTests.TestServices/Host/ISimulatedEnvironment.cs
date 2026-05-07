@@ -1,5 +1,6 @@
 using AdaptiveRemote.EndtoEndTests.Host;
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
 namespace AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 
@@ -17,6 +18,12 @@ public interface ISimulatedEnvironment : IDisposable
     /// Gets the simulated Broadlink device, if started.
     /// </summary>
     ISimulatedBroadlinkDevice Broadlink { get; }
+
+    TestJwtAuthority JwtAuthority { get; }
+
+    ServiceFixture RawLayoutService { get; }
+
+    ServiceFixture CompiledLayoutService { get; }
 
     void EnsureHostStarted();
 

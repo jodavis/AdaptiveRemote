@@ -1,6 +1,8 @@
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using AdaptiveRemote.Services.Conversation;
+using AdaptiveRemote.TestUtilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
@@ -57,6 +59,9 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
                 // Always inject TestSpeechSynthesis so tests can verify spoken phrases without audio devices
                 await testEndpoint.InjectTestServiceAsync<ISpeechSynthesis, TestSpeechSynthesis>(ct);
             });
+
+        _lazyCompiledLayoutService = new(StartCompiledLayoutService);
+        _lazyRawLayoutService = new(StartRawLayoutService);
     }
 
     /// <inheritdoc/>
@@ -64,6 +69,28 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     /// <inheritdoc/>
     public ISimulatedBroadlinkDevice Broadlink => _broadlink;
+
+    private Lazy<ServiceFixture> _lazyRawLayoutService;
+    public ServiceFixture RawLayoutService => _lazyRawLayoutService.Value;
+
+    private Lazy<ServiceFixture> _lazyCompiledLayoutService;
+    public ServiceFixture CompiledLayoutService => _lazyCompiledLayoutService.Value;
+
+    public TestJwtAuthority JwtAuthority { get; } = new();
+
+    private ServiceFixture StartRawLayoutService()
+    {
+        ServiceFixture fixture = new ServiceFixture(JwtAuthority);
+        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync("AdaptiveRemote.Backend.RawLayoutService"));
+        return fixture;
+    }
+
+    private ServiceFixture StartCompiledLayoutService()
+    {
+        ServiceFixture fixture = new ServiceFixture(JwtAuthority);
+        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync("AdaptiveRemote.Backend.CompiledLayoutService"));
+        return fixture;
+    }
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, byte[]> TestIrPayloads => _testIrPayloads;
@@ -109,6 +136,30 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         try
         {
             _broadlink.Dispose();
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyCompiledLayoutService.IsValueCreated)
+            {
+                _lazyCompiledLayoutService.Value.Dispose();
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyRawLayoutService.IsValueCreated)
+            {
+                _lazyRawLayoutService.Value.Dispose();
+            }
         }
         catch
         {

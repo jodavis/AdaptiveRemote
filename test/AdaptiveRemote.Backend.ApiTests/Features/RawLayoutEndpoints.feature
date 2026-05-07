@@ -40,8 +40,8 @@ Scenario: Create a new raw layout
     And the response body is valid JSON
     And the response body represents a RawLayout
     And the RawLayout in the response body has a valid Id property
-    And the service logs contain a request log entry for POST /layouts/raw
-    And the service logs contain no warnings or errors
+    And the RawLayoutService logs contain a request log entry for POST /layouts/raw
+    And the RawLayoutService logs contain no warnings or errors
 
 Scenario: Get raw layout by ID
     Given RawLayoutService is running
@@ -52,7 +52,7 @@ Scenario: Get raw layout by ID
     And the response body is valid JSON
     And the response body represents a RawLayout
     And the RawLayout in the response body has "name"="Test Layout"
-    And the service logs contain no warnings or errors
+    And the RawLayoutService logs contain no warnings or errors
 
 Scenario: Update an existing raw layout
     Given RawLayoutService is running
@@ -87,14 +87,14 @@ Scenario: Update an existing raw layout
     And the response body is valid JSON
     And the response body represents a RawLayout
     And the RawLayout in the response body has "name"="Updated Layout"
-    And the service logs contain no warnings or errors
+    And the RawLayoutService logs contain no warnings or errors
     
     # Get the updated layout
     When the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint
     Then the response is 200 OK
 	And the response body represents a RawLayout
     And the RawLayout in the response body has "name"="Updated Layout"
-    And the service logs contain no warnings or errors
+    And the RawLayoutService logs contain no warnings or errors
 
 Scenario: Delete a raw layout
     Given RawLayoutService is running
@@ -110,7 +110,7 @@ Scenario: Delete a raw layout
 
 Scenario: Access raw layouts without authentication
     Given RawLayoutService is running
-    And the client has a no Authorization token
+    And the client has no Authorization token
 	When the client calls GET /layouts/raw on the RawLayoutService endpoint
     Then the response is 401 Unauthorized
 

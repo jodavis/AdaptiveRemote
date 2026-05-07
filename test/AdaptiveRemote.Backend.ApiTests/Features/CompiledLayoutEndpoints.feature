@@ -9,8 +9,8 @@ Scenario: Get active compiled layout
     And the response body represents a CompiledLayout
     And the CompiledLayout in the response body has a TiVo command named "Up"
     And the CompiledLayout in the response body has a TiVo command named "Select"
-    And the CompiledLayout in the response body has a IR command named "Power"
+    And the CompiledLayout in the response body has an IR command named "Power"
     And the CompiledLayout in the response body has a Lifecycle command named "Learn"
     And the CompiledLayout in the response body has a Lifecycle command named "Exit"
-    And the service logs contain a request log entry for GET /layouts/compiled/active
-    And the service logs contain no warnings or errors
+    And the CompiledLayoutService logs contain a request log entry for GET /layouts/compiled/active
+    And the CompiledLayoutService logs contain no warnings or errors

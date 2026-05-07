@@ -3,7 +3,7 @@ Feature: LayoutProcessingService Endpoints
 
 Scenario: Health check returns 200 OK
     Given LayoutProcessingService is running
-    And the client has a no Authorization token
+    And the client has no Authorization token
 	When the client calls GET /health on the LayoutProcessingService endpoint
     Then the response is 200 OK
     And the response body is valid JSON
@@ -11,7 +11,7 @@ Scenario: Health check returns 200 OK
 	And the HealthResponse in the response body has "serviceName"="LayoutProcessingService"
 	And the HealthResponse in the response body has "status"="Healthy"
     And the HealthResponse in the response body has a "version" property
-    And the service logs contain no warnings or errors
+    And the RawLayoutService logs contain no warnings or errors
 
 @PipelineTest
 Scenario: End-to-end layout processing success path
