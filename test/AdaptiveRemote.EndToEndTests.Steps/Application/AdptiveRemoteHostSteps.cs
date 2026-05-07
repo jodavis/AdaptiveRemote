@@ -2,7 +2,7 @@
 using FluentAssertions;
 using Reqnroll;
 
-namespace AdaptiveRemote.EndToEndTests.Steps;
+namespace AdaptiveRemote.EndToEndTests.Steps.Application;
 
 [Binding]
 public class AdaptiveRemoteHostSteps : StepsBase

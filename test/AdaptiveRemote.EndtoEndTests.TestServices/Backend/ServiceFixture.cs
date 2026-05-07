@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
 
-namespace AdaptiveRemote.Backend.ApiTests.Support;
+namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
 /// <summary>
 /// Manages the lifecycle of backend services for API integration tests.

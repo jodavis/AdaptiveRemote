@@ -3,8 +3,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
-namespace AdaptiveRemote.Backend.ApiTests.Support;
+namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
 /// <summary>
 /// Manages the lifecycle of both RawLayoutService and LayoutProcessingService for

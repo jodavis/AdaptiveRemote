@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 
-namespace AdaptiveRemote.Backend.ApiTests.Support;
+namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
 /// <summary>
 /// A minimal local OIDC/JWKS authority used by API integration tests to issue and

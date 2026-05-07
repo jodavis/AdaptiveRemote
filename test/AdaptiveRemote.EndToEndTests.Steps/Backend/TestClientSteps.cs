@@ -1,14 +1,13 @@
 ﻿using System.Net;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using AdaptiveRemote.Contracts;
+using AdaptiveRemote.EndToEndTests.TestServices;
 using AdaptiveRemote.TestUtilities;
-using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
-using Reqnroll.Formatters.PayloadProcessing.Cucumber;
 
-namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
+namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 
 [Binding]
 public class TestClientSteps
@@ -160,7 +159,6 @@ public class TestClientSteps
         Assert.IsNotNull(_lastDeserializedObject, "The response body has not been deserialized yet. Ensure that the step 'the response body represents a CompiledLayout' is called before this step.");
         Assert.IsInstanceOfType<CompiledLayout>(_lastDeserializedObject, "Expected the deserialized object to be a CompiledLayout.");
         CompiledLayout layout = (CompiledLayout)_lastDeserializedObject;
-
 
         IEnumerable<CommandDefinitionDto> commands = EnumerateAllCommands(layout.Elements);
         Assert.IsTrue(commands.Any(c => c.Type == expectedType && c.Name == expectedName),

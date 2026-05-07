@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll.BoDi;
 using Reqnroll.Infrastructure;
 
-namespace AdaptiveRemote.EndToEndTests.Steps;
+namespace AdaptiveRemote.EndToEndTests.Steps.Application;
 
 public abstract class StepsBase : IContainerDependentObject
 {

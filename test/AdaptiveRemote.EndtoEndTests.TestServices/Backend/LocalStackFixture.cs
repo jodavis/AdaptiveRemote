@@ -4,7 +4,7 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 
-namespace AdaptiveRemote.Backend.ApiTests.Support;
+namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
 /// <summary>
 /// Manages a LocalStack Docker container for integration testing.

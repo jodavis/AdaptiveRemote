@@ -3,7 +3,7 @@ using AdaptiveRemote.Services.Testing;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
 
-namespace AdaptiveRemote.EndToEndTests.Steps;
+namespace AdaptiveRemote.EndToEndTests.Steps.Application;
 
 [Binding]
 public class AccessibilitySteps : StepsBase

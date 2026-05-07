@@ -3,7 +3,7 @@ using AdaptiveRemote.Services.Testing;
 using AdaptiveRemote.TestUtilities;
 using FluentAssertions;
 
-namespace AdaptiveRemote.EndToEndTests.Steps;
+namespace AdaptiveRemote.EndToEndTests.Steps.Application;
 
 internal static class ISpeechTestServiceExtensions
 {

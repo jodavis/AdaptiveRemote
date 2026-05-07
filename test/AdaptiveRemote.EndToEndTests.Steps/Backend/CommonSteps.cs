@@ -1,11 +1,9 @@
-using System.Net;
-using System.Text.Json;
-using AdaptiveRemote.Backend.ApiTests.Support;
 using AdaptiveRemote.Contracts;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using FluentAssertions;
 using Reqnroll;
 
-namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
+namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 
 [Binding]
 public class CommonSteps : IDisposable

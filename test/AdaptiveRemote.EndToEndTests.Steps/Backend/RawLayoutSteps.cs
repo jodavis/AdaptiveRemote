@@ -1,14 +1,13 @@
-using AdaptiveRemote.Backend.ApiTests.Support;
 using AdaptiveRemote.Contracts;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using Reqnroll;
 
-namespace AdaptiveRemote.Backend.ApiTests.StepDefinitions;
+namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 
 [Binding]
 public class RawLayoutSteps
 {
     private readonly ServiceContext _context;
-    private RawLayout? _createdLayout;
 
     public RawLayoutSteps(ServiceContext context)
     {
