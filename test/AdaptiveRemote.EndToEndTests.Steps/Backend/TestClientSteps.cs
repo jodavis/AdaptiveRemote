@@ -1,10 +1,8 @@
 ﻿using System.Net;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using AdaptiveRemote.Contracts;
 using AdaptiveRemote.EndToEndTests.TestServices;
-using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

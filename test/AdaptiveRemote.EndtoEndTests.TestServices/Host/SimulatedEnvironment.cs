@@ -91,14 +91,14 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     private ServiceFixture StartRawLayoutService()
     {
         ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.RawLayoutService", this);
-        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync());
+        fixture.StartService();
         return fixture;
     }
 
     private ServiceFixture StartCompiledLayoutService()
     {
         ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.CompiledLayoutService", this);
-        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync());
+        fixture.StartService();
         return fixture;
     }
 
@@ -113,7 +113,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             // Enable the orchestrator for pipeline tests
             ["Orchestrator__Enabled"] = "true",
         });
-        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync());
+        fixture.StartService();
         return fixture;
     }
 
@@ -121,9 +121,9 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     {
         LocalStackFixture fixture = new LocalStackFixture(LoggerFactory);
 
-        WaitHelpers.WaitForAsyncTask(ct => fixture.StartAsync(), timeoutInSeconds: 30);
-        WaitHelpers.WaitForAsyncTask(ct => fixture.CreateSqsQueueAsync("LayoutProcessingQueue", ct), timeoutInSeconds: 10);
-        WaitHelpers.WaitForAsyncTask(ct => fixture.CreateTableAsync("RawLayouts", ct), timeoutInSeconds: 10);
+        fixture.Start();
+        fixture.CreateSqsQueue("LayoutProcessingQueue");
+        fixture.CreateTable("RawLayouts");
 
         return fixture;
     }
