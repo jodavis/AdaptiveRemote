@@ -176,8 +176,8 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     await testRunner.AndAsync("the CompiledLayout in the response body has a Lifecycle command named \"Exit\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 15
-    await testRunner.AndAsync("the CompiledLayoutService logs contain a request log entry for GET /layouts/compi" +
-                        "led/active", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("I should see a message that contains \"GET /layouts/compiled/active\" in the Compil" +
+                        "edLayoutService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 16
     await testRunner.AndAsync("I should not see any warning or error messages in the CompiledLayoutService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");

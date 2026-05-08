@@ -12,5 +12,5 @@ Scenario: Get active compiled layout
     And the CompiledLayout in the response body has an IR command named "Power"
     And the CompiledLayout in the response body has a Lifecycle command named "Learn"
     And the CompiledLayout in the response body has a Lifecycle command named "Exit"
-    And the CompiledLayoutService logs contain a request log entry for GET /layouts/compiled/active
+    And I should see a message that contains "GET /layouts/compiled/active" in the CompiledLayoutService logs
     And I should not see any warning or error messages in the CompiledLayoutService logs

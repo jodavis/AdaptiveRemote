@@ -38,11 +38,10 @@ Scenario: End-to-end layout processing success path
             ]
         }
         """
-    Then the LayoutProcessingService logs contain the message "Layout compiled successfully"
-    And the LayoutProcessingService logs contain the message "Layout validation passed"
-    And the LayoutProcessingService logs contain the message "Compiled layout stored"
-    And the LayoutProcessingService logs contain the message "Layout-ready notification published"
-    And the LayoutProcessingService logs contain no warnings or errors
+    Then I should see a message that contains "Layout compiled successfully" in the LayoutProcessingService logs
+    And I should see a message that contains "Layout validation passed" in the LayoutProcessingService logs
+    And I should see a message that contains "Compiled layout stored" in the LayoutProcessingService logs
+    And I should see a message that contains "Layout-ready notification published" in the LayoutProcessingService logs
     And I should not see any warning or error messages in the LayoutProcessingService logs
     And I should not see any warning or error messages in the RawLayoutService logs
 
@@ -72,9 +71,11 @@ Scenario: End-to-end layout processing validation failure path
             ]
         }
         """
-    Then the LayoutProcessingService logs contain the message "Layout compiled successfully"
-    And the LayoutProcessingService logs contain the message "Layout validation failed"
-    And the LayoutProcessingService logs contain the message "Validation result written back to raw layout"
-    And the LayoutProcessingService logs contain no warnings or errors
+    Then I should see a message that contains "Layout compiled successfully" in the LayoutProcessingService logs
+    And I should see a warning message in the LayoutProcessingService logs:
+        """
+        Layout validation failed
+		"""
+	And I should see a message that contains "Validation result written back to raw layout" in the LayoutProcessingService logs
     And I should not see any warning or error messages in the LayoutProcessingService logs
     And I should not see any warning or error messages in the RawLayoutService logs

@@ -81,8 +81,42 @@ public class LogVerificationSteps : StepsBase
             "{0} log error message does not match the expected text", serviceName);
     }
 
+    [Then("I should see a warning message in the logs:")]
+    public void ThenIShouldSeeAWarningInTheLogs(string expectedWarningMessage)
+    {
+        ThenIShouldSeeAWarningInTheServiceLogs(HostName, expectedWarningMessage);
+    }
+
+    [Then("^I should see a warning message in the " + ServiceFilter + " logs:")]
+    public void ThenIShouldSeeAWarningInTheServiceLogs(string serviceName, string expectedWarningMessage)
+    {
+        IEnumerable<string>? warningAndErrorLines = null;
+        string logFilePath = GetLogFileFor(serviceName);
+
+        WaitHelpers.ExecuteWithRetries(() =>
+        {
+            warningAndErrorLines = FilterLogLines(logFilePath, IsWarningOrError);
+            return warningAndErrorLines.Any(line => line.Contains(expectedWarningMessage, StringComparison.Ordinal));
+        });
+
+        Assert.IsNotNull(warningAndErrorLines, "Failed to read {0} log lines.", serviceName);
+        Assert.IsTrue(warningAndErrorLines.Any(), "{0} log does not contain any error messages.", serviceName);
+        Assert.AreEqual(1, warningAndErrorLines.Count(),
+            "{0} log contains unexpected errors:\n{1}",
+            serviceName,
+            string.Join("\n", warningAndErrorLines));
+        StringAssert.Contains(warningAndErrorLines.First(), expectedWarningMessage,
+            "{0} log warning message does not match the expected text", serviceName);
+    }
+
+    [Then("^I should see a message that contains \"(.*)\" in the logs")]
+    public void ThenIShouldSeeAMessageThatContainsSomethingInTheLogs(string expectedMessagePart)
+    {
+        ThenIShouldSeeAMessageThatContainsSomethingInTheServiceLogs(expectedMessagePart, HostName);
+    }
+
     [Then("^I should see a message that contains \"(.*)\" in the " + ServiceFilter + " logs")]
-    public void ThenIShouldSeeAnErrorInTheServiceLogsThatContains(string expectedMessagePart, string serviceName)
+    public void ThenIShouldSeeAMessageThatContainsSomethingInTheServiceLogs(string expectedMessagePart, string serviceName)
     {
         string logFilePath = GetLogFileFor(serviceName);
 
@@ -164,10 +198,14 @@ public class LogVerificationSteps : StepsBase
             || line.Contains("] [Error] [", StringComparison.Ordinal);
     }
 
+    private static bool IsWarning(string line)
+    {
+        return line.Contains("] Warning [", StringComparison.Ordinal)
+            || line.Contains("] [Warning] [", StringComparison.Ordinal);
+    }
+
     private static bool IsWarningOrError(string line)
     {
-        return IsError(line)
-            || line.Contains("] Warning [", StringComparison.Ordinal)
-            || line.Contains("] [Warning] [", StringComparison.Ordinal);
+        return IsError(line) || IsWarning(line);
     }
 }
