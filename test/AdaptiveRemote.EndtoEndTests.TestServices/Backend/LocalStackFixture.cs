@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using AdaptiveRemote.TestUtilities;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.SQS;
@@ -30,7 +31,7 @@ public class LocalStackFixture : IDisposable
     /// <summary>
     /// Starts LocalStack in a Docker container and waits for it to be ready.
     /// </summary>
-    public async Task StartAsync()
+    public void Start()
     {
         if (_isStarted)
         {
@@ -51,17 +52,17 @@ public class LocalStackFixture : IDisposable
         };
 
         checkProcess.Start();
-        string existingContainer = await checkProcess.StandardOutput.ReadToEndAsync();
-        await checkProcess.WaitForExitAsync();
+        string existingContainer = WaitHelpers.WaitForAsyncTask(checkProcess.StandardOutput.ReadToEndAsync);
+        WaitHelpers.WaitForAsyncTask(checkProcess.WaitForExitAsync);
 
         if (!string.IsNullOrWhiteSpace(existingContainer))
         {
             _logger.LogInformation("Found an existing localstack-test container. Verifying if it can be reused...");
-        
+
             // Container already running — verify that SQS is enabled before reusing it.
             // An older container may have been started with SERVICES=dynamodb only.
-            await WaitForLocalStackReadyAsync();
-            if (await IsSqsEnabledAsync())
+            WaitForLocalStackReady();
+            if (IsSqsEnabled())
             {
                 _isStarted = true;
                 _ownsContainer = false;
@@ -83,7 +84,7 @@ public class LocalStackFixture : IDisposable
                 }
             };
             stopOldProcess.Start();
-            await stopOldProcess.WaitForExitAsync();
+            WaitHelpers.WaitForAsyncTask(stopOldProcess.WaitForExitAsync);
             stopOldProcess.Dispose();
         }
 
@@ -107,18 +108,18 @@ public class LocalStackFixture : IDisposable
         _dockerProcess = new Process { StartInfo = startInfo };
         _dockerProcess.Start();
 
-        string containerId = await _dockerProcess.StandardOutput.ReadToEndAsync();
-        await _dockerProcess.WaitForExitAsync();
+        string containerId = WaitHelpers.WaitForAsyncTask(_dockerProcess.StandardOutput.ReadToEndAsync);
+        WaitHelpers.WaitForAsyncTask(_dockerProcess.WaitForExitAsync);
 
         if (_dockerProcess.ExitCode != 0)
         {
-            string error = await _dockerProcess.StandardError.ReadToEndAsync();
+            string error = WaitHelpers.WaitForAsyncTask(_dockerProcess.StandardError.ReadToEndAsync);
             _logger.LogError("Failed to start localstack-test container. Exit code: {ExitCode}. Error: {Error}", _dockerProcess.ExitCode, error);
             throw new InvalidOperationException($"Failed to start LocalStack: {error}");
         }
 
         // Wait for LocalStack to be ready
-        await WaitForLocalStackReadyAsync();
+        WaitForLocalStackReady();
 
         _isStarted = true;
         _ownsContainer = true; // We created this container
@@ -129,7 +130,7 @@ public class LocalStackFixture : IDisposable
     /// <summary>
     /// Creates a DynamoDB table in LocalStack for testing.
     /// </summary>
-    public async Task CreateTableAsync(string tableName, CancellationToken cancellationToken = default)
+    public void CreateTable(string tableName)
     {
         if (!_isStarted)
         {
@@ -153,11 +154,11 @@ public class LocalStackFixture : IDisposable
         // Check if table already exists
         try
         {
-            await client.DescribeTableAsync(tableName, cancellationToken);
+            WaitHelpers.WaitForAsyncTask(ct => client.DescribeTableAsync(tableName, ct), timeoutInSeconds: 10);
             // Table exists, no need to create
             return;
         }
-        catch (Amazon.DynamoDBv2.Model.ResourceNotFoundException)
+        catch (AggregateException ex) when (ex.InnerException is Amazon.DynamoDBv2.Model.ResourceNotFoundException)
         {
             // Table doesn't exist, proceed to create
         }
@@ -178,28 +179,24 @@ public class LocalStackFixture : IDisposable
             BillingMode = BillingMode.PAY_PER_REQUEST
         };
 
-        await client.CreateTableAsync(request, cancellationToken);
+        WaitHelpers.WaitForAsyncTask(ct => client.CreateTableAsync(request, ct), timeoutInSeconds: 10);
 
         _logger.LogInformation("CreateTable request for '{TableName}' sent. Waiting for table to become active...", tableName);
 
         // Wait for table to be active
-        bool isActive = false;
-        for (int i = 0; i < 30 && !isActive; i++)
+        bool isActive = WaitHelpers.ExecuteWithRetries(() =>
         {
             try
             {
-                DescribeTableResponse response = await client.DescribeTableAsync(tableName, cancellationToken);
-                isActive = response.Table.TableStatus == TableStatus.ACTIVE;
-                if (!isActive)
-                {
-                    await Task.Delay(500, cancellationToken);
-                }
+                DescribeTableResponse response = WaitHelpers.WaitForAsyncTask(ct => client.DescribeTableAsync(tableName, ct));
+                return response.Table.TableStatus == TableStatus.ACTIVE;
             }
-            catch (Amazon.DynamoDBv2.Model.ResourceNotFoundException)
+            catch (AggregateException ex) when (ex.InnerException is Amazon.DynamoDBv2.Model.ResourceNotFoundException
+                                             || ex.InnerException is OperationCanceledException)
             {
-                await Task.Delay(500, cancellationToken);
+                return false;
             }
-        }
+        }, timeoutInSeconds: 15);
 
         if (!isActive)
         {
@@ -213,7 +210,7 @@ public class LocalStackFixture : IDisposable
     /// <summary>
     /// Creates an SQS queue in LocalStack for testing. Idempotent: returns existing queue URL if already present.
     /// </summary>
-    public async Task<string> CreateSqsQueueAsync(string queueName, CancellationToken cancellationToken = default)
+    public string CreateSqsQueue(string queueName)
     {
         if (!_isStarted)
         {
@@ -233,22 +230,22 @@ public class LocalStackFixture : IDisposable
         try
         {
             _logger.LogInformation("Checking if SQS queue '{QueueName}' already exists in LocalStack...", queueName);
-            GetQueueUrlResponse existingQueue = await client.GetQueueUrlAsync(queueName, cancellationToken);
-            
+            GetQueueUrlResponse existingQueue = WaitHelpers.WaitForAsyncTask(ct => client.GetQueueUrlAsync(queueName, ct));
+
             _logger.LogInformation("SQS queue '{QueueName}' already exists with URL: {QueueUrl}", queueName, existingQueue.QueueUrl);
             return existingQueue.QueueUrl;
         }
-        catch (QueueDoesNotExistException)
+        catch (AggregateException ex) when (ex.InnerException is QueueDoesNotExistException)
         {
             // Queue doesn't exist, proceed to create
         }
 
         _logger.LogInformation("Creating SQS queue '{QueueName}' in LocalStack...", queueName);
 
-        CreateQueueResponse response = await client.CreateQueueAsync(new CreateQueueRequest
+        CreateQueueResponse response = WaitHelpers.WaitForAsyncTask(ct => client.CreateQueueAsync(new CreateQueueRequest
         {
             QueueName = queueName
-        }, cancellationToken);
+        }, ct), timeoutInSeconds: 15);
 
         _logger.LogInformation("SQS queue '{QueueName}' created with URL: {QueueUrl}", queueName, response.QueueUrl);
 
@@ -264,18 +261,18 @@ public class LocalStackFixture : IDisposable
     /// <summary>
     /// Returns true if SQS is enabled in the running LocalStack instance.
     /// </summary>
-    private async Task<bool> IsSqsEnabledAsync()
+    private bool IsSqsEnabled()
     {
         try
         {
             using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(5) };
-            HttpResponseMessage response = await client.GetAsync($"{ServiceUrl}/_localstack/health");
+            HttpResponseMessage response = WaitHelpers.WaitForAsyncTask(ct => client.GetAsync($"{ServiceUrl}/_localstack/health", ct));
             if (!response.IsSuccessStatusCode)
             {
                 return false;
             }
 
-            string body = await response.Content.ReadAsStringAsync();
+            string body = WaitHelpers.WaitForAsyncTask(response.Content.ReadAsStringAsync);
             using System.Text.Json.JsonDocument json = System.Text.Json.JsonDocument.Parse(body);
 
             // Top-level "status": "running" means all services are implicitly available
@@ -306,32 +303,35 @@ public class LocalStackFixture : IDisposable
         }
     }
 
-    private async Task WaitForLocalStackReadyAsync()
+    private void WaitForLocalStackReady()
     {
         // Poll LocalStack health endpoint
         using HttpClient client = new() { Timeout = TimeSpan.FromSeconds(2) };
 
-        for (int i = 0; i < 60; i++)
+        bool isReady = WaitHelpers.ExecuteWithRetries(() =>
         {
             try
             {
-                HttpResponseMessage response = await client.GetAsync($"{ServiceUrl}/_localstack/health");
+                HttpResponseMessage response = WaitHelpers.WaitForAsyncTask(ct => client.GetAsync($"{ServiceUrl}/_localstack/health", ct));
                 if (response.IsSuccessStatusCode)
                 {
                     // Give it a bit more time to fully initialize DynamoDB
-                    await Task.Delay(2000);
-                    return;
+                    Thread.Sleep(2000);
+                    return true;
                 }
             }
             catch
             {
                 // Ignore exceptions during startup
             }
+            return false;
+        }, timeoutInSeconds: 60);
 
-            await Task.Delay(1000);
+        if (!isReady)
+        {
+            _logger.LogError("LocalStack did not become ready within the expected time.");
+            throw new InvalidOperationException("LocalStack did not become ready within 60 seconds");
         }
-
-        throw new InvalidOperationException("LocalStack did not become ready within 60 seconds");
     }
 
     public void Dispose()

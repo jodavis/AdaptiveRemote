@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
@@ -35,7 +36,7 @@ public class ServiceFixture : IDisposable
         _logger = environment.LoggerFactory.CreateLogger(serviceName + "Fixture");
     }
 
-    public async Task StartServiceAsync()
+    public void StartService()
     {
         if (_serviceProcess != null)
         {
@@ -135,29 +136,26 @@ public class ServiceFixture : IDisposable
             Timeout = TimeSpan.FromSeconds(5),
         };
 
-        bool isReady = false;
-        for (int i = 0; i < 30 && !_serviceProcess.HasExited; i++)
+        int i = 0;
+        bool isReady = WaitHelpers.ExecuteWithRetries(() =>
         {
             try
             {
-                HttpResponseMessage response = await healthClient
-                    .GetAsync("/health")
-                    .ConfigureAwait(false);
+                HttpResponseMessage response = WaitHelpers.WaitForAsyncTask(ct => healthClient.GetAsync("/health", ct));
                 if (response.IsSuccessStatusCode)
                 {
-                    isReady = true;
-                    break;
+                    return true;
                 }
 
-                _logger.LogWarning("Health check attempt {Attempt} failed with HTTP {StatusCode} from {ServiceUrl}/health", i + 1, (int)response.StatusCode, ServiceUrl);
+                _logger.LogWarning("Health check attempt {Attempt} failed with HTTP {StatusCode} from {ServiceUrl}/health", ++i, (int)response.StatusCode, ServiceUrl);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Health check attempt {Attempt} failed polling {ServiceUrl}/health", i + 1, ServiceUrl);
+                _logger.LogWarning(ex, "Health check attempt {Attempt} failed polling {ServiceUrl}/health", ++i, ServiceUrl);
             }
 
-            await Task.Delay(1000).ConfigureAwait(false);
-        }
+            return false;
+        });
 
         if (!isReady)
         {
