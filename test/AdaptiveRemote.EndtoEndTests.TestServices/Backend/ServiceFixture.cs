@@ -15,31 +15,32 @@ public class ServiceFixture : IDisposable
     private Process? _serviceProcess;
     private readonly StringBuilder _logOutput = new();
     private readonly object _logLock = new();
+    private readonly string _serviceName;
     private readonly ISimulatedEnvironment _environment;
-    private string? _startedServiceName;
     private readonly IReadOnlyDictionary<string, string>? _environmentVariables;
+
+    public string? LogFilePath { get; }
 
     public string ServiceUrl { get; }
 
-    public ServiceFixture(ISimulatedEnvironment environment, Dictionary<string, string>? environmentVariables = null)
+    public ServiceFixture(string serviceName, ISimulatedEnvironment environment, Dictionary<string, string>? environmentVariables = null)
     {
         _environmentVariables = environmentVariables;
         ServiceUrl = $"http://localhost:{GetFreePort()}";
+        _serviceName = serviceName;
         _environment = environment;
+
+        LogFilePath = _environment.LogFolder is null
+            ? null
+            : Path.Combine(_environment.LogFolder, $"{serviceName}_{DateTime.Now:yyyyMMdd_HHmmss}.log)");
     }
 
-    public async Task StartServiceAsync(string serviceName)
+    public async Task StartServiceAsync()
     {
         if (_serviceProcess != null)
         {
-            if (_startedServiceName != serviceName)
-            {
-                throw new InvalidOperationException($"Service fixture already started with {_startedServiceName}, cannot start {serviceName}");
-            }
             return; // Already started
         }
-
-        _startedServiceName = serviceName;
 
         // Find the repository root by looking for the .git directory
         string currentDir = Directory.GetCurrentDirectory();
@@ -56,8 +57,8 @@ public class ServiceFixture : IDisposable
 
         string projectPath = Path.Combine(
             repoRoot,
-            "src", serviceName,
-            $"{serviceName}.csproj");
+            "src", _serviceName,
+            $"{_serviceName}.csproj");
 
         if (!File.Exists(projectPath))
         {
@@ -69,7 +70,7 @@ public class ServiceFixture : IDisposable
             FileName = "dotnet",
             // --no-launch-profile prevents launchSettings.json from overriding
             // ASPNETCORE_URLS with its applicationUrl setting.
-            Arguments = $"run --project \"{projectPath}\" --no-build --no-launch-profile",
+            Arguments = $"run --project \"{projectPath}\" --no-build --no-launch-profile --logFile \"{LogFilePath}\"",
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -93,7 +94,7 @@ public class ServiceFixture : IDisposable
             }
         };
 
-        if (serviceName == "AdaptiveRemote.Backend.RawLayoutService")
+        if (_serviceName == "AdaptiveRemote.Backend.RawLayoutService")
         {
             // Configure DynamoDB for RawLayoutService
             startInfo.Environment["DynamoDB__ServiceUrl"] = _environment.LocalStack.ServiceUrl;
@@ -101,7 +102,7 @@ public class ServiceFixture : IDisposable
             startInfo.Environment["DynamoDB__TableName"] = "RawLayouts";
         }
 
-        if (serviceName == "AdaptiveRemote.Backend.LayoutProcessingService")
+        if (_serviceName == "AdaptiveRemote.Backend.LayoutProcessingService")
         {
             // Configure SQS for LayoutProcessingService
             startInfo.Environment["Sqs__ServiceUrl"] = _environment.LocalStack.ServiceUrl;

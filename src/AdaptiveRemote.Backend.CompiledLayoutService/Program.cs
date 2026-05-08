@@ -1,17 +1,30 @@
+using System.Text.Json;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Backend.CompiledLayoutService.Configuration;
 using AdaptiveRemote.Backend.CompiledLayoutService.Endpoints;
-using AdaptiveRemote.Backend.CompiledLayoutService.Logging;
 using AdaptiveRemote.Backend.CompiledLayoutService.Services;
 using AdaptiveRemote.Contracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Scalar.AspNetCore;
-using System.Net.Http;
-using System.Text.Json;
+
+string? logFilePath = null;
+for (int i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] == "--logFile")
+    {
+        logFilePath = args[i + 1];
+        break;
+    }
+}
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+if (!string.IsNullOrEmpty(logFilePath))
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
+    builder.Logging.AddFile(logFilePath);
+}
 
 // Register services
 builder.Services.AddSingleton<ICompiledLayoutRepository, HardcodedLayoutProvider>();
@@ -49,7 +62,7 @@ builder.Services.AddOpenApi();
 WebApplication app = builder.Build();
 
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.ServiceStarting();
+logger.ServiceStarting("CompiledLayoutService");
 
 if (app.Environment.IsDevelopment())
 {
@@ -75,7 +88,7 @@ app.MapLayoutEndpoints();
 string listenAddress = app.Configuration["ASPNETCORE_URLS"]
     ?? app.Configuration["urls"]
     ?? "http://localhost:5000";
-logger.ServiceStarted(listenAddress);
+logger.ServiceStarted("CompiledLayoutService", listenAddress);
 
 app.Run();
 

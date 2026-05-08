@@ -1,6 +1,7 @@
 using System.Reflection;
-using AdaptiveRemote.Backend.CompiledLayoutService.Logging;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Contracts;
+using Microsoft.OpenApi;
 
 namespace AdaptiveRemote.Backend.CompiledLayoutService.Endpoints;
 
@@ -15,7 +16,7 @@ public static class HealthEndpoints
 
     private static IResult GetHealth(ILogger<Program> logger)
     {
-        logger.HealthCheckRequested();
+        using IDisposable scope = logger.StartRequestScope("GET", "/health");
 
         string? version = Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()

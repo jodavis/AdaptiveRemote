@@ -88,21 +88,21 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     private ServiceFixture StartRawLayoutService()
     {
-        ServiceFixture fixture = new ServiceFixture(this);
-        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync("AdaptiveRemote.Backend.RawLayoutService"));
+        ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.RawLayoutService", this);
+        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync());
         return fixture;
     }
 
     private ServiceFixture StartCompiledLayoutService()
     {
-        ServiceFixture fixture = new ServiceFixture(this);
-        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync("AdaptiveRemote.Backend.CompiledLayoutService"));
+        ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.CompiledLayoutService", this);
+        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync());
         return fixture;
     }
 
     private ServiceFixture StartLayoutProcessingService()
     {
-        ServiceFixture fixture = new ServiceFixture(this, new()
+        ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.LayoutProcessingService", this, new()
         {
             ["RawLayoutService__BaseUrl"] = RawLayoutService.ServiceUrl,
             ["RawLayoutService__ServiceAccountToken"] = JwtAuthority.CreateToken("service-account-layout-processor"),
@@ -111,7 +111,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             // Enable the orchestrator for pipeline tests
             ["Orchestrator__Enabled"] = "true",
         });
-        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync("AdaptiveRemote.Backend.LayoutProcessingService"));
+        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync());
         return fixture;
     }
 
@@ -140,6 +140,16 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     }
 
     public string? HostLogs => _currentLogLocation;
+
+    public string? RawLayoutServiceLogs => _lazyRawLayoutService.IsValueCreated ? _lazyRawLayoutService.Value.LogFilePath : null;
+
+    public string? CompiledLayoutServiceLogs => _lazyCompiledLayoutService.IsValueCreated ? _lazyCompiledLayoutService.Value.LogFilePath : null;
+
+    public string? LayoutProcessingServiceLogs => _lazyLayoutProcessingService.IsValueCreated ? _lazyLayoutProcessingService.Value.LogFilePath : null;
+
+    public string? LogFolder => _nextLogLocation is not null 
+        ? Path.GetDirectoryName(_nextLogLocation)
+        : null;
 
     /// <inheritdoc/>
     public void Dispose()

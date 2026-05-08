@@ -1,10 +1,9 @@
+using AdaptiveRemote.Backend.Common.Logging;
+using AdaptiveRemote.Backend.RawLayoutService.Configuration;
 using AdaptiveRemote.Contracts;
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using AdaptiveRemote.Backend.RawLayoutService.Configuration;
-using AdaptiveRemote.Backend.RawLayoutService.Logging;
 
 namespace AdaptiveRemote.Backend.RawLayoutService.Services;
 
