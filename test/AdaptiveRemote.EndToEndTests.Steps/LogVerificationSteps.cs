@@ -1,5 +1,4 @@
-﻿using AdaptiveRemote.EndToEndTests.Steps.Application;
-using AdaptiveRemote.TestUtilities;
+﻿using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Reqnroll;
