@@ -21,7 +21,9 @@ public class StubLayoutValidationClient : ILayoutValidationClient
 
     public Task<ValidationResult> ValidateAsync(CompiledLayout compiled, CancellationToken ct)
     {
-        if (_forceInvalid)
+        // This check allows tests to force an invalid result by using the
+        // StubLayoutCompilerClient with a special RawLayout name.
+        if (compiled.CssDefinitions == "INVALID")
         {
             ValidationResult failure = new(
                 IsValid: false,

@@ -1,8 +1,10 @@
 ﻿using System.Net;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using AdaptiveRemote.Contracts;
 using AdaptiveRemote.EndToEndTests.TestServices;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -27,37 +29,7 @@ public class TestClientSteps
     [Given("{Uri} has a raw layout with the name {string}")]
     public void GivenARawLayoutExistsWithTheName(Uri endpointUri, string layoutName)
     {
-        RawLayout testLayout = new(
-            Id: Guid.Empty,
-            UserId: "test-user",
-            Name: layoutName,
-            Elements: new List<RawLayoutElementDto>
-            {
-                new RawCommandDefinitionDto(
-                    Type: CommandType.TiVo,
-                    Name: "Up",
-                    Label: "Up",
-                    Glyph: "↑",
-                    SpeakPhrase: "up",
-                    Reverse: "Down",
-                    CssId: "up-btn",
-                    GridRow: 0,
-                    GridColumn: 1
-                )
-            },
-            Version: 1,
-            CreatedAt: DateTimeOffset.UtcNow,
-            UpdatedAt: DateTimeOffset.UtcNow,
-            ValidationResult: null
-        );
-
-        string requestBody = JsonSerializer.Serialize(testLayout, LayoutContractsJsonContext.Default.RawLayout);
-
-        WhenTheClientCallsEndpoint(HttpMethod.Post, new("/layouts/raw", UriKind.Relative), endpointUri, requestBody);
-        ThenTheResponseIs(HttpStatusCode.Created);
-        ThenTheResponseBodyRepresents(RawLayoutToJsonTypeInfo());
-
-        _existingRawLayoutId = ((RawLayout)_lastDeserializedObject!).Id;
+        WhenANamedLayoutIsCreatedVia(layoutName, endpointUri);
     }
 
     [When(@"the client calls (GET|POST|PUT|DELETE) (/\S+) on the (\w+) endpoint")]
@@ -92,10 +64,48 @@ public class TestClientSteps
         _lastDeserializedObject = null;
     }
 
-    [When(@"a raw layout named {string} is created via the {Uri}")]
-    public void WhenARawLayoutIsCreatedViaTheEndpoint(string layoutName, Uri endpointUri)
+    [When(@"a layout named {string} is created via {Uri}")]
+    public void WhenANamedLayoutIsCreatedVia(string layoutName, Uri endpointUri)
     {
-        GivenARawLayoutExistsWithTheName(endpointUri, layoutName);
+        RawLayout testLayout = new(
+            Id: Guid.Empty,
+            UserId: "test-user",
+            Name: layoutName,
+            Elements: new List<RawLayoutElementDto>
+            {
+                new RawCommandDefinitionDto(
+                    Type: CommandType.TiVo,
+                    Name: "Up",
+                    Label: "Up",
+                    Glyph: "↑",
+                    SpeakPhrase: "up",
+                    Reverse: "Down",
+                    CssId: "up-btn",
+                    GridRow: 0,
+                    GridColumn: 1
+                )
+            },
+            Version: 1,
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: DateTimeOffset.UtcNow,
+            ValidationResult: null
+        );
+
+        string requestBody = JsonSerializer.Serialize(testLayout, LayoutContractsJsonContext.Default.RawLayout);
+
+        WhenThisLayoutIsCreatedVia(endpointUri, requestBody);
+
+        _existingRawLayoutId = ((RawLayout)_lastDeserializedObject!).Id;
+    }
+
+    [When(@"^this layout is created via (RawLayoutService):")]
+    public void WhenThisLayoutIsCreatedVia(Uri serviceUri, string body)
+    {
+        WhenTheClientCallsEndpoint(HttpMethod.Post, new("/layouts/raw", UriKind.Relative), serviceUri, body);
+        ThenTheResponseIs(HttpStatusCode.Created);
+        ThenTheResponseBodyRepresents(RawLayoutToJsonTypeInfo());
+
+        _existingRawLayoutId = ((RawLayout)_lastDeserializedObject!).Id;
     }
 
     [Then(@"the response is {HttpStatusCode}")]

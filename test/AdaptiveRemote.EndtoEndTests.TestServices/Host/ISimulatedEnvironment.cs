@@ -25,6 +25,10 @@ public interface ISimulatedEnvironment : IDisposable
 
     ServiceFixture CompiledLayoutService { get; }
 
+    ServiceFixture LayoutProcessingService { get; }
+
+    LocalStackFixture LocalStack { get; }
+
     void EnsureHostStarted();
 
     void StartHost();

@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Sockets;
 using System.Text;
+using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 
 namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
@@ -12,23 +12,20 @@ namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 /// </summary>
 public class ServiceFixture : IDisposable
 {
-    // LocalStack is shared across all scenarios to avoid repeated slow startups.
-    // Data isolation is achieved via unique per-scenario user IDs.
-    private static LocalStackFixture? _sharedLocalStack;
-    private static readonly SemaphoreSlim _localStackInitLock = new(1, 1);
-
     private Process? _serviceProcess;
     private readonly StringBuilder _logOutput = new();
     private readonly object _logLock = new();
-    private readonly TestJwtAuthority _jwtAuthority;
+    private readonly ISimulatedEnvironment _environment;
     private string? _startedServiceName;
+    private readonly IReadOnlyDictionary<string, string>? _environmentVariables;
 
     public string ServiceUrl { get; }
 
-    public ServiceFixture(TestJwtAuthority jwtAuthority)
+    public ServiceFixture(ISimulatedEnvironment environment, Dictionary<string, string>? environmentVariables = null)
     {
+        _environmentVariables = environmentVariables;
         ServiceUrl = $"http://localhost:{GetFreePort()}";
-        _jwtAuthority = jwtAuthority;
+        _environment = environment;
     }
 
     public async Task StartServiceAsync(string serviceName)
@@ -43,25 +40,6 @@ public class ServiceFixture : IDisposable
         }
 
         _startedServiceName = serviceName;
-
-        // Start LocalStack if this is a service that needs AWS resources (DynamoDB, SQS).
-        // A single LocalStack instance is shared across all scenarios.
-        LocalStackFixture? localStack = null;
-        if (serviceName == "AdaptiveRemote.Backend.RawLayoutService"
-            || serviceName == "AdaptiveRemote.Backend.LayoutProcessingService")
-        {
-            localStack = await GetSharedLocalStackAsync();
-
-            if (serviceName == "AdaptiveRemote.Backend.RawLayoutService")
-            {
-                await localStack.CreateTableAsync("RawLayouts");
-            }
-
-            if (serviceName == "AdaptiveRemote.Backend.LayoutProcessingService")
-            {
-                await localStack.CreateSqsQueueAsync("LayoutProcessingQueue");
-            }
-        }
 
         // Find the repository root by looking for the .git directory
         string currentDir = Directory.GetCurrentDirectory();
@@ -101,40 +79,42 @@ public class ServiceFixture : IDisposable
                 ["ASPNETCORE_ENVIRONMENT"] = "Development",
                 ["ASPNETCORE_URLS"] = ServiceUrl,
                 // Point the service at the local test JWT authority.
-                ["Cognito__Authority"] = _jwtAuthority.Authority,
+                ["Cognito__Authority"] = _environment.JwtAuthority.Authority,
                 // Use the same local test authority host for LocalStack health checks.
-                ["LocalStack__BaseUrl"] = _jwtAuthority.Authority,
+                ["LocalStack__BaseUrl"] = _environment.JwtAuthority.Authority,
+
+                // Configure AWS resources for services that need LocalStack
+                ["AWS_ACCESS_KEY_ID"] = "test",
+                ["AWS_SECRET_ACCESS_KEY"] = "test",
+
+                // Disable the SQS polling background service so health-check-only tests do not
+                // trigger the orchestration pipeline and log errors against unconfigured upstreams.
+                ["Orchestrator__Enabled"] = "false",
             }
         };
 
-        // Configure AWS resources for services that need LocalStack
-        if (localStack != null)
+        if (serviceName == "AdaptiveRemote.Backend.RawLayoutService")
         {
-            // Provide dummy AWS credentials for LocalStack
-            startInfo.Environment["AWS_ACCESS_KEY_ID"] = "test";
-            startInfo.Environment["AWS_SECRET_ACCESS_KEY"] = "test";
-        }
-
-        // Configure DynamoDB for RawLayoutService
-        if (serviceName == "AdaptiveRemote.Backend.RawLayoutService" && localStack != null)
-        {
-            startInfo.Environment["DynamoDB__ServiceUrl"] = localStack.ServiceUrl;
-            startInfo.Environment["DynamoDB__Region"] = localStack.Region;
+            // Configure DynamoDB for RawLayoutService
+            startInfo.Environment["DynamoDB__ServiceUrl"] = _environment.LocalStack.ServiceUrl;
+            startInfo.Environment["DynamoDB__Region"] = _environment.LocalStack.Region;
             startInfo.Environment["DynamoDB__TableName"] = "RawLayouts";
-            startInfo.Environment["Sqs__ServiceUrl"] = localStack.ServiceUrl;
-            startInfo.Environment["Sqs__QueueUrl"] = localStack.GetSqsQueueUrl("LayoutProcessingQueue");
-            startInfo.Environment["Sqs__Region"] = localStack.Region;
         }
 
-        // Configure SQS for LayoutProcessingService
-        if (serviceName == "AdaptiveRemote.Backend.LayoutProcessingService" && localStack != null)
+        if (serviceName == "AdaptiveRemote.Backend.LayoutProcessingService")
         {
-            startInfo.Environment["Sqs__ServiceUrl"] = localStack.ServiceUrl;
-            startInfo.Environment["Sqs__QueueUrl"] = localStack.GetSqsQueueUrl("LayoutProcessingQueue");
-            startInfo.Environment["Sqs__Region"] = localStack.Region;
-            // Disable the SQS polling background service so health-check-only tests do not
-            // trigger the orchestration pipeline and log errors against unconfigured upstreams.
-            startInfo.Environment["Orchestrator__Enabled"] = "false";
+            // Configure SQS for LayoutProcessingService
+            startInfo.Environment["Sqs__ServiceUrl"] = _environment.LocalStack.ServiceUrl;
+            startInfo.Environment["Sqs__QueueUrl"] = _environment.LocalStack.GetSqsQueueUrl("LayoutProcessingQueue");
+            startInfo.Environment["Sqs__Region"] = _environment.LocalStack.Region;
+        }
+
+        if (_environmentVariables is not null)
+        {
+            foreach (KeyValuePair<string, string> envVar in _environmentVariables)
+            {
+                startInfo.Environment.Add(envVar.Key, envVar.Value);
+            }
         }
 
         _serviceProcess = new Process { StartInfo = startInfo };
@@ -238,25 +218,5 @@ public class ServiceFixture : IDisposable
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
         return port;
-    }
-
-    private static async Task<LocalStackFixture> GetSharedLocalStackAsync()
-    {
-        await _localStackInitLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            if (_sharedLocalStack == null)
-            {
-                LocalStackFixture localStack = new();
-                await localStack.StartAsync().ConfigureAwait(false);
-                _sharedLocalStack = localStack;
-            }
-
-            return _sharedLocalStack;
-        }
-        finally
-        {
-            _localStackInitLock.Release();
-        }
     }
 }
