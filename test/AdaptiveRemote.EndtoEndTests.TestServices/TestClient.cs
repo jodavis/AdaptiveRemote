@@ -49,7 +49,21 @@ public class TestClient
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AuthorizationToken);
         }
 
-        return WaitHelpers.WaitForAsyncTask(ct => _httpClient.SendAsync(request, ct));
+        HttpResponseMessage response = WaitHelpers.WaitForAsyncTask(ct => _httpClient.SendAsync(request, ct));
+
+        _log.LogInformation(
+            """
+            Client {ClientID} received response for request #{RequestNumber}: 
+            {StatusCode} {ResponsePhrase}
+            {ResponseBody}
+            """,
+            _clientID,
+            requestNumber,
+            (int)response.StatusCode,
+            response.ReasonPhrase,
+            response.Content.ReadAsStringAsync().Result);
+
+        return response;
     }
 
     public override string ToString() => $"Client {_clientID}";

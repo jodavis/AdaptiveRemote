@@ -62,6 +62,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
         _lazyCompiledLayoutService = new(StartCompiledLayoutService);
         _lazyRawLayoutService = new(StartRawLayoutService);
+        _lazyLayoutProcessingService = new(StartLayoutProcessingService);
+        _lazyLocalStackFixture = new(StartLocalStack);
     }
 
     /// <inheritdoc/>
@@ -76,19 +78,51 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     private Lazy<ServiceFixture> _lazyCompiledLayoutService;
     public ServiceFixture CompiledLayoutService => _lazyCompiledLayoutService.Value;
 
+    private Lazy<ServiceFixture> _lazyLayoutProcessingService;
+    public ServiceFixture LayoutProcessingService => _lazyLayoutProcessingService.Value;
+
+    private Lazy<LocalStackFixture> _lazyLocalStackFixture = new(() => new LocalStackFixture());
+    public LocalStackFixture LocalStack => _lazyLocalStackFixture.Value;
+
     public TestJwtAuthority JwtAuthority { get; } = new();
 
     private ServiceFixture StartRawLayoutService()
     {
-        ServiceFixture fixture = new ServiceFixture(JwtAuthority);
+        ServiceFixture fixture = new ServiceFixture(this);
         WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync("AdaptiveRemote.Backend.RawLayoutService"));
         return fixture;
     }
 
     private ServiceFixture StartCompiledLayoutService()
     {
-        ServiceFixture fixture = new ServiceFixture(JwtAuthority);
+        ServiceFixture fixture = new ServiceFixture(this);
         WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync("AdaptiveRemote.Backend.CompiledLayoutService"));
+        return fixture;
+    }
+
+    private ServiceFixture StartLayoutProcessingService()
+    {
+        ServiceFixture fixture = new ServiceFixture(this, new()
+        {
+            ["RawLayoutService__BaseUrl"] = RawLayoutService.ServiceUrl,
+            ["RawLayoutService__ServiceAccountToken"] = JwtAuthority.CreateToken("service-account-layout-processor"),
+            ["CompiledLayoutService__BaseUrl"] = CompiledLayoutService.ServiceUrl,
+
+            // Enable the orchestrator for pipeline tests
+            ["Orchestrator__Enabled"] = "true",
+        });
+        WaitHelpers.WaitForAsyncTask(ct => fixture.StartServiceAsync("AdaptiveRemote.Backend.LayoutProcessingService"));
+        return fixture;
+    }
+
+    private LocalStackFixture StartLocalStack()
+    {
+        LocalStackFixture fixture = new LocalStackFixture();
+
+        WaitHelpers.WaitForAsyncTask(ct => fixture.StartAsync(), timeoutInSeconds: 30);
+        WaitHelpers.WaitForAsyncTask(ct => fixture.CreateSqsQueueAsync("LayoutProcessingQueue", ct), timeoutInSeconds: 10);
+        WaitHelpers.WaitForAsyncTask(ct => fixture.CreateTableAsync("RawLayouts", ct), timeoutInSeconds: 10);
+
         return fixture;
     }
 
@@ -159,6 +193,30 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             if (_lazyRawLayoutService.IsValueCreated)
             {
                 _lazyRawLayoutService.Value.Dispose();
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyLayoutProcessingService.IsValueCreated)
+            {
+                _lazyLayoutProcessingService.Value.Dispose();
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyLocalStackFixture.IsValueCreated)
+            {
+                _lazyLocalStackFixture.Value.Dispose();
             }
         }
         catch

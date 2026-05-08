@@ -15,16 +15,61 @@ Scenario: Health check returns 200 OK
 
 @PipelineTest
 Scenario: End-to-end layout processing success path
-    Given the layout processing pipeline is running
-    When a raw layout is created via RawLayoutService
-    Then the processing service logs show the layout was compiled and validated
-    And the processing service logs show the compiled layout was stored
-    And the processing service logs show no unhandled errors
+    Given LayoutProcessingService is running
+    And the client has a valid Authorization token
+    When this layout is created via RawLayoutService:
+        """
+        {
+            "userId": "test-user",
+            "name": "Pipeline Test Layout",
+            "elements": [
+                {
+                    "$type": "command",
+                    "type": 1,
+                    "name": "Up",
+                    "label": "Up",
+                    "speakPhrase": "up",
+                    "reverse": "Down",
+                    "cssId": "up-btn",
+                    "gridRow": 0,
+                    "gridColumn": 0
+                }
+            ]
+        }
+        """
+    Then the LayoutProcessingService logs contain the message "Layout compiled successfully"
+    And the LayoutProcessingService logs contain the message "Layout validation passed"
+    And the LayoutProcessingService logs contain the message "Compiled layout stored"
+    And the LayoutProcessingService logs contain the message "Layout-ready notification published"
+    And the LayoutProcessingService logs contain no warnings or errors
 
 @PipelineTest
 Scenario: End-to-end layout processing validation failure path
-    Given the layout processing pipeline is running with forced validation failure
-    When a raw layout is created via RawLayoutService
-    Then the processing service logs show the layout failed validation
-    And the processing service logs show the validation result was written back
-    And the processing service logs show no unhandled errors
+    Given LayoutProcessingService is running
+    And the client has a valid Authorization token
+    When this layout is created via RawLayoutService:
+        # Invalid because it has a special "name" that is considered invalid
+        # for testing purposes
+        """
+        {
+            "userId": "test-user",
+            "name": "Invalid Pipeline Test Layout",
+            "elements": [
+                {
+                    "$type": "command",
+                    "type": 1,
+                    "name": "Up",
+                    "label": "Up",
+                    "speakPhrase": "up",
+                    "reverse": "Down",
+                    "cssId": "up-btn",
+                    "gridRow": 0,
+                    "gridColumn": 0
+                }
+            ]
+        }
+        """
+    Then the LayoutProcessingService logs contain the message "Layout compiled successfully"
+    And the LayoutProcessingService logs contain the message "Layout validation failed"
+    And the LayoutProcessingService logs contain the message "Validation result written back to raw layout"
+    And the LayoutProcessingService logs contain no warnings or errors

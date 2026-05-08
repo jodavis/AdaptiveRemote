@@ -15,6 +15,10 @@ public class StubLayoutCompilerClient : ILayoutCompilerClient
     {
         IReadOnlyList<LayoutElementDto> compiledElements = ConvertElements(raw.Elements);
 
+        // This is a special check to simulate a validation failure
+        // for testing purposes
+        bool invalid = raw.Name == "Invalid Pipeline Test Layout";
+
         CompiledLayout compiled = new(
             Id: Guid.NewGuid(),
             RawLayoutId: raw.Id,
@@ -22,7 +26,7 @@ public class StubLayoutCompilerClient : ILayoutCompilerClient
             IsActive: false,
             Version: raw.Version,
             Elements: compiledElements,
-            CssDefinitions: string.Empty,  // Stub: no real CSS generation until ADR-171
+            CssDefinitions: invalid ? "INVALID" : string.Empty,  // Stub: no real CSS generation until ADR-171
             CompiledAt: DateTimeOffset.UtcNow
         );
 

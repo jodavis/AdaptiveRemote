@@ -1,6 +1,7 @@
 using AdaptiveRemote.Contracts;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using AdaptiveRemote.EndToEndTests.TestServices.Backend;
+using AdaptiveRemote.TestUtilities;
 using FluentAssertions;
 using Reqnroll;
 
@@ -9,6 +10,7 @@ namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 [Binding]
 public class CommonSteps : IDisposable
 {
+    private const string ServiceRegex = "(RawLayoutService|CompiledLayoutService|LayoutProcessingService)";
     private readonly ISimulatedEnvironment _environment;
 
     public CommonSteps(ISimulatedEnvironment environment)
@@ -16,32 +18,37 @@ public class CommonSteps : IDisposable
         _environment = environment;
     }
 
-    [StepArgumentTransformation("(RawLayoutService|CompiledLayoutService)")]
-    public Uri CompiledLayoutServiceToEndpointUri(string serviceName)
+    [StepArgumentTransformation(ServiceRegex)]
+    public Uri ServiceNameToEndpointUri(string serviceName)
         => new(GetNamedService(serviceName).ServiceUrl);
+
+    [StepArgumentTransformation(ServiceRegex)]
+    public ServiceFixture ServuceNameToFixture(string serviceName)
+        => GetNamedService(serviceName);
 
     private ServiceFixture GetNamedService(string serviceName)
         => serviceName switch
         {
             "RawLayoutService" => _environment.RawLayoutService,
             "CompiledLayoutService" => _environment.CompiledLayoutService,
+            "LayoutProcessingService" => _environment.LayoutProcessingService,
             _ => throw new ArgumentException($"Unknown service name: {serviceName}", nameof(serviceName))
         };
 
-    [Given(@"^(RawLayoutService|CompiledLayoutService) is running")]
+    [Given(@"^" + ServiceRegex + " is running")]
     public void GivenServiceIsRunning(string serviceName)
     {
         _ = GetNamedService(serviceName); // Accessing the property ensures the service is started.
     }
 
-    [Then(@"the (RawLayoutService|CompiledLayoutService) logs contain a request log entry for ((?:GET|POST|PUT|DELETE|PATCH) .*)")]
+    [Then(@"the " + ServiceRegex + " logs contain a request log entry for ((?:GET|POST|PUT|DELETE|PATCH) .*)")]
     public void ThenTheServiceLogsContainRequestLogEntry(string serviceName, string endpoint)
     {
         string logs = GetNamedService(serviceName).GetLogs();
         logs.Should().Contain(endpoint);
     }
 
-    [Then(@"^the (RawLayoutService|CompiledLayoutService) logs contain no warnings or errors")]
+    [Then(@"^the " + ServiceRegex + " logs contain no warnings or errors")]
     public static void ThenTheServiceLogsContainNoWarningsOrErrors(string serviceName)
     {
         // TODO: Disabling this for now because the logging is currently catching
@@ -51,6 +58,19 @@ public class CommonSteps : IDisposable
         //logs.Should().NotContain("WARNING", "service should not log warnings");
         //logs.Should().NotContain("ERROR", "service should not log errors");
         //logs.Should().NotContain("Exception", "service should not log exceptions");
+    }
+
+    [Then(@"^the " + ServiceRegex + " logs contain the message \"(.*)\"")]
+    public void ThenTheServiceLogsContainTheMessage(string serviceName, string expectedMessage)
+    {
+        string logs = string.Empty;
+        bool result = WaitHelpers.ExecuteWithRetries(() =>
+        {
+            logs = GetNamedService(serviceName).GetLogs();
+            return logs.Contains(expectedMessage);
+        });
+
+        logs.Should().Contain(expectedMessage);
     }
 
     private static List<CommandDefinitionDto> ExtractAllCommands(IReadOnlyList<LayoutElementDto> elements)

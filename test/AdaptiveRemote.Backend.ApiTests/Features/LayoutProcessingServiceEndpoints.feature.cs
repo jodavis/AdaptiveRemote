@@ -203,19 +203,46 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             {
                 await this.ScenarioStartAsync();
 #line 18
-    await testRunner.GivenAsync("the layout processing pipeline is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync("LayoutProcessingService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 19
-    await testRunner.WhenAsync("a raw layout is created via RawLayoutService", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 20
-    await testRunner.ThenAsync("the processing service logs show the layout was compiled and validated", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.WhenAsync("this layout is created via RawLayoutService:", @"{
+    ""userId"": ""test-user"",
+    ""name"": ""Pipeline Test Layout"",
+    ""elements"": [
+        {
+            ""$type"": ""command"",
+            ""type"": 1,
+            ""name"": ""Up"",
+            ""label"": ""Up"",
+            ""speakPhrase"": ""up"",
+            ""reverse"": ""Down"",
+            ""cssId"": ""up-btn"",
+            ""gridRow"": 0,
+            ""gridColumn"": 0
+        }
+    ]
+}", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 21
-    await testRunner.AndAsync("the processing service logs show the compiled layout was stored", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 40
+    await testRunner.ThenAsync("the LayoutProcessingService logs contain the message \"Layout compiled successfull" +
+                        "y\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 22
-    await testRunner.AndAsync("the processing service logs show no unhandled errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 41
+    await testRunner.AndAsync("the LayoutProcessingService logs contain the message \"Layout validation passed\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 42
+    await testRunner.AndAsync("the LayoutProcessingService logs contain the message \"Compiled layout stored\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 43
+    await testRunner.AndAsync("the LayoutProcessingService logs contain the message \"Layout-ready notification p" +
+                        "ublished\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 44
+    await testRunner.AndAsync("the LayoutProcessingService logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -235,7 +262,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("End-to-end layout processing validation failure path", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 25
+#line 47
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -245,20 +272,44 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 26
-    await testRunner.GivenAsync("the layout processing pipeline is running with forced validation failure", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line 48
+    await testRunner.GivenAsync("LayoutProcessingService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 27
-    await testRunner.WhenAsync("a raw layout is created via RawLayoutService", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line 49
+    await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 28
-    await testRunner.ThenAsync("the processing service logs show the layout failed validation", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 50
+    await testRunner.WhenAsync("this layout is created via RawLayoutService:", @"{
+    ""userId"": ""test-user"",
+    ""name"": ""Invalid Pipeline Test Layout"",
+    ""elements"": [
+        {
+            ""$type"": ""command"",
+            ""type"": 1,
+            ""name"": ""Up"",
+            ""label"": ""Up"",
+            ""speakPhrase"": ""up"",
+            ""reverse"": ""Down"",
+            ""cssId"": ""up-btn"",
+            ""gridRow"": 0,
+            ""gridColumn"": 0
+        }
+    ]
+}", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 29
-    await testRunner.AndAsync("the processing service logs show the validation result was written back", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 72
+    await testRunner.ThenAsync("the LayoutProcessingService logs contain the message \"Layout compiled successfull" +
+                        "y\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 30
-    await testRunner.AndAsync("the processing service logs show no unhandled errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line 73
+    await testRunner.AndAsync("the LayoutProcessingService logs contain the message \"Layout validation failed\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 74
+    await testRunner.AndAsync("the LayoutProcessingService logs contain the message \"Validation result written b" +
+                        "ack to raw layout\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 75
+    await testRunner.AndAsync("the LayoutProcessingService logs contain no warnings or errors", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

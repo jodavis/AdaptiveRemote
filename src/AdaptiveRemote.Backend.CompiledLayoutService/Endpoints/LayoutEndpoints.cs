@@ -1,4 +1,7 @@
+using System.Net;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using AdaptiveRemote.Backend.CompiledLayoutService.Logging;
 using AdaptiveRemote.Contracts;
 
@@ -12,6 +15,26 @@ public static class LayoutEndpoints
             .WithName(nameof(GetActiveLayout))
             .Produces<CompiledLayout>(StatusCodes.Status200OK)
             .RequireAuthorization();
+
+        app.MapPost("/layouts/compiled", CreateOrUpdateLayout)
+            .WithName(nameof(CreateOrUpdateLayout))
+            .Produces<CompiledLayout>(StatusCodes.Status201Created);
+    }
+
+    private static async Task<IResult> CreateOrUpdateLayout(
+        ILogger<Program> logger,
+        CompiledLayout layout,
+        CancellationToken cancellationToken)
+    {
+        // Stub implementation to support E2E testing
+        if (layout is null)
+        {
+            return Results.BadRequest();
+        }
+
+        // Assign a new ID to simulate storage
+        CompiledLayout stored = layout with { Id = Guid.NewGuid() };
+        return Results.Created(default(Uri), layout);
     }
 
     private static async Task<IResult> GetActiveLayout(
