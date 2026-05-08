@@ -1,11 +1,10 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
-
 /// <summary>
 /// Manages the lifecycle of backend services for API integration tests.
 /// Starts the service process and captures structured log output.
@@ -13,11 +12,10 @@ namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 public class ServiceFixture : IDisposable
 {
     private Process? _serviceProcess;
-    private readonly StringBuilder _logOutput = new();
-    private readonly object _logLock = new();
     private readonly string _serviceName;
     private readonly ISimulatedEnvironment _environment;
     private readonly IReadOnlyDictionary<string, string>? _environmentVariables;
+    private readonly ILogger _logger;
 
     public string? LogFilePath { get; }
 
@@ -33,6 +31,8 @@ public class ServiceFixture : IDisposable
         LogFilePath = _environment.LogFolder is null
             ? null
             : Path.Combine(_environment.LogFolder, $"{serviceName}_{DateTime.Now:yyyyMMdd_HHmmss}.log)");
+
+        _logger = environment.LoggerFactory.CreateLogger(serviceName + "Fixture");
     }
 
     public async Task StartServiceAsync()
@@ -41,6 +41,8 @@ public class ServiceFixture : IDisposable
         {
             return; // Already started
         }
+
+        _logger.LogInformation("Initializing {ServiceName} fixture", _serviceName);
 
         // Find the repository root by looking for the .git directory
         string currentDir = Directory.GetCurrentDirectory();
@@ -52,6 +54,7 @@ public class ServiceFixture : IDisposable
 
         if (repoRoot == null)
         {
+            _logger.LogError("Could not find repository root (no .git directory found)");
             throw new InvalidOperationException("Could not find repository root (no .git directory found)");
         }
 
@@ -62,8 +65,11 @@ public class ServiceFixture : IDisposable
 
         if (!File.Exists(projectPath))
         {
+            _logger.LogError("Project file not found at: {ProjectPath}", projectPath);
             throw new InvalidOperationException($"Project file not found at: {projectPath}");
         }
+
+        _logger.LogInformation("Found project file for {ServiceName} at: {ProjectPath}", _serviceName, projectPath);
 
         ProcessStartInfo startInfo = new()
         {
@@ -119,32 +125,7 @@ public class ServiceFixture : IDisposable
         }
 
         _serviceProcess = new Process { StartInfo = startInfo };
-
-        _serviceProcess.OutputDataReceived += (sender, args) =>
-        {
-            if (args.Data != null)
-            {
-                lock (_logLock)
-                {
-                    _logOutput.AppendLine(args.Data);
-                }
-            }
-        };
-
-        _serviceProcess.ErrorDataReceived += (sender, args) =>
-        {
-            if (args.Data != null)
-            {
-                lock (_logLock)
-                {
-                    _logOutput.AppendLine($"ERROR: {args.Data}");
-                }
-            }
-        };
-
         _serviceProcess.Start();
-        _serviceProcess.BeginOutputReadLine();
-        _serviceProcess.BeginErrorReadLine();
 
         // Poll /health with a temporary unauthenticated client (/health is open).
         // Use a short per-request timeout so a slow/stuck response doesn't block the loop.
@@ -168,17 +149,11 @@ public class ServiceFixture : IDisposable
                     break;
                 }
 
-                lock (_logLock)
-                {
-                    _logOutput.AppendLine($"[HealthCheck attempt {i + 1}] HTTP {(int)response.StatusCode} from {ServiceUrl}/health");
-                }
+                _logger.LogWarning("Health check attempt {Attempt} failed with HTTP {StatusCode} from {ServiceUrl}/health", i + 1, (int)response.StatusCode, ServiceUrl);
             }
             catch (Exception ex)
             {
-                lock (_logLock)
-                {
-                    _logOutput.AppendLine($"[HealthCheck attempt {i + 1}] Request failed polling {ServiceUrl}/health: {ex.Message}");
-                }
+                _logger.LogWarning(ex, "Health check attempt {Attempt} failed polling {ServiceUrl}/health", i + 1, ServiceUrl);
             }
 
             await Task.Delay(1000).ConfigureAwait(false);
@@ -186,17 +161,11 @@ public class ServiceFixture : IDisposable
 
         if (!isReady)
         {
-            string logs = GetLogs();
-            throw new InvalidOperationException($"Service failed to start within 30 seconds (polling {ServiceUrl}/health). Logs:\n{logs}");
+            _logger.LogError("Service failed to start within 30 seconds (polling {ServiceUrl}/health).", ServiceUrl);
+            throw new InvalidOperationException($"Service failed to start within 30 seconds (polling {ServiceUrl}/health).");
         }
-    }
 
-    public string GetLogs()
-    {
-        lock (_logLock)
-        {
-            return _logOutput.ToString();
-        }
+        _logger.LogInformation("{ServiceName} is ready and responding to health checks at {ServiceUrl}/health", _serviceName, ServiceUrl);
     }
 
     public void Dispose()

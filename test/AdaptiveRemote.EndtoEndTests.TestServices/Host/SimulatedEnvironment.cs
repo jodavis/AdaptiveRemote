@@ -3,6 +3,7 @@ using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using AdaptiveRemote.Services.Conversation;
 using AdaptiveRemote.TestUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
@@ -34,11 +35,12 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     // Settings file path is determined lazily from the TestResults directory when SetLogLocation is first called.
     private string? _testSettingsPath;
 
-    public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder)
+    public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder, ILoggerFactory loggerFactory)
     {
         _tivo = tivoBuilder.Start();
         _broadlink = broadlinkBuilder.Start();
         _hostBuilder = hostBuilder;
+        LoggerFactory = loggerFactory;
 
         List<string> args =
         [
@@ -81,7 +83,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     private Lazy<ServiceFixture> _lazyLayoutProcessingService;
     public ServiceFixture LayoutProcessingService => _lazyLayoutProcessingService.Value;
 
-    private Lazy<LocalStackFixture> _lazyLocalStackFixture = new(() => new LocalStackFixture());
+    private Lazy<LocalStackFixture> _lazyLocalStackFixture;
     public LocalStackFixture LocalStack => _lazyLocalStackFixture.Value;
 
     public TestJwtAuthority JwtAuthority { get; } = new();
@@ -117,7 +119,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     private LocalStackFixture StartLocalStack()
     {
-        LocalStackFixture fixture = new LocalStackFixture();
+        LocalStackFixture fixture = new LocalStackFixture(LoggerFactory);
 
         WaitHelpers.WaitForAsyncTask(ct => fixture.StartAsync(), timeoutInSeconds: 30);
         WaitHelpers.WaitForAsyncTask(ct => fixture.CreateSqsQueueAsync("LayoutProcessingQueue", ct), timeoutInSeconds: 10);
@@ -150,6 +152,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     public string? LogFolder => _nextLogLocation is not null 
         ? Path.GetDirectoryName(_nextLogLocation)
         : null;
+
+    public ILoggerFactory LoggerFactory { get; }
 
     /// <inheritdoc/>
     public void Dispose()
