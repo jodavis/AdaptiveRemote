@@ -1,8 +1,5 @@
-using System.Net;
 using System.Security.Claims;
-using System.Text;
-using System.Text.Json;
-using AdaptiveRemote.Backend.CompiledLayoutService.Logging;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Contracts;
 
 namespace AdaptiveRemote.Backend.CompiledLayoutService.Endpoints;
@@ -26,6 +23,8 @@ public static class LayoutEndpoints
         CompiledLayout layout,
         CancellationToken cancellationToken)
     {
+        using IDisposable scope = logger.StartRequestScope("POST", "/layouts/compiled");
+
         // Stub implementation to support E2E testing
         if (layout is null)
         {
@@ -51,7 +50,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.GetActiveLayoutRequested(userId);
+        using IDisposable scope = logger.StartRequestScope("GET", "/layouts/compiled/active", userId);
 
         CompiledLayout? layout = await repository.GetActiveForUserAsync(userId, cancellationToken);
 

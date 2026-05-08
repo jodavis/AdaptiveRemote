@@ -53,22 +53,30 @@ internal class EnvironmentSetupHooks
     [AfterScenario]
     public static void OnAfterScenario_AttachLogsToTestResult(TestContext testContext)
     {
-        string? logLocation = _startedEnvironment?.HostLogs;
+        (string service, string? logLocation)[] logsToAttach =
+        {
+            ("Host", _startedEnvironment?.HostLogs),
+            ("RawLayoutService", _startedEnvironment?.RawLayoutServiceLogs),
+            ("CompiledLayoutService", _startedEnvironment?.CompiledLayoutServiceLogs),
+            ("LayoutProcessingService", _startedEnvironment?.LayoutProcessingServiceLogs)
+        };
 
-        if (logLocation is null)
+        foreach ((string service, string? logLocation) in logsToAttach)
         {
-            testContext.WriteLine("No log location had been set for the host.");
-            return;
-        }
+            if (logLocation is null)
+            {
+                continue;
+            }
 
-        if (File.Exists(logLocation))
-        {
-            testContext.AddResultFile(logLocation);
-            testContext.WriteLine("Log file found and attached");
-        }
-        else
-        {
-            testContext.WriteLine("Log file not found at expected location: " + logLocation);
+            if (File.Exists(logLocation))
+            {
+                testContext.AddResultFile(logLocation);
+                testContext.WriteLine("Log file for {0} found and attached", service);
+            }
+            else
+            {
+                testContext.WriteLine("Log file for {0} not found at expected location: {1}", service, logLocation);
+            }
         }
     }
 

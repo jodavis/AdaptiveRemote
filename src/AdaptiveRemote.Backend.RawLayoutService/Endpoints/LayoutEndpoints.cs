@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using AdaptiveRemote.Backend.RawLayoutService.Logging;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Contracts;
 
 namespace AdaptiveRemote.Backend.RawLayoutService.Endpoints;
@@ -60,7 +60,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.ListRawLayoutsRequested(userId);
+        using IDisposable scope = logger.StartRequestScope("GET", "/layouts/raw", userId);
 
         try
         {
@@ -90,7 +90,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.GetRawLayoutRequested(userId, id);
+        using IDisposable scope = logger.StartRequestScope("GET", $"/layouts/raw/{id}", userId);
 
         try
         {
@@ -127,7 +127,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.CreateRawLayoutRequested(userId);
+        using IDisposable scope = logger.StartRequestScope("POST", "/layouts/raw", userId);
 
         // Validate required fields
         if (string.IsNullOrWhiteSpace(layout.Name))
@@ -188,7 +188,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.UpdateRawLayoutRequested(userId, id);
+        using IDisposable scope = logger.StartRequestScope("PUT", $"/layouts/raw/{id}", userId);
 
         try
         {
@@ -244,7 +244,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.DeleteRawLayoutRequested(userId, id);
+        using IDisposable scope = logger.StartRequestScope("DELETE", $"/layouts/raw/{id}", userId);
 
         try
         {
@@ -275,7 +275,7 @@ public static class LayoutEndpoints
         IRawLayoutStatusWriter statusWriter,
         CancellationToken cancellationToken)
     {
-        logger.UpdateValidationResultRequested(id);
+        using IDisposable scope = logger.StartRequestScope("PATCH", $"/layouts/raw/{id}/validation-result", null);
 
         try
         {

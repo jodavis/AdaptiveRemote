@@ -1,20 +1,33 @@
+using System.Text.Json;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Backend.RawLayoutService.Configuration;
 using AdaptiveRemote.Backend.RawLayoutService.Endpoints;
-using AdaptiveRemote.Backend.RawLayoutService.Logging;
 using AdaptiveRemote.Backend.RawLayoutService.Repositories;
 using AdaptiveRemote.Backend.RawLayoutService.Services;
 using AdaptiveRemote.Contracts;
 using Amazon.DynamoDBv2;
 using Amazon.SQS;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Scalar.AspNetCore;
-using System.Net.Http;
-using System.Text.Json;
+
+string? logFilePath = null;
+for (int i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] == "--logFile")
+    {
+        logFilePath = args[i + 1];
+        break;
+    }
+}
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+if (!string.IsNullOrEmpty(logFilePath))
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
+    builder.Logging.AddFile(logFilePath);
+}
 
 // Configure DynamoDB
 DynamoDbSettings dynamoDbSettings = builder.Configuration
@@ -169,7 +182,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 WebApplication app = builder.Build();
 
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.ServiceStarting();
+logger.ServiceStarting("RawLayoutService");
 
 if (app.Environment.IsDevelopment())
 {
@@ -195,7 +208,7 @@ app.MapLayoutEndpoints();
 string listenAddress = app.Configuration["ASPNETCORE_URLS"]
     ?? app.Configuration["urls"]
     ?? "http://localhost:5000";
-logger.ServiceStarted(listenAddress);
+logger.ServiceStarted("RawLayoutService", listenAddress);
 
 app.Run();
 

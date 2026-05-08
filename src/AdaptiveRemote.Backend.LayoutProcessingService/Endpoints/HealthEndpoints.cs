@@ -1,4 +1,4 @@
-using AdaptiveRemote.Backend.LayoutProcessingService.Logging;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Contracts;
 using System.Reflection;
 
@@ -19,7 +19,7 @@ public static class HealthEndpoints
 
     private static IResult GetHealth(ILogger<Program> logger)
     {
-        logger.HealthCheckRequested();
+        using IDisposable scope = logger.StartRequestScope("GET", "/health");
 
         try
         {
