@@ -192,7 +192,7 @@ app.MapHealthEndpoints();
 string listenAddress = app.Configuration["ASPNETCORE_URLS"]
     ?? app.Configuration["urls"]
     ?? "http://localhost:5000";
-logger.ServiceStarted("CompiledLayoutService", listenAddress);
+logger.ServiceStarted("LayoutProcessingService", listenAddress);
 
 app.Run();
 

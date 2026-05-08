@@ -33,7 +33,7 @@ public static class LayoutEndpoints
 
         // Assign a new ID to simulate storage
         CompiledLayout stored = layout with { Id = Guid.NewGuid() };
-        return Results.Created(default(Uri), layout);
+        return Results.Created($"/layouts/compiled/{stored.Id}", stored);
     }
 
     private static async Task<IResult> GetActiveLayout(
