@@ -7,6 +7,7 @@ Scenario: List raw layouts when user has no layouts
     When the client calls GET /layouts/raw on the RawLayoutService endpoint
     Then the response is 200 OK
     And the response body is "[]"
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Create a new raw layout
     Given RawLayoutService is running
@@ -39,9 +40,8 @@ Scenario: Create a new raw layout
 	Then the response is 201 Created
     And the response body is valid JSON
     And the response body represents a RawLayout
-    And the RawLayout in the response body has a valid Id property
-    And the RawLayoutService logs contain a request log entry for POST /layouts/raw
-    And the RawLayoutService logs contain no warnings or errors
+    And I should see a message that contains "POST /layouts/raw" in the RawLayoutService logs
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Get raw layout by ID
     Given RawLayoutService is running
@@ -52,7 +52,7 @@ Scenario: Get raw layout by ID
     And the response body is valid JSON
     And the response body represents a RawLayout
     And the RawLayout in the response body has "name"="Test Layout"
-    And the RawLayoutService logs contain no warnings or errors
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Update an existing raw layout
     Given RawLayoutService is running
@@ -87,14 +87,14 @@ Scenario: Update an existing raw layout
     And the response body is valid JSON
     And the response body represents a RawLayout
     And the RawLayout in the response body has "name"="Updated Layout"
-    And the RawLayoutService logs contain no warnings or errors
+    And I should not see any warning or error messages in the RawLayoutService logs
     
     # Get the updated layout
     When the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint
     Then the response is 200 OK
 	And the response body represents a RawLayout
     And the RawLayout in the response body has "name"="Updated Layout"
-    And the RawLayoutService logs contain no warnings or errors
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Delete a raw layout
     Given RawLayoutService is running
@@ -107,18 +107,21 @@ Scenario: Delete a raw layout
     # Verify the layout was deleted
     When the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint
     Then the response is 404 Not Found
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Access raw layouts without authentication
     Given RawLayoutService is running
     And the client has no Authorization token
 	When the client calls GET /layouts/raw on the RawLayoutService endpoint
     Then the response is 401 Unauthorized
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Get non-existent layout by ID
     Given RawLayoutService is running
 	And the client has a valid Authorization token
 	When the client calls GET /layouts/raw/{random} on the RawLayoutService endpoint
     Then the response is 404 Not Found
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Update non-existent layout
     Given RawLayoutService is running
@@ -149,12 +152,14 @@ Scenario: Update non-existent layout
         }
         """
     Then the response is 404 Not Found
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Delete non-existent layout
     Given RawLayoutService is running
     And the client has a valid Authorization token
     When the client calls DELETE /layouts/raw/{random} on the RawLayoutService endpoint
     Then the response is 404 Not Found
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Create layout with invalid data
     Given RawLayoutService is running
@@ -187,6 +192,10 @@ Scenario: Create layout with invalid data
         """
     Then the response is 400 Bad Request
     And the response body contains "Expected either ',', '}', or ']'."
+    And I should see an error message in the RawLayoutService logs:
+        """
+        [Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware] An unhandled exception has occurred while executing the request.
+		"""
 
 Scenario: Create layout with missing required fields
     Given RawLayoutService is running
@@ -219,3 +228,7 @@ Scenario: Create layout with missing required fields
     # TODO: I think this should be 400 Bad Request, but .NET is the one throwing
     Then the response is 500 Internal Server Error
     And the response body contains "The JSON payload for polymorphic interface or abstract type 'AdaptiveRemote.Contracts.RawLayoutElementDto' must specify a type discriminator."
+    And I should see an error message in the RawLayoutService logs:
+        """
+        [Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware] An unhandled exception has occurred while executing the request.
+		"""

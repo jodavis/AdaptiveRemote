@@ -18,7 +18,6 @@ public class TestClient
     public TestClient(ILoggerFactory loggerFactory)
     {
         _log = loggerFactory.CreateLogger<TestClient>();
-        _log.LogInformation("Created Client {ClientID}\n{CallStack}", _clientID, new System.Diagnostics.StackTrace());
     }
 
     public HttpResponseMessage? SendRequest(HttpMethod method, Uri url, string? body = null)
