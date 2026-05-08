@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndToEndTests.TestServices.Backend;
 
@@ -15,6 +16,12 @@ public class LocalStackFixture : IDisposable
     private Process? _dockerProcess;
     private bool _isStarted;
     private bool _ownsContainer; // Track if we created the container
+    private readonly ILogger<LocalStackFixture> _logger;
+
+    public LocalStackFixture(ILoggerFactory loggerFactory)
+    {
+        _logger = loggerFactory.CreateLogger<LocalStackFixture>();
+    }
 
     public string ServiceUrl { get; } = "http://localhost:4566";
 
@@ -49,6 +56,8 @@ public class LocalStackFixture : IDisposable
 
         if (!string.IsNullOrWhiteSpace(existingContainer))
         {
+            _logger.LogInformation("Found an existing localstack-test container. Verifying if it can be reused...");
+        
             // Container already running — verify that SQS is enabled before reusing it.
             // An older container may have been started with SERVICES=dynamodb only.
             await WaitForLocalStackReadyAsync();
@@ -58,6 +67,8 @@ public class LocalStackFixture : IDisposable
                 _ownsContainer = false;
                 return;
             }
+
+            _logger.LogInformation("Found an existing localstack-test container, but SQS is not enabled. Stopping the stale container...");
 
             // SQS not available — stop the stale container so we can start a fresh one
             // with the correct SERVICES configuration.
@@ -77,6 +88,8 @@ public class LocalStackFixture : IDisposable
         }
 
         // Start LocalStack container
+        _logger.LogInformation("Starting localstack-test container...");
+
         ProcessStartInfo startInfo = new()
         {
             FileName = "docker",
@@ -100,6 +113,7 @@ public class LocalStackFixture : IDisposable
         if (_dockerProcess.ExitCode != 0)
         {
             string error = await _dockerProcess.StandardError.ReadToEndAsync();
+            _logger.LogError("Failed to start localstack-test container. Exit code: {ExitCode}. Error: {Error}", _dockerProcess.ExitCode, error);
             throw new InvalidOperationException($"Failed to start LocalStack: {error}");
         }
 
@@ -108,6 +122,8 @@ public class LocalStackFixture : IDisposable
 
         _isStarted = true;
         _ownsContainer = true; // We created this container
+
+        _logger.LogInformation("LocalStack is ready and running in container {ContainerId}", containerId.Trim());
     }
 
     /// <summary>
@@ -119,6 +135,8 @@ public class LocalStackFixture : IDisposable
         {
             throw new InvalidOperationException("LocalStack must be started before creating tables");
         }
+
+        _logger.LogInformation("Creating DynamoDB table '{TableName}' in LocalStack...", tableName);
 
         // Use dummy credentials for LocalStack
         Amazon.Runtime.BasicAWSCredentials credentials = new("test", "test");
@@ -162,6 +180,8 @@ public class LocalStackFixture : IDisposable
 
         await client.CreateTableAsync(request, cancellationToken);
 
+        _logger.LogInformation("CreateTable request for '{TableName}' sent. Waiting for table to become active...", tableName);
+
         // Wait for table to be active
         bool isActive = false;
         for (int i = 0; i < 30 && !isActive; i++)
@@ -183,8 +203,11 @@ public class LocalStackFixture : IDisposable
 
         if (!isActive)
         {
+            _logger.LogError("Table {TableName} did not become active within the expected time.", tableName);
             throw new InvalidOperationException($"Table {tableName} did not become active within 15 seconds");
         }
+
+        _logger.LogInformation("DynamoDB table '{TableName}' is created and active.", tableName);
     }
 
     /// <summary>
@@ -209,7 +232,10 @@ public class LocalStackFixture : IDisposable
 
         try
         {
+            _logger.LogInformation("Checking if SQS queue '{QueueName}' already exists in LocalStack...", queueName);
             GetQueueUrlResponse existingQueue = await client.GetQueueUrlAsync(queueName, cancellationToken);
+            
+            _logger.LogInformation("SQS queue '{QueueName}' already exists with URL: {QueueUrl}", queueName, existingQueue.QueueUrl);
             return existingQueue.QueueUrl;
         }
         catch (QueueDoesNotExistException)
@@ -217,10 +243,14 @@ public class LocalStackFixture : IDisposable
             // Queue doesn't exist, proceed to create
         }
 
+        _logger.LogInformation("Creating SQS queue '{QueueName}' in LocalStack...", queueName);
+
         CreateQueueResponse response = await client.CreateQueueAsync(new CreateQueueRequest
         {
             QueueName = queueName
         }, cancellationToken);
+
+        _logger.LogInformation("SQS queue '{QueueName}' created with URL: {QueueUrl}", queueName, response.QueueUrl);
 
         return response.QueueUrl;
     }
@@ -309,6 +339,8 @@ public class LocalStackFixture : IDisposable
         // Only stop the container if we created it
         if (_ownsContainer && _dockerProcess != null)
         {
+            _logger.LogInformation("Stopping localstack-test container...");
+
             // Stop and remove the container
             Process stopProcess = new()
             {

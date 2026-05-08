@@ -1,6 +1,7 @@
 using AdaptiveRemote.EndtoEndTests.Host;
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 using AdaptiveRemote.EndToEndTests.TestServices.Backend;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 
@@ -53,4 +54,6 @@ public interface ISimulatedEnvironment : IDisposable
     IReadOnlyDictionary<string, byte[]> TestIrPayloads { get; }
 
     string? LogFolder { get; }
+
+    ILoggerFactory LoggerFactory { get; }
 }
