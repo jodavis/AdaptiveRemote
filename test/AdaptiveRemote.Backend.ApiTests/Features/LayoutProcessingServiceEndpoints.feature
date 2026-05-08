@@ -1,15 +1,16 @@
 @ApiIntegrationTest
 Feature: LayoutProcessingService Endpoints
 
+
 Scenario: Health check returns 200 OK
     Given LayoutProcessingService is running
     And the client has no Authorization token
-	When the client calls GET /health on the LayoutProcessingService endpoint
+    When the client calls GET /health on the LayoutProcessingService endpoint
     Then the response is 200 OK
     And the response body is valid JSON
     And the response body represents a HealthResponse
-	And the HealthResponse in the response body has "serviceName"="LayoutProcessingService"
-	And the HealthResponse in the response body has "status"="Healthy"
+    And the HealthResponse in the response body has "serviceName"="LayoutProcessingService"
+    And the HealthResponse in the response body has "status"="Healthy"
     And the HealthResponse in the response body has a "version" property
     And I should not see any warning or error messages in the LayoutProcessingService logs
     And I should not see any warning or error messages in the RawLayoutService logs

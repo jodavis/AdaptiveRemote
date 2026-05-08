@@ -133,7 +133,7 @@ namespace AdaptiveRemote.Backend.ApiTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Health check returns 200 OK", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 4
+#line 5
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -143,39 +143,39 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 5
+#line 6
     await testRunner.GivenAsync("LayoutProcessingService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 6
+#line 7
     await testRunner.AndAsync("the client has no Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 7
- await testRunner.WhenAsync("the client calls GET /health on the LayoutProcessingService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
 #line 8
-    await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.WhenAsync("the client calls GET /health on the LayoutProcessingService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 9
-    await testRunner.AndAsync("the response body is valid JSON", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
 #line 10
-    await testRunner.AndAsync("the response body represents a HealthResponse", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the response body is valid JSON", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 11
- await testRunner.AndAsync("the HealthResponse in the response body has \"serviceName\"=\"LayoutProcessingServic" +
-                        "e\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the response body represents a HealthResponse", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 12
- await testRunner.AndAsync("the HealthResponse in the response body has \"status\"=\"Healthy\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the HealthResponse in the response body has \"serviceName\"=\"LayoutProcessingServic" +
+                        "e\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 13
-    await testRunner.AndAsync("the HealthResponse in the response body has a \"version\" property", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("the HealthResponse in the response body has \"status\"=\"Healthy\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 14
+    await testRunner.AndAsync("the HealthResponse in the response body has a \"version\" property", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 15
     await testRunner.AndAsync("I should not see any warning or error messages in the LayoutProcessingService log" +
                         "s", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 15
+#line 16
     await testRunner.AndAsync("I should not see any warning or error messages in the RawLayoutService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
@@ -196,7 +196,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("End-to-end layout processing success path", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 18
+#line 19
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -206,13 +206,13 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 19
+#line 20
     await testRunner.GivenAsync("LayoutProcessingService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 20
+#line 21
     await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 21
+#line 22
     await testRunner.WhenAsync("this layout is created via RawLayoutService:", @"{
     ""userId"": ""test-user"",
     ""name"": ""Pipeline Test Layout"",
@@ -231,27 +231,27 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     ]
 }", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 41
+#line 42
     await testRunner.ThenAsync("I should see a message that contains \"Layout compiled successfully\" in the Layout" +
                         "ProcessingService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 42
+#line 43
     await testRunner.AndAsync("I should see a message that contains \"Layout validation passed\" in the LayoutProc" +
                         "essingService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 43
+#line 44
     await testRunner.AndAsync("I should see a message that contains \"Compiled layout stored\" in the LayoutProces" +
                         "singService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 44
+#line 45
     await testRunner.AndAsync("I should see a message that contains \"Layout-ready notification published\" in the" +
                         " LayoutProcessingService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 45
+#line 46
     await testRunner.AndAsync("I should not see any warning or error messages in the LayoutProcessingService log" +
                         "s", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 46
+#line 47
     await testRunner.AndAsync("I should not see any warning or error messages in the RawLayoutService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
@@ -272,7 +272,7 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("End-to-end layout processing validation failure path", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 49
+#line 50
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -282,13 +282,13 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 50
+#line 51
     await testRunner.GivenAsync("LayoutProcessingService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 51
+#line 52
     await testRunner.AndAsync("the client has a valid Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 52
+#line 53
     await testRunner.WhenAsync("this layout is created via RawLayoutService:", @"{
     ""userId"": ""test-user"",
     ""name"": ""Invalid Pipeline Test Layout"",
@@ -307,22 +307,22 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
     ]
 }", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 74
+#line 75
     await testRunner.ThenAsync("I should see a message that contains \"Layout compiled successfully\" in the Layout" +
                         "ProcessingService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 75
+#line 76
     await testRunner.AndAsync("I should see a warning message in the LayoutProcessingService logs:", "Layout validation failed", ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 79
+#line 80
  await testRunner.AndAsync("I should see a message that contains \"Validation result written back to raw layou" +
                         "t\" in the LayoutProcessingService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 80
+#line 81
     await testRunner.AndAsync("I should not see any warning or error messages in the LayoutProcessingService log" +
                         "s", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 81
+#line 82
     await testRunner.AndAsync("I should not see any warning or error messages in the RawLayoutService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }

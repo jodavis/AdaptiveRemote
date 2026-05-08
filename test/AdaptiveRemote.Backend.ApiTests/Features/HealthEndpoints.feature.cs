@@ -117,7 +117,7 @@ namespace AdaptiveRemote.Backend.ApiTests.Features
         
         private static global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages InitializeCucumberMessages()
         {
-            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/HealthEndpoints.feature.ndjson", 3);
+            return new global::Reqnroll.Formatters.RuntimeSupport.FeatureLevelCucumberMessages("Features/HealthEndpoints.feature.ndjson", 4);
         }
         
         [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute("Get service health status")]
@@ -131,7 +131,7 @@ namespace AdaptiveRemote.Backend.ApiTests.Features
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Get service health status", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
             string[] tagsOfRule = ((string[])(null));
             global::Reqnroll.RuleInfo ruleInfo = null;
-#line 3
+#line 4
 this.ScenarioInitialize(scenarioInfo, ruleInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -141,30 +141,73 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             else
             {
                 await this.ScenarioStartAsync();
-#line 4
+#line 5
     await testRunner.GivenAsync("CompiledLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 5
+#line 6
     await testRunner.WhenAsync("the client calls GET /health on the CompiledLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 6
+#line 7
     await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 7
+#line 8
     await testRunner.AndAsync("the response body is valid JSON", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 8
+#line 9
     await testRunner.AndAsync("the response body represents a HealthResponse", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 9
- await testRunner.AndAsync("the HealthResponse in the response body has \"serviceName\"=\"CompiledLayoutService\"" +
+#line 10
+    await testRunner.AndAsync("the HealthResponse in the response body has \"serviceName\"=\"CompiledLayoutService\"" +
                         "", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 10
- await testRunner.AndAsync("the HealthResponse in the response body has \"status\"=\"healthy\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
-#line hidden
 #line 11
+    await testRunner.AndAsync("the HealthResponse in the response body has \"status\"=\"healthy\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 12
     await testRunner.AndAsync("the HealthResponse in the response body has a \"version\" property", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute("Get service health status with expired token")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.DescriptionAttribute("Get service health status with expired token")]
+        [global::Microsoft.VisualStudio.TestTools.UnitTesting.TestPropertyAttribute("FeatureTitle", "Health Endpoints")]
+        public async global::System.Threading.Tasks.Task GetServiceHealthStatusWithExpiredToken()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            global::System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new global::System.Collections.Specialized.OrderedDictionary();
+            string pickleIndex = "1";
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Get service health status with expired token", null, tagsOfScenario, argumentsOfScenario, featureTags, pickleIndex);
+            string[] tagsOfRule = ((string[])(null));
+            global::Reqnroll.RuleInfo ruleInfo = null;
+#line 14
+this.ScenarioInitialize(scenarioInfo, ruleInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                await testRunner.SkipScenarioAsync();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 15
+    await testRunner.GivenAsync("CompiledLayoutService is running", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 16
+    await testRunner.AndAsync("the client has an expired Authorization token", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 17
+    await testRunner.WhenAsync("the client calls GET /health on the CompiledLayoutService endpoint", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 18
+    await testRunner.ThenAsync("the response is 200 OK", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 19
+    await testRunner.AndAsync("the response body is valid JSON", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 20
+    await testRunner.AndAsync("the response body represents a HealthResponse", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
