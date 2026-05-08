@@ -13,4 +13,4 @@ Scenario: Get active compiled layout
     And the CompiledLayout in the response body has a Lifecycle command named "Learn"
     And the CompiledLayout in the response body has a Lifecycle command named "Exit"
     And the CompiledLayoutService logs contain a request log entry for GET /layouts/compiled/active
-    And the CompiledLayoutService logs contain no warnings or errors
+    And I should not see any warning or error messages in the CompiledLayoutService logs

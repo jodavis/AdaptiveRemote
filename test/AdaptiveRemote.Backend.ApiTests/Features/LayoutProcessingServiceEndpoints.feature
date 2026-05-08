@@ -11,7 +11,8 @@ Scenario: Health check returns 200 OK
 	And the HealthResponse in the response body has "serviceName"="LayoutProcessingService"
 	And the HealthResponse in the response body has "status"="Healthy"
     And the HealthResponse in the response body has a "version" property
-    And the RawLayoutService logs contain no warnings or errors
+    And I should not see any warning or error messages in the LayoutProcessingService logs
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 @PipelineTest
 Scenario: End-to-end layout processing success path
@@ -42,6 +43,8 @@ Scenario: End-to-end layout processing success path
     And the LayoutProcessingService logs contain the message "Compiled layout stored"
     And the LayoutProcessingService logs contain the message "Layout-ready notification published"
     And the LayoutProcessingService logs contain no warnings or errors
+    And I should not see any warning or error messages in the LayoutProcessingService logs
+    And I should not see any warning or error messages in the RawLayoutService logs
 
 @PipelineTest
 Scenario: End-to-end layout processing validation failure path
@@ -73,3 +76,5 @@ Scenario: End-to-end layout processing validation failure path
     And the LayoutProcessingService logs contain the message "Layout validation failed"
     And the LayoutProcessingService logs contain the message "Validation result written back to raw layout"
     And the LayoutProcessingService logs contain no warnings or errors
+    And I should not see any warning or error messages in the LayoutProcessingService logs
+    And I should not see any warning or error messages in the RawLayoutService logs
