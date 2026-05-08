@@ -9,6 +9,20 @@ Scenario: List raw layouts when user has no layouts
     And the response body is "[]"
     And I should not see any warning or error messages in the RawLayoutService logs
 
+Scenario: List raw layouts when unauthenticated
+    Given RawLayoutService is running
+    And the client has no Authorization token
+    When the client calls GET /layouts/raw on the RawLayoutService endpoint
+    Then the response is 401 Unauthorized
+    And I should not see any warning or error messages in the RawLayoutService logs
+
+Scenario: List raw layouts with expired token
+    Given RawLayoutService is running
+    And the client has an expired Authorization token
+    When the client calls GET /layouts/raw on the RawLayoutService endpoint
+    Then the response is 401 Unauthorized
+    And I should not see any warning or error messages in the RawLayoutService logs
+
 Scenario: Create a new raw layout
     Given RawLayoutService is running
     And the client has a valid Authorization token
@@ -52,6 +66,24 @@ Scenario: Get raw layout by ID
     And the response body is valid JSON
     And the response body represents a RawLayout
     And the RawLayout in the response body has "name"="Test Layout"
+    And I should not see any warning or error messages in the RawLayoutService logs
+
+Scenario: Get raw layout by ID when unauthenticated
+    Given RawLayoutService is running
+    And the client has a valid Authorization token
+    And RawLayoutService has a raw layout with the name "Test Layout"
+    And the client has no Authorization token
+    When the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint
+    Then the response is 401 Unauthorized
+    And I should not see any warning or error messages in the RawLayoutService logs
+
+Scenario: Get raw layout by ID with expired token
+    Given RawLayoutService is running
+    And the client has a valid Authorization token
+    And RawLayoutService has a raw layout with the name "Test Layout"
+    And the client has an expired Authorization token
+    When the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint
+    Then the response is 401 Unauthorized
     And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Update an existing raw layout
@@ -107,6 +139,24 @@ Scenario: Delete a raw layout
     # Verify the layout was deleted
     When the client calls GET /layouts/raw/{id} on the RawLayoutService endpoint
     Then the response is 404 Not Found
+    And I should not see any warning or error messages in the RawLayoutService logs
+
+Scenario: Delete a raw layout when unauthenticated
+    Given RawLayoutService is running
+    And the client has a valid Authorization token
+    And RawLayoutService has a raw layout with the name "Layout to Delete"
+    And the client has no Authorization token
+    When the client calls DELETE /layouts/raw/{id} on the RawLayoutService endpoint
+    Then the response is 401 Unauthorized
+    And I should not see any warning or error messages in the RawLayoutService logs
+
+Scenario: Delete a raw layout with expired token
+    Given RawLayoutService is running
+    And the client has a valid Authorization token
+    And RawLayoutService has a raw layout with the name "Layout to Delete"
+    And the client has an expired Authorization token
+    When the client calls DELETE /layouts/raw/{id} on the RawLayoutService endpoint
+    Then the response is 401 Unauthorized
     And I should not see any warning or error messages in the RawLayoutService logs
 
 Scenario: Access raw layouts without authentication
