@@ -40,7 +40,7 @@
     <PackageVersion Include="Reqnroll.MSTest" Version="3.3.2" />
     <!-- Test Utilities -->
     <PackageVersion Include="coverlet.collector" Version="10.0.0" />
-    <PackageVersion Include="Deque.AxeCore.Commons" Version="4.11.2" />
+    <PackageVersion Include="Deque.AxeCore.Commons" Version="4.11.3" />
     <PackageVersion Include="Deque.AxeCore.Playwright" Version="4.11.2" />
     <PackageVersion Include="FluentAssertions" Version="8.9.0" />
     <PackageVersion Include="Moq" Version="4.20.70" />
