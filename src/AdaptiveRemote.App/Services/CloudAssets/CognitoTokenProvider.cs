@@ -22,6 +22,7 @@ internal sealed class CognitoTokenProvider : ICloudAuthTokenProvider, IDisposabl
     private string? _cachedToken;
     private DateTimeOffset _tokenExpiry = DateTimeOffset.MinValue;
     private readonly SemaphoreSlim _lock = new(1, 1);
+    private bool _missingConfigurationLogged;
 
     public CognitoTokenProvider(
         IOptions<CloudSettings> options,
@@ -43,11 +44,22 @@ internal sealed class CognitoTokenProvider : ICloudAuthTokenProvider, IDisposabl
         _log = new MessageLogger(logger);
     }
 
-    public async Task<string> GetTokenAsync(CancellationToken ct)
+    public async Task<string?> GetTokenAsync(CancellationToken ct)
     {
         await _lock.WaitAsync(ct);
         try
         {
+            if (!IsConfigured())
+            {
+                if (!_missingConfigurationLogged)
+                {
+                    _log.CognitoTokenProvider_MissingConfiguration();
+                    _missingConfigurationLogged = true;
+                }
+
+                return null;
+            }
+
             if (_cachedToken is not null && DateTimeOffset.UtcNow < _tokenExpiry - ExpiryBuffer)
             {
                 return _cachedToken;
@@ -100,6 +112,11 @@ internal sealed class CognitoTokenProvider : ICloudAuthTokenProvider, IDisposabl
 
         return (accessToken, DateTimeOffset.UtcNow.AddSeconds(expiresIn));
     }
+
+    private bool IsConfigured() =>
+        !string.IsNullOrWhiteSpace(_settings.ClientId)
+        && !string.IsNullOrWhiteSpace(_settings.ClientSecret)
+        && !string.IsNullOrWhiteSpace(_settings.CognitoTokenEndpointUrl);
 
     public void Dispose()
     {

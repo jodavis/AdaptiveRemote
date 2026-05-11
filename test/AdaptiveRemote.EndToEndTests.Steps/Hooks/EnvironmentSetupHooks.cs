@@ -63,6 +63,7 @@ internal class EnvironmentSetupHooks
     {
         _startedEnvironment ??= container.Resolve<SimulatedEnvironment>();
         _startedEnvironment.Broadlink.ClearRecordedPackets();
+        _startedEnvironment.SetCloudAuthCredentials(clientId: null, clientSecret: null);
     }
 
     [AfterScenario]

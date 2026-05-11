@@ -116,3 +116,35 @@ Scenario: App continues with cached layout when background server download fails
 	And I should not see the Guide button
 	And I should not see any error messages in the logs
 
+@cloud-layout
+Scenario: App starts from compiled layout service when cloud credentials are not configured
+	Given the application is not running
+	And cloud auth is configured without credentials
+	And the local layout cache is empty
+	And the compiled layout service serves the primary layout
+	When I start the application
+	Then I should see the application in the Ready phase
+	And I should not see any error messages in the logs
+
+@cloud-layout
+Scenario: App starts from compiled layout service when cloud credentials are valid
+	Given the application is not running
+	And cloud auth is configured with valid credentials
+	And the local layout cache is empty
+	And the compiled layout service serves the primary layout
+	When I start the application
+	Then I should see the application in the Ready phase
+	And I should see a message in the logs:
+		"""
+		Cognito access token acquired successfully
+		"""
+	And I should not see any error messages in the logs
+
+@cloud-layout
+Scenario: App enters fatal error state when cloud credentials are invalid and cache is empty
+	Given the application is not running
+	And cloud auth is configured with invalid credentials
+	And the local layout cache is empty
+	And the compiled layout service serves the primary layout
+	When I start the application
+	Then I should see a fatal startup error message

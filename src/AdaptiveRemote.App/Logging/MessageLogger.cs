@@ -198,6 +198,9 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 1802, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
     public partial void CognitoTokenProvider_AcquireTokenFailed(Exception exception);
 
+    [LoggerMessage(EventId = 1803, Level = LogLevel.Warning, Message = "Cloud OAuth settings are missing; skipping Cognito token acquisition")]
+    public partial void CognitoTokenProvider_MissingConfiguration();
+
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Loading existing settings from {FilePath}")]
     public partial void ProgrammaticSettings_LoadingExistingSettings(string filePath);
 

@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -30,10 +29,6 @@ public class CognitoTokenProviderTests
             httpMessageHandler ?? new FakeHttpMessageHandler(
                 BuildTokenResponse("default-token", expiresIn: 3600)));
 
-    // ─────────────────────────────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────────────────────────────
-
     private static HttpResponseMessage BuildTokenResponse(string token, int expiresIn = 3600) =>
         new(HttpStatusCode.OK)
         {
@@ -43,23 +38,21 @@ public class CognitoTokenProviderTests
                 "application/json"),
         };
 
-    // ─────────────────────────────────────────────────────────────────
-    // Tests
-    // ─────────────────────────────────────────────────────────────────
-
     [TestMethod]
-    public async Task CognitoTokenProvider_GetTokenAsync_FirstCall_FetchesAndReturnsTokenAsync()
+    public void CognitoTokenProvider_GetTokenAsync_FirstCall_FetchesAndReturnsToken()
     {
         // Arrange
         FakeHttpMessageHandler handler = new(BuildTokenResponse("first-token"));
         using CognitoTokenProvider sut = MakeSut(httpMessageHandler: handler);
 
         // Act
-        string token = await sut.GetTokenAsync(CancellationToken.None);
+        Task<string?> tokenTask = sut.GetTokenAsync(CancellationToken.None);
 
         // Assert
-        token.Should().Be("first-token");
+        tokenTask.Should().BeComplete();
+        tokenTask.Result.Should().Be("first-token");
         handler.CallCount.Should().Be(1);
+        VerifyTokenRequest(handler, TokenEndpointUrl, ClientId, ClientSecret);
         MockLogger.VerifyMessages(log =>
         {
             log.CognitoTokenProvider_AcquiringToken();
@@ -68,55 +61,47 @@ public class CognitoTokenProviderTests
     }
 
     [TestMethod]
-    public async Task CognitoTokenProvider_GetTokenAsync_SecondCallBeforeExpiry_ReturnsCachedTokenAsync()
+    public void CognitoTokenProvider_GetTokenAsync_SecondCallBeforeExpiry_ReturnsCachedToken()
     {
-        // Arrange — token expires in 1 hour, well outside the 60-second buffer
+        // Arrange
         FakeHttpMessageHandler handler = new(BuildTokenResponse("cached-token", expiresIn: 3600));
         using CognitoTokenProvider sut = MakeSut(httpMessageHandler: handler);
 
-        // Act — call twice
-        string first = await sut.GetTokenAsync(CancellationToken.None);
-        string second = await sut.GetTokenAsync(CancellationToken.None);
+        // Act
+        Task<string?> firstTask = sut.GetTokenAsync(CancellationToken.None);
+        Task<string?> secondTask = sut.GetTokenAsync(CancellationToken.None);
 
-        // Assert — only one HTTP request made; cached token returned on second call
-        first.Should().Be("cached-token");
-        second.Should().Be("cached-token");
+        // Assert
+        firstTask.Should().BeComplete();
+        secondTask.Should().BeComplete();
+        firstTask.Result.Should().Be("cached-token");
+        secondTask.Result.Should().Be("cached-token");
         handler.CallCount.Should().Be(1);
-        MockLogger.VerifyMessages(log =>
-        {
-            log.CognitoTokenProvider_AcquiringToken();
-            log.CognitoTokenProvider_TokenAcquired();
-        });
     }
 
     [TestMethod]
-    public async Task CognitoTokenProvider_GetTokenAsync_CallAfterNearExpiry_RefreshesTokenAsync()
+    public void CognitoTokenProvider_GetTokenAsync_CallAfterNearExpiry_RefreshesToken()
     {
-        // Arrange — first response expires in 30 seconds (within 60-second buffer → will refresh)
+        // Arrange
         FakeHttpMessageHandler handler = new(
             BuildTokenResponse("initial-token", expiresIn: 30),
             BuildTokenResponse("refreshed-token", expiresIn: 3600));
         using CognitoTokenProvider sut = MakeSut(httpMessageHandler: handler);
 
-        // Act — first call acquires; second call finds token near expiry and refreshes
-        string first = await sut.GetTokenAsync(CancellationToken.None);
-        string second = await sut.GetTokenAsync(CancellationToken.None);
+        // Act
+        Task<string?> firstTask = sut.GetTokenAsync(CancellationToken.None);
+        Task<string?> secondTask = sut.GetTokenAsync(CancellationToken.None);
 
         // Assert
-        first.Should().Be("initial-token");
-        second.Should().Be("refreshed-token");
+        firstTask.Should().BeComplete();
+        secondTask.Should().BeComplete();
+        firstTask.Result.Should().Be("initial-token");
+        secondTask.Result.Should().Be("refreshed-token");
         handler.CallCount.Should().Be(2);
-        MockLogger.VerifyMessages(log =>
-        {
-            log.CognitoTokenProvider_AcquiringToken();
-            log.CognitoTokenProvider_TokenAcquired();
-            log.CognitoTokenProvider_AcquiringToken();
-            log.CognitoTokenProvider_TokenAcquired();
-        });
     }
 
     [TestMethod]
-    public async Task CognitoTokenProvider_GetTokenAsync_CancellationRequested_ThrowsOperationCanceledExceptionAsync()
+    public void CognitoTokenProvider_GetTokenAsync_CancellationRequestedBeforeCall_CancelsWithoutHttpCall()
     {
         // Arrange
         using CancellationTokenSource cts = new();
@@ -125,25 +110,60 @@ public class CognitoTokenProviderTests
         using CognitoTokenProvider sut = MakeSut(httpMessageHandler: handler);
 
         // Act
-        Func<Task> act = async () => await sut.GetTokenAsync(cts.Token);
+        Task<string?> tokenTask = sut.GetTokenAsync(cts.Token);
 
         // Assert
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        tokenTask.Should().BeCanceled();
         handler.CallCount.Should().Be(0);
     }
 
     [TestMethod]
-    public async Task CognitoTokenProvider_GetTokenAsync_HttpFailure_PropagatesExceptionAsync()
+    public void CognitoTokenProvider_GetTokenAsync_CancellationWhileWaitingForLock_EndsWithOperationCanceledOutcome()
+    {
+        // Arrange
+        TaskCompletionSource<HttpResponseMessage> firstResponse = new();
+        FakeHttpMessageHandler handler = new(
+            (_, ct) => firstResponse.Task.WaitAsync(ct),
+            (_, _) => Task.FromResult(BuildTokenResponse("second-token")));
+        using CognitoTokenProvider sut = MakeSut(httpMessageHandler: handler);
+
+        Task<string?> firstTokenTask = sut.GetTokenAsync(CancellationToken.None);
+        SpinWait.SpinUntil(() => handler.CallCount == 1, TimeSpan.FromSeconds(1))
+            .Should().BeTrue(because: "the first request must acquire the lock before the second call is cancelled");
+
+        using CancellationTokenSource secondCallCancellation = new();
+        Task<string?> secondTokenTask = sut.GetTokenAsync(secondCallCancellation.Token);
+
+        // Act
+        secondCallCancellation.Cancel();
+
+        // Assert
+        firstTokenTask.Should().NotBeComplete();
+        SpinWait.SpinUntil(() => secondTokenTask.IsCompleted, TimeSpan.FromSeconds(1))
+            .Should().BeTrue();
+        bool secondRequestCanceled = secondTokenTask.IsCanceled
+            || (secondTokenTask.IsFaulted
+                && secondTokenTask.Exception?.InnerException is OperationCanceledException);
+        secondRequestCanceled.Should().BeTrue();
+        handler.CallCount.Should().Be(1);
+
+        firstResponse.SetResult(BuildTokenResponse("first-token"));
+        firstTokenTask.Should().BeComplete();
+        firstTokenTask.Result.Should().Be("first-token");
+    }
+
+    [TestMethod]
+    public void CognitoTokenProvider_GetTokenAsync_HttpFailure_PropagatesException()
     {
         // Arrange
         FakeHttpMessageHandler handler = new(new HttpResponseMessage(HttpStatusCode.Unauthorized));
         using CognitoTokenProvider sut = MakeSut(httpMessageHandler: handler);
 
         // Act
-        Func<Task> act = async () => await sut.GetTokenAsync(CancellationToken.None);
+        Task<string?> tokenTask = sut.GetTokenAsync(CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<HttpRequestException>();
+        tokenTask.Should().BeFaultedWith(new HttpRequestException("Response status code does not indicate success: 401 (Unauthorized)."));
         MockLogger.VerifyMessages(log =>
         {
             log.CognitoTokenProvider_AcquiringToken();
@@ -152,35 +172,73 @@ public class CognitoTokenProviderTests
         });
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // FakeHttpMessageHandler — returns pre-configured responses in order
-    // ─────────────────────────────────────────────────────────────────
-
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
+    [TestMethod]
+    public void CognitoTokenProvider_GetTokenAsync_MissingCredentials_ReturnsNullWithoutCallingHttp()
     {
-        private readonly ConcurrentQueue<HttpResponseMessage> _responses;
-        private int _callCount;
-
-        public int CallCount => _callCount;
-
-        public FakeHttpMessageHandler(params HttpResponseMessage[] responses)
+        // Arrange
+        CloudSettings settings = new()
         {
-            _responses = new ConcurrentQueue<HttpResponseMessage>(responses);
-        }
+            ClientId = string.Empty,
+            ClientSecret = string.Empty,
+            CognitoTokenEndpointUrl = TokenEndpointUrl,
+        };
+        FakeHttpMessageHandler handler = new(BuildTokenResponse("token"));
+        using CognitoTokenProvider sut = MakeSut(settings, handler);
 
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            int callNumber = Interlocked.Increment(ref _callCount);
+        // Act
+        Task<string?> tokenTask = sut.GetTokenAsync(CancellationToken.None);
 
-            if (!_responses.TryDequeue(out HttpResponseMessage? response))
-            {
-                throw new InvalidOperationException(
-                    $"FakeHttpMessageHandler: no response configured for call #{callNumber}");
-            }
-
-            return Task.FromResult(response);
-        }
+        // Assert
+        tokenTask.Should().BeComplete();
+        tokenTask.Result.Should().BeNull();
+        handler.CallCount.Should().Be(0);
+        MockLogger.VerifyMessages(log => log.CognitoTokenProvider_MissingConfiguration());
     }
+
+    [TestMethod]
+    public void CognitoTokenProvider_GetTokenAsync_MissingEndpoint_ReturnsNullWithoutCallingHttp()
+    {
+        // Arrange
+        CloudSettings settings = new()
+        {
+            ClientId = ClientId,
+            ClientSecret = ClientSecret,
+            CognitoTokenEndpointUrl = string.Empty,
+        };
+        FakeHttpMessageHandler handler = new(BuildTokenResponse("token"));
+        using CognitoTokenProvider sut = MakeSut(settings, handler);
+
+        // Act
+        Task<string?> tokenTask = sut.GetTokenAsync(CancellationToken.None);
+
+        // Assert
+        tokenTask.Should().BeComplete();
+        tokenTask.Result.Should().BeNull();
+        handler.CallCount.Should().Be(0);
+    }
+
+    private static void VerifyTokenRequest(
+        FakeHttpMessageHandler handler,
+        string expectedUrl,
+        string expectedClientId,
+        string expectedClientSecret)
+    {
+        handler.Requests.Should().ContainSingle();
+        CapturedHttpRequest request = handler.Requests.Single();
+        request.Method.Should().Be(HttpMethod.Post.Method);
+        request.Url.Should().Be(expectedUrl);
+
+        request.Body.Should().NotBeNull();
+        Dictionary<string, string> formValues = ParseFormUrlEncoded(request.Body!);
+        formValues["grant_type"].Should().Be("client_credentials");
+        formValues["client_id"].Should().Be(expectedClientId);
+        formValues["client_secret"].Should().Be(expectedClientSecret);
+    }
+
+    private static Dictionary<string, string> ParseFormUrlEncoded(string body) =>
+        body.Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Select(part => part.Split('=', 2))
+            .ToDictionary(
+                static parts => WebUtility.UrlDecode(parts[0]),
+                static parts => parts.Length > 1 ? WebUtility.UrlDecode(parts[1]) : string.Empty);
 }

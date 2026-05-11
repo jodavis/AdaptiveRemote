@@ -73,6 +73,28 @@ public class CloudLayoutSteps : StepsBase
         Environment.SetIdleCooldownSeconds(seconds);
     }
 
+    [Given(@"cloud auth is configured with valid credentials")]
+    public void GivenCloudAuthIsConfiguredWithValidCredentials()
+    {
+        Environment.SetCloudAuthCredentials(
+            Environment.JwtAuthority.ValidClientId,
+            Environment.JwtAuthority.ValidClientSecret);
+    }
+
+    [Given(@"cloud auth is configured with invalid credentials")]
+    public void GivenCloudAuthIsConfiguredWithInvalidCredentials()
+    {
+        Environment.SetCloudAuthCredentials(
+            Environment.JwtAuthority.ValidClientId,
+            "invalid-client-secret");
+    }
+
+    [Given(@"cloud auth is configured without credentials")]
+    public void GivenCloudAuthIsConfiguredWithoutCredentials()
+    {
+        Environment.SetCloudAuthCredentials(clientId: null, clientSecret: null);
+    }
+
     [When(@"the compiled layout service is updated to the updated layout")]
     public void WhenTheCompiledLayoutServiceIsUpdatedToTheUpdatedLayout()
     {
@@ -107,4 +129,3 @@ public class CloudLayoutSteps : StepsBase
         File.Copy(sourceFixturePath, cacheFile, overwrite: true);
     }
 }
-

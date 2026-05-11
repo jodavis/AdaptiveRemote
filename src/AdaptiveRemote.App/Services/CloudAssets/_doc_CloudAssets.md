@@ -56,8 +56,9 @@ The idle cooldown in tests is set to 0 seconds via `--cloud:IdleCooldownSeconds=
 ## OAuth2 token provider
 
 [`ICloudAuthTokenProvider`](ICloudAuthTokenProvider.cs) exposes a single method,
-`GetTokenAsync(ct)`, that returns a valid Bearer token. Callers attach it to requests;
-they never manage token expiry themselves.
+`GetTokenAsync(ct)`, that returns a valid Bearer token when configured. If credentials or
+endpoint settings are missing, it returns `null` so callers can continue without adding
+authorization.
 
 [`CognitoTokenProvider`](CognitoTokenProvider.cs) is the production singleton implementation:
 - POSTs to `CloudSettings.CognitoTokenEndpointUrl` using the OAuth2 Client Credentials grant,
@@ -66,6 +67,8 @@ they never manage token expiry themselves.
 - Proactively refreshes when fewer than 60 seconds remain before expiry, making expired tokens
   invisible to callers.
 - Uses a `SemaphoreSlim(1,1)` to prevent concurrent fetches (only one refresh in flight at a time).
+- Logs a warning and returns `null` (without making an HTTP call) when `ClientId`,
+  `ClientSecret`, or `CognitoTokenEndpointUrl` are missing.
 - Exceptions propagate to the caller so failures surface in logs at the download layer.
 
 `ClientId`, `ClientSecret`, and `CognitoTokenEndpointUrl` default to empty string. Supply them

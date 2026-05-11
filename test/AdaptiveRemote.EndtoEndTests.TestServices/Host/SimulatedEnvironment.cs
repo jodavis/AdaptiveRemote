@@ -24,6 +24,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     private readonly ISimulatedTiVoDevice _tivo;
     private readonly ISimulatedBroadlinkDevice _broadlink;
+    private readonly TestJwtAuthority _jwtAuthority;
     private readonly AdaptiveRemoteHost.Builder _hostBuilder;
     private bool _disposed;
     private AdaptiveRemoteHost? _host;
@@ -38,6 +39,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     {
         _tivo = tivoBuilder.Start();
         _broadlink = broadlinkBuilder.Start();
+        _jwtAuthority = new TestJwtAuthority();
         _hostBuilder = hostBuilder;
 
         List<string> args =
@@ -69,6 +71,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, byte[]> TestIrPayloads => _testIrPayloads;
+
+    public ITestJwtAuthority JwtAuthority => _jwtAuthority;
 
     /// <inheritdoc/>
     public string? CloudCachePath => _cloudCachePath;
@@ -117,6 +121,15 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         try
         {
             _broadlink.Dispose();
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            _jwtAuthority.Dispose();
         }
         catch
         {
@@ -173,6 +186,12 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         // Appends the arg; the configuration system uses last-wins for duplicate keys,
         // so this overrides the value set in SetCloudAssetPaths.
         _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs($"--cloud:IdleCooldownSeconds={seconds}"));
+    }
+
+    public void SetCloudAuthCredentials(string? clientId, string? clientSecret)
+    {
+        _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs(
+            $"--cloud:CognitoTokenEndpointUrl=\"{_jwtAuthority.TokenEndpointUrl}\" --cloud:ClientId=\"{clientId ?? string.Empty}\" --cloud:ClientSecret=\"{clientSecret ?? string.Empty}\""));
     }
 
     public void SetLogLocation(string logLocation)
