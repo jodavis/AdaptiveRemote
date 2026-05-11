@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 
@@ -140,7 +141,7 @@ public sealed class TestJwtAuthority : ITestJwtAuthority
 
     private static int GetFreePort()
     {
-        using System.Net.Sockets.TcpListener listener = new(IPAddress.Loopback, 0);
+        using TcpListener listener = new(IPAddress.Loopback, 0);
         listener.Start();
         int port = ((IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();

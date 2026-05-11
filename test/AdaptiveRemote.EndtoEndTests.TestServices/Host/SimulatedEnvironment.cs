@@ -190,8 +190,12 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     public void SetCloudAuthCredentials(string? clientId, string? clientSecret)
     {
+        string escapedTokenEndpoint = EscapeCommandLineValue(_jwtAuthority.TokenEndpointUrl);
+        string escapedClientId = EscapeCommandLineValue(clientId ?? string.Empty);
+        string escapedClientSecret = EscapeCommandLineValue(clientSecret ?? string.Empty);
+
         _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs(
-            $"--cloud:CognitoTokenEndpointUrl=\"{_jwtAuthority.TokenEndpointUrl}\" --cloud:ClientId=\"{clientId ?? string.Empty}\" --cloud:ClientSecret=\"{clientSecret ?? string.Empty}\""));
+            $"--cloud:CognitoTokenEndpointUrl=\"{escapedTokenEndpoint}\" --cloud:ClientId=\"{escapedClientId}\" --cloud:ClientSecret=\"{escapedClientSecret}\""));
     }
 
     public void SetLogLocation(string logLocation)
@@ -222,4 +226,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         lines.AddRange(payloads.Select(kvp => $"{kvp.Key}={Convert.ToBase64String(kvp.Value)}"));
         File.WriteAllLines(path, lines);
     }
+
+    private static string EscapeCommandLineValue(string value) =>
+        value.Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal);
 }

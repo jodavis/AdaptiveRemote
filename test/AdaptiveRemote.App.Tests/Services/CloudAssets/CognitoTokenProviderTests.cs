@@ -121,14 +121,19 @@ public class CognitoTokenProviderTests
     public void CognitoTokenProvider_GetTokenAsync_CancellationWhileWaitingForLock_EndsWithOperationCanceledOutcome()
     {
         // Arrange
+        TaskCompletionSource firstRequestStarted = new();
         TaskCompletionSource<HttpResponseMessage> firstResponse = new();
         FakeHttpMessageHandler handler = new(
-            (_, ct) => firstResponse.Task.WaitAsync(ct),
+            (_, ct) =>
+            {
+                firstRequestStarted.TrySetResult();
+                return firstResponse.Task.WaitAsync(ct);
+            },
             (_, _) => Task.FromResult(BuildTokenResponse("second-token")));
         using CognitoTokenProvider sut = MakeSut(httpMessageHandler: handler);
 
         Task<string?> firstTokenTask = sut.GetTokenAsync(CancellationToken.None);
-        SpinWait.SpinUntil(() => handler.CallCount == 1, TimeSpan.FromSeconds(1))
+        WaitForCondition(() => firstRequestStarted.Task.IsCompleted, TimeSpan.FromSeconds(5))
             .Should().BeTrue(because: "the first request must acquire the lock before the second call is cancelled");
 
         using CancellationTokenSource secondCallCancellation = new();
@@ -139,12 +144,9 @@ public class CognitoTokenProviderTests
 
         // Assert
         firstTokenTask.Should().NotBeComplete();
-        SpinWait.SpinUntil(() => secondTokenTask.IsCompleted, TimeSpan.FromSeconds(1))
+        WaitForCondition(() => secondTokenTask.IsCompleted, TimeSpan.FromSeconds(5))
             .Should().BeTrue();
-        bool secondRequestCanceled = secondTokenTask.IsCanceled
-            || (secondTokenTask.IsFaulted
-                && secondTokenTask.Exception?.InnerException is OperationCanceledException);
-        secondRequestCanceled.Should().BeTrue();
+        AssertCanceledOutcome(secondTokenTask);
         handler.CallCount.Should().Be(1);
 
         firstResponse.SetResult(BuildTokenResponse("first-token"));
@@ -241,4 +243,27 @@ public class CognitoTokenProviderTests
             .ToDictionary(
                 static parts => WebUtility.UrlDecode(parts[0]),
                 static parts => parts.Length > 1 ? WebUtility.UrlDecode(parts[1]) : string.Empty);
+
+    private static void AssertCanceledOutcome(Task task)
+    {
+        bool wasCanceled = task.IsCanceled
+            || (task.IsFaulted && task.Exception?.InnerException is OperationCanceledException);
+        wasCanceled.Should().BeTrue("the operation should observe CancellationToken cancellation");
+    }
+
+    private static bool WaitForCondition(Func<bool> condition, TimeSpan timeout)
+    {
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.Add(timeout);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (condition())
+            {
+                return true;
+            }
+
+            Thread.Sleep(10);
+        }
+
+        return condition();
+    }
 }
