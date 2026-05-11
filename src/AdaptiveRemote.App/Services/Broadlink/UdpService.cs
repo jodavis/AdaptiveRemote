@@ -106,6 +106,18 @@ internal class UdpService : IUdpService
                 _logger.UdpService_Cancelled(packet);
                 responseChannel.Writer.TryComplete(error);
             }
+            catch (UdpException error) when (cancellationToken.IsCancellationRequested)
+            {
+                OperationCanceledException cancelled = new("UDP broadcast was cancelled.", error, cancellationToken);
+                _logger.UdpService_Cancelled(packet);
+                responseChannel.Writer.TryComplete(cancelled);
+            }
+            catch (Exception error) when (cancellationToken.IsCancellationRequested)
+            {
+                OperationCanceledException cancelled = new("UDP broadcast was cancelled.", error, cancellationToken);
+                _logger.UdpService_Cancelled(packet);
+                responseChannel.Writer.TryComplete(cancelled);
+            }
             catch (UdpException error)
             {
                 _logger.UdpService_Failed(packet, error);
@@ -183,6 +195,16 @@ internal class UdpService : IUdpService
         {
             _logger.UdpService_Cancelled(packet);
             throw;
+        }
+        catch (UdpException error) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.UdpService_Cancelled(packet);
+            throw new OperationCanceledException("UDP send was cancelled.", error, cancellationToken);
+        }
+        catch (Exception error) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.UdpService_Cancelled(packet);
+            throw new OperationCanceledException("UDP send was cancelled.", error, cancellationToken);
         }
         catch (UdpException error)
         {

@@ -8,6 +8,7 @@ using AdaptiveRemote.Contracts;
 using Amazon.DynamoDBv2;
 using Amazon.SQS;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Scalar.AspNetCore;
 
 string? logFilePath = null;
@@ -27,6 +28,12 @@ if (!string.IsNullOrEmpty(logFilePath))
     builder.Logging.ClearProviders();
     builder.Logging.AddConsole();
     builder.Logging.AddFile(logFilePath);
+}
+
+if (!builder.Environment.IsProduction())
+{
+    builder.Services.AddDataProtection()
+        .UseEphemeralDataProtectionProvider();
 }
 
 // Configure DynamoDB
