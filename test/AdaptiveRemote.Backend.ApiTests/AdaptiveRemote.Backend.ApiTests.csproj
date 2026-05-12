@@ -16,16 +16,20 @@
     <PackageReference Include="Reqnroll" />
     <PackageReference Include="Reqnroll.MSTest" />
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
-    <PackageReference Include="AWSSDK.DynamoDBv2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AdaptiveRemote.Contracts\AdaptiveRemote.Contracts.csproj" />
+    <ProjectReference Include="..\AdaptiveRemote.EndToEndTests.Steps\AdaptiveRemote.EndToEndTests.Steps.csproj" />
+    <ProjectReference Include="..\AdaptiveRemote.TestUtilities\AdaptiveRemote.TestUtilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="StepDefinitions\" />
   </ItemGroup>
 
 </Project>

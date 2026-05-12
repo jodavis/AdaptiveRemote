@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using AdaptiveRemote.Backend.CompiledLayoutService.Logging;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Contracts;
 
 namespace AdaptiveRemote.Backend.CompiledLayoutService.Endpoints;
@@ -12,6 +12,28 @@ public static class LayoutEndpoints
             .WithName(nameof(GetActiveLayout))
             .Produces<CompiledLayout>(StatusCodes.Status200OK)
             .RequireAuthorization();
+
+        app.MapPost("/layouts/compiled", CreateOrUpdateLayout)
+            .WithName(nameof(CreateOrUpdateLayout))
+            .Produces<CompiledLayout>(StatusCodes.Status201Created);
+    }
+
+    private static async Task<IResult> CreateOrUpdateLayout(
+        ILogger<Program> logger,
+        CompiledLayout layout,
+        CancellationToken cancellationToken)
+    {
+        using IDisposable scope = logger.StartRequestScope("POST", "/layouts/compiled");
+
+        // Stub implementation to support E2E testing
+        if (layout is null)
+        {
+            return Results.BadRequest();
+        }
+
+        // Assign a new ID to simulate storage
+        CompiledLayout stored = layout with { Id = Guid.NewGuid() };
+        return Results.Created($"/layouts/compiled/{stored.Id}", stored);
     }
 
     private static async Task<IResult> GetActiveLayout(
@@ -28,7 +50,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.GetActiveLayoutRequested(userId);
+        using IDisposable scope = logger.StartRequestScope("GET", "/layouts/compiled/active", userId);
 
         CompiledLayout? layout = await repository.GetActiveForUserAsync(userId, cancellationToken);
 

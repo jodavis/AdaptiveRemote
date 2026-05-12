@@ -1,5 +1,7 @@
 using AdaptiveRemote.EndtoEndTests.Host;
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
+using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
 
@@ -18,6 +20,16 @@ public interface ISimulatedEnvironment : IDisposable
     /// </summary>
     ISimulatedBroadlinkDevice Broadlink { get; }
 
+    TestJwtAuthority JwtAuthority { get; }
+
+    ServiceFixture RawLayoutService { get; }
+
+    ServiceFixture CompiledLayoutService { get; }
+
+    ServiceFixture LayoutProcessingService { get; }
+
+    LocalStackFixture LocalStack { get; }
+
     void EnsureHostStarted();
 
     void StartHost();
@@ -28,10 +40,20 @@ public interface ISimulatedEnvironment : IDisposable
 
     string? HostLogs { get; }
 
+    string? RawLayoutServiceLogs { get; }
+
+    string? CompiledLayoutServiceLogs { get; }
+
+    string? LayoutProcessingServiceLogs { get; }
+
     /// <summary>
     /// Gets the test-time IR payloads that are programmed into the settings file.
     /// Keys are command names (e.g. "Power"); values are the raw IR bytes.
     /// Commands not present in this dictionary are not programmed and should be disabled.
     /// </summary>
     IReadOnlyDictionary<string, byte[]> TestIrPayloads { get; }
+
+    string? LogFolder { get; }
+
+    ILoggerFactory LoggerFactory { get; }
 }

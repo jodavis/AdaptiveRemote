@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 using AdaptiveRemote.Services.Testing;
+using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 using StreamJsonRpc;
 

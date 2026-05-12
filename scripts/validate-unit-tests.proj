@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.Build.Traversal">
   <ItemGroup>
     <ProjectReference Include="../test/**/*.csproj" />
+    <ProjectReference Remove="../test/*TestUtilities*/*.csproj" />
     <ProjectReference Remove="../test/*EndToEndTests*/*.csproj" />
     <ProjectReference Remove="../test/*EndtoEndTests*/*.csproj" />
   </ItemGroup>

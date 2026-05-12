@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:1.4.0
     ports:
       - "4566:4566"
     environment:
@@ -50,11 +50,44 @@ services:
       - DynamoDB__ServiceUrl=http://localstack:4566
       - DynamoDB__TableName=RawLayouts
       - DynamoDB__Region=us-east-1
+      # SQS settings for LocalStack
+      - Sqs__ServiceUrl=http://localstack:4566
+      - Sqs__QueueUrl=http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/LayoutProcessingQueue
+      - Sqs__Region=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - LocalStack__BaseUrl=http://localstack:4566
     depends_on:
       - localstack
+    networks:
+      - backend
+
+  layoutprocessingservice:
+    build:
+      context: .
+      dockerfile: src/AdaptiveRemote.Backend.LayoutProcessingService/Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      # Set Cognito dev user pool values here or via a .env file.
+      - Cognito__Authority=${COGNITO_AUTHORITY:-}
+      - Cognito__Audience=${COGNITO_AUDIENCE:-}
+      # SQS settings for LocalStack
+      - Sqs__ServiceUrl=http://localstack:4566
+      - Sqs__QueueUrl=http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/LayoutProcessingQueue
+      - Sqs__Region=us-east-1
+      # Upstream service URLs (Docker Compose DNS)
+      - RawLayoutService__BaseUrl=http://rawlayoutservice:8080
+      - CompiledLayoutService__BaseUrl=http://compiledlayoutservice:8080
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - LocalStack__BaseUrl=http://localstack:4566
+    depends_on:
+      - localstack
+      - rawlayoutservice
+      - compiledlayoutservice
     networks:
       - backend
 

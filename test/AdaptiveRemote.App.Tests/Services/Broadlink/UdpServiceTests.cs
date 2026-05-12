@@ -1,6 +1,7 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Options;
 using Moq;
 
@@ -104,11 +105,56 @@ public class UdpServiceTests
         });
     }
 
+    [TestMethod]
+    public void UdpService_BroadcastAsync_WhenSocketThrowsAfterCancellation_LogsCancelledInsteadOfUnexpectedError()
+    {
+        // Arrange
+        IUdpService sut = CreateSut();
+
+        ScanRequestPacket inputPacket = new()
+        {
+            RequestTime = new DateTimeOffset(2026, 5, 11, 0, 0, 0, TimeSpan.Zero)
+        };
+        TaskCompletionSource receiveStarted = new();
+        CancellationTokenSource cts = new();
+
+        Expect_SocketFactory_CreateForBroadcast();
+        Expect_Socket_LocalEndPoint(IPEndPoint.Parse("10.0.0.2:54321"));
+        Expect_Socket_SendTo(inputPacket.GetBuffer());
+        Expect_Socket_ReceiveFrom_ThrowsAfterCancellation(receiveStarted);
+
+        // Act
+        Task resultTask = ConsumeAsync(sut.BroadcastAsync(inputPacket, cts.Token), cts.Token);
+        receiveStarted.Task.Should().BeCompleteWithin(TimeSpan.FromMilliseconds(100),
+            because: "BroadcastAsync should start waiting for a response");
+        cts.Cancel();
+
+        // Assert
+        resultTask.Should().BeCanceled(because: "the broadcast should surface cancellation to the caller");
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.UdpService_Sending(inputPacket.ToString(), inputPacket.Size, IPEndPoint.Parse("255.255.255.255:80"));
+            messageLogger.UdpService_Sent(inputPacket.ToString());
+            messageLogger.UdpService_Cancelled(inputPacket.ToString());
+        });
+    }
+
     private void Expect_SocketFactory_Create()
         => MockSocketFactory
             .Setup(x => x.Create())
             .Returns(MockSocket.Object)
             .Verifiable(Times.Once);
+
+    private void Expect_SocketFactory_CreateForBroadcast()
+        => MockSocketFactory
+            .Setup(x => x.CreateForBroadcast())
+            .Returns(MockSocket.Object)
+            .Verifiable(Times.Once);
+
+    private void Expect_Socket_LocalEndPoint(EndPoint localEndPoint)
+        => MockSocket
+            .SetupGet(x => x.LocalEndPoint)
+            .Returns(localEndPoint);
 
     private void Expect_Socket_SendTo(ReadOnlyMemory<byte> expectedBytes)
         => MockSocket
@@ -138,4 +184,24 @@ public class UdpServiceTests
             })
             .WithStandardTaskBehavior(new SocketReceiveFromResult() { ReceivedBytes = responseBytes.Length, RemoteEndPoint = responseEndPoint })
             .Verifiable(Times.Once);
+
+    private void Expect_Socket_ReceiveFrom_ThrowsAfterCancellation(TaskCompletionSource receiveStarted)
+        => MockSocket
+            .Setup(x => x.ReceiveFromAsync(It.IsAny<Memory<byte>>(), It.IsAny<EndPoint>(), It.IsAny<CancellationToken>()))
+            .Returns(async (Memory<byte> _, EndPoint _, CancellationToken cancellationToken) =>
+            {
+                receiveStarted.TrySetResult();
+                await cancellationToken.WaitForCancelledAsync();
+                throw new ObjectDisposedException("socket");
+            })
+            .Verifiable(Times.Once);
+
+    private static async Task ConsumeAsync(
+        IAsyncEnumerable<ScanResponsePacket> responses,
+        CancellationToken cancellationToken)
+    {
+        await foreach (ScanResponsePacket _ in responses.WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+        }
+    }
 }

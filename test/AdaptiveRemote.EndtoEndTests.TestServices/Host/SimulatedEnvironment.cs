@@ -1,6 +1,9 @@
 using AdaptiveRemote.EndtoEndTests.SimulatedBroadlink;
 using AdaptiveRemote.EndtoEndTests.SimulatedTiVo;
+using AdaptiveRemote.EndToEndTests.TestServices.Backend;
 using AdaptiveRemote.Services.Conversation;
+using AdaptiveRemote.TestUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace AdaptiveRemote.EndtoEndTests.Host;
@@ -32,11 +35,12 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     // Settings file path is determined lazily from the TestResults directory when SetLogLocation is first called.
     private string? _testSettingsPath;
 
-    public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder)
+    public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder, ILoggerFactory loggerFactory)
     {
         _tivo = tivoBuilder.Start();
         _broadlink = broadlinkBuilder.Start();
         _hostBuilder = hostBuilder;
+        LoggerFactory = loggerFactory;
 
         List<string> args =
         [
@@ -57,6 +61,11 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
                 // Always inject TestSpeechSynthesis so tests can verify spoken phrases without audio devices
                 await testEndpoint.InjectTestServiceAsync<ISpeechSynthesis, TestSpeechSynthesis>(ct);
             });
+
+        _lazyCompiledLayoutService = new(StartCompiledLayoutService);
+        _lazyRawLayoutService = new(StartRawLayoutService);
+        _lazyLayoutProcessingService = new(StartLayoutProcessingService);
+        _lazyLocalStackFixture = new(StartLocalStack);
     }
 
     /// <inheritdoc/>
@@ -64,6 +73,60 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     /// <inheritdoc/>
     public ISimulatedBroadlinkDevice Broadlink => _broadlink;
+
+    private Lazy<ServiceFixture> _lazyRawLayoutService;
+    public ServiceFixture RawLayoutService => _lazyRawLayoutService.Value;
+
+    private Lazy<ServiceFixture> _lazyCompiledLayoutService;
+    public ServiceFixture CompiledLayoutService => _lazyCompiledLayoutService.Value;
+
+    private Lazy<ServiceFixture> _lazyLayoutProcessingService;
+    public ServiceFixture LayoutProcessingService => _lazyLayoutProcessingService.Value;
+
+    private Lazy<LocalStackFixture> _lazyLocalStackFixture;
+    public LocalStackFixture LocalStack => _lazyLocalStackFixture.Value;
+
+    public TestJwtAuthority JwtAuthority { get; } = new();
+
+    private ServiceFixture StartRawLayoutService()
+    {
+        ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.RawLayoutService", this);
+        fixture.StartService();
+        return fixture;
+    }
+
+    private ServiceFixture StartCompiledLayoutService()
+    {
+        ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.CompiledLayoutService", this);
+        fixture.StartService();
+        return fixture;
+    }
+
+    private ServiceFixture StartLayoutProcessingService()
+    {
+        ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.LayoutProcessingService", this, new()
+        {
+            ["RawLayoutService__BaseUrl"] = RawLayoutService.ServiceUrl,
+            ["RawLayoutService__ServiceAccountToken"] = JwtAuthority.CreateToken("service-account-layout-processor"),
+            ["CompiledLayoutService__BaseUrl"] = CompiledLayoutService.ServiceUrl,
+
+            // Enable the orchestrator for pipeline tests
+            ["Orchestrator__Enabled"] = "true",
+        });
+        fixture.StartService();
+        return fixture;
+    }
+
+    private LocalStackFixture StartLocalStack()
+    {
+        LocalStackFixture fixture = new LocalStackFixture(LoggerFactory);
+
+        fixture.Start();
+        fixture.CreateSqsQueue("LayoutProcessingQueue");
+        fixture.CreateTable("RawLayouts");
+
+        return fixture;
+    }
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, byte[]> TestIrPayloads => _testIrPayloads;
@@ -79,6 +142,18 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     }
 
     public string? HostLogs => _currentLogLocation;
+
+    public string? RawLayoutServiceLogs => _lazyRawLayoutService.IsValueCreated ? _lazyRawLayoutService.Value.LogFilePath : null;
+
+    public string? CompiledLayoutServiceLogs => _lazyCompiledLayoutService.IsValueCreated ? _lazyCompiledLayoutService.Value.LogFilePath : null;
+
+    public string? LayoutProcessingServiceLogs => _lazyLayoutProcessingService.IsValueCreated ? _lazyLayoutProcessingService.Value.LogFilePath : null;
+
+    public string? LogFolder => _nextLogLocation is not null 
+        ? Path.GetDirectoryName(_nextLogLocation)
+        : null;
+
+    public ILoggerFactory LoggerFactory { get; }
 
     /// <inheritdoc/>
     public void Dispose()
@@ -109,6 +184,54 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         try
         {
             _broadlink.Dispose();
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyCompiledLayoutService.IsValueCreated)
+            {
+                _lazyCompiledLayoutService.Value.Dispose();
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyRawLayoutService.IsValueCreated)
+            {
+                _lazyRawLayoutService.Value.Dispose();
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyLayoutProcessingService.IsValueCreated)
+            {
+                _lazyLayoutProcessingService.Value.Dispose();
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyLocalStackFixture.IsValueCreated)
+            {
+                _lazyLocalStackFixture.Value.Dispose();
+            }
         }
         catch
         {

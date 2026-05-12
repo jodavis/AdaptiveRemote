@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text;
 using AdaptiveRemote.EndtoEndTests.Logging;
 using AdaptiveRemote.Services.Testing;
+using AdaptiveRemote.TestUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using StreamJsonRpc;

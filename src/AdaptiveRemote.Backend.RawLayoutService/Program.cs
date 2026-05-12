@@ -1,19 +1,40 @@
+using System.Text.Json;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Backend.RawLayoutService.Configuration;
 using AdaptiveRemote.Backend.RawLayoutService.Endpoints;
-using AdaptiveRemote.Backend.RawLayoutService.Logging;
 using AdaptiveRemote.Backend.RawLayoutService.Repositories;
 using AdaptiveRemote.Backend.RawLayoutService.Services;
 using AdaptiveRemote.Contracts;
 using Amazon.DynamoDBv2;
+using Amazon.SQS;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.DataProtection;
 using Scalar.AspNetCore;
-using System.Net.Http;
-using System.Text.Json;
+
+string? logFilePath = null;
+for (int i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] == "--logFile")
+    {
+        logFilePath = args[i + 1];
+        break;
+    }
+}
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+if (!string.IsNullOrEmpty(logFilePath))
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
+    builder.Logging.AddFile(logFilePath);
+}
+
+if (!builder.Environment.IsProduction())
+{
+    builder.Services.AddDataProtection()
+        .UseEphemeralDataProtectionProvider();
+}
 
 // Configure DynamoDB
 DynamoDbSettings dynamoDbSettings = builder.Configuration
@@ -63,13 +84,69 @@ else
 
 builder.Services.AddSingleton(dynamoDbClient);
 
+// Configure SQS for the layout processing trigger
+SqsSettings sqsSettings = builder.Configuration
+    .GetSection("Sqs")
+    .Get<SqsSettings>() ?? new SqsSettings();
+
+builder.Services.Configure<SqsSettings>(builder.Configuration.GetSection("Sqs"));
+
+// Create SQS client
+IAmazonSQS sqsClient;
+
+if (!string.IsNullOrEmpty(sqsSettings.ServiceUrl))
+{
+    // LocalStack or custom endpoint
+    AmazonSQSConfig sqsConfig = new()
+    {
+        ServiceURL = sqsSettings.ServiceUrl,
+        AuthenticationRegion = sqsSettings.Region
+    };
+
+    string? sqsAccessKey = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID");
+    string? sqsSecretKey = Environment.GetEnvironmentVariable("AWS_SECRET_ACCESS_KEY");
+
+    if (!string.IsNullOrEmpty(sqsAccessKey) && !string.IsNullOrEmpty(sqsSecretKey))
+    {
+        sqsClient = new AmazonSQSClient(
+            new Amazon.Runtime.BasicAWSCredentials(sqsAccessKey, sqsSecretKey),
+            sqsConfig);
+    }
+    else
+    {
+        sqsClient = new AmazonSQSClient(sqsConfig);
+    }
+}
+else
+{
+    // Production AWS — use default credential chain
+    AmazonSQSConfig sqsConfig = new()
+    {
+        RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(sqsSettings.Region)
+    };
+    sqsClient = new AmazonSQSClient(sqsConfig);
+}
+
+builder.Services.AddSingleton(sqsClient);
+
 // Register repositories and services
 builder.Services.AddSingleton<DynamoDbRawLayoutRepository>();
 builder.Services.AddSingleton<IRawLayoutRepository>(sp => sp.GetRequiredService<DynamoDbRawLayoutRepository>());
 builder.Services.AddSingleton<IRawLayoutStatusWriter>(sp => sp.GetRequiredService<DynamoDbRawLayoutRepository>());
 
-// Register stub implementations (to be replaced in later tasks)
-builder.Services.AddSingleton<ILayoutProcessingTrigger, StubLayoutProcessingTrigger>();
+// Register the layout processing trigger: use SQS if configured, otherwise fall back to no-op stub.
+// SQS wiring requires a QueueUrl; environments without SQS (e.g. integration tests without LocalStack)
+// continue using the stub so CRUD endpoints remain functional.
+if (!string.IsNullOrEmpty(sqsSettings.QueueUrl))
+{
+    builder.Services.AddSingleton<ILayoutProcessingTrigger, SqsLayoutProcessingTrigger>();
+}
+else
+{
+    builder.Services.AddSingleton<ILayoutProcessingTrigger, StubLayoutProcessingTrigger>();
+}
+
+// Register stub notification publisher (to be replaced in Task 9)
 builder.Services.AddSingleton<INotificationPublisher, StubNotificationPublisher>();
 
 // Configure JWT Bearer authentication with AWS Cognito
@@ -102,10 +179,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
 
+// Register the source-generated JSON context so minimal-API model binding can
+// deserialize request bodies (e.g. RawLayout on POST/PUT) without reflection.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, LayoutContractsJsonContext.Default);
+});
+
 WebApplication app = builder.Build();
 
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.ServiceStarting();
+logger.ServiceStarting("RawLayoutService");
 
 if (app.Environment.IsDevelopment())
 {
@@ -131,7 +215,7 @@ app.MapLayoutEndpoints();
 string listenAddress = app.Configuration["ASPNETCORE_URLS"]
     ?? app.Configuration["urls"]
     ?? "http://localhost:5000";
-logger.ServiceStarted(listenAddress);
+logger.ServiceStarted("RawLayoutService", listenAddress);
 
 app.Run();
 

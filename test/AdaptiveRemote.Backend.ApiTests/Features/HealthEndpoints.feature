@@ -1,7 +1,20 @@
 Feature: Health Endpoints
 
+
 Scenario: Get service health status
     Given CompiledLayoutService is running
-    When a test client calls GET /health
+    When the client calls GET /health on the CompiledLayoutService endpoint
     Then the response is 200 OK
-    And the body contains the service name and version
+    And the response body is valid JSON
+    And the response body represents a HealthResponse
+    And the HealthResponse in the response body has "serviceName"="CompiledLayoutService"
+    And the HealthResponse in the response body has "status"="healthy"
+    And the HealthResponse in the response body has a "version" property
+
+Scenario: Get service health status with expired token
+    Given CompiledLayoutService is running
+    And the client has an expired Authorization token
+    When the client calls GET /health on the CompiledLayoutService endpoint
+    Then the response is 200 OK
+    And the response body is valid JSON
+    And the response body represents a HealthResponse

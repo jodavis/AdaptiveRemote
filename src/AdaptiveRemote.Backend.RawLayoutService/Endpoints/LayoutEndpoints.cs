@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using AdaptiveRemote.Backend.RawLayoutService.Logging;
+using AdaptiveRemote.Backend.Common.Logging;
 using AdaptiveRemote.Contracts;
 
 namespace AdaptiveRemote.Backend.RawLayoutService.Endpoints;
@@ -35,6 +35,17 @@ public static class LayoutEndpoints
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .RequireAuthorization();
+
+        // NOTE: This endpoint is intended for machine-to-machine calls from LayoutProcessingService.
+        // RequireAuthorization() enforces that a valid JWT is present, but does not currently
+        // restrict callers to a service-account identity. A dedicated authorization policy
+        // (e.g., checking a Cognito M2M client_credentials claim) will be added when Cognito M2M
+        // token support is implemented in a later task.
+        app.MapPatch("/layouts/raw/{id:guid}/validation-result", UpdateValidationResult)
+            .WithName(nameof(UpdateValidationResult))
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization();
     }
 
     private static async Task<IResult> ListRawLayouts(
@@ -49,7 +60,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.ListRawLayoutsRequested(userId);
+        using IDisposable scope = logger.StartRequestScope("GET", "/layouts/raw", userId);
 
         try
         {
@@ -79,13 +90,13 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.GetRawLayoutRequested(userId, id);
+        using IDisposable scope = logger.StartRequestScope("GET", $"/layouts/raw/{id}", userId);
 
         try
         {
             RawLayout? layout = await repository.GetAsync(id, cancellationToken);
 
-            if (layout == null || layout.UserId != userId)
+            if (layout is null)
             {
                 return Results.NotFound();
             }
@@ -116,7 +127,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.CreateRawLayoutRequested(userId);
+        using IDisposable scope = logger.StartRequestScope("POST", "/layouts/raw", userId);
 
         // Validate required fields
         if (string.IsNullOrWhiteSpace(layout.Name))
@@ -177,7 +188,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.UpdateRawLayoutRequested(userId, id);
+        using IDisposable scope = logger.StartRequestScope("PUT", $"/layouts/raw/{id}", userId);
 
         try
         {
@@ -233,7 +244,7 @@ public static class LayoutEndpoints
             return Results.Unauthorized();
         }
 
-        logger.DeleteRawLayoutRequested(userId, id);
+        using IDisposable scope = logger.StartRequestScope("DELETE", $"/layouts/raw/{id}", userId);
 
         try
         {
@@ -254,6 +265,32 @@ public static class LayoutEndpoints
         {
             logger.ErrorDeletingRawLayout(id, userId, ex);
             return Results.Problem("Error deleting raw layout");
+        }
+    }
+
+    private static async Task<IResult> UpdateValidationResult(
+        Guid id,
+        ValidationResult result,
+        ILogger<Program> logger,
+        IRawLayoutStatusWriter statusWriter,
+        CancellationToken cancellationToken)
+    {
+        using IDisposable scope = logger.StartRequestScope("PATCH", $"/layouts/raw/{id}/validation-result", null);
+
+        try
+        {
+            await statusWriter.UpdateValidationResultAsync(id, result, cancellationToken);
+            logger.ValidationResultUpdated(id);
+            return Results.NoContent();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            return Results.NotFound();
+        }
+        catch (Exception ex)
+        {
+            logger.ErrorUpdatingValidationResult(id, ex);
+            return Results.Problem("Error updating validation result");
         }
     }
 }

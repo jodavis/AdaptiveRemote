@@ -8,16 +8,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.DynamoDBv2" />
+    <PackageReference Include="AWSSDK.SQS" />
     <PackageReference Include="Deque.AxeCore.Commons" />
     <PackageReference Include="Deque.AxeCore.Playwright" />
     <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Playwright" />
     <PackageReference Include="MSTest.TestFramework" />
     <PackageReference Include="StreamJsonRpc" />
-    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\AdaptiveRemote.App\AdaptiveRemote.App.csproj" />
+    <ProjectReference Include="..\AdaptiveRemote.TestUtilities\AdaptiveRemote.TestUtilities.csproj" />
   </ItemGroup>
 
 </Project>
