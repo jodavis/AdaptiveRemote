@@ -21,9 +21,7 @@ public class StubLayoutValidationClient : ILayoutValidationClient
 
     public Task<ValidationResult> ValidateAsync(CompiledLayout compiled, CancellationToken ct)
     {
-        // This check allows tests to force an invalid result by using the
-        // StubLayoutCompilerClient with a special RawLayout name.
-        if (compiled.CssDefinitions == "INVALID")
+        if (_forceInvalid)
         {
             ValidationResult failure = new(
                 IsValid: false,
@@ -32,7 +30,6 @@ public class StubLayoutValidationClient : ILayoutValidationClient
             return Task.FromResult(failure);
         }
 
-        // Stub: always valid until real validation Lambda is wired in ADR-172
         ValidationResult result = new(
             IsValid: true,
             Issues: Array.Empty<ValidationIssue>()
