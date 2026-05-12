@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AdaptiveRemote.Backend.LayoutCompilerService</RootNamespace>
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AdaptiveRemote.Backend.Common\AdaptiveRemote.Backend.Common.csproj" />
+    <ProjectReference Include="..\AdaptiveRemote.Contracts\AdaptiveRemote.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
