@@ -129,15 +129,19 @@ LayoutCompilerServiceSettings layoutCompilerSettings = builder.Configuration
 
 builder.Services.Configure<LayoutCompilerServiceSettings>(builder.Configuration.GetSection("LayoutCompilerService"));
 
+if (string.IsNullOrEmpty(layoutCompilerSettings.BaseUrl) ||
+    !Uri.TryCreate(layoutCompilerSettings.BaseUrl, UriKind.Absolute, out Uri? compilerBaseUri))
+{
+    throw new InvalidOperationException(
+        "LayoutCompilerService:BaseUrl must be set to a valid absolute URI in configuration.");
+}
+
 builder.Services.AddHttpClient<ILayoutCompilerClient, HttpLayoutCompilerClient>(client =>
 {
-    if (!string.IsNullOrEmpty(layoutCompilerSettings.BaseUrl))
-    {
-        client.BaseAddress = new Uri(layoutCompilerSettings.BaseUrl);
-    }
+    client.BaseAddress = compilerBaseUri;
 });
 
-// Register stub implementations (to be replaced in later tasks)
+// Register remaining stub implementations
 builder.Services.AddSingleton<ILayoutValidationClient, StubLayoutValidationClient>();
 builder.Services.AddSingleton<INotificationPublisher, StubNotificationPublisher>();
 

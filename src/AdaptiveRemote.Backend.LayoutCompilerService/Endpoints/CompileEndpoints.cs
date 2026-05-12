@@ -55,7 +55,7 @@ public static class CompileEndpoints
         catch (Exception ex)
         {
             logger.CompilationFailed(raw.Id, ex.Message, ex);
-            return Results.BadRequest($"Compilation failed: {ex.Message}");
+            return Results.BadRequest("Compilation failed.");
         }
 
         logger.CompilationSucceeded(raw.Id, compiled.Elements.Count);
@@ -100,7 +100,7 @@ public static class CompileEndpoints
         catch (Exception ex)
         {
             logger.CompilationFailed(Guid.Empty, $"Preview compilation failed: {ex.Message}", ex);
-            return Results.BadRequest($"Preview compilation failed: {ex.Message}");
+            return Results.BadRequest("Preview compilation failed.");
         }
 
         logger.PreviewCompilationSucceeded(elements.Count);

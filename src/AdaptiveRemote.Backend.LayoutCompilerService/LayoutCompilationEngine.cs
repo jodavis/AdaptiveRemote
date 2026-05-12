@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Text.RegularExpressions;
 using AdaptiveRemote.Contracts;
 
 namespace AdaptiveRemote.Backend.LayoutCompilerService;
@@ -76,10 +77,29 @@ public static class LayoutCompilationEngine
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Validates that <paramref name="cssId"/> contains only characters that are safe to
+    /// interpolate directly into a CSS ID selector (<c>#id { ... }</c>).
+    /// Allowed: ASCII letters, digits, hyphens, and underscores.
+    /// </summary>
+    private static bool IsValidCssId(string? cssId) =>
+        !string.IsNullOrEmpty(cssId) && CssIdPattern.IsMatch(cssId);
+
+    // Only letters, digits, hyphens, and underscores are permitted — no whitespace,
+    // braces, commas, or other characters that could break or escape a selector.
+    private static readonly Regex CssIdPattern = new(@"^[A-Za-z0-9\-_]+$", RegexOptions.Compiled);
+
     private static void AppendElementCssRules(StringBuilder sb, IReadOnlyList<RawLayoutElementDto> elements)
     {
         foreach (RawLayoutElementDto element in elements)
         {
+            if (!IsValidCssId(element.CssId))
+            {
+                throw new InvalidOperationException(
+                    $"Element CssId '{element.CssId}' contains invalid characters. " +
+                    "Only ASCII letters, digits, hyphens, and underscores are permitted.");
+            }
+
             sb.AppendLine();
             sb.AppendLine($"#{element.CssId} {{");
             sb.AppendLine($"  grid-row: {element.GridRow} / span {element.GridRowSpan};");
@@ -88,8 +108,15 @@ public static class LayoutCompilationEngine
             if (!string.IsNullOrWhiteSpace(element.AdditionalCss))
             {
                 // Inline per-element overrides inside the same rule block.
+                // Lines containing '{' or '}' are skipped: they are not valid in CSS property
+                // declarations and indicate an injection attempt (e.g. breaking out of the rule block).
                 foreach (string line in element.AdditionalCss.Split('\n', StringSplitOptions.RemoveEmptyEntries))
                 {
+                    if (line.Contains('{', StringComparison.Ordinal) || line.Contains('}', StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
                     sb.AppendLine($"  {line.Trim()}");
                 }
             }

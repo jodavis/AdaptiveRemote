@@ -48,7 +48,8 @@ Event IDs are organized in ranges by subsystem:
 | 800–899 | TiVoConnection |
 | 900–999 | UdpService |
 | 1000–1099 | BroadlinkCommandService |
-| 1100–1199 | CompiledLayoutService (backend) |
+| 1100–1179 | CompiledLayoutService (backend) |
+| 1180–1199 | LayoutCompilerService (backend) |
 | 1200–1299 | RawLayoutService (backend) |
 | 1300–1699 | (reserved — App subsystems: ProgrammaticSettings, ScopedBackgroundProcess, ConversationState, SamplesRecorder, TestEndpointService, CognitoTokenService) |
 | 1700–1799 | LayoutProcessingService (backend) |

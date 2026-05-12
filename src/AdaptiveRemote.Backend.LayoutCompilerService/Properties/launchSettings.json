@@ -18,13 +18,12 @@
       },
       "applicationUrl": "http://localhost:5180"
     },
-    "Lambda Test Tool": {
+    "LayoutCompilerService (HTTP)": {
       "commandName": "Project",
       "launchBrowser": false,
       "outputCapture": "None",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "AWS_LAMBDA_RUNTIME_API": "localhost:5050"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "http://localhost:5180"
     }

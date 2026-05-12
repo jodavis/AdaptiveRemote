@@ -104,6 +104,35 @@ public class LayoutCompilationEngineTests
     }
 
     [TestMethod]
+    public void LayoutCompilationEngine_BuildCssDefinitions_AdditionalCssWithBraces_BraceLinesAreSkipped()
+    {
+        // Arrange — a line containing '{' or '}' would allow breaking out of the rule block.
+        IReadOnlyList<RawLayoutElementDto> elements = new[]
+        {
+            new RawCommandDefinitionDto(
+                Type: CommandType.TiVo,
+                Name: "Power",
+                Label: "Power",
+                Glyph: null,
+                SpeakPhrase: "power",
+                Reverse: null,
+                CssId: "power-btn",
+                GridRow: 1,
+                GridColumn: 1,
+                AdditionalCss: "color: red;\n} body { display:none\nfont-size: 1rem;")
+        };
+
+        // Act
+        string css = LayoutCompilationEngine.BuildCssDefinitions(elements);
+
+        // Assert — safe properties are included; the injection line is dropped entirely.
+        css.Should().Contain("color: red;");
+        css.Should().Contain("font-size: 1rem;");
+        css.Should().NotContain("body");
+        css.Should().NotContain("display:none");
+    }
+
+    [TestMethod]
     public void LayoutCompilationEngine_BuildCssDefinitions_MultipleElements_GridExtentsBasedOnMaxValues()
     {
         // Arrange
@@ -137,6 +166,41 @@ public class LayoutCompilationEngineTests
         // Assert
         css.Should().Contain("grid-template-columns: repeat(4, 1fr);");
         css.Should().Contain("grid-template-rows: repeat(3, auto);");
+    }
+
+    [TestMethod]
+    public void LayoutCompilationEngine_BuildCssDefinitions_Group_GroupCssAppearsBeforeChildrenCss()
+    {
+        // Arrange
+        IReadOnlyList<RawLayoutElementDto> elements = new[]
+        {
+            new RawLayoutGroupDefinitionDto(
+                CssId: "nav-group",
+                Children: new[]
+                {
+                    new RawCommandDefinitionDto(
+                        Type: CommandType.TiVo,
+                        Name: "Up",
+                        Label: "Up",
+                        Glyph: null,
+                        SpeakPhrase: "up",
+                        Reverse: null,
+                        CssId: "up-btn",
+                        GridRow: 1,
+                        GridColumn: 1)
+                },
+                GridRow: 1,
+                GridColumn: 1)
+        };
+
+        // Act
+        string css = LayoutCompilationEngine.BuildCssDefinitions(elements);
+
+        // Assert — group rule must appear before child rule in the output.
+        int groupRuleIndex = css.IndexOf("#nav-group {", StringComparison.Ordinal);
+        int childRuleIndex = css.IndexOf("#up-btn {", StringComparison.Ordinal);
+        groupRuleIndex.Should().BeGreaterThanOrEqualTo(0, "group rule should be present in CSS");
+        childRuleIndex.Should().BeGreaterThan(groupRuleIndex, "group CSS rule must precede its children's CSS rules");
     }
 
     // ── Element conversion (payload stripping) ─────────────────────────────────
@@ -336,6 +400,125 @@ public class LayoutCompilationEngineTests
         // Assert
         preview.ValidationResult.IsValid.Should().BeTrue();
         preview.ValidationResult.Issues.Should().BeEmpty();
+    }
+
+    // ── AdditionalCss injection filtering ─────────────────────────────────────
+
+    [TestMethod]
+    public void LayoutCompilationEngine_BuildCssDefinitions_AdditionalCssLineWithOpenBrace_IsSkipped()
+    {
+        // Arrange
+        IReadOnlyList<RawLayoutElementDto> elements = new[]
+        {
+            new RawCommandDefinitionDto(
+                Type: CommandType.TiVo,
+                Name: "Evil",
+                Label: "Evil",
+                Glyph: null,
+                SpeakPhrase: "evil",
+                Reverse: null,
+                CssId: "evil-btn",
+                GridRow: 1,
+                GridColumn: 1,
+                AdditionalCss: "color: red;\n.injected { color: blue; }\nfont-size: 1rem;")
+        };
+
+        // Act
+        string css = LayoutCompilationEngine.BuildCssDefinitions(elements);
+
+        // Assert — the injected rule block line is dropped; surrounding safe lines survive.
+        css.Should().NotContain(".injected");
+        css.Should().Contain("color: red;");
+        css.Should().Contain("font-size: 1rem;");
+    }
+
+    [TestMethod]
+    public void LayoutCompilationEngine_BuildCssDefinitions_AdditionalCssLineWithCloseBrace_IsSkipped()
+    {
+        // Arrange
+        IReadOnlyList<RawLayoutElementDto> elements = new[]
+        {
+            new RawCommandDefinitionDto(
+                Type: CommandType.TiVo,
+                Name: "Evil2",
+                Label: "Evil2",
+                Glyph: null,
+                SpeakPhrase: "evil2",
+                Reverse: null,
+                CssId: "evil2-btn",
+                GridRow: 1,
+                GridColumn: 1,
+                AdditionalCss: "} .outside { color: blue;")
+        };
+
+        // Act
+        string css = LayoutCompilationEngine.BuildCssDefinitions(elements);
+
+        // Assert — the escape attempt is dropped entirely.
+        css.Should().NotContain(".outside");
+    }
+
+    // ── CssId validation ───────────────────────────────────────────────────────
+
+    [TestMethod]
+    [DataRow("btn with space")]
+    [DataRow("btn{inject}")]
+    [DataRow("btn,other")]
+    [DataRow("btn}close")]
+    [DataRow("")]
+    public void LayoutCompilationEngine_BuildCssDefinitions_InvalidCssId_Throws(string invalidCssId)
+    {
+        // Arrange
+        IReadOnlyList<RawLayoutElementDto> elements = new[]
+        {
+            new RawCommandDefinitionDto(
+                Type: CommandType.TiVo,
+                Name: "Bad",
+                Label: "Bad",
+                Glyph: null,
+                SpeakPhrase: "bad",
+                Reverse: null,
+                CssId: invalidCssId,
+                GridRow: 1,
+                GridColumn: 1)
+        };
+
+        // Act
+        Action act = () => LayoutCompilationEngine.BuildCssDefinitions(elements);
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*CssId*invalid characters*");
+    }
+
+    [TestMethod]
+    [DataRow("btn-1")]
+    [DataRow("my_button")]
+    [DataRow("NavGroup")]
+    [DataRow("a")]
+    [DataRow("Z9-_x")]
+    public void LayoutCompilationEngine_BuildCssDefinitions_ValidCssId_DoesNotThrow(string validCssId)
+    {
+        // Arrange
+        IReadOnlyList<RawLayoutElementDto> elements = new[]
+        {
+            new RawCommandDefinitionDto(
+                Type: CommandType.TiVo,
+                Name: "Good",
+                Label: "Good",
+                Glyph: null,
+                SpeakPhrase: "good",
+                Reverse: null,
+                CssId: validCssId,
+                GridRow: 1,
+                GridColumn: 1)
+        };
+
+        // Act
+        Action act = () => LayoutCompilationEngine.BuildCssDefinitions(elements);
+
+        // Assert
+        act.Should().NotThrow();
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
