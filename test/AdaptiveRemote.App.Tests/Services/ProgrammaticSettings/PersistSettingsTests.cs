@@ -40,9 +40,12 @@ public class PersistSettingsTests
         MockFileSystem.AddFile(ResolvedSettingsPath, "ExistingSetting=123");
 
         MockFileSystem.Expect_OpenRead_ForPath(ResolvedSettingsPath);
-        MockFileSystem.Expect_OpenRead_IsNotCalledForPath(InputSettingsPath);
         MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath);
-        MockFileSystem.Expect_OpenWrite_IsNotCalledForPath(InputSettingsPath);
+        if (InputSettingsPath != ResolvedSettingsPath)
+        {
+            MockFileSystem.Expect_OpenRead_IsNotCalledForPath(InputSettingsPath);
+            MockFileSystem.Expect_OpenWrite_IsNotCalledForPath(InputSettingsPath);
+        }
 
         // Act
         sut.Set("NewSetting", "abc");
@@ -405,4 +408,3 @@ public class PersistSettingsTests
     }
 
 }
-
