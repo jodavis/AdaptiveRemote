@@ -83,8 +83,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     private Lazy<ServiceFixture> _lazyLayoutProcessingService;
     public ServiceFixture LayoutProcessingService => _lazyLayoutProcessingService.Value;
 
-    private Lazy<LocalStackFixture> _lazyLocalStackFixture;
-    public LocalStackFixture LocalStack => _lazyLocalStackFixture.Value;
+    private Lazy<LocalStackFixture?> _lazyLocalStackFixture;
+    public LocalStackFixture LocalStack => _lazyLocalStackFixture.Value ?? throw new InvalidOperationException("LocalStack is not available (Docker may not be running). Use in-memory implementations instead.");
 
     public TestJwtAuthority JwtAuthority { get; } = new();
 
@@ -117,15 +117,25 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         return fixture;
     }
 
-    private LocalStackFixture StartLocalStack()
+    private LocalStackFixture? StartLocalStack()
     {
-        LocalStackFixture fixture = new LocalStackFixture(LoggerFactory);
-
-        fixture.Start();
-        fixture.CreateSqsQueue("LayoutProcessingQueue");
-        fixture.CreateTable("RawLayouts");
-
-        return fixture;
+        // LocalStack is optional for API tests - only required for tests that explicitly need SQS/DynamoDB.
+        // Services now use in-memory implementations by default, so Docker is not required.
+        try
+        {
+            LocalStackFixture fixture = new LocalStackFixture(LoggerFactory);
+            fixture.Start();
+            fixture.CreateSqsQueue("LayoutProcessingQueue");
+            fixture.CreateTable("RawLayouts");
+            return fixture;
+        }
+        catch (Exception ex)
+        {
+            // Docker not available - log and return null
+            ILogger logger = LoggerFactory.CreateLogger<SimulatedEnvironment>();
+            logger.LogWarning(ex, "LocalStack could not be started (Docker may not be available). Tests will use in-memory implementations.");
+            return null;
+        }
     }
 
     /// <inheritdoc/>
@@ -228,7 +238,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
         try
         {
-            if (_lazyLocalStackFixture.IsValueCreated)
+            if (_lazyLocalStackFixture.IsValueCreated && _lazyLocalStackFixture.Value is not null)
             {
                 _lazyLocalStackFixture.Value.Dispose();
             }

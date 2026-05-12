@@ -130,9 +130,20 @@ else
 builder.Services.AddSingleton(sqsClient);
 
 // Register repositories and services
-builder.Services.AddSingleton<DynamoDbRawLayoutRepository>();
-builder.Services.AddSingleton<IRawLayoutRepository>(sp => sp.GetRequiredService<DynamoDbRawLayoutRepository>());
-builder.Services.AddSingleton<IRawLayoutStatusWriter>(sp => sp.GetRequiredService<DynamoDbRawLayoutRepository>());
+// Use in-memory repository when ServiceUrl is empty/null (no DynamoDB configured).
+// This allows API tests to run without Docker/LocalStack.
+if (string.IsNullOrEmpty(dynamoDbSettings.ServiceUrl))
+{
+    builder.Services.AddSingleton<InMemoryRawLayoutRepository>();
+    builder.Services.AddSingleton<IRawLayoutRepository>(sp => sp.GetRequiredService<InMemoryRawLayoutRepository>());
+    builder.Services.AddSingleton<IRawLayoutStatusWriter>(sp => sp.GetRequiredService<InMemoryRawLayoutRepository>());
+}
+else
+{
+    builder.Services.AddSingleton<DynamoDbRawLayoutRepository>();
+    builder.Services.AddSingleton<IRawLayoutRepository>(sp => sp.GetRequiredService<DynamoDbRawLayoutRepository>());
+    builder.Services.AddSingleton<IRawLayoutStatusWriter>(sp => sp.GetRequiredService<DynamoDbRawLayoutRepository>());
+}
 
 // Register the layout processing trigger: use SQS if configured, otherwise fall back to no-op stub.
 // SQS wiring requires a QueueUrl; environments without SQS (e.g. integration tests without LocalStack)
@@ -191,7 +202,9 @@ WebApplication app = builder.Build();
 ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.ServiceStarting("RawLayoutService");
 
-if (app.Environment.IsDevelopment())
+// Only check for LocalStack when DynamoDB is configured (ServiceUrl is not empty).
+// When ServiceUrl is empty, the service uses in-memory repositories and doesn't need LocalStack.
+if (app.Environment.IsDevelopment() && !string.IsNullOrEmpty(dynamoDbSettings.ServiceUrl))
 {
     await EnsureLocalStackRunningAsync(app, logger).ConfigureAwait(false);
 }

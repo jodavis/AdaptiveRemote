@@ -109,18 +109,16 @@ public class ServiceFixture : IDisposable
 
         if (_serviceName == "AdaptiveRemote.Backend.RawLayoutService")
         {
-            // Configure DynamoDB for RawLayoutService
-            startInfo.Environment["DynamoDB__ServiceUrl"] = _environment.LocalStack.ServiceUrl;
-            startInfo.Environment["DynamoDB__Region"] = _environment.LocalStack.Region;
+            // Don't configure DynamoDB ServiceUrl - this triggers in-memory mode (no LocalStack required)
+            // startInfo.Environment["DynamoDB__ServiceUrl"] is intentionally not set
+            startInfo.Environment["DynamoDB__Region"] = "us-east-1";
             startInfo.Environment["DynamoDB__TableName"] = "RawLayouts";
         }
 
         if (_serviceName == "AdaptiveRemote.Backend.LayoutProcessingService")
         {
-            // Configure SQS for LayoutProcessingService
-            startInfo.Environment["Sqs__ServiceUrl"] = _environment.LocalStack.ServiceUrl;
-            startInfo.Environment["Sqs__QueueUrl"] = _environment.LocalStack.GetSqsQueueUrl("LayoutProcessingQueue");
-            startInfo.Environment["Sqs__Region"] = _environment.LocalStack.Region;
+            // SQS not configured - orchestrator will use stub trigger (disabled by default)
+            // The orchestrator is enabled per-test via environment variables when needed
         }
 
         if (_environmentVariables is not null)
