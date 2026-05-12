@@ -10,6 +10,7 @@ Task 5 ([ADR-187](https://jodasoft.atlassian.net/browse/ADR-187)).
 | `AdaptiveRemote.Backend.CompiledLayoutService` | 54433 (HTTPS) / 54434 (HTTP) | Compiled layout storage and retrieval |
 | `AdaptiveRemote.Backend.RawLayoutService` | 54435 (HTTPS) / 54436 (HTTP) | Raw layout CRUD; enqueues SQS trigger on save |
 | `AdaptiveRemote.Backend.LayoutProcessingService` | 54437 (HTTPS) / 54438 (HTTP) | SQS polling; orchestrates compile → validate → store → notify pipeline |
+| `AdaptiveRemote.Backend.LayoutCompilerService` | 5180 (HTTP) | Compiles raw layouts to CSS+element DTOs; runs as a plain HTTP container in Docker Compose (Lambda deployment is aspirational) |
 
 ### LayoutProcessingService
 
@@ -21,15 +22,18 @@ then drives: fetch raw layout → compile → validate → store compiled layout
 
 1. Dequeue SQS message containing `rawLayoutId`
 2. Fetch `RawLayout` from `RawLayoutService` via `IRawLayoutRepository`
-3. Compile via `ILayoutCompilerClient` (stub: `StubLayoutCompilerClient`)
+3. Compile via `HttpLayoutCompilerClient` → `LayoutCompilerService` (POST /compile)
 4. Validate via `ILayoutValidationClient` (stub: `StubLayoutValidationClient`)
 5a. On validation failure: write result back via `IRawLayoutStatusWriter`; delete message
 5b. On success: store compiled layout via `ICompiledLayoutRepository`; publish notification via `INotificationPublisher`; delete message
 5c. On error: do NOT delete message; SQS retry → DLQ (max receive count = 3; DLQ retention = 14 days)
 
-**Stub implementations (current task):**
+**Compiler client:**
 
-- `StubLayoutCompilerClient` — derives a `CompiledLayout` from `RawLayout` elements; no real CSS
+`ILayoutCompilerClient` is implemented by `HttpLayoutCompilerClient`, which calls `LayoutCompilerService` (POST /compile). The previous `StubLayoutCompilerClient` has been removed.
+
+**Stub implementations (remaining):**
+
 - `StubLayoutValidationClient` — always returns `IsValid=true`; set `Validation:ForceInvalid=true` to exercise the failure path
 - `StubNotificationPublisher` — no-op
 

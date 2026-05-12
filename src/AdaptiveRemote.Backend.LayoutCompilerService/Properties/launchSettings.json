@@ -1,0 +1,31 @@
+{
+  "profiles": {
+    "Development": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "outputCapture": "None",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:5180"
+    },
+    "AdaptiveRemote.Backend.LayoutCompilerService": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "outputCapture": "None",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:5180"
+    },
+    "LayoutCompilerService (HTTP)": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "outputCapture": "None",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:5180"
+    }
+  }
+}

@@ -6,9 +6,10 @@ namespace AdaptiveRemote.Backend.LayoutProcessingService.Services;
 /// <summary>
 /// Stub implementation of ILayoutValidationClient.
 /// Returns a valid ValidationResult for all inputs by default.
-/// When Validation:ForceInvalid is set to true (e.g. in integration tests), returns an
-/// invalid result with a single stub issue, enabling end-to-end testing of the failure path.
-/// To be replaced with a real Lambda-backed HTTP client in ADR-172.
+/// When CssDefinitions equals "INVALID" (produced by StubLayoutCompilerClient for layouts
+/// with a special test name), or when Validation:ForceInvalid is set to true in configuration,
+/// returns an invalid result with a single stub issue, enabling end-to-end testing of the
+/// failure path. To be replaced with a real Lambda-backed HTTP client in ADR-172.
 /// </summary>
 public class StubLayoutValidationClient : ILayoutValidationClient
 {
@@ -24,6 +25,15 @@ public class StubLayoutValidationClient : ILayoutValidationClient
         // This check allows tests to force an invalid result by using the
         // StubLayoutCompilerClient with a special RawLayout name.
         if (compiled.CssDefinitions == "INVALID")
+        {
+            ValidationResult failure = new(
+                IsValid: false,
+                Issues: [new ValidationIssue("STUB_INVALID", "Stub validation forced invalid for testing", null)]
+            );
+            return Task.FromResult(failure);
+        }
+
+        if (_forceInvalid)
         {
             ValidationResult failure = new(
                 IsValid: false,

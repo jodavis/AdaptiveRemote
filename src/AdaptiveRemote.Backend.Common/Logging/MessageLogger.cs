@@ -3,10 +3,13 @@ using Microsoft.Extensions.Logging;
 namespace AdaptiveRemote.Backend.Common.Logging;
 
 /// <summary>
-/// Centralized logging messages for CompiledLayoutService.
+/// Centralized logging messages for backend services.
 /// All log messages MUST be defined here as [LoggerMessage] source-generated methods.
 /// Event ID ranges:
-///   1100-1199: CompiledLayoutService
+///   1100-1199: shared backend messages (1100-1107: common; 1180-1199: LayoutCompilerService)
+///   1200-1299: RawLayoutService
+///   1300-1399: CompiledLayoutService
+///   1700-1799: LayoutProcessingService
 /// </summary>
 public static partial class MessageLogger
 {
@@ -37,6 +40,22 @@ public static partial class MessageLogger
         Level = LogLevel.Error,
         Message = "LocalStack dependency check failed at {HealthUrl}: {FailureReason}. LocalStack is required for local development. See docs/local-dev.md for setup instructions")]
     public static partial void LocalStackDependencyUnavailable(this ILogger logger, string healthUrl, string failureReason, Exception? exception);
+
+    // LayoutCompilerService-specific messages
+    [LoggerMessage(EventId = 1180, Level = LogLevel.Information, Message = "Compilation started; rawLayoutId={RawLayoutId} elementCount={ElementCount}")]
+    public static partial void CompilationStarted(this ILogger logger, Guid rawLayoutId, int elementCount);
+
+    [LoggerMessage(EventId = 1181, Level = LogLevel.Information, Message = "Compilation succeeded; rawLayoutId={RawLayoutId} compiledElementCount={CompiledElementCount}")]
+    public static partial void CompilationSucceeded(this ILogger logger, Guid rawLayoutId, int compiledElementCount);
+
+    [LoggerMessage(EventId = 1182, Level = LogLevel.Information, Message = "Preview compilation started; elementCount={ElementCount}")]
+    public static partial void PreviewCompilationStarted(this ILogger logger, int elementCount);
+
+    [LoggerMessage(EventId = 1183, Level = LogLevel.Information, Message = "Preview compilation succeeded; elementCount={ElementCount}")]
+    public static partial void PreviewCompilationSucceeded(this ILogger logger, int elementCount);
+
+    [LoggerMessage(EventId = 1184, Level = LogLevel.Error, Message = "Compilation failed; rawLayoutId={RawLayoutId} reason={Reason}")]
+    public static partial void CompilationFailed(this ILogger logger, Guid rawLayoutId, string reason, Exception? exception);
 
     // CompiledLayoutService-specific messages
     [LoggerMessage(EventId = 1301, Level = LogLevel.Information, Message = "Returning active compiled layout Id={LayoutId}")]

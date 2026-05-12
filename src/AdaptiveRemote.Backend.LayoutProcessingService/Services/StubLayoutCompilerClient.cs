@@ -7,7 +7,9 @@ namespace AdaptiveRemote.Backend.LayoutProcessingService.Services;
 /// Stub implementation of ILayoutCompilerClient.
 /// Returns a hardcoded CompiledLayout derived from the input RawLayout elements
 /// (names and labels pass through; no real CSS generation).
-/// To be replaced with a real Lambda-backed HTTP client in ADR-171.
+/// Used when LayoutCompilerService:BaseUrl is not configured (e.g. in integration test
+/// environments where the real Lambda is not available).
+/// To be replaced by the real Lambda-backed HttpLayoutCompilerClient in production.
 /// </summary>
 public class StubLayoutCompilerClient : ILayoutCompilerClient
 {
@@ -26,7 +28,7 @@ public class StubLayoutCompilerClient : ILayoutCompilerClient
             IsActive: false,
             Version: raw.Version,
             Elements: compiledElements,
-            CssDefinitions: invalid ? "INVALID" : string.Empty,  // Stub: no real CSS generation until ADR-171
+            CssDefinitions: invalid ? "INVALID" : string.Empty,  // Stub: no real CSS generation; see ADR-172 for the real implementation
             CompiledAt: DateTimeOffset.UtcNow
         );
 

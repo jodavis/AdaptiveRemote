@@ -122,8 +122,29 @@ builder.Services.AddHttpClient<ICompiledLayoutRepository, HttpCompiledLayoutRepo
     }
 });
 
-// Register stub implementations (to be replaced in later tasks)
-builder.Services.AddSingleton<ILayoutCompilerClient, StubLayoutCompilerClient>();
+// Configure HTTP client for LayoutCompilerService
+LayoutCompilerServiceSettings layoutCompilerSettings = builder.Configuration
+    .GetSection("LayoutCompilerService")
+    .Get<LayoutCompilerServiceSettings>() ?? new LayoutCompilerServiceSettings();
+
+builder.Services.Configure<LayoutCompilerServiceSettings>(builder.Configuration.GetSection("LayoutCompilerService"));
+
+if (!string.IsNullOrEmpty(layoutCompilerSettings.BaseUrl) &&
+    Uri.TryCreate(layoutCompilerSettings.BaseUrl, UriKind.Absolute, out Uri? compilerBaseUri))
+{
+    builder.Services.AddHttpClient<ILayoutCompilerClient, HttpLayoutCompilerClient>(client =>
+    {
+        client.BaseAddress = compilerBaseUri;
+    });
+}
+else
+{
+    // No LayoutCompilerService URL configured: fall back to the stub implementation.
+    // This is expected in local test environments where the Lambda is not running.
+    builder.Services.AddSingleton<ILayoutCompilerClient, StubLayoutCompilerClient>();
+}
+
+// Register remaining stub implementations
 builder.Services.AddSingleton<ILayoutValidationClient, StubLayoutValidationClient>();
 builder.Services.AddSingleton<INotificationPublisher, StubNotificationPublisher>();
 

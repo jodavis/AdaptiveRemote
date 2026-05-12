@@ -62,6 +62,18 @@ services:
     networks:
       - backend
 
+  layoutcompilerservice:
+    build:
+      context: .
+      dockerfile: src/AdaptiveRemote.Backend.LayoutCompilerService/Dockerfile
+    ports:
+      - "8083:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    networks:
+      - backend
+
   layoutprocessingservice:
     build:
       context: .
@@ -81,6 +93,7 @@ services:
       # Upstream service URLs (Docker Compose DNS)
       - RawLayoutService__BaseUrl=http://rawlayoutservice:8080
       - CompiledLayoutService__BaseUrl=http://compiledlayoutservice:8080
+      - LayoutCompilerService__BaseUrl=http://layoutcompilerservice:8080
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - LocalStack__BaseUrl=http://localstack:4566
@@ -88,6 +101,7 @@ services:
       - localstack
       - rawlayoutservice
       - compiledlayoutservice
+      - layoutcompilerservice
     networks:
       - backend
 
