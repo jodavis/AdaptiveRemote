@@ -129,17 +129,20 @@ LayoutCompilerServiceSettings layoutCompilerSettings = builder.Configuration
 
 builder.Services.Configure<LayoutCompilerServiceSettings>(builder.Configuration.GetSection("LayoutCompilerService"));
 
-if (string.IsNullOrEmpty(layoutCompilerSettings.BaseUrl) ||
-    !Uri.TryCreate(layoutCompilerSettings.BaseUrl, UriKind.Absolute, out Uri? compilerBaseUri))
+if (!string.IsNullOrEmpty(layoutCompilerSettings.BaseUrl) &&
+    Uri.TryCreate(layoutCompilerSettings.BaseUrl, UriKind.Absolute, out Uri? compilerBaseUri))
 {
-    throw new InvalidOperationException(
-        "LayoutCompilerService:BaseUrl must be set to a valid absolute URI in configuration.");
+    builder.Services.AddHttpClient<ILayoutCompilerClient, HttpLayoutCompilerClient>(client =>
+    {
+        client.BaseAddress = compilerBaseUri;
+    });
 }
-
-builder.Services.AddHttpClient<ILayoutCompilerClient, HttpLayoutCompilerClient>(client =>
+else
 {
-    client.BaseAddress = compilerBaseUri;
-});
+    // No LayoutCompilerService URL configured: fall back to the stub implementation.
+    // This is expected in local test environments where the Lambda is not running.
+    builder.Services.AddSingleton<ILayoutCompilerClient, StubLayoutCompilerClient>();
+}
 
 // Register remaining stub implementations
 builder.Services.AddSingleton<ILayoutValidationClient, StubLayoutValidationClient>();

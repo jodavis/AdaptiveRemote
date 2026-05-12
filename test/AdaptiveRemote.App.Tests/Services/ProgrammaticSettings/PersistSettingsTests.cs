@@ -5,8 +5,19 @@ namespace AdaptiveRemote.Services.ProgrammaticSettings;
 [TestClass]
 public class PersistSettingsTests
 {
-    private static readonly string InputSettingsPath = Path.Combine("%LocalAppData%", "path", "to", "settings.ini");
-    private static readonly string ResolvedSettingsPath = Environment.ExpandEnvironmentVariables(InputSettingsPath);
+    // Use a custom-defined environment variable so that InputSettingsPath and ResolvedSettingsPath
+    // are always distinct on every platform (Linux, Windows, macOS), allowing the mock to correctly
+    // verify that the service resolves the env var before accessing the file system.
+    private const string TestSettingsVarName = "ADAPTIVE_REMOTE_SETTINGS_DIR_TEST";
+
+    [ClassInitialize]
+    public static void ClassSetup(TestContext context)
+    {
+        Environment.SetEnvironmentVariable(TestSettingsVarName, Path.Combine(Path.GetTempPath(), "ar-test-settings"));
+    }
+
+    private static string InputSettingsPath => Path.Combine($"%{TestSettingsVarName}%", "path", "to", "settings.ini");
+    private static string ResolvedSettingsPath => Environment.ExpandEnvironmentVariables(InputSettingsPath);
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
     private readonly MockFileSystem MockFileSystem = new();
@@ -40,12 +51,9 @@ public class PersistSettingsTests
         MockFileSystem.AddFile(ResolvedSettingsPath, "ExistingSetting=123");
 
         MockFileSystem.Expect_OpenRead_ForPath(ResolvedSettingsPath);
+        MockFileSystem.Expect_OpenRead_IsNotCalledForPath(InputSettingsPath);
         MockFileSystem.Expect_OpenWrite_ForPath(ResolvedSettingsPath);
-        if (InputSettingsPath != ResolvedSettingsPath)
-        {
-            MockFileSystem.Expect_OpenRead_IsNotCalledForPath(InputSettingsPath);
-            MockFileSystem.Expect_OpenWrite_IsNotCalledForPath(InputSettingsPath);
-        }
+        MockFileSystem.Expect_OpenWrite_IsNotCalledForPath(InputSettingsPath);
 
         // Act
         sut.Set("NewSetting", "abc");
