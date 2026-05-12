@@ -35,6 +35,8 @@ public interface ISimulatedEnvironment : IDisposable
     /// </summary>
     IReadOnlyDictionary<string, byte[]> TestIrPayloads { get; }
 
+    ITestJwtAuthority JwtAuthority { get; }
+
     /// <summary>
     /// Gets the cloud asset cache directory path configured for the current test run, or null if not configured.
     /// </summary>
@@ -50,4 +52,6 @@ public interface ISimulatedEnvironment : IDisposable
     /// Appends a command-line arg that supersedes the default configured in SetCloudAssetPaths.
     /// </summary>
     void SetIdleCooldownSeconds(int seconds);
+
+    void SetCloudAuthCredentials(string? clientId, string? clientSecret);
 }

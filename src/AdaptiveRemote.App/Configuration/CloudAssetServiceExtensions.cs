@@ -12,6 +12,7 @@ internal static class CloudAssetServiceExtensions
 {
     internal static IServiceCollection AddCloudAssetServices(this IServiceCollection services, IConfiguration configuration)
         => services
+            .AddSingleton<ICloudAuthTokenProvider, CognitoTokenProvider>()
             .AddSingleton<ICloudAssetStore, CloudAssetStore>()
             .AddSingleton<IIdleDetector, IdleDetector>()
             .AddScopedLifecycleService<IdleDetector.ScopedIdleDetector>()

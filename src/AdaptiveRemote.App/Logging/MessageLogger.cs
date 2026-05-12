@@ -187,6 +187,20 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 1009, Level = LogLevel.Warning, Message = "IR learning already in progress; ignoring request to program {Command}")]
     public partial void BroadlinkCommandService_LearningAlreadyInProgress(Models.Command command);
 
+    // 1800–1899: CognitoTokenProvider (CloudAssets)
+
+    [LoggerMessage(EventId = 1800, Level = LogLevel.Information, Message = "Acquiring Cognito access token via Client Credentials flow")]
+    public partial void CognitoTokenProvider_AcquiringToken();
+
+    [LoggerMessage(EventId = 1801, Level = LogLevel.Information, Message = "Cognito access token acquired successfully")]
+    public partial void CognitoTokenProvider_TokenAcquired();
+
+    [LoggerMessage(EventId = 1802, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
+    public partial void CognitoTokenProvider_AcquireTokenFailed(Exception exception);
+
+    [LoggerMessage(EventId = 1803, Level = LogLevel.Warning, Message = "Cloud OAuth settings are missing; skipping Cognito token acquisition")]
+    public partial void CognitoTokenProvider_MissingConfiguration();
+
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Loading existing settings from {FilePath}")]
     public partial void ProgrammaticSettings_LoadingExistingSettings(string filePath);
 

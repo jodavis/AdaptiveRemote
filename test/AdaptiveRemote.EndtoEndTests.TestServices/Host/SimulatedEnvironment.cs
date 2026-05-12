@@ -24,6 +24,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     private readonly ISimulatedTiVoDevice _tivo;
     private readonly ISimulatedBroadlinkDevice _broadlink;
+    private readonly TestJwtAuthority _jwtAuthority;
     private readonly AdaptiveRemoteHost.Builder _hostBuilder;
     private bool _disposed;
     private AdaptiveRemoteHost? _host;
@@ -38,6 +39,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     {
         _tivo = tivoBuilder.Start();
         _broadlink = broadlinkBuilder.Start();
+        _jwtAuthority = new TestJwtAuthority();
         _hostBuilder = hostBuilder;
 
         List<string> args =
@@ -69,6 +71,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, byte[]> TestIrPayloads => _testIrPayloads;
+
+    public ITestJwtAuthority JwtAuthority => _jwtAuthority;
 
     /// <inheritdoc/>
     public string? CloudCachePath => _cloudCachePath;
@@ -117,6 +121,15 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         try
         {
             _broadlink.Dispose();
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            _jwtAuthority.Dispose();
         }
         catch
         {
@@ -175,6 +188,16 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs($"--cloud:IdleCooldownSeconds={seconds}"));
     }
 
+    public void SetCloudAuthCredentials(string? clientId, string? clientSecret)
+    {
+        string escapedTokenEndpoint = EscapeCommandLineValue(_jwtAuthority.TokenEndpointUrl);
+        string escapedClientId = EscapeCommandLineValue(clientId ?? string.Empty);
+        string escapedClientSecret = EscapeCommandLineValue(clientSecret ?? string.Empty);
+
+        _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs(
+            $"--cloud:CognitoTokenEndpointUrl=\"{escapedTokenEndpoint}\" --cloud:ClientId=\"{escapedClientId}\" --cloud:ClientSecret=\"{escapedClientSecret}\""));
+    }
+
     public void SetLogLocation(string logLocation)
     {
         // Ensure settings file is created (adds --programmatic arg) before adding log arg
@@ -203,4 +226,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         lines.AddRange(payloads.Select(kvp => $"{kvp.Key}={Convert.ToBase64String(kvp.Value)}"));
         File.WriteAllLines(path, lines);
     }
+
+    private static string EscapeCommandLineValue(string value) =>
+        value.Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal);
 }
