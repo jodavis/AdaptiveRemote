@@ -16,6 +16,12 @@ public class PersistSettingsTests
         Environment.SetEnvironmentVariable(TestSettingsVarName, Path.Combine(Path.GetTempPath(), "ar-test-settings"));
     }
 
+    [ClassCleanup]
+    public static void ClassTeardown()
+    {
+        Environment.SetEnvironmentVariable(TestSettingsVarName, null);
+    }
+
     private static string InputSettingsPath => Path.Combine($"%{TestSettingsVarName}%", "path", "to", "settings.ini");
     private static string ResolvedSettingsPath => Environment.ExpandEnvironmentVariables(InputSettingsPath);
 

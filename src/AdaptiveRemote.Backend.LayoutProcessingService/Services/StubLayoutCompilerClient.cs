@@ -28,7 +28,7 @@ public class StubLayoutCompilerClient : ILayoutCompilerClient
             IsActive: false,
             Version: raw.Version,
             Elements: compiledElements,
-            CssDefinitions: invalid ? "INVALID" : string.Empty,  // Stub: no real CSS generation until ADR-171
+            CssDefinitions: invalid ? "INVALID" : string.Empty,  // Stub: no real CSS generation; see ADR-172 for the real implementation
             CompiledAt: DateTimeOffset.UtcNow
         );
 
