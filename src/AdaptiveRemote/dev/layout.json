@@ -1,0 +1,58 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "rawLayoutId": "00000000-0000-0000-0000-000000000000",
+  "userId": "stub",
+  "isActive": true,
+  "version": 1,
+  "elements": [
+    {
+      "$type": "group",
+      "cssId": "DPAD",
+      "children": [
+        { "$type": "command", "type": "TiVo", "name": "Up",       "label": "Up",       "glyph": null, "speakPhrase": "Sent Up",        "reverse": "Down",     "cssId": "UP"       },
+        { "$type": "command", "type": "TiVo", "name": "Down",     "label": "Down",     "glyph": null, "speakPhrase": "Sent Down",      "reverse": "Up",       "cssId": "DOWN"     },
+        { "$type": "command", "type": "TiVo", "name": "Left",     "label": "Left",     "glyph": null, "speakPhrase": "Sent Left",      "reverse": "Right",    "cssId": "LEFT"     },
+        { "$type": "command", "type": "TiVo", "name": "Right",    "label": "Right",    "glyph": null, "speakPhrase": "Sent Right",     "reverse": "Left",     "cssId": "RIGHT"    },
+        { "$type": "command", "type": "TiVo", "name": "Select",   "label": "Select",   "glyph": null, "speakPhrase": "Sent Select",    "reverse": null,       "cssId": "SELECT"   },
+        { "$type": "command", "type": "TiVo", "name": "Back",     "label": "Back",     "glyph": null, "speakPhrase": "Sent Back",      "reverse": null,       "cssId": "BACK"     },
+        { "$type": "command", "type": "IR",   "name": "Power",    "label": "Power",    "glyph": null, "speakPhrase": "Sent Power",     "reverse": "Power",    "cssId": "POWER"    },
+        { "$type": "command", "type": "IR",   "name": "PowerOn",  "label": "PowerOn",  "glyph": null, "speakPhrase": "Sent PowerOn",   "reverse": "PowerOff", "cssId": "POWERON"  },
+        { "$type": "command", "type": "IR",   "name": "PowerOff", "label": "PowerOff", "glyph": null, "speakPhrase": "Sent PowerOff",  "reverse": "PowerOn",  "cssId": "POWEROFF" }
+      ]
+    },
+    {
+      "$type": "group",
+      "cssId": "WELL",
+      "children": [
+        { "$type": "command", "type": "TiVo", "name": "TiVo",    "label": "TiVo",    "glyph": null, "speakPhrase": "Sent TiVo",    "reverse": null, "cssId": "TIVO"   },
+        { "$type": "command", "type": "TiVo", "name": "Netflix",  "label": "Netflix",  "glyph": null, "speakPhrase": "Sent Netflix",  "reverse": null, "cssId": "NETFLIX" },
+        { "$type": "command", "type": "TiVo", "name": "Guide",    "label": "Guide",    "glyph": null, "speakPhrase": "Sent Guide",    "reverse": null, "cssId": "GUIDE"   },
+        { "$type": "command", "type": "TiVo", "name": "Info",     "label": "Info",     "glyph": null, "speakPhrase": "Sent Info",     "reverse": null, "cssId": "INFO"    }
+      ]
+    },
+    {
+      "$type": "group",
+      "cssId": "PLAYBACK",
+      "children": [
+        { "$type": "command", "type": "TiVo", "name": "Play",   "label": "Play",   "glyph": null, "speakPhrase": "Sent Play",   "reverse": "Pause",  "cssId": "PLAY"   },
+        { "$type": "command", "type": "TiVo", "name": "Pause",  "label": "Pause",  "glyph": null, "speakPhrase": "Sent Pause",  "reverse": "Play",   "cssId": "PAUSE"  },
+        { "$type": "command", "type": "TiVo", "name": "Record", "label": "Record", "glyph": null, "speakPhrase": "Sent Record", "reverse": null,     "cssId": "RECORD" },
+        { "$type": "command", "type": "TiVo", "name": "Skip",   "label": "Skip",   "glyph": null, "speakPhrase": "Sent Skip",   "reverse": "Replay", "cssId": "SKIP"   },
+        { "$type": "command", "type": "TiVo", "name": "Replay", "label": "Replay", "glyph": null, "speakPhrase": "Sent Replay", "reverse": "Skip",   "cssId": "REPLAY" }
+      ]
+    },
+    {
+      "$type": "group",
+      "cssId": "CHANNELANDVOLUME",
+      "children": [
+        { "$type": "command", "type": "TiVo", "name": "ChannelUp",   "label": "Up",   "glyph": null, "speakPhrase": "Sent Channel Up",   "reverse": "ChannelDown", "cssId": "CHANNELUP"   },
+        { "$type": "command", "type": "TiVo", "name": "ChannelDown", "label": "Down", "glyph": null, "speakPhrase": "Sent Channel Down", "reverse": "ChannelUp",   "cssId": "CHANNELDOWN" },
+        { "$type": "command", "type": "IR",   "name": "VolumeUp",    "label": "Up",   "glyph": null, "speakPhrase": "Sent Volume Up",    "reverse": "VolumeDown",  "cssId": "VOLUMEUP"    },
+        { "$type": "command", "type": "IR",   "name": "VolumeDown",  "label": "Down", "glyph": null, "speakPhrase": "Sent Volume Down",  "reverse": "VolumeUp",    "cssId": "VOLUMEDOWN"  },
+        { "$type": "command", "type": "IR",   "name": "Mute",        "label": "Mute", "glyph": null, "speakPhrase": "Sent Mute",         "reverse": "Mute",        "cssId": "MUTE"        }
+      ]
+    }
+  ],
+  "cssDefinitions": "#ROOT #DPAD { grid-row: 1; grid-column: 1; display: grid; grid-template-rows: repeat(3, 1fr); grid-template-columns: repeat(3, 1fr); grid-gap: 10px; } #ROOT #DPAD #UP { grid-row: 1; grid-column: 2; } #ROOT #DPAD #DOWN { grid-row: 3; grid-column: 2; } #ROOT #DPAD #LEFT { grid-row: 2; grid-column: 1; } #ROOT #DPAD #RIGHT { grid-row: 2; grid-column: 3; } #ROOT #DPAD #SELECT { grid-row: 2; grid-column: 2; } #ROOT #DPAD #POWER { grid-row: 1; grid-column: 1; margin: 20px; background-color: #aa2525; border-color: #561313; border-width: 2px; color: black; } #ROOT #DPAD #POWER:hover { background-color: #bf2a2a; } #ROOT #DPAD #POWER:active, #ROOT #DPAD #POWER.btn-active { background-color: #d74545; } #ROOT #DPAD #POWER.btn-not-programmed { color: #aa2525; border-color: #aa2525; background-color: #222; border-width: 5px; } #ROOT #DPAD #POWER.btn-not-programmed:hover { background-color: #2f2f2f; } #ROOT #DPAD #POWER.btn-not-programmed:active, #ROOT #DPAD #POWER.btn-not-programmed.btn-active { background-color: #484848; } #ROOT #DPAD #POWER.btn-disabled { background-color: #888888; color: #3c3c3c; border-color: #555555; } #ROOT #DPAD #POWERON { display: none; } #ROOT #DPAD #POWEROFF { display: none; } #ROOT #DPAD #BACK { grid-row: 3; grid-column: 1; margin: 20px; } #ROOT #WELL { grid-row: 1; grid-column: 2; margin: -0.5%; } #ROOT #WELL > button { width: 49%; height: 19%; margin: 0.5%; } #ROOT #PLAYBACK { grid-row: 2; grid-column: 1; display: grid; grid-template-rows: repeat(3, 1fr); grid-template-columns: repeat(5, 1fr); grid-gap: 10px; } #ROOT #PLAYBACK #REPLAY { grid-row: 1; grid-column: 1; } #ROOT #PLAYBACK #PLAY { grid-row: 1; grid-column: 2; } #ROOT #PLAYBACK #PAUSE { grid-row: 1; grid-column: 3; } #ROOT #PLAYBACK #RECORD { grid-row: 1; grid-column: 4; } #ROOT #PLAYBACK #SKIP { grid-row: 1; grid-column: 5; } #ROOT #CHANNELANDVOLUME { grid-row: 2; grid-column: 2; display: grid; grid-template-rows: 36pt 1fr 1fr; grid-template-columns: 2fr 1fr 2fr; grid-gap: 10px; } #ROOT #CHANNELANDVOLUME:before { grid-row: 1; grid-column: 1; font-size: 36pt; font-weight: bold; color: #62b0ff; content: \"Channel\"; text-align: center; } #ROOT #CHANNELANDVOLUME:after { grid-row: 1; grid-column: 3; font-size: 36pt; font-weight: bold; color: #62b0ff; content: \"Volume\"; text-align: center; } #ROOT #CHANNELANDVOLUME #CHANNELUP { grid-row: 2; grid-column: 1; } #ROOT #CHANNELANDVOLUME #CHANNELDOWN { grid-row: 3; grid-column: 1; } #ROOT #CHANNELANDVOLUME #VOLUMEUP { grid-row: 2; grid-column: 3; } #ROOT #CHANNELANDVOLUME #VOLUMEDOWN { grid-row: 3; grid-column: 3; } #ROOT #CHANNELANDVOLUME #MUTE { grid-row: 2; grid-column: 2; grid-row-end: span 2; } #ROOT #GUTTER { grid-row: 3; grid-column-start: 1; grid-column-end: span 2; grid-gap: 20px; display: grid; grid-template-rows: 1fr; grid-template-columns: 6fr 1fr 1fr; grid-gap: 10px; } #ROOT #GUTTER #EXIT { grid-row: 1; grid-column: 3; } #ROOT #GUTTER #LEARN { grid-row: 1; grid-column: 2; margin: 10px; } #ROOT #GUTTER #LISTENING { grid-row: 1; grid-column: 1; }",
+  "compiledAt": "2026-04-19T00:00:00+00:00"
+}

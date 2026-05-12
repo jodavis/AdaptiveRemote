@@ -1,5 +1,6 @@
 using AdaptiveRemote.Models;
 using AdaptiveRemote.Services.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace AdaptiveRemote.EndtoEndTests;
@@ -11,16 +12,21 @@ namespace AdaptiveRemote.EndtoEndTests;
 /// </summary>
 public class ApplicationTestService : IApplicationTestService
 {
-    private readonly Services.IRemoteDefinitionService _remoteDefinitionService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly LifecycleView _lifecycleView;
     private readonly IHostApplicationLifetime _applicationLifetime;
 
+    // Resolved lazily so that GetCurrentPhaseAsync works in FatalError state,
+    // where the layout asset is absent and IRemoteDefinitionService cannot be built.
+    private Services.IRemoteDefinitionService RemoteDefinitionService
+        => _serviceProvider.GetRequiredService<Services.IRemoteDefinitionService>();
+
     public ApplicationTestService(
-        Services.IRemoteDefinitionService remoteDefinitionService,
+        IServiceProvider serviceProvider,
         LifecycleView lifecycleView,
         IHostApplicationLifetime applicationLifetime)
     {
-        _remoteDefinitionService = remoteDefinitionService;
+        _serviceProvider = serviceProvider;
         _lifecycleView = lifecycleView;
         _applicationLifetime = applicationLifetime;
     }
@@ -28,7 +34,7 @@ public class ApplicationTestService : IApplicationTestService
     public async Task InvokeCommandAsync(string commandName, CancellationToken cancellationToken)
     {
         // Find the Exit command by walking the remote tree
-        Command command = FindCommandByName(_remoteDefinitionService.RemoteRoot, commandName)
+        Command command = FindCommandByName(RemoteDefinitionService.RemoteRoot, commandName)
             ?? throw new InvalidOperationException($"{commandName} command not found in remote definition service");
 
         if (command.ExecuteAsync is null)
@@ -51,7 +57,7 @@ public class ApplicationTestService : IApplicationTestService
     public Task<bool> GetIsListeningAsync(CancellationToken cancellationToken)
     {
         // Find the ConversationView by walking the remote tree
-        ConversationView? conversationView = FindConversationView(_remoteDefinitionService.RemoteRoot)
+        ConversationView? conversationView = FindConversationView(RemoteDefinitionService.RemoteRoot)
             ?? throw new InvalidOperationException("ConversationView not found in remote definition service");
 
         // Use GetValue to access the internal property

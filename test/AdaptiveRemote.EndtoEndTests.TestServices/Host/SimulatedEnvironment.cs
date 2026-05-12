@@ -24,6 +24,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     private readonly ISimulatedTiVoDevice _tivo;
     private readonly ISimulatedBroadlinkDevice _broadlink;
+    private readonly TestJwtAuthority _jwtAuthority;
     private readonly AdaptiveRemoteHost.Builder _hostBuilder;
     private bool _disposed;
     private AdaptiveRemoteHost? _host;
@@ -31,11 +32,14 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     private string? _currentLogLocation;
     // Settings file path is determined lazily from the TestResults directory when SetLogLocation is first called.
     private string? _testSettingsPath;
+    private string? _cloudCachePath;
+    private string? _cloudStubFilePath;
 
     public SimulatedEnvironment(SimulatedTiVoDeviceBuilder tivoBuilder, SimulatedBroadlinkDeviceBuilder broadlinkBuilder, AdaptiveRemoteHost.Builder hostBuilder)
     {
         _tivo = tivoBuilder.Start();
         _broadlink = broadlinkBuilder.Start();
+        _jwtAuthority = new TestJwtAuthority();
         _hostBuilder = hostBuilder;
 
         List<string> args =
@@ -67,6 +71,14 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, byte[]> TestIrPayloads => _testIrPayloads;
+
+    public ITestJwtAuthority JwtAuthority => _jwtAuthority;
+
+    /// <inheritdoc/>
+    public string? CloudCachePath => _cloudCachePath;
+
+    /// <inheritdoc/>
+    public string? CloudStubFilePath => _cloudStubFilePath;
 
     public AdaptiveRemoteHost Host
     {
@@ -115,6 +127,15 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             // Ignore disposal errors
         }
 
+        try
+        {
+            _jwtAuthority.Dispose();
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
         _disposed = true;
     }
 
@@ -146,6 +167,37 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         }
     }
 
+    public void SetCloudAssetPaths(string cachePath, string stubFilePath)
+    {
+        _cloudCachePath = cachePath;
+        _cloudStubFilePath = stubFilePath;
+
+        _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs(
+            $"--cloud:CachePath=\"{cachePath}\" --cloud:StubFilePath=\"{stubFilePath}\" --cloud:IdleCooldownSeconds=0"));
+    }
+
+    public void SetIdleCooldownSeconds(int seconds)
+    {
+        if (seconds < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(seconds), seconds, "Idle cooldown must be non-negative.");
+        }
+
+        // Appends the arg; the configuration system uses last-wins for duplicate keys,
+        // so this overrides the value set in SetCloudAssetPaths.
+        _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs($"--cloud:IdleCooldownSeconds={seconds}"));
+    }
+
+    public void SetCloudAuthCredentials(string? clientId, string? clientSecret)
+    {
+        string escapedTokenEndpoint = EscapeCommandLineValue(_jwtAuthority.TokenEndpointUrl);
+        string escapedClientId = EscapeCommandLineValue(clientId ?? string.Empty);
+        string escapedClientSecret = EscapeCommandLineValue(clientSecret ?? string.Empty);
+
+        _hostBuilder.ConfigureSettings(s => s.AddCommandLineArgs(
+            $"--cloud:CognitoTokenEndpointUrl=\"{escapedTokenEndpoint}\" --cloud:ClientId=\"{escapedClientId}\" --cloud:ClientSecret=\"{escapedClientSecret}\""));
+    }
+
     public void SetLogLocation(string logLocation)
     {
         // Ensure settings file is created (adds --programmatic arg) before adding log arg
@@ -174,4 +226,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         lines.AddRange(payloads.Select(kvp => $"{kvp.Key}={Convert.ToBase64String(kvp.Value)}"));
         File.WriteAllLines(path, lines);
     }
+
+    private static string EscapeCommandLineValue(string value) =>
+        value.Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal);
 }

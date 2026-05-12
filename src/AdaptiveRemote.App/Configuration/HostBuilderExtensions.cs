@@ -1,5 +1,8 @@
-﻿using AdaptiveRemote.Services;
+﻿using AdaptiveRemote.Contracts;
+using AdaptiveRemote.Models.CloudAssets;
+using AdaptiveRemote.Services;
 using AdaptiveRemote.Services.Commands;
+using AdaptiveRemote.Services.Layout;
 using AdaptiveRemote.Services.Lifecycle;
 using AdaptiveRemote.Services.ProgrammaticSettings;
 using Microsoft.Extensions.Configuration;
@@ -25,10 +28,15 @@ internal static class HostBuilderExtensions
     internal static IServiceCollection AddRemoteServices(this IServiceCollection services, IConfiguration configuration)
         => services
             .AddApplicationLifecycleServices()
-            .AddScopedLifecycleService<LifecycleCommandService>()
-            .AddScoped<IRemoteDefinitionService, StaticCommandGroupProvider>()
-            .AddSingleton<IPersistSettings, PersistSettings>()
-            .Configure<ProgrammaticSettings>(configuration.GetSection(SettingsKeys.ProgrammaticSettings));
+            .AddCloudAssetServices(configuration.GetSection(SettingsKeys.CloudSettings))
+            .AddScopedCloudAsset(new JsonCloudAsset<CompiledLayout>(
+                name: "layout",
+                streamUrl: "/notifications/layouts/stream",
+                eventName: "layout-ready",
+                resourcePath: "/layouts/compiled",
+                jsonContext: LayoutContractsJsonContext.Default))
+            .AddCommandSystemServices()
+            .AddProgrammaticSettingsServices(configuration.GetSection(SettingsKeys.ProgrammaticSettings));
 
     internal static IServiceCollection AddScopedLifecycleService<ServiceType>(this IServiceCollection services)
         where ServiceType : class, IScopedLifecycle
@@ -48,5 +56,19 @@ internal static class HostBuilderExtensions
             .AddScoped<ScopedLifecycleContainer>()
             .AddScoped<Components.BlazorAppScope>()
             .AddSingleton<IApplicationScopeContainer, ApplicationScopeContainer>()
-            .AddSingleton(sp => (IApplicationScopeProvider)sp.GetRequiredService<IApplicationScopeContainer>());
+            .AddSingleton(sp => (IApplicationScopeProvider)sp.GetRequiredService<IApplicationScopeContainer>())
+            .AddSingleton<IApplicationRecycleSignal, ApplicationRecycleSignal>()
+            .AddScopedLifecycleService<LifecycleCommandService>()
+            .AddScoped<IUserActivityDetector, ProgrammingModeActivityDetector>();
+
+    private static IServiceCollection AddCommandSystemServices(this IServiceCollection services)
+        => services
+            .AddScoped<IUserActivityDetector, CommandsActivityDetector>()
+            .AddScoped<IRemoteDefinitionService, RemoteLayoutDefinitionService>()
+            .AddScoped<IDynamicStylesheetProvider, LayoutStylesheetProvider>();
+
+    private static IServiceCollection AddProgrammaticSettingsServices(this IServiceCollection services, IConfiguration configuration)
+        => services
+            .AddSingleton<IPersistSettings, PersistSettings>()
+            .Configure<ProgrammaticSettings>(configuration);
 }

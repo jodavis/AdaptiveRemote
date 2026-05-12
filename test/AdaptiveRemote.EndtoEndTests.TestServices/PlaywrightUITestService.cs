@@ -80,12 +80,29 @@ public class PlaywrightUITestService : IUITestService
     {
         // Use Playwright's getByRole with exact match - it will throw meaningful errors
         // if there are no matches or ambiguous matches
+        
+        // TODO: Find by aria name instead
         return label switch
         {
-            "Channel Down" => GetButtonLocatorByLabel("Down").Nth(1),
-            "Channel Up" => GetButtonLocatorByLabel("Up").Nth(1),
-            "Volume Down" => GetButtonLocatorByLabel("Down").Nth(2),
-            "Volume Up" => GetButtonLocatorByLabel("Up").Nth(2),
+            // DPAD buttons (Nth(0) - first occurrence)
+            "Up" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Up", Exact = true }).Nth(0)
+                .Describe("button with label 'Up' on DPAD"),
+            "Down" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Down", Exact = true }).Nth(0)
+                .Describe("button with label 'Down' on DPAD"),
+            "Left" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Left", Exact = true }).Nth(0)
+                .Describe("button with label 'Left' on DPAD"),
+            "Right" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Right", Exact = true }).Nth(0)
+                .Describe("button with label 'Right' on DPAD"),
+            // Channel buttons (Nth(1) - second occurrence)
+            "Channel Down" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Down", Exact = true }).Nth(1)
+                .Describe("button with label 'Down' for Channel"),
+            "Channel Up" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Up", Exact = true }).Nth(1)
+                .Describe("button with label 'Up' for Channel"),
+            // Volume buttons (Nth(2) - third occurrence)
+            "Volume Down" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Down", Exact = true }).Nth(2)
+                .Describe("button with label 'Down' for Volume"),
+            "Volume Up" => CurrentPage.GetByRole(AriaRole.Button, new() { Name = "Up", Exact = true }).Nth(2)
+                .Describe("button with label 'Up' for Volume"),
             _ => CurrentPage.GetByRole(AriaRole.Button, new() { Name = label, Exact = true })
                 .Describe($"button with label '{label}'")
         };
@@ -154,6 +171,38 @@ public class PlaywrightUITestService : IUITestService
         {
             return null;
         }
+    }
+
+    public async Task<string?> GetStylesheetRulePropertyValueAsync(
+        string selector,
+        string propertyName,
+        CancellationToken cancellationToken = default)
+    {
+        return await CurrentPage.EvaluateAsync<string?>(
+            @"({ selector, propertyName }) => {
+                for (const stylesheet of Array.from(document.styleSheets)) {
+                    let rules;
+                    try {
+                        rules = stylesheet.cssRules;
+                    } catch {
+                        continue;
+                    }
+
+                    for (const rule of Array.from(rules)) {
+                        if (rule.type !== CSSRule.STYLE_RULE) {
+                            continue;
+                        }
+
+                        if (rule.selectorText === selector) {
+                            const value = rule.style.getPropertyValue(propertyName);
+                            return value ? value.trim() : null;
+                        }
+                    }
+                }
+
+                return null;
+            }",
+            new { selector, propertyName });
     }
 
     public void Dispose()

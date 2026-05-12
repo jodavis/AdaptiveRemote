@@ -2,6 +2,6 @@
 pushd %~dp0..
 dotnet test --no-build "%~dp0validate-unit-tests.proj"
 if %ERRORLEVEL% neq 0 ( popd & exit /b %ERRORLEVEL% )
-dotnet test --no-build "%~dp0validate-e2e-tests.proj"
+dotnet test --no-build "%~dp0validate-e2e-tests.proj" -m:1
 if %ERRORLEVEL% neq 0 ( popd & exit /b %ERRORLEVEL% )
 popd

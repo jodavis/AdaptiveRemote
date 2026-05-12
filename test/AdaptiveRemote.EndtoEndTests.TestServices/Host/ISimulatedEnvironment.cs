@@ -34,4 +34,24 @@ public interface ISimulatedEnvironment : IDisposable
     /// Commands not present in this dictionary are not programmed and should be disabled.
     /// </summary>
     IReadOnlyDictionary<string, byte[]> TestIrPayloads { get; }
+
+    ITestJwtAuthority JwtAuthority { get; }
+
+    /// <summary>
+    /// Gets the cloud asset cache directory path configured for the current test run, or null if not configured.
+    /// </summary>
+    string? CloudCachePath { get; }
+
+    /// <summary>
+    /// Gets the stub layout file path configured for the current test run, or null if not configured.
+    /// </summary>
+    string? CloudStubFilePath { get; }
+
+    /// <summary>
+    /// Overrides the idle cooldown for the next host start.
+    /// Appends a command-line arg that supersedes the default configured in SetCloudAssetPaths.
+    /// </summary>
+    void SetIdleCooldownSeconds(int seconds);
+
+    void SetCloudAuthCredentials(string? clientId, string? clientSecret);
 }

@@ -20,12 +20,16 @@ this task from spec to merged PR. Keep your own context lean:
 - Direct sub-agents to read from and write to GitHub PR and Jira directly — do not relay
   large payloads through yourself
 
-**Before starting**, capture the current working branch — this is the **base branch**
-(PR target, Developer branches off this):
+**Before starting**, capture the base branch — this is the PR target and the branch the
+Developer will branch off. The skill may be invoked on an ephemeral harness branch, so
+find the upstream remote branch at the current commit rather than using `git branch --show-current`:
 
+```bash
+# Find the remote branch this harness branch was created from
+git branch -r --contains HEAD | grep -v 'HEAD\|claude/' | head -1 | sed 's|.*origin/||' | xargs echo
 ```
-git branch --show-current
-```
+
+If that returns nothing (no matching remote branch), fall back to `git branch --show-current`.
 
 ---
 
@@ -126,6 +130,11 @@ Developer instructions:
 > **Task key:** TASK_KEY
 > **Base branch:** BASE_BRANCH
 >
+> **Non-negotiable build rule:** After making any changes, you MUST run
+> `scripts/validate-build.sh` before committing. Never run `dotnet build` directly.
+> Never run `dotnet test`, `scripts/validate-tests.sh`, or any test command — a
+> dedicated Tester agent handles all testing.
+>
 > **Task brief:**
 > TASK_BRIEF
 >
@@ -168,7 +177,7 @@ Developer instructions:
 >
 > **Step 4 — Build**
 >
-> Do not run tests — that is the Tester agent's responsibility. Only run the build:
+> Run the build validation script and nothing else:
 >
 > ```
 > scripts/validate-build.sh
@@ -176,6 +185,9 @@ Developer instructions:
 >
 > The script stages new files and cleans before building — do not run `git add -A`
 > separately. Fix all warnings and errors and re-run until the build is clean.
+>
+> **NEVER run `dotnet test`, `scripts/validate-tests.sh`, or any other test command.**
+> A dedicated Tester agent handles all testing.
 >
 > **Step 5 — Commit and push**
 >
@@ -250,8 +262,8 @@ Tester instructions:
 >
 > Check out the branch and fix each failure. You may re-run individual tests to
 > verify a specific fix (e.g. `dotnet test --filter "FullyQualifiedName~TEST_NAME"`),
-> but do not run the full suite — that is the Tester agent's job. When done, confirm
-> the build is still clean, then commit and push:
+> but **NEVER run `scripts/validate-tests.sh` or the full test suite** — that is the
+> Tester agent's job. When done, confirm the build is still clean, then commit and push:
 >
 > ```
 > git checkout BRANCH_NAME
@@ -270,14 +282,18 @@ Re-run Tester. Repeat until no failures.
 
 ### Phase 4 — Create PR
 
-Create the pull request. Substitute actual values for all placeholders:
+Create the pull request **as a draft**. Use `mcp__github__create_pull_request` with `draft: true`.
+Substitute actual values for all placeholders:
 
 ```
-gh pr create \
-  --base BASE_BRANCH \
-  --head BRANCH_NAME \
-  --title "[TASK_KEY] <concise description from task brief>" \
-  --body "$(cat <<'EOF'
+mcp__github__create_pull_request(
+  owner="jodavis",
+  repo="adaptiveremote",
+  base=BASE_BRANCH,
+  head=BRANCH_NAME,
+  title="[TASK_KEY] <concise description from task brief>",
+  draft=true,
+  body="""
 Jira: https://jodasoft.atlassian.net/browse/TASK_KEY
 
 ## What changed
@@ -289,11 +305,11 @@ Jira: https://jodasoft.atlassian.net/browse/TASK_KEY
 `scripts/validate-tests` passes — unit tests and headless E2E tests.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
+"""
+)
 ```
 
-Capture the PR URL from the output.
+Capture the PR URL and PR number from the output.
 
 Optional (silent fail): `mcp__github__request_copilot_review`
 Optional (silent fail): set Jira status to "In Review" via `mcp__jira__editJiraIssue`
@@ -338,12 +354,32 @@ Reviewer instructions:
 >   headless E2E coverage
 > - `.editorconfig` compliance
 >
-> For each issue found, post a comment **directly to the PR**:
-> ```
-> gh pr review PR_URL --comment -b "path/to/File.cs:LINE — your comment"
+> Collect all issues into a JSON array (schema below). If the array is non-empty,
+> post them as a **single formal PR review** with line-anchored comments so each
+> becomes a resolvable discussion thread:
+>
+> ```bash
+> # Extract PR number from PR_URL (e.g. .../pull/171 → 171)
+> PR_NUMBER=<number>
+> COMMIT_SHA=$(git rev-parse HEAD)
+>
+> # Write review payload to a temp file
+> cat > /tmp/review.json << EOF
+> {
+>   "commit_id": "$COMMIT_SHA",
+>   "event": "COMMENT",
+>   "body": "Automated review — see inline comments.",
+>   "comments": [
+>     { "path": "relative/path/to/File.cs", "line": 42, "body": "your comment" }
+>   ]
+> }
+> EOF
+>
+> gh api repos/jodavis/adaptiveremote/pulls/$PR_NUMBER/reviews \
+>   -X POST --input /tmp/review.json
 > ```
 >
-> After posting all comments, return a JSON array. Return only the JSON — no other text.
+> Return a JSON array. Return only the JSON — no other text.
 > An empty array means no issues.
 >
 > ```json
@@ -374,6 +410,11 @@ Developer instructions:
 > **Branch:** BRANCH_NAME
 > **PR URL:** PR_URL
 >
+> **Non-negotiable build rule:** After making any changes, you MUST run
+> `scripts/validate-build.sh` before committing. Never run `dotnet build` directly.
+> Never run `dotnet test`, `scripts/validate-tests.sh`, or any test command — a
+> dedicated Tester agent handles all testing.
+>
 > **Task brief:**
 > TASK_BRIEF
 >
@@ -395,12 +436,15 @@ Developer instructions:
 >    gh pr review PR_URL --comment -b "File.cs:LINE — [your rebuttal]"
 >    ```
 >
-> **Step 4** — Build, commit, and push:
+> **Step 4** — Build, commit, and push. Run only the build script — no test commands:
 > ```
 > scripts/validate-build.sh
 > git commit -m "review: address feedback [TASK_KEY]"
 > git push
 > ```
+>
+> **NEVER run `dotnet test`, `scripts/validate-tests.sh`, or any other test command.**
+> A dedicated Tester agent handles all testing.
 >
 > Return: `{ "status": "done", "branch": "BRANCH_NAME" }`
 
@@ -437,12 +481,27 @@ Then spawn **Tester and scoped Reviewer in parallel** and wait for both.
 >    accessibility regressions, or clear spec non-compliance. Do not raise style, naming,
 >    or minor cleanup issues.
 >
-> For each issue, post a comment directly to the PR:
-> ```
-> gh pr review PR_URL --comment -b "path/to/File.cs:LINE — your comment"
+> Collect all issues into a JSON array (same schema as Phase 5). If non-empty,
+> post them as a single formal PR review with line-anchored comments:
+>
+> ```bash
+> PR_NUMBER=<number>
+> COMMIT_SHA=$(git rev-parse HEAD)
+> cat > /tmp/review.json << EOF
+> {
+>   "commit_id": "$COMMIT_SHA",
+>   "event": "COMMENT",
+>   "body": "Follow-up review — see inline comments.",
+>   "comments": [
+>     { "path": "relative/path/to/File.cs", "line": 42, "body": "your comment" }
+>   ]
+> }
+> EOF
+> gh api repos/jodavis/adaptiveremote/pulls/$PR_NUMBER/reviews \
+>   -X POST --input /tmp/review.json
 > ```
 >
-> Return a JSON array (same schema as before). Return only the JSON — no other text.
+> Return a JSON array. Return only the JSON — no other text.
 > An empty array means all previous comments are resolved and no new significant issues exist.
 
 **Routing after both complete:**
@@ -457,8 +516,17 @@ Loop, updating `REVIEWER_BASELINE` each time before the parallel spawn.
 
 ## Completion
 
-When the Reviewer returns an empty array, tell the user:
+When the Reviewer returns an empty array:
+
+1. **Mark the PR ready for review** using `mcp__github__update_pull_request` with `draft: false`
+   (owner="jodavis", repo="adaptiveremote", pullNumber=PR_NUMBER).
+
+2. **Request a review from @jodavis** using `mcp__github__update_pull_request` with
+   `reviewers: ["jodavis"]` (owner="jodavis", repo="adaptiveremote", pullNumber=PR_NUMBER).
+
+3. Tell the user:
 
 > Implementation complete.
 > PR: PR_URL
 > All tests pass and all review comments have been addressed or rebutted on the PR.
+> The PR has been marked ready for review and @jodavis has been requested as a reviewer.

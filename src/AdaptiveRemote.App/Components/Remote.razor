@@ -1,5 +1,10 @@
 ﻿@inject Services.IRemoteDefinitionService RemoteDefinitions
+@inject Services.IDynamicStylesheetProvider Stylesheet
 
+@if (Stylesheet.GetCss() is { } css)
+{
+    <style>@((MarkupString)css)</style>
+}
 <ModalMessageUI />
 <RemoteLayout LayoutElement="@RemoteDefinitions.RemoteRoot" ProgramMode="@ProgramMode" />
 

@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Runtime.Intrinsics.Arm;
 using Microsoft.Extensions.Logging;
 
 namespace AdaptiveRemote.Logging;
@@ -42,8 +43,17 @@ internal partial class MessageLogger
     [LoggerMessage(EventId = 710, Level = LogLevel.Information, Message = "Waiting for application scope")]
     public partial void ApplicationLifecycle_WaitingForScope();
 
-    [LoggerMessage(EventId = 711, Level = LogLevel.Information, Message = "Application scope released, shutting down")]
-    public partial void ApplicationLifecycle_ScopeReleased();
+    [LoggerMessage(EventId = 712, Level = LogLevel.Information, Message = "Recycling application scope")]
+    public partial void ApplicationLifecycle_RecyclingScope();
+
+    [LoggerMessage(EventId = 713, Level = LogLevel.Information, Message = "Application scope ready")]
+    public partial void ApplicationLifecycle_ScopeReady();
+    
+    [LoggerMessage(EventId = 714, Level = LogLevel.Information, Message = "Waiting for preinitializer: {Name}")]
+    public partial void ApplicationLifecycle_WaitingForPreinitializer(string name);
+    
+    [LoggerMessage(EventId = 715, Level = LogLevel.Error, Message = "Preinitializer failed: {Name}")]
+    public partial void ApplicationLifecycle_PreinitializerFailed(string name, Exception ex);
 
     [LoggerMessage(EventId = 205, Level = LogLevel.Warning, Message = "Not restarting after {ErrorCount} error(s)")]
     public partial void ConversationController_RetryLimitReached(int errorCount);
@@ -176,6 +186,20 @@ internal partial class MessageLogger
 
     [LoggerMessage(EventId = 1009, Level = LogLevel.Warning, Message = "IR learning already in progress; ignoring request to program {Command}")]
     public partial void BroadlinkCommandService_LearningAlreadyInProgress(Models.Command command);
+
+    // 1800–1899: CognitoTokenProvider (CloudAssets)
+
+    [LoggerMessage(EventId = 1800, Level = LogLevel.Information, Message = "Acquiring Cognito access token via Client Credentials flow")]
+    public partial void CognitoTokenProvider_AcquiringToken();
+
+    [LoggerMessage(EventId = 1801, Level = LogLevel.Information, Message = "Cognito access token acquired successfully")]
+    public partial void CognitoTokenProvider_TokenAcquired();
+
+    [LoggerMessage(EventId = 1802, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
+    public partial void CognitoTokenProvider_AcquireTokenFailed(Exception exception);
+
+    [LoggerMessage(EventId = 1803, Level = LogLevel.Warning, Message = "Cloud OAuth settings are missing; skipping Cognito token acquisition")]
+    public partial void CognitoTokenProvider_MissingConfiguration();
 
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Loading existing settings from {FilePath}")]
     public partial void ProgrammaticSettings_LoadingExistingSettings(string filePath);
@@ -357,4 +381,36 @@ internal partial class MessageLogger
 
     [LoggerMessage(EventId = 1602, Level = LogLevel.Error, Message = "Failed to acquire Cognito access token")]
     public partial void CognitoTokenService_AcquireTokenFailed(Exception exception);
+
+    // 1700–1799: CloudAssetOrchestrator
+
+    [LoggerMessage(EventId = 1700, Level = LogLevel.Information, Message = "Downloading asset '{AssetName}'")]
+    public partial void CloudAssetOrchestrator_Downloading(string assetName);
+
+    [LoggerMessage(EventId = 1701, Level = LogLevel.Error, Message = "Failed to initialize cloud assets")]
+    public partial void CloudAssetOrchestrator_Failed(Exception error);
+
+    [LoggerMessage(EventId = 1702, Level = LogLevel.Information, Message = "Loaded asset '{AssetName}' from cache")]
+    public partial void CloudAssetOrchestrator_LoadedFromCache(string assetName);
+
+    [LoggerMessage(EventId = 1703, Level = LogLevel.Information, Message = "Asset '{AssetName}' is up to date")]
+    public partial void CloudAssetOrchestrator_AssetUpToDate(string assetName);
+
+    [LoggerMessage(EventId = 1704, Level = LogLevel.Information, Message = "Asset '{AssetName}' updated from server; scheduling recycle")]
+    public partial void CloudAssetOrchestrator_AssetUpdated(string assetName);
+
+    [LoggerMessage(EventId = 1705, Level = LogLevel.Warning, Message = "Failed to download latest '{AssetName}' from server; keeping cached version")]
+    public partial void CloudAssetOrchestrator_BackgroundFetchFailed(string assetName, Exception? exception);
+
+    [LoggerMessage(EventId = 1706, Level = LogLevel.Information, Message = "Layout service reported a change; re-downloading asset '{AssetName}'")]
+    public partial void CloudAssetOrchestrator_FileChangeDetected(string assetName);
+
+    [LoggerMessage(EventId = 1707, Level = LogLevel.Warning, Message = "Received change notification for unknown asset '{AssetName}'; ignoring")]
+    public partial void CloudAssetOrchestrator_UnknownAssetChange(string assetName);
+
+    [LoggerMessage(EventId = 1708, Level = LogLevel.Information, Message = "Asset '{AssetName}' not found in cache")]
+    public partial void CloudAssetOrchestrator_NotFoundInCache(string assetName);
+
+    [LoggerMessage(EventId = 1709, Level = LogLevel.Information, Message = "Downloaded asset '{AssetName}'")]
+    public partial void CloudAssetOrchestrator_Downloaded(string assetName);
 }
