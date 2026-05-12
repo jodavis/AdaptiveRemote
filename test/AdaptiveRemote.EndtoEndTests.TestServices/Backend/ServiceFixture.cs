@@ -95,6 +95,12 @@ public class ServiceFixture : IDisposable
                 ["AWS_ACCESS_KEY_ID"] = "test",
                 ["AWS_SECRET_ACCESS_KEY"] = "test",
 
+                // ASP.NET Core Data Protection logs a development-only warning about
+                // unencrypted key persistence that is unrelated to the service behavior
+                // these API tests are exercising. Treat it as non-actionable noise so
+                // log-cleanliness assertions remain focused on service regressions.
+                ["Logging__LogLevel__Microsoft.AspNetCore.DataProtection"] = "Error",
+
                 // Disable the SQS polling background service so health-check-only tests do not
                 // trigger the orchestration pipeline and log errors against unconfigured upstreams.
                 ["Orchestrator__Enabled"] = "false",
