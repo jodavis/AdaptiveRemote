@@ -720,8 +720,8 @@ Implement `AdaptiveRemote.Backend.RawLayoutService` with full CRUD backed by Dyn
 - [ ] DynamoDB table created with partition key `UserId`, sort key `Id` (KSUID)
 - [ ] All CRUD endpoints (`GET /layouts/raw`, `GET /layouts/raw/{id}`, `POST /layouts/raw`, `PUT /layouts/raw/{id}`, `DELETE /layouts/raw/{id}`) implemented and unit tested
 - [ ] `docker-compose.yml` updated with LocalStack container; DynamoDB table provisioned on startup
-- [ ] `ILayoutProcessingTrigger` stub (no-op) injected so save/update endpoints compile; SQS wiring deferred to Task 5
-- [ ] `INotificationPublisher` stub (no-op) injected; notification wiring deferred to Task 9
+- [ ] `ILayoutProcessingTrigger` stub (no-op) injected so save/update endpoints compile; local-mode implementation added in Task 6; real SQS wiring deferred to Task 7
+- [ ] `INotificationPublisher` stub (no-op) injected; notification wiring deferred to Task 11
 - [ ] Follows the logging, metrics, and health endpoint pattern established in Task 2; API integration tests assert no warnings or errors in service logs during normal CRUD operations
 - [ ] Unit tests cover repository logic against LocalStack or mocked DynamoDB client
 - [ ] API integration tests cover all CRUD endpoints:
@@ -819,12 +819,53 @@ When a developer launches the Lambda project with F5 in Visual Studio
 Then the Lambda Test Tool UI opens in a browser for interactive invocation
 ```
 
-### Task 6 — LayoutProcessingService (with stubs) ([ADR-170](https://jodasoft.atlassian.net/browse/ADR-170))
+### Task 6 — Local-mode mock infrastructure ([ADR-205](https://jodasoft.atlassian.net/browse/ADR-205))
+
+Introduce a "local mode" that allows each backend service to start and handle requests with
+no AWS or Docker dependency. In local mode, DynamoDB repositories are replaced with
+thread-safe in-memory equivalents, the SQS trigger makes a fire-and-forget HTTP POST to
+`LayoutProcessingService` rather than enqueuing to SQS, and the LocalStack startup health
+check is suppressed. Local mode is activated by a `LocalMode` configuration key readable
+via standard .NET `IConfiguration` precedence (environment variable `LocalMode=true`,
+command-line `--LocalMode=true`, or `appsettings.json`). All subsequent tasks that introduce
+AWS-backed implementations must register the equivalent in-memory implementation when
+`LocalMode=true`.
+
+- [ ] `LocalMode` configuration key introduced; read via `IConfiguration` standard precedence; documented in `docs/local-dev.md`
+- [ ] LocalStack startup health check (Task 5) is suppressed when `LocalMode=true`; services start cleanly without any network dependencies
+- [ ] `InMemoryRawLayoutRepository` implemented in `RawLayoutService`; satisfies both `IRawLayoutRepository` and `IRawLayoutStatusWriter`; thread-safe (e.g. `ConcurrentDictionary<Guid, RawLayout>`); registered in DI in place of `DynamoDbRawLayoutRepository` when `LocalMode=true`
+- [ ] `InMemoryCompiledLayoutRepository` implemented in `CompiledLayoutService`; satisfies `ICompiledLayoutRepository`; `SetActiveAsync` atomically sets `IsActive = true` on the target and clears it on all other layouts for the same user; thread-safe; registered in DI when `LocalMode=true` (used by Task 10 once DynamoDB is wired up for CompiledLayoutService)
+- [ ] `InMemoryLayoutProcessingTrigger` implemented in `RawLayoutService`; satisfies `ILayoutProcessingTrigger`; awaits `POST /process-raw/{rawLayoutId}` to `LayoutProcessingService` and expects `202 Accepted` (the endpoint queues the work internally and returns immediately — see Task 7); if the HTTP call fails or times out, logs a warning and returns without propagating the error (graceful degradation when running services in isolation); registered in DI in place of the no-op stub from Task 4 when `LocalMode=true`; `LayoutProcessingService`'s receiving endpoint is defined in Task 7
+- [ ] Each service can be started in local mode with `dotnet run`, serve requests against in-memory storage, and stop cleanly with no AWS or Docker process running
+- [ ] `docs/local-dev.md` updated with local mode instructions: the `LocalMode` flag, how to set it via env var and command line, and a note that in-memory data does not persist across restarts
+- [ ] Unit tests for `InMemoryRawLayoutRepository`: CRUD round-trip, `UpdateValidationResultAsync` updates only the targeted layout, concurrent writes do not corrupt state
+- [ ] Unit tests for `InMemoryCompiledLayoutRepository`: CRUD round-trip, `SetActiveAsync` results in exactly one active layout per user regardless of prior state
+- [ ] API integration tests extended with a local-mode variant: each required service is launched as a separate `dotnet run --LocalMode=true` process (same pattern as the client E2E host launcher); the CRUD scenarios from Tasks 2 and 4 pass without Docker or docker-compose
+
+```gherkin
+Given LocalMode is enabled and Docker is not running
+When a developer runs any ECS Fargate backend service
+Then the service starts successfully
+And the startup logs contain no warnings or errors about LocalStack or AWS credentials
+
+Given LocalMode is enabled and RawLayoutService is running
+When a test client calls POST /layouts/raw with a valid RawLayout body
+Then the response is 201 Created
+And GET /layouts/raw/{id} returns the same layout
+
+Given LocalMode is enabled and CompiledLayoutService is running
+And a user has two compiled layouts with layout B currently active
+When a test client calls PUT /layouts/compiled/{A}/active
+Then GET /layouts/compiled/active returns layout A
+And layout B is no longer the active layout
+```
+
+### Task 7 — LayoutProcessingService (with stubs) ([ADR-170](https://jodasoft.atlassian.net/browse/ADR-170))
 
 Implement `AdaptiveRemote.Backend.LayoutProcessingService` with SQS polling and the full
 orchestration pipeline. `ILayoutCompilerClient` and `ILayoutValidationClient` are backed by
 stub implementations that return hardcoded valid results, keeping the pipeline testable
-end-to-end before the real Lambda functions are built in Tasks 6 and 7.
+end-to-end before the real Lambda functions are built in Tasks 8 and 9.
 
 - [ ] `AdaptiveRemote.Backend.LayoutProcessingService` project created; included in `backend.slnf`
 - [ ] SQS queue and DLQ provisioned in `docker-compose` via LocalStack; max receive count = 3; DLQ retention = 14 days
@@ -834,8 +875,8 @@ end-to-end before the real Lambda functions are built in Tasks 6 and 7.
 - [ ] On validation failure: calls `IRawLayoutStatusWriter.UpdateValidationResultAsync`; does not store a compiled layout; does not notify client
 - [ ] On success: calls `ICompiledLayoutRepository.SaveAsync` then `INotificationPublisher.PublishLayoutReadyAsync`
 - [ ] Failed processing attempts are logged as errors; DLQ arrival is logged as an error
-- [ ] `RawLayoutService` SQS trigger wired up (replaces no-op stub from Task 4)
-- [ ] `INotificationPublisher` stub (no-op) injected; notification wiring deferred to Task 9
+- [ ] `RawLayoutService` real SQS trigger wired up in normal mode; `InMemoryLayoutProcessingTrigger` (Task 6) remains active in local mode
+- [ ] `INotificationPublisher` stub (no-op) injected; notification wiring deferred to Task 11
 - [ ] Follows the logging, metrics, and health endpoint pattern established in Task 2; structured log events emitted on each SQS message processed (success and failure); API integration tests assert expected log events and no unexpected warnings or errors
 - [ ] Unit tests cover success path, validation failure path, and SQS message retry behaviour
 - [ ] API integration tests cover the end-to-end processing pipeline (stub compiler and validator in use):
@@ -852,15 +893,16 @@ end-to-end before the real Lambda functions are built in Tasks 6 and 7.
   And GET /layouts/raw/{id} returns a RawLayout with a non-null ValidationResult
   And ValidationResult.IsValid is false
   ```
+- [ ] Follows the local-mode pattern from Task 6: exposes an internal `POST /process-raw/{rawLayoutId}` endpoint (not via API Gateway) that enqueues the ID to an in-process `Channel<Guid>` and returns `202 Accepted`; a background `IHostedService` reads from the Channel and runs the same processing pipeline as the SQS path; this is the local-mode replacement for SQS polling and the endpoint that `InMemoryLayoutProcessingTrigger` (Task 6) calls
 - [ ] Follows the dev environment pattern from Task 5: Scalar UI configured and guarded by
   `IsDevelopment()`, console window launch profile present, LocalStack startup health check
   implemented, and agent verification step completed (start with LocalStack running; start
   with LocalStack stopped and confirm startup error)
 
-### Task 7 — LayoutCompilerService (Lambda) ([ADR-171](https://jodasoft.atlassian.net/browse/ADR-171))
+### Task 8 — LayoutCompilerService (Lambda) ([ADR-171](https://jodasoft.atlassian.net/browse/ADR-171))
 
 Implement `AdaptiveRemote.Backend.LayoutCompilerService` as a Native AOT Lambda, replacing
-the stub injected in Task 5.
+the stub injected in Task 7.
 
 - [ ] `AdaptiveRemote.Backend.LayoutCompilerService` project created as a .NET 10 Lambda function with Native AOT; included in `backend.slnf`
 - [ ] `POST /compile` accepts `RawLayout`, returns `CompiledLayout`; grid positions and CSS overrides resolved into `CssDefinitions`; layout elements stripped of authoring properties
@@ -891,10 +933,10 @@ the stub injected in Task 5.
   present, LocalStack deployment verified via `aws lambda invoke`, and agent verification step
   completed
 
-### Task 8 — LayoutValidationService (Lambda) ([ADR-172](https://jodasoft.atlassian.net/browse/ADR-172))
+### Task 9 — LayoutValidationService (Lambda) ([ADR-172](https://jodasoft.atlassian.net/browse/ADR-172))
 
 Implement `AdaptiveRemote.Backend.LayoutValidationService` as a Native AOT Lambda, replacing
-the stub injected in Task 5.
+the stub injected in Task 7.
 
 - [ ] `AdaptiveRemote.Backend.LayoutValidationService` project created as a .NET 10 Lambda function with Native AOT; included in `backend.slnf`
 - [ ] `POST /validate` accepts `CompiledLayout`, returns `ValidationResult`
@@ -930,7 +972,7 @@ the stub injected in Task 5.
   present, LocalStack deployment verified via `aws lambda invoke`, and agent verification step
   completed
 
-### Task 9 — CompiledLayoutService with DynamoDB ([ADR-173](https://jodasoft.atlassian.net/browse/ADR-173))
+### Task 10 — CompiledLayoutService with DynamoDB ([ADR-173](https://jodasoft.atlassian.net/browse/ADR-173))
 
 Replace the static hardcoded response in `CompiledLayoutService` with real DynamoDB storage and active layout management.
 
@@ -940,7 +982,8 @@ Replace the static hardcoded response in `CompiledLayoutService` with real Dynam
 - [ ] Follows the logging, metrics, and health endpoint pattern established in Task 2; API integration tests assert no warnings or errors during normal storage operations
 - [ ] All compiled layout endpoints functional end-to-end with DynamoDB
 - [ ] `PUT /layouts/compiled/{id}/active` endpoint implemented
-- [ ] Previously hardcoded layout seeded into DynamoDB on first run so the client continues to work
+- [ ] Follows the local-mode pattern from Task 6: `DynamoDbCompiledLayoutRepository` registered in DI in normal mode; `InMemoryCompiledLayoutRepository` (Task 6) registered when `LocalMode=true`; the in-memory store starts empty on each run (client falls back to the bundled default layout on `404` per the data flow spec)
+- [ ] Previously hardcoded layout seeded into DynamoDB on first run so the client continues to work in normal mode
 - [ ] API integration tests cover the 404 case and active layout switching:
 
   ```gherkin
@@ -959,7 +1002,7 @@ Replace the static hardcoded response in `CompiledLayoutService` with real Dynam
   implemented, and agent verification step completed (start with LocalStack running; start
   with LocalStack stopped and confirm startup error)
 
-### Task 10 — NotificationService (SSE) ([ADR-174](https://jodasoft.atlassian.net/browse/ADR-174))
+### Task 11 — NotificationService (SSE) ([ADR-174](https://jodasoft.atlassian.net/browse/ADR-174))
 
 Implement `AdaptiveRemote.Backend.NotificationService` with SSE push for `layout-saved` and `layout-ready` events.
 
