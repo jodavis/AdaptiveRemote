@@ -1,0 +1,90 @@
+---
+description: Implement a feature or bug fix from a Researcher task brief. Writes tests first, then implements, then returns a structured work summary.
+argument-hint: <work-item-id>
+---
+
+## Inputs
+
+Work item ID: `$ARGUMENTS`
+
+Task brief:
+
+$TASK_BRIEF
+
+---
+
+## Steps
+
+### 1 — Load standards
+
+Invoke the `developer-patterns` skill. Read `CLAUDE.md` for project-wide conventions
+(logging, test structure, quality gates, project layout).
+
+### 2 — Understand the task
+
+Read the task brief above in full. Identify:
+
+- The exit criteria — these define what "done" means
+- Files to create or modify, and the design decisions that constrain each
+- Existing utilities, base classes, and patterns to reuse (the brief will call these out)
+
+If anything in the brief is ambiguous and the ambiguity would affect correctness, note it
+in your work summary and resolve it conservatively.
+
+### 3 — TDD: E2E / API tests first
+
+Write Gherkin scenarios that cover the exit criteria before writing any implementation code.
+Use existing steps whenever possible. When new steps are needed, follow the conventions in
+`developer-patterns`:
+
+- Generalized, human-readable `When` / `Then` / `Given` phrasing
+- Step definitions delegate logic to test service methods
+
+Run the new scenarios and confirm they fail (nothing is implemented yet).
+
+### 4 — TDD: unit tests
+
+Write unit tests for each component before implementing it. Follow the CLAUDE.md test
+conventions: Moq with `MockBehavior.Strict`, `private readonly` mock fields, `Expect_*`
+helpers, `CreateSut()`, and full async dependency coverage.
+
+Confirm the tests fail before proceeding.
+
+### 5 — Implement
+
+Implement the feature layer by layer, making the failing tests pass one layer at a time.
+
+After each layer, build and test only the code you have modified:
+
+```bash
+dotnet build <project-path>
+dotnet test <test-project-path>
+```
+
+Fix any build errors or new test failures before moving to the next layer.
+
+### 6 — Self-review
+
+Review the diff as if you were doing a code review:
+
+- Does every exit criterion have demonstrable coverage (code + test)?
+- Are there missing test cases (branches, error paths, invalid inputs)?
+- Do all files follow CLAUDE.md naming, structure, and logging conventions?
+- Is there any scope creep — changes not required by the brief?
+
+### 7 — Report
+
+Return a work summary as structured prose:
+
+**Files created or modified**
+List each file by path with a one-line description of what changed.
+
+**Key decisions made**
+Anything not dictated by the brief that you chose during implementation (design choices,
+interface splits, tradeoffs). Omit this section if there are none.
+
+**Unit tests**
+File path(s) and test method names for all new or modified unit tests.
+
+**E2E scenarios**
+Feature file path(s) and scenario title(s) for all new or modified Gherkin scenarios.

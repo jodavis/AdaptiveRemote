@@ -58,26 +58,55 @@ def _parse_frontmatter(text: str) -> tuple[dict, str]:
     body = "\n".join(lines[end + 1:]).lstrip("\n")
 
     metadata: dict = {}
-    for line in frontmatter_lines:
-        if ":" in line:
+    i = 0
+    while i < len(frontmatter_lines):
+        line = frontmatter_lines[i]
+        if ":" in line and not line.startswith(" ") and not line.startswith("-"):
             key, _, value = line.partition(":")
-            metadata[key.strip()] = value.strip()
+            key = key.strip()
+            value = value.strip()
+            if not value:
+                # Collect YAML list items on the following indented lines.
+                items: list[str] = []
+                j = i + 1
+                while j < len(frontmatter_lines):
+                    item_line = frontmatter_lines[j].strip()
+                    if item_line.startswith("- "):
+                        items.append(item_line[2:].strip())
+                        j += 1
+                    else:
+                        break
+                if items:
+                    metadata[key] = items
+                    i = j
+                    continue
+            metadata[key] = value
+        i += 1
 
     return metadata, body
 
 
-def call_agent(agent_name: str, skill_name: str, *args: str, stream: bool = True) -> str:
+def call_agent(
+    agent_name: str,
+    skill_name: str,
+    *args: str,
+    stream: bool = True,
+    substitutions: dict[str, str] | None = None,
+) -> str:
     """Invoke a Claude agent with a skill via the claude CLI.
 
     Reads the agent definition for its model and system prompt, reads the skill
     definition for its instructions, and calls `claude -p` with the combined prompt.
 
     Args:
-        agent_name: Name of the agent (matches .claude/agents/<name>.md).
-        skill_name: Name of the skill (matches .claude/commands/<name>.md).
-        *args:      Arguments passed to the skill, substituted for $ARGUMENTS.
-        stream:     If True (default), print output to stdout as it arrives.
-                    Set to False for agents that return structured JSON.
+        agent_name:     Name of the agent (matches .claude/agents/<name>.md).
+        skill_name:     Name of the skill (matches .claude/commands/<name>.md).
+        *args:          Arguments passed to the skill, substituted for $ARGUMENTS.
+        stream:         If True (default), print output to stdout as it arrives.
+                        Set to False for agents that return structured JSON.
+        substitutions:  Optional dict of {placeholder: value} pairs substituted into
+                        the skill body before $ARGUMENTS is resolved. Use for embedding
+                        structured content (e.g. {"$TASK_BRIEF": brief_text}).
 
     Returns:
         The full text output from the agent.
@@ -102,6 +131,9 @@ def call_agent(agent_name: str, skill_name: str, *args: str, stream: bool = True
     agent_meta, agent_body = _parse_frontmatter(agent_path.read_text(encoding="utf-8"))
     _, skill_body = _parse_frontmatter(skill_path.read_text(encoding="utf-8"))
 
+    if substitutions:
+        for placeholder, value in substitutions.items():
+            skill_body = skill_body.replace(placeholder, value)
     arguments_str = " ".join(args)
     skill_body = skill_body.replace("$ARGUMENTS", arguments_str)
 
@@ -110,9 +142,14 @@ def call_agent(agent_name: str, skill_name: str, *args: str, stream: bool = True
     raw_model = agent_meta.get("model", "sonnet")
     model = MODEL_MAP.get(raw_model, raw_model)
 
+    cmd = ["claude", "-p", prompt, "--model", model]
+    tools = agent_meta.get("tools")
+    if isinstance(tools, list) and tools:
+        cmd += ["--allowedTools", ",".join(tools)]
+
     try:
         proc = subprocess.Popen(
-            ["claude", "-p", prompt, "--model", model],
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -197,9 +234,19 @@ def main() -> None:
 
     try:
         print(f"Researcher is planning work for {work_item_id}...", flush=True)
-        call_agent("researcher", "researcher-plan", work_item_id, spec_path)
+        brief = call_agent("researcher", "researcher-plan", work_item_id, spec_path)
     except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
         print(f"Error invoking researcher agent:\n{e}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        print(f"Developer is implementing {work_item_id}...", flush=True)
+        call_agent(
+            "developer", "developer-implement", work_item_id,
+            substitutions={"$TASK_BRIEF": brief},
+        )
+    except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+        print(f"Error invoking developer agent:\n{e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":

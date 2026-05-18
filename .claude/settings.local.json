@@ -13,7 +13,8 @@
       "Bash(curl -s http://localhost:4566/_localstack/health)",
       "Bash(git add *)",
       "Bash(gh pr *)",
-      "Bash(python -u .claude/scripts/dev_team.py ADR-171)"
+      "Bash(python -u .claude/scripts/dev_team.py ADR-171)",
+      "Monitor"
     ]
   }
 }

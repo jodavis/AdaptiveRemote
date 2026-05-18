@@ -68,6 +68,17 @@ Example: `TiVoService_InitializeAsync_WaitsForTiVoLocator`
 Use AAA (Arrange-Act-Assert). Use `[TestInitialize]` for mock setup and `[TestCleanup]` for
 mock verification. Group setup calls into `Expect_*` helper methods.
 
+### Mocks
+- Create `Mock<T>` objects as `private readonly` fields on the test class so they are shared
+  across setup helpers, test methods, and verification.
+- Always use `MockBehavior.Strict` to catch unexpected calls.
+- Wrap each `Mock.Setup` chain in an `Expect_<Call>_On(dependency, ...)` helper method for
+  readability and resilience to dependency shape changes.
+
+### `CreateSut()`
+Always add a `CreateSut()` method that constructs the subject under test. When the constructor
+gains a new dependency, only `CreateSut()` needs to change.
+
 ### Async / Task patterns
 - Use `TaskCompletionSource` to represent a task that remains incomplete (e.g., simulating a
   hanging async operation).
@@ -75,6 +86,15 @@ mock verification. Group setup calls into `Expect_*` helper methods.
   `.Should().BeCanceled()`, `.Should().BeFaultedWith(ex)`.
 - Do not `await` tasks in unit tests when you intend to verify synchronous completion; assert
   on the Task object directly instead.
+- For every `async` method on a dependency, cover all of the following scenarios:
+  - Returns completed task → code under test continues
+  - Returns incomplete task → code under test awaits (stays incomplete)
+  - Incomplete task then completes → code under test resumes
+  - `CancellationToken` fires, throws `TaskCanceledException` → returned task `IsCanceled`
+  - `CancellationToken` fires, dependency returns complete → returned task `IsCanceled`
+  - `CancellationToken` fires, dependency stays incomplete → code stays incomplete
+  - Dependency throws directly (no `Task` returned) → exception propagates
+  - Dependency returns faulted `Task` → propagates
 
 ### E2E tests
 Prefer the Headless host for new E2E tests — cross-platform, no display required:
