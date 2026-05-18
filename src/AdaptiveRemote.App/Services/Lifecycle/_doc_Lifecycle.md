@@ -1,5 +1,7 @@
 # Lifecycle Subsystem Architecture & Design
 
+Summary: Describes DI scope management, lifecycle hooks, and the Blazor scope-sharing model used for service initialization and teardown.
+
 ## Overview
 The Lifecycle subsystem orchestrates application startup, shutdown, and scoped updates. Its main role is to manage
 DI scopes for services that need to be re-initialized when configuration or data changes. It is not responsible for

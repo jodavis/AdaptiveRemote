@@ -1,5 +1,7 @@
 # Broadlink RM4 Mini IR Learning Protocol
 
+Summary: Documents the IR learning sequence for the RM4 Mini — enter learning mode, poll for the captured IR code, then decode and store it.
+
 This document describes the IR learning protocol for the Broadlink RM4 Mini, as implemented in AdaptiveRemote. It is distilled from the [mjg59/python-broadlink](https://github.com/mjg59/python-broadlink) Python project and references the C# implementation in `AdaptiveRemote.Services.Broadlink.DeviceConnection`.
 
 ## Overview
