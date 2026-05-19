@@ -52,6 +52,7 @@ Event IDs are organized in ranges by subsystem:
 | 1200–1299 | RawLayoutService (backend) |
 | 1300–1699 | (reserved — App subsystems: ProgrammaticSettings, ScopedBackgroundProcess, ConversationState, SamplesRecorder, TestEndpointService, CognitoTokenService) |
 | 1700–1799 | LayoutProcessingService (backend) |
+| 1800–1899 | LayoutCompilerService (backend) |
 
 Assign new log messages the next unused ID in the appropriate range. When replacing an existing
 message, use exact text including whitespace, newlines, and punctuation.

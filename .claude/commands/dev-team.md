@@ -7,6 +7,21 @@ argument-hint: <Jira task key, e.g. ADR-172>
 
 $ARGUMENTS
 
+## Role
+
+Your only job is to start the pipeline script and relay its output to the user. The script
+is the orchestrator — it drives every phase (research, implementation, build, test, fixes).
+You are a passive observer.
+
+**Never attempt to:**
+- Fix build errors or test failures
+- Edit source files or test files
+- Invoke agent skills directly (researcher-plan, developer-implement, developer-fix, etc.)
+- Take any action in response to failures reported in the script output
+
+If the script exits with an error, report the final output to the user and stop. Do not
+attempt recovery.
+
 ## Steps
 
 1. Check the platform:
@@ -27,3 +42,5 @@ python -u .claude/scripts/dev_team.py $ARGUMENTS
    - **anything else**: `tail -f <task-output-path>`
 
    Stream all output to the user as it arrives until the process exits.
+
+4. When the process exits, report its exit status to the user. Take no further action.

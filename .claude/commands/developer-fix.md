@@ -7,13 +7,21 @@ argument-hint: <work-item-id>
 
 Work item ID: `$ARGUMENTS`
 
-The following context must be embedded in the prompt by the caller:
+### Original task brief
 
-- **Original task brief** — the full prose brief produced by `researcher-plan`
-- **Original work summary** — the structured prose summary produced by `developer-implement`
-- **Issues to fix** — a prose list of build errors, test failures, or code review comments
+$TASK_BRIEF
 
-All three are required. If any are missing, stop and tell the caller what is needed.
+---
+
+### Work summary (all prior implementation and fix rounds)
+
+$WORK_SUMMARIES
+
+---
+
+### Issues to fix
+
+$ISSUES
 
 ---
 
