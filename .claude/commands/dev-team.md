@@ -33,7 +33,7 @@ python -c "import sys; print(sys.platform)"
 2. Start the pipeline script in the background:
 
 ```bash
-python -u .claude/scripts/dev_team.py $ARGUMENTS
+python -u .claude/scripts/dev_team.py $ARGUMENTS --workflow .claude/scripts/implementation-pipeline.md
 ```
 
 3. **Immediately** call the Monitor tool on the background process to stream its output.

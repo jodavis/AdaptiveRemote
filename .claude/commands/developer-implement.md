@@ -17,8 +17,8 @@ $TASK_BRIEF
 
 ### 1 — Load standards
 
-Invoke the `developer-patterns` skill. Read `CLAUDE.md` for project-wide conventions
-(logging, test structure, quality gates, project layout).
+Invoke the `developer-patterns` skill (loads all guidelines from `CONTRIBUTING.md`).
+Read `CLAUDE.md` for quality gates and operational conventions.
 
 ### 2 — Understand the task
 
@@ -63,7 +63,20 @@ dotnet test <test-project-path>
 
 Fix any build errors or new test failures before moving to the next layer.
 
-### 6 — Self-review
+### 6 — Commit
+
+Commit all changes with a clear message that describes what was implemented and why:
+
+```bash
+git add -A
+git commit -m "$ARGUMENTS: <short description of what was implemented>"
+```
+
+The message body (optional) can list the key decisions if they are non-obvious.
+
+Do not push — the pipeline pushes after validation passes.
+
+### 7 — Self-review
 
 Review the diff as if you were doing a code review:
 
@@ -72,7 +85,7 @@ Review the diff as if you were doing a code review:
 - Do all files follow CLAUDE.md naming, structure, and logging conventions?
 - Is there any scope creep — changes not required by the brief?
 
-### 7 — Report
+### 8 — Report
 
 Return a work summary as structured prose:
 

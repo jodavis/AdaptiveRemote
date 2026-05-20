@@ -29,7 +29,8 @@ $ISSUES
 
 ### 1 — Load standards
 
-Invoke the `developer-patterns` skill. Read `CLAUDE.md` for project-wide conventions.
+Invoke the `developer-patterns` skill (loads all guidelines from `CONTRIBUTING.md`).
+Read `CLAUDE.md` for quality gates and operational conventions.
 
 ### 2 — Understand context
 
@@ -51,13 +52,26 @@ For each issue:
 
 ### 4 — Fix each issue
 
-Address issues one at a time. After each fix, build and test the affected code to confirm
-the fix works without introducing new failures:
+Address issues one at a time. After each fix:
 
-```bash
-dotnet build <project-path>
-dotnet test <test-project-path>
-```
+1. Build and test the affected code to confirm the fix works without introducing new failures:
+
+   ```bash
+   dotnet build <project-path>
+   dotnet test <test-project-path>
+   ```
+
+2. Commit the fix immediately with a message describing the specific issue resolved:
+
+   ```bash
+   git add -A
+   git commit -m "$ARGUMENTS: <one-line description of what was fixed and why>"
+   ```
+
+   One commit per issue keeps the git history readable and makes individual fixes easy to
+   review. Do not batch multiple fixes into a single commit.
+
+Do not push — the pipeline pushes after all fixes pass full validation.
 
 ### 5 — Self-review
 
