@@ -9,8 +9,10 @@ To start fresh, delete the context file:
   .claude/logs/dev-team/<work-item-id>-context.md
 """
 
+import argparse
 import datetime
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -26,28 +28,76 @@ MODEL_MAP = {
 }
 
 MAX_FIX_ITERATIONS = 5
+MAX_REVIEW_FIX_ITERATIONS = 3
+
+
+# ---------------------------------------------------------------------------
+# Workflow definition (parsed from a Mermaid stateDiagram-v2 file)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class WorkflowDefinition:
+    transitions: dict[str, dict[str, str]]
+    terminal_states: set[str]
+    initial_state: str
+
+
+def parse_workflow(path: Path) -> WorkflowDefinition:
+    """Parse a Mermaid stateDiagram-v2 block from a markdown file.
+
+    Recognises three line forms inside the diagram:
+      [*] --> StateA          → initial state
+      StateA --> [*]          → terminal state
+      StateA --> StateB : t   → transition with trigger t
+    """
+    text = path.read_text(encoding="utf-8")
+
+    # Extract the first ```mermaid ... ``` fenced block.
+    match = re.search(r"```mermaid\s*\n(.*?)```", text, re.DOTALL)
+    if not match:
+        raise ValueError(f"No mermaid fenced block found in {path}")
+
+    transitions: dict[str, dict[str, str]] = {}
+    terminal_states: set[str] = set()
+    initial_state: str | None = None
+
+    for raw_line in match.group(1).splitlines():
+        line = raw_line.strip()
+        if "-->" not in line:
+            continue
+
+        # StateA --> [*]  (terminal)
+        m = re.match(r"^(\w+)\s+-->\s+\[\*\]$", line)
+        if m:
+            terminal_states.add(m.group(1))
+            continue
+
+        # [*] --> StateA  (initial)
+        m = re.match(r"^\[\*\]\s+-->\s+(\w+)$", line)
+        if m:
+            initial_state = m.group(1)
+            continue
+
+        # StateA --> StateB : trigger
+        m = re.match(r"^(\w+)\s+-->\s+(\w+)\s*:\s*(\w+)$", line)
+        if m:
+            src, dst, trigger = m.group(1), m.group(2), m.group(3)
+            transitions.setdefault(src, {})[trigger] = dst
+            continue
+
+    if initial_state is None:
+        raise ValueError(f"No initial state ([*] --> ...) found in {path}")
+
+    return WorkflowDefinition(
+        transitions=transitions,
+        terminal_states=terminal_states,
+        initial_state=initial_state,
+    )
 
 
 # ---------------------------------------------------------------------------
 # State machine
 # ---------------------------------------------------------------------------
-
-TRANSITIONS: dict[str, dict[str, str]] = {
-    "init": {"start": "researching"},
-    "researching": {"research_done": "implementing"},
-    "implementing": {"impl_done": "validating"},
-    "validating": {
-        "build_failed": "fixing",
-        "tests_failed": "fixing",
-        "clean": "done",
-    },
-    "fixing": {
-        "fix_done": "validating",
-        "max_retries": "failed",
-    },
-}
-
-TERMINAL_STATES = {"done", "failed"}
 
 
 class StateMachine:
@@ -83,6 +133,9 @@ class PipelineContext:
     brief: str = ""
     work_summaries: list[str] = field(default_factory=list)
     fix_iteration: int = 0
+    review_fix_iteration: int = 0
+    pr_url: str = ""
+    review_notes: str = ""
     last_failure: str = ""
     started: datetime.datetime = field(default_factory=datetime.datetime.now)
     last_updated: datetime.datetime = field(default_factory=datetime.datetime.now)
@@ -97,6 +150,8 @@ class PipelineContext:
             f"work_item_id: {self.work_item_id}",
             f"spec_path: {self.spec_path}",
             f"fix_iteration: {self.fix_iteration}",
+            f"review_fix_iteration: {self.review_fix_iteration}",
+            f"pr_url: {self.pr_url}",
             f"started: {self.started.isoformat()}",
             f"last_updated: {self.last_updated.isoformat()}",
             "---",
@@ -111,6 +166,9 @@ class PipelineContext:
             lines += ["", "## Implementation Summary", "", self.work_summaries[0].strip()]
             for i, summary in enumerate(self.work_summaries[1:], start=1):
                 lines += ["", f"## Fix {i}", "", summary.strip()]
+
+        if self.review_notes:
+            lines += ["", "## Review Notes", "", self.review_notes.strip()]
 
         if self.last_failure:
             lines += ["", "## Last Failure", "", self.last_failure.strip()]
@@ -129,6 +187,8 @@ class PipelineContext:
             spec_path=meta.get("spec_path", ""),
             state=meta.get("state", "init"),
             fix_iteration=int(meta.get("fix_iteration", 0)),
+            review_fix_iteration=int(meta.get("review_fix_iteration", 0)),
+            pr_url=meta.get("pr_url", ""),
         )
 
         try:
@@ -148,6 +208,7 @@ class PipelineContext:
             work_summaries.append(sections[f"Fix {i}"])
             i += 1
         ctx.work_summaries = work_summaries
+        ctx.review_notes = sections.get("Review Notes", "")
         ctx.last_failure = sections.get("Last Failure", "")
 
         return ctx
@@ -172,6 +233,35 @@ def _parse_sections(body: str) -> dict[str, str]:
         sections[current_heading] = "\n".join(current_lines).strip()
 
     return sections
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def parse_json_output(text: str) -> dict:
+    """Extract the last parseable JSON object from agent output text.
+
+    Tries single-line JSON objects from the end of the text first, then
+    fenced code blocks. Returns an empty dict if nothing parses.
+    """
+    for line in reversed(text.strip().splitlines()):
+        line = line.strip()
+        if line.startswith("{") and line.endswith("}"):
+            try:
+                return json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+    for block in reversed(re.findall(r"```(?:json)?\s*\n([\s\S]*?)\n```", text)):
+        try:
+            result = json.loads(block.strip())
+            if isinstance(result, dict):
+                return result
+        except json.JSONDecodeError:
+            continue
+
+    return {}
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +351,86 @@ class ValidateStep(Step):
         return "clean"
 
 
+class ReviewStep(Step):
+    handles = "reviewing"
+
+    def run(self, ctx: PipelineContext) -> str:
+        print("Pushing branch before review...", flush=True)
+        try:
+            subprocess.run(
+                ["git", "push", "origin", "HEAD"],
+                check=True, cwd=REPO_ROOT,
+                capture_output=True, text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"Warning: git push failed (continuing): {e.stderr}", flush=True)
+
+        print(f"Reviewer is reviewing {ctx.work_item_id}...", flush=True)
+        try:
+            output = call_agent(
+                "reviewer", "reviewer-review",
+                substitutions={
+                    "$WORK_ITEM_ID": ctx.work_item_id,
+                    "$SPEC_PATH": ctx.spec_path,
+                    "$TASK_BRIEF": ctx.brief,
+                    "$PR_URL": ctx.pr_url,
+                },
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking reviewer agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+
+        result = parse_json_output(output)
+        if result.get("pr_url"):
+            ctx.pr_url = result["pr_url"]
+        ctx.review_notes = output
+
+        status = result.get("status", "changes_requested")
+        if status == "approved":
+            print("Review approved.", flush=True)
+            return "approved"
+        print("Reviewer requested changes.", flush=True)
+        return "changes_requested"
+
+
+class SignOffStep(Step):
+    handles = "reviewing-signoff"
+
+    def run(self, ctx: PipelineContext) -> str:
+        print("Pushing latest fixes before sign-off...", flush=True)
+        try:
+            subprocess.run(
+                ["git", "push", "origin", "HEAD"],
+                check=True, cwd=REPO_ROOT,
+                capture_output=True, text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"Warning: git push failed (continuing): {e.stderr}", flush=True)
+
+        print(f"Reviewer is signing off on {ctx.work_item_id}...", flush=True)
+        try:
+            output = call_agent(
+                "reviewer", "reviewer-sign-off",
+                substitutions={
+                    "$WORK_ITEM_ID": ctx.work_item_id,
+                    "$TASK_BRIEF": ctx.brief,
+                    "$PR_URL": ctx.pr_url,
+                },
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking reviewer agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+
+        ctx.review_notes = output
+        result = parse_json_output(output)
+        status = result.get("status", "changes_requested")
+        if status == "approved":
+            print("Sign-off approved.", flush=True)
+            return "approved"
+        print("Sign-off requested further changes.", flush=True)
+        return "changes_requested"
+
+
 class FixStep(Step):
     handles = "fixing"
 
@@ -294,6 +464,44 @@ class FixStep(Step):
         return "fix_done"
 
 
+class FixPrStep(Step):
+    handles = "fixing-pr"
+
+    def run(self, ctx: PipelineContext) -> str:
+        if ctx.review_fix_iteration >= MAX_REVIEW_FIX_ITERATIONS:
+            print(
+                f"Error: still failing review after {MAX_REVIEW_FIX_ITERATIONS} "
+                f"review fix iterations. Manual intervention needed.",
+                file=sys.stderr,
+            )
+            return "max_retries"
+        print(
+            f"Invoking developer to address review comments "
+            f"(iteration {ctx.review_fix_iteration + 1} of {MAX_REVIEW_FIX_ITERATIONS})...",
+            flush=True,
+        )
+        issues = (
+            f"Code review changes requested on PR {ctx.pr_url}.\n\n"
+            f"Read the open review threads on the PR and address each one.\n\n"
+            f"Reviewer summary:\n{ctx.review_notes}"
+        )
+        try:
+            fix_summary = call_agent(
+                "developer", "developer-fix", ctx.work_item_id,
+                substitutions={
+                    "$TASK_BRIEF": ctx.brief,
+                    "$WORK_SUMMARIES": _format_work_summaries(ctx.work_summaries),
+                    "$ISSUES": issues,
+                },
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking developer-fix agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+        ctx.review_fix_iteration += 1
+        ctx.work_summaries.append(fix_summary)
+        return "fix_done"
+
+
 # ---------------------------------------------------------------------------
 # Pipeline
 # ---------------------------------------------------------------------------
@@ -301,24 +509,31 @@ class FixStep(Step):
 class DevTeamPipeline:
     """Drives the dev-team state machine from init (or a resumed state) to done."""
 
-    def __init__(self, ctx: PipelineContext, context_path: Path) -> None:
+    def __init__(self, ctx: PipelineContext, context_path: Path, workflow: WorkflowDefinition) -> None:
         self.ctx = ctx
         self.context_path = context_path
-        self.machine = StateMachine(TRANSITIONS, initial=ctx.state)
+        self.workflow = workflow
+        self.machine = StateMachine(workflow.transitions, initial=ctx.state)
+        validate_step = ValidateStep()
         self.step_handlers: dict[str, Step] = {
             "researching": ResearchStep(),
             "implementing": ImplementStep(),
-            "validating": ValidateStep(),
+            "validating": validate_step,
+            "validating-pr": validate_step,
             "fixing": FixStep(),
+            "reviewing": ReviewStep(),
+            "reviewing-signoff": SignOffStep(),
+            "fixing-pr": FixPrStep(),
         }
 
     def run(self) -> None:
-        if self.machine.state == "init":
-            self.machine.transition("start")
+        if self.machine.state == self.workflow.initial_state:
+            boot_trigger = next(iter(self.workflow.transitions[self.workflow.initial_state]))
+            self.machine.transition(boot_trigger)
             self.ctx.state = self.machine.state
             self.ctx.save(self.context_path)
 
-        while self.machine.state not in TERMINAL_STATES:
+        while self.machine.state not in self.workflow.terminal_states:
             step = self.step_handlers.get(self.machine.state)
             if step is None:
                 raise RuntimeError(f"No handler for state '{self.machine.state}'")
@@ -645,14 +860,26 @@ def find_spec_file(work_item_id: str) -> Path:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    if len(sys.argv) < 2:
-        print(
-            "Usage: dev_team.py <work-item-id>  (e.g. dev_team.py ADR-172)",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        prog="dev_team.py",
+        description="dev-team pipeline orchestrator",
+    )
+    parser.add_argument("work_item_id", metavar="work-item-id",
+                        help="Jira work item ID (e.g. ADR-172)")
+    parser.add_argument("--workflow", required=True, metavar="path",
+                        help="Path to a Mermaid stateDiagram-v2 workflow file")
+    args = parser.parse_args()
 
-    work_item_id = sys.argv[1]
+    work_item_id = args.work_item_id
+    workflow_path = Path(args.workflow)
+    if not workflow_path.is_absolute():
+        workflow_path = REPO_ROOT / workflow_path
+
+    try:
+        workflow = parse_workflow(workflow_path)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Error loading workflow: {e}", file=sys.stderr)
+        sys.exit(1)
 
     log_dir = REPO_ROOT / ".claude" / "logs" / "dev-team"
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -660,7 +887,7 @@ def main() -> None:
 
     if context_path.exists():
         ctx = PipelineContext.load(context_path)
-        if ctx.state in TERMINAL_STATES:
+        if ctx.state in workflow.terminal_states:
             print(f"Previous run ended with state '{ctx.state}'.")
             print(f"Delete {context_path} to run again.")
             sys.exit(0 if ctx.state == "done" else 1)
@@ -670,10 +897,11 @@ def main() -> None:
         spec_file = find_spec_file(work_item_id)
         spec_path = str(spec_file.relative_to(REPO_ROOT))
         print(f"Found {spec_file}", flush=True)
-        ctx = PipelineContext(work_item_id=work_item_id, spec_path=spec_path)
+        ctx = PipelineContext(work_item_id=work_item_id, spec_path=spec_path,
+                              state=workflow.initial_state)
         ctx.save(context_path)
 
-    DevTeamPipeline(ctx, context_path).run()
+    DevTeamPipeline(ctx, context_path, workflow).run()
 
 
 if __name__ == "__main__":

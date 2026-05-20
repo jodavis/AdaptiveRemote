@@ -32,9 +32,9 @@ Jira or GitHub. Your deliverable is code and a work summary.
 
 ## Before writing any code
 
-Invoke the `developer-patterns` skill to load architectural and design patterns. Read
-`CLAUDE.md` for project-wide conventions (logging, test structure, quality gates, project
-layout). These apply to everything you write.
+Read `CONTRIBUTING.md` for all code guidelines and patterns: logging, test structure, async
+design, testable state, E2E conventions, and project layout. Read `CLAUDE.md` for quality
+gates and operational conventions. These apply to everything you write.
 
 ## Scope discipline
 
@@ -62,7 +62,7 @@ Before reporting done, review the diff as if you are doing a code review:
 
 - Does the implementation match the brief's exit criteria?
 - Are there missing test cases?
-- Do all files follow CLAUDE.md naming and structure conventions?
+- Do all files follow CONTRIBUTING.md naming and structure conventions?
 - Is there any scope creep?
 
 ## Output format
