@@ -300,29 +300,29 @@ this.ScenarioInitialize(scenarioInfo, ruleInfo);
             ""label"": ""Up"",
             ""speakPhrase"": ""up"",
             ""reverse"": ""Down"",
-            ""cssId"": ""up-btn"",
+            ""cssId"": ""INVALID_up-btn"",
             ""gridRow"": 0,
             ""gridColumn"": 0
         }
     ]
 }", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 75
+#line 76
     await testRunner.ThenAsync("I should see a message that contains \"Layout compiled successfully\" in the Layout" +
                         "ProcessingService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 76
+#line 77
     await testRunner.AndAsync("I should see a warning message in the LayoutProcessingService logs:", "Layout validation failed", ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 80
+#line 81
  await testRunner.AndAsync("I should see a message that contains \"Validation result written back to raw layou" +
                         "t\" in the LayoutProcessingService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 81
+#line 82
     await testRunner.AndAsync("I should not see any warning or error messages in the LayoutProcessingService log" +
                         "s", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 82
+#line 83
     await testRunner.AndAsync("I should not see any warning or error messages in the RawLayoutService logs", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
