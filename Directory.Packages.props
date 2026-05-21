@@ -3,6 +3,8 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup Label="Application Packages">
+    <!-- AWS Lambda -->
+    <PackageVersion Include="Amazon.Lambda.AspNetCoreServer.Hosting" Version="2.0.0" />
     <!-- AWS SDK -->
     <PackageVersion Include="AWSSDK.DynamoDBv2" Version="3.7.406.21" />
     <PackageVersion Include="AWSSDK.SQS" Version="3.7.400.109" />

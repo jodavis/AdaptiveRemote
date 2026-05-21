@@ -58,7 +58,8 @@ internal class EnvironmentSetupHooks
             ("Host", _startedEnvironment?.HostLogs),
             ("RawLayoutService", _startedEnvironment?.RawLayoutServiceLogs),
             ("CompiledLayoutService", _startedEnvironment?.CompiledLayoutServiceLogs),
-            ("LayoutProcessingService", _startedEnvironment?.LayoutProcessingServiceLogs)
+            ("LayoutProcessingService", _startedEnvironment?.LayoutProcessingServiceLogs),
+            ("LayoutCompilerService", _startedEnvironment?.LayoutCompilerServiceLogs)
         };
 
         foreach ((string service, string? logLocation) in logsToAttach)

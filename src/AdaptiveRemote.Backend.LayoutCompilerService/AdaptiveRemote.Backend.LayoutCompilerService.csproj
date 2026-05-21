@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AdaptiveRemote.Backend.LayoutCompilerService</RootNamespace>
+    <AssemblyName>bootstrap</AssemblyName>
+    <PublishAot>true</PublishAot>
+    <!-- AddAWSLambdaHosting uses reflection for Lambda JSON serialization; safe for HttpApi since
+         the reflective path only runs inside the Lambda runtime, not during local HTTP serving. -->
+    <NoWarn>$(NoWarn);IL2026;IL3050</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.AspNetCoreServer.Hosting" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AdaptiveRemote.Backend.Common\AdaptiveRemote.Backend.Common.csproj" />
+    <ProjectReference Include="..\AdaptiveRemote.Contracts\AdaptiveRemote.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -12,7 +12,8 @@ public class LogVerificationSteps : StepsBase
     private const string RawLayoutServiceName = "RawLayoutService";
     private const string CompiledLayoutServiceName = "CompiledLayoutService";
     private const string LayoutProcessingServiceName = "LayoutProcessingService";
-    private const string ServiceFilter = "(" + RawLayoutServiceName + "|" + CompiledLayoutServiceName + "|" + LayoutProcessingServiceName + ")";
+    private const string LayoutCompilerServiceName = "LayoutCompilerService";
+    private const string ServiceFilter = "(" + RawLayoutServiceName + "|" + CompiledLayoutServiceName + "|" + LayoutProcessingServiceName + "|" + LayoutCompilerServiceName + ")";
 
     private static readonly Dictionary<string, int> _lastLineRead = new();
 
@@ -207,6 +208,7 @@ public class LogVerificationSteps : StepsBase
             RawLayoutServiceName => Environment.RawLayoutServiceLogs,
             CompiledLayoutServiceName => Environment.CompiledLayoutServiceLogs,
             LayoutProcessingServiceName => Environment.LayoutProcessingServiceLogs,
+            LayoutCompilerServiceName => Environment.LayoutCompilerServiceLogs,
             _ => throw new ArgumentException($"Unexpected service name: {serviceName}", nameof(serviceName))
         };
 

@@ -48,7 +48,7 @@ public class ServiceFixture : IDisposable
         // Find the repository root by looking for the .git directory
         string currentDir = Directory.GetCurrentDirectory();
         string? repoRoot = currentDir;
-        while (repoRoot != null && !Directory.Exists(Path.Combine(repoRoot, ".git")))
+        while (repoRoot != null && !Path.Exists(Path.Combine(repoRoot, ".git")))
         {
             repoRoot = Directory.GetParent(repoRoot)?.FullName;
         }

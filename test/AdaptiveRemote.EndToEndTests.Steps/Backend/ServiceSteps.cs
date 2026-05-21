@@ -6,7 +6,7 @@ namespace AdaptiveRemote.EndToEndTests.Steps.Backend;
 [Binding]
 public class ServiceSteps : StepsBase
 {
-    private const string ServiceRegex = "(RawLayoutService|CompiledLayoutService|LayoutProcessingService)";
+    private const string ServiceRegex = "(RawLayoutService|CompiledLayoutService|LayoutProcessingService|LayoutCompilerService)";
 
     [StepArgumentTransformation(ServiceRegex)]
     public Uri ServiceNameToEndpointUri(string serviceName)
@@ -19,6 +19,7 @@ public class ServiceSteps : StepsBase
             "RawLayoutService" => Environment.RawLayoutService,
             "CompiledLayoutService" => Environment.CompiledLayoutService,
             "LayoutProcessingService" => Environment.LayoutProcessingService,
+            "LayoutCompilerService" => Environment.LayoutCompilerService,
             _ => throw new ArgumentException($"Unknown service name: {serviceName}", nameof(serviceName))
         };
 

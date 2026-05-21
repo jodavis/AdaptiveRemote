@@ -128,4 +128,17 @@ public static partial class MessageLogger
     [LoggerMessage(EventId = 1720, Level = LogLevel.Warning, Message = "SQS message unrecognized and deleted; receiptHandle={ReceiptHandle}")]
     public static partial void SqsUnrecognizedMessageWarning(this ILogger logger, string receiptHandle, Exception exception);
 
+    // LayoutCompilerService-specific messages
+    [LoggerMessage(EventId = 1800, Level = LogLevel.Information, Message = "Compilation started; rawLayoutId={RawLayoutId}")]
+    public static partial void CompilationStarted(this ILogger logger, Guid rawLayoutId);
+
+    [LoggerMessage(EventId = 1801, Level = LogLevel.Information, Message = "Compilation completed; rawLayoutId={RawLayoutId}")]
+    public static partial void CompilationCompleted(this ILogger logger, Guid rawLayoutId);
+
+    [LoggerMessage(EventId = 1802, Level = LogLevel.Information, Message = "Preview compilation started")]
+    public static partial void PreviewCompilationStarted(this ILogger logger);
+
+    [LoggerMessage(EventId = 1803, Level = LogLevel.Information, Message = "Preview compilation completed")]
+    public static partial void PreviewCompilationCompleted(this ILogger logger);
+
 }

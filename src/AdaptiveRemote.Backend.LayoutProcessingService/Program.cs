@@ -122,8 +122,22 @@ builder.Services.AddHttpClient<ICompiledLayoutRepository, HttpCompiledLayoutRepo
     }
 });
 
+// Configure HTTP client for LayoutCompilerService
+LayoutCompilerServiceSettings layoutCompilerSettings = builder.Configuration
+    .GetSection("LayoutCompilerService")
+    .Get<LayoutCompilerServiceSettings>() ?? new LayoutCompilerServiceSettings();
+
+builder.Services.Configure<LayoutCompilerServiceSettings>(builder.Configuration.GetSection("LayoutCompilerService"));
+
+builder.Services.AddHttpClient<ILayoutCompilerClient, HttpLayoutCompilerClient>(client =>
+{
+    if (!string.IsNullOrEmpty(layoutCompilerSettings.BaseUrl))
+    {
+        client.BaseAddress = new Uri(layoutCompilerSettings.BaseUrl);
+    }
+});
+
 // Register stub implementations (to be replaced in later tasks)
-builder.Services.AddSingleton<ILayoutCompilerClient, StubLayoutCompilerClient>();
 builder.Services.AddSingleton<ILayoutValidationClient, StubLayoutValidationClient>();
 builder.Services.AddSingleton<INotificationPublisher, StubNotificationPublisher>();
 
