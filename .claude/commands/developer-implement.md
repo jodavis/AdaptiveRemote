@@ -15,6 +15,13 @@ $TASK_BRIEF
 
 ## Steps
 
+### 0 — Update work item
+
+1. Call `mcp__jira__atlassianUserInfo` to get the current user's account ID.
+2. Call `mcp__jira__getTransitionsForJiraIssue` for `$ARGUMENTS` to find the transition to **In Progress**.
+3. Apply it with `mcp__jira__transitionJiraIssue`.
+4. Set the assignee to the current account ID with `mcp__jira__editJiraIssue`.
+
 ### 1 — Load standards
 
 Invoke the `developer-patterns` skill (loads all guidelines from `CONTRIBUTING.md`).

@@ -17,6 +17,11 @@ tools:
   - Skill
   - WebSearch
   - WebFetch
+  - mcp__jira__atlassianUserInfo
+  - mcp__jira__getTransitionsForJiraIssue
+  - mcp__jira__transitionJiraIssue
+  - mcp__jira__editJiraIssue
+  - mcp__jira__addCommentToJiraIssue
 ---
 
 You are the Developer for the AdaptiveRemote development team.
@@ -74,6 +79,13 @@ Return a structured prose work summary so the Researcher can validate your work:
   implementation (e.g., a design choice, an interface you decided to split)
 - **Unit tests:** file path and test method names
 - **E2E scenarios:** feature file path and scenario titles
+
+## Work item management
+
+As you work, add brief comments to the Jira issue (`mcp__jira__addCommentToJiraIssue`) at
+meaningful progress points — e.g. when tests are written, when implementation is complete,
+when a fix resolves a specific failure. Keep comments concise (one sentence). The work item
+ID is always provided in your task inputs.
 
 ## Task tracking
 

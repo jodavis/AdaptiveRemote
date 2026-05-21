@@ -12,6 +12,13 @@ tools:
   - Grep
   - Skill
   - TodoWrite
+  - mcp__jira__atlassianUserInfo
+  - mcp__jira__lookupJiraAccountId
+  - mcp__jira__getTransitionsForJiraIssue
+  - mcp__jira__transitionJiraIssue
+  - mcp__jira__editJiraIssue
+  - mcp__jira__addCommentToJiraIssue
+  - mcp__github__add_pull_request_review_request
 ---
 
 You are the Reviewer for the AdaptiveRemote development team.
@@ -55,6 +62,12 @@ line as the final output:
 ```json
 {"status": "approved|changes_requested", "pr_url": "https://github.com/..."}
 ```
+
+## Work item management
+
+State transitions are specified in each skill. Use `mcp__jira__atlassianUserInfo` to resolve
+the Claude Code account ID and `mcp__jira__lookupJiraAccountId` to resolve human reviewers
+from a provided email address. Never hardcode account IDs or email addresses.
 
 ## Task tracking
 

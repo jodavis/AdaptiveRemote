@@ -12,11 +12,13 @@ To start fresh, delete the context file:
 import argparse
 import datetime
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
 import threading
+import time;
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -144,6 +146,8 @@ class PipelineContext:
     pr_url: str = ""
     review_notes: str = ""
     last_failure: str = ""
+    # Runtime-only — not persisted to the context file.
+    review_assignee_email: str = field(default="", repr=False)
     build_log: str = ""
     test_log: str = ""
     started: datetime.datetime = field(default_factory=datetime.datetime.now)
@@ -200,6 +204,7 @@ class PipelineContext:
         """Load context from a markdown file previously written by save()."""
         text = path.read_text(encoding="utf-8")
         meta, body = _parse_frontmatter(text)
+        
 
         ctx = cls(
             work_item_id=meta.get("work_item_id", ""),
@@ -454,6 +459,7 @@ class SignOffStep(Step):
                     "$WORK_ITEM_ID": ctx.work_item_id,
                     "$TASK_BRIEF": ctx.brief,
                     "$PR_URL": ctx.pr_url,
+                    "$REVIEW_ASSIGNEE_EMAIL": ctx.review_assignee_email,
                 },
             )
         except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
@@ -583,8 +589,7 @@ class DevTeamPipeline:
             self.ctx.state = self.machine.state
             self.ctx.save(self.context_path)
 
-        if self.machine.state == "failed":
-            sys.exit(1)
+        # Callers check ctx.state and handle failure (sys.exit, cleanup, etc.).
 
 
 # ---------------------------------------------------------------------------
@@ -793,10 +798,14 @@ def call_agent(
                 if stream:
                     print(result_text, flush=True)
 
+    print(f"[{time.time():.1f}] Waiting for process to exit...", flush=True)
     proc.wait()
+    print(f"[{time.time():.1f}] Reading stderr...", flush=True)
     stderr_text = proc.stderr.read()  # type: ignore[union-attr]
     if stderr_text:
+        print(f"[{time.time():.1f}] opening log path to write errors...")
         with log_path.open("a", encoding="utf-8") as log_file:
+            print(f"[{time.time():.1f}] Writing errors...", flush=True)
             log_file.write(json.dumps({"type": "stderr", "text": stderr_text}) + "\n")
 
     if proc.returncode != 0:
@@ -806,7 +815,30 @@ def call_agent(
             stderr=f"{stderr_text}\n(exit code {proc.returncode})",
         )
 
+    print(f"[{time.time():.1f}] call_agent complete", flush=True)
     return result_text
+
+
+def _handle_pipeline_failure(ctx: PipelineContext) -> None:
+    """Assign the Jira issue to the human reviewer and add a failure comment."""
+    log_parts: list[str] = []
+    if ctx.build_log:
+        log_parts.append(f"Build log: {ctx.build_log}")
+    if ctx.test_log:
+        log_parts.append(f"Test log: {ctx.test_log}")
+    log_paths = "\n".join(log_parts) if log_parts else "(no logs recorded)"
+
+    print(f"Updating Jira for failed pipeline ({ctx.work_item_id})...", flush=True)
+    try:
+        call_agent(
+            "developer", "jira-update-failed", ctx.work_item_id,
+            substitutions={
+                "$REVIEW_ASSIGNEE_EMAIL": ctx.review_assignee_email,
+                "$LOG_PATHS": log_paths,
+            },
+        )
+    except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+        print(f"Warning: Jira failure update failed (continuing): {e}", file=sys.stderr)
 
 
 def _format_work_summaries(summaries: list[str]) -> str:
@@ -934,6 +966,16 @@ def main() -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
     context_path = log_dir / f"{work_item_id}-context.md"
 
+    review_assignee_email = os.environ.get("REVIEW_ASSIGNEE_EMAIL", "")
+    if not review_assignee_email:
+        print(
+            "Error: REVIEW_ASSIGNEE_EMAIL environment variable is not set.\n"
+            "Set it to the Jira/email address of the human reviewer, e.g.:\n"
+            "  set REVIEW_ASSIGNEE_EMAIL=you@example.com",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     if context_path.exists():
         ctx = PipelineContext.load(context_path)
         if ctx.state in workflow.terminal_states:
@@ -950,7 +992,13 @@ def main() -> None:
                               state=workflow.initial_state)
         ctx.save(context_path)
 
+    ctx.review_assignee_email = review_assignee_email
+
     DevTeamPipeline(ctx, context_path, workflow).run()
+
+    if ctx.state == "failed":
+        _handle_pipeline_failure(ctx)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

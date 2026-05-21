@@ -65,6 +65,15 @@ inline review comments attached to the specific file and line. Submit with event
   Priority 1–5 issues were found in the modified files
 - **REQUEST_CHANGES** otherwise
 
+## Step 6a — Hand off to human reviewer (approved only)
+
+If the review outcome is **approved**, do the following before writing the output summary:
+
+1. Call `mcp__jira__lookupJiraAccountId` with `$REVIEW_ASSIGNEE_EMAIL` to get the human reviewer's account ID.
+2. Assign the Jira issue to that account with `mcp__jira__editJiraIssue`.
+3. Call `mcp__github__add_pull_request_review_request` to request a review from `$REVIEW_ASSIGNEE_EMAIL` on `$PR_URL`.
+4. Add a brief Jira comment with `mcp__jira__addCommentToJiraIssue`: "PR ready for human review — reviewer requested on GitHub."
+
 ## Step 7 — Output
 
 Write a concise summary:

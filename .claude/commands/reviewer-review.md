@@ -39,6 +39,13 @@ If `$PR_URL` is empty:
 
 If `$PR_URL` is already set, use that PR for the review.
 
+## Step 3a — Update work item
+
+1. Call `mcp__jira__atlassianUserInfo` to get the current user's account ID.
+2. Call `mcp__jira__getTransitionsForJiraIssue` for `$WORK_ITEM_ID` to find the transition to **In Review**.
+3. Apply it with `mcp__jira__transitionJiraIssue`.
+4. Set the assignee to the current account ID with `mcp__jira__editJiraIssue`.
+
 ## Step 4 — Retrieve and read the diff
 
 Use the GitHub MCP to fetch the PR diff. Read all changed files in full to understand the
