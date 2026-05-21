@@ -2,6 +2,8 @@
 
 AdaptiveRemote is an accessible remote control for TV/AV equipment built for users with limited or total loss of mobility. Accessibility is the primary design constraint: vision accessibility first, speech recognition second, eye-gaze input third.
 
+> If you are planning, writing, or reviewing code, read the code guidelines in `CONTRIBUTING.md`.
+
 ## Read Before Making Changes
 
 Read the `_doc_*.md` file for any area you plan to modify:
@@ -30,60 +32,13 @@ Read the `_doc_*.md` file for any area you plan to modify:
 
 ## Logging
 
-All log messages are defined as `[LoggerMessage]` source-generated methods in
-`src/AdaptiveRemote.App/Logging/MessageLogger.cs`. Never call `logger.LogXxx()` directly —
-add new methods to `MessageLogger` instead.
-
-Event IDs are organized in ranges by subsystem:
-
-| Range | Subsystem |
-|-------|-----------|
-| 100–199 | SpeechRecognitionEngine |
-| 200–299 | ConversationController |
-| 300–399 | SpeechRecognition |
-| 400–499 | SpeechSynthesis |
-| 500–599 | ListeningController |
-| 600–699 | CommandService |
-| 700–799 | ApplicationLifecycle |
-| 800–899 | TiVoConnection |
-| 900–999 | UdpService |
-| 1000–1099 | BroadlinkCommandService |
-| 1100–1199 | CompiledLayoutService (backend) |
-| 1200–1299 | RawLayoutService (backend) |
-| 1300–1699 | (reserved — App subsystems: ProgrammaticSettings, ScopedBackgroundProcess, ConversationState, SamplesRecorder, TestEndpointService, CognitoTokenService) |
-| 1700–1799 | LayoutProcessingService (backend) |
-
-Assign new log messages the next unused ID in the appropriate range. When replacing an existing
-message, use exact text including whitespace, newlines, and punctuation.
-
-In tests, verify log output using `MockLogger.VerifyMessages(log => { log.MethodName(...); })`.
+See `CONTRIBUTING.md` for logging conventions (`[LoggerMessage]` source-gen, event ID
+ranges, test verification with `MockLogger.VerifyMessages`).
 
 ## Testing
 
-### Naming
-`ClassName_Method_Scenario_ExpectedResult`
-Example: `TiVoService_InitializeAsync_WaitsForTiVoLocator`
-
-### Structure
-Use AAA (Arrange-Act-Assert). Use `[TestInitialize]` for mock setup and `[TestCleanup]` for
-mock verification. Group setup calls into `Expect_*` helper methods.
-
-### Async / Task patterns
-- Use `TaskCompletionSource` to represent a task that remains incomplete (e.g., simulating a
-  hanging async operation).
-- Assert task state without `await`: `.Should().BeComplete()`, `.Should().NotBeComplete()`,
-  `.Should().BeCanceled()`, `.Should().BeFaultedWith(ex)`.
-- Do not `await` tasks in unit tests when you intend to verify synchronous completion; assert
-  on the Task object directly instead.
-
-### E2E tests
-Prefer the Headless host for new E2E tests — cross-platform, no display required:
-
-```bash
-dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj
-pwsh src/AdaptiveRemote.Headless/bin/Debug/net10.0/playwright.ps1 install chromium  # if tests crash at startup with a JSON-RPC disconnect
-dotnet test --filter "FullyQualifiedName~Host.Headless"
-```
+See `CONTRIBUTING.md` for test naming, structure, mock setup, `CreateSut()`, async
+scenario matrix, and E2E (Gherkin/Headless) conventions.
 
 ## Documentation
 

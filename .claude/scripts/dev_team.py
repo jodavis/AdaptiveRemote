@@ -1,0 +1,1005 @@
+#!/usr/bin/env python3
+"""dev-team pipeline orchestrator.
+
+Entry point: main() — accepts a Jira work item ID, finds the matching spec file,
+and runs the dev-team pipeline. Reentrant: if a context file exists from a prior
+interrupted run, execution resumes from the last completed state.
+
+To start fresh, delete the context file:
+  .claude/logs/dev-team/<work-item-id>-context.md
+"""
+
+import argparse
+import datetime
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time;
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from pathlib import Path
+
+# Reconfigure stdout/stderr to UTF-8 early so that Unicode characters in agent
+# output (e.g. arrows, bullets) don't crash on Windows cp1252 terminals.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+MODEL_MAP = {
+    "haiku": "claude-haiku-4-5-20251001",
+    "sonnet": "claude-sonnet-4-6",
+    "opus": "claude-opus-4-7",
+}
+
+MAX_FIX_ITERATIONS = 5
+MAX_REVIEW_FIX_ITERATIONS = 3
+
+
+# ---------------------------------------------------------------------------
+# Workflow definition (parsed from a Mermaid stateDiagram-v2 file)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class WorkflowDefinition:
+    transitions: dict[str, dict[str, str]]
+    terminal_states: set[str]
+    initial_state: str
+
+
+def parse_workflow(path: Path) -> WorkflowDefinition:
+    """Parse a Mermaid stateDiagram-v2 block from a markdown file.
+
+    Recognises three line forms inside the diagram:
+      [*] --> StateA          → initial state
+      StateA --> [*]          → terminal state
+      StateA --> StateB : t   → transition with trigger t
+    """
+    text = path.read_text(encoding="utf-8")
+
+    # Extract the first ```mermaid ... ``` fenced block.
+    match = re.search(r"```mermaid\s*\n(.*?)```", text, re.DOTALL)
+    if not match:
+        raise ValueError(f"No mermaid fenced block found in {path}")
+
+    transitions: dict[str, dict[str, str]] = {}
+    terminal_states: set[str] = set()
+    initial_state: str | None = None
+
+    for raw_line in match.group(1).splitlines():
+        line = raw_line.strip()
+        if "-->" not in line:
+            continue
+
+        # StateA --> [*]  (terminal)
+        m = re.match(r"^([\w-]+)\s+-->\s+\[\*\]$", line)
+        if m:
+            terminal_states.add(m.group(1))
+            continue
+
+        # [*] --> StateA  (initial)
+        m = re.match(r"^\[\*\]\s+-->\s+([\w-]+)$", line)
+        if m:
+            initial_state = m.group(1)
+            continue
+
+        # StateA --> StateB : trigger
+        m = re.match(r"^([\w-]+)\s+-->\s+([\w-]+)\s*:\s*([\w-]+)$", line)
+        if m:
+            src, dst, trigger = m.group(1), m.group(2), m.group(3)
+            transitions.setdefault(src, {})[trigger] = dst
+            continue
+
+    if initial_state is None:
+        raise ValueError(f"No initial state ([*] --> ...) found in {path}")
+
+    return WorkflowDefinition(
+        transitions=transitions,
+        terminal_states=terminal_states,
+        initial_state=initial_state,
+    )
+
+
+# ---------------------------------------------------------------------------
+# State machine
+# ---------------------------------------------------------------------------
+
+
+class StateMachine:
+    """Simple state machine backed by a dict-of-dicts transition table."""
+
+    def __init__(self, transitions: dict[str, dict[str, str]], initial: str) -> None:
+        self._transitions = transitions
+        self.state = initial
+
+    def transition(self, trigger: str) -> str:
+        """Advance to the next state via trigger. Returns new state."""
+        available = self._transitions.get(self.state, {})
+        if trigger not in available:
+            raise ValueError(
+                f"Invalid trigger '{trigger}' from state '{self.state}'. "
+                f"Available: {list(available)}"
+            )
+        self.state = available[trigger]
+        return self.state
+
+
+# ---------------------------------------------------------------------------
+# Pipeline context (serializable state)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class PipelineContext:
+    """All mutable state for a dev-team pipeline run, persisted across resumptions."""
+
+    work_item_id: str
+    spec_path: str
+    state: str = "init"
+    brief: str = ""
+    work_summaries: list[str] = field(default_factory=list)
+    fix_iteration: int = 0
+    review_fix_iteration: int = 0
+    pr_url: str = ""
+    review_notes: str = ""
+    last_failure: str = ""
+    # Runtime-only — not persisted to the context file.
+    review_assignee_email: str = field(default="", repr=False)
+    build_log: str = ""
+    test_log: str = ""
+    started: datetime.datetime = field(default_factory=datetime.datetime.now)
+    last_updated: datetime.datetime = field(default_factory=datetime.datetime.now)
+
+    def save(self, path: Path) -> None:
+        """Write context to a markdown file with YAML frontmatter and named sections."""
+        self.last_updated = datetime.datetime.now()
+
+        lines = [
+            "---",
+            f"state: {self.state}",
+            f"work_item_id: {self.work_item_id}",
+            f"spec_path: {self.spec_path}",
+            f"fix_iteration: {self.fix_iteration}",
+            f"review_fix_iteration: {self.review_fix_iteration}",
+            f"pr_url: {self.pr_url}",
+            f"build_log: {self.build_log}",
+            f"test_log: {self.test_log}",
+            f"started: {self.started.isoformat()}",
+            f"last_updated: {self.last_updated.isoformat()}",
+            "---",
+            "",
+            f"# {self.work_item_id} Dev Team Context",
+        ]
+
+        if self.brief:
+            lines += ["", "## Researcher Brief", "", self.brief.strip()]
+
+        if self.work_summaries:
+            lines += ["", "## Implementation Summary", "", self.work_summaries[0].strip()]
+            for i, summary in enumerate(self.work_summaries[1:], start=1):
+                lines += ["", f"## Fix {i}", "", summary.strip()]
+
+        if self.review_notes:
+            lines += ["", "## Review Notes", "", self.review_notes.strip()]
+
+        if self.last_failure:
+            lines += ["", "## Last Failure", "", self.last_failure.strip()]
+
+        log_links: list[str] = []
+        if self.build_log:
+            log_links.append(f"- Build: {self.build_log}")
+        if self.test_log:
+            log_links.append(f"- Tests: {self.test_log}")
+        if log_links:
+            lines += ["", "## Logs", ""] + log_links
+
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    @classmethod
+    def load(cls, path: Path) -> "PipelineContext":
+        """Load context from a markdown file previously written by save()."""
+        text = path.read_text(encoding="utf-8")
+        meta, body = _parse_frontmatter(text)
+        
+
+        ctx = cls(
+            work_item_id=meta.get("work_item_id", ""),
+            spec_path=meta.get("spec_path", ""),
+            state=meta.get("state", "init"),
+            fix_iteration=int(meta.get("fix_iteration", 0)),
+            review_fix_iteration=int(meta.get("review_fix_iteration", 0)),
+            pr_url=meta.get("pr_url", ""),
+            build_log=meta.get("build_log", ""),
+            test_log=meta.get("test_log", ""),
+        )
+
+        try:
+            ctx.started = datetime.datetime.fromisoformat(meta["started"])
+            ctx.last_updated = datetime.datetime.fromisoformat(meta["last_updated"])
+        except (KeyError, ValueError):
+            pass
+
+        sections = _parse_sections(body)
+        ctx.brief = sections.get("Researcher Brief", "")
+
+        work_summaries: list[str] = []
+        if "Implementation Summary" in sections:
+            work_summaries.append(sections["Implementation Summary"])
+        i = 1
+        while f"Fix {i}" in sections:
+            work_summaries.append(sections[f"Fix {i}"])
+            i += 1
+        ctx.work_summaries = work_summaries
+        ctx.review_notes = sections.get("Review Notes", "")
+        ctx.last_failure = sections.get("Last Failure", "")
+
+        return ctx
+
+
+def _parse_sections(body: str) -> dict[str, str]:
+    """Split a markdown body into {heading: content} by '## ' headings."""
+    sections: dict[str, str] = {}
+    current_heading: str | None = None
+    current_lines: list[str] = []
+
+    for line in body.split("\n"):
+        if line.startswith("## "):
+            if current_heading is not None:
+                sections[current_heading] = "\n".join(current_lines).strip()
+            current_heading = line[3:].strip()
+            current_lines = []
+        elif current_heading is not None:
+            current_lines.append(line)
+
+    if current_heading is not None:
+        sections[current_heading] = "\n".join(current_lines).strip()
+
+    return sections
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _commit_and_push(work_item_id: str) -> None:
+    """Push the current branch. The developer is expected to have already committed.
+
+    As a safety net, stages and commits any uncommitted changes left by the developer
+    before pushing. The pipeline never pushes until validation is clean, so partial
+    or broken work is never sent to the remote.
+    """
+    try:
+        subprocess.run(["git", "add", "-A"], check=True, cwd=REPO_ROOT, capture_output=True)
+        diff = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"], cwd=REPO_ROOT, capture_output=True,
+        )
+        if diff.returncode != 0:
+            subprocess.run(
+                ["git", "commit", "-m", f"{work_item_id}: uncommitted changes at validation"],
+                check=True, cwd=REPO_ROOT, capture_output=True,
+            )
+        subprocess.run(
+            ["git", "push", "origin", "HEAD"],
+            check=True, cwd=REPO_ROOT, capture_output=True,
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"Warning: git commit/push failed (continuing): {e.stderr}", flush=True)
+
+
+def parse_json_output(text: str) -> dict:
+    """Extract the last parseable JSON object from agent output text.
+
+    Tries single-line JSON objects from the end of the text first, then
+    fenced code blocks. Returns an empty dict if nothing parses.
+    """
+    for line in reversed(text.strip().splitlines()):
+        line = line.strip()
+        if line.startswith("{") and line.endswith("}"):
+            try:
+                return json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+    for block in reversed(re.findall(r"```(?:json)?\s*\n([\s\S]*?)\n```", text)):
+        try:
+            result = json.loads(block.strip())
+            if isinstance(result, dict):
+                return result
+        except json.JSONDecodeError:
+            continue
+
+    return {}
+
+
+# ---------------------------------------------------------------------------
+# Steps
+# ---------------------------------------------------------------------------
+
+class Step(ABC):
+    """A single phase of the dev-team pipeline."""
+
+    handles: str  # state name this step is responsible for
+
+    @abstractmethod
+    def run(self, ctx: PipelineContext) -> str:
+        """Execute step logic (or skip if already done). Returns a trigger name."""
+        ...
+
+
+class ResearchStep(Step):
+    handles = "researching"
+
+    def run(self, ctx: PipelineContext) -> str:
+        if ctx.brief:
+            print("Research already complete in context — skipping.", flush=True)
+            return "research_done"
+        print(f"Researcher is planning work for {ctx.work_item_id}...", flush=True)
+        try:
+            ctx.brief = call_agent(
+                "researcher", "researcher-plan",
+                ctx.work_item_id, ctx.spec_path,
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking researcher agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+        return "research_done"
+
+
+class ImplementStep(Step):
+    handles = "implementing"
+
+    def run(self, ctx: PipelineContext) -> str:
+        if ctx.work_summaries:
+            print("Implementation already complete in context — skipping.", flush=True)
+            return "impl_done"
+        print(f"Developer is implementing {ctx.work_item_id}...", flush=True)
+        try:
+            impl_summary = call_agent(
+                "developer", "developer-implement", ctx.work_item_id,
+                substitutions={"$TASK_BRIEF": ctx.brief},
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking developer agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+        ctx.work_summaries.append(impl_summary)
+        return "impl_done"
+
+
+class ValidateStep(Step):
+    handles = "validating"
+
+    def run(self, ctx: PipelineContext) -> str:
+        print("Running scripts/validate-build...", flush=True)
+        try:
+            build_ok, build_log, build_tail = run_validate_script("validate-build")
+        except (FileNotFoundError, OSError) as e:
+            print(f"Error running validate-build:\n{e}", file=sys.stderr)
+            sys.exit(1)
+
+        ctx.build_log = str(build_log)
+        if not build_ok:
+            print(f"Build FAILED. Log: {build_log}", flush=True)
+            ctx.last_failure = (
+                f"Build failed.\n\n"
+                f"Full log (read this for details): {build_log}\n\n"
+                f"Last 30 lines:\n```\n{build_tail}\n```"
+            )
+            return "build_failed"
+
+        print(f"Build clean. Log: {build_log}", flush=True)
+
+        print("Running scripts/validate-tests...", flush=True)
+        try:
+            tests_ok, tests_log, tests_tail = run_validate_script("validate-tests")
+        except (FileNotFoundError, OSError) as e:
+            print(f"Error running validate-tests:\n{e}", file=sys.stderr)
+            sys.exit(1)
+
+        ctx.test_log = str(tests_log)
+        if not tests_ok:
+            print(f"Tests FAILED. Log: {tests_log}", flush=True)
+            ctx.last_failure = (
+                f"Test failures.\n\n"
+                f"Full log (read this for details): {tests_log}\n\n"
+                f"Last 30 lines:\n```\n{tests_tail}\n```"
+            )
+            return "tests_failed"
+
+        print(f"Tests clean. Log: {tests_log}", flush=True)
+        ctx.last_failure = ""
+        _commit_and_push(ctx.work_item_id)
+        return "clean"
+
+
+class ReviewStep(Step):
+    handles = "reviewing"
+
+    def run(self, ctx: PipelineContext) -> str:
+        print(f"Reviewer is reviewing {ctx.work_item_id}...", flush=True)
+        try:
+            output = call_agent(
+                "reviewer", "reviewer-review",
+                substitutions={
+                    "$WORK_ITEM_ID": ctx.work_item_id,
+                    "$SPEC_PATH": ctx.spec_path,
+                    "$TASK_BRIEF": ctx.brief,
+                    "$PR_URL": ctx.pr_url,
+                },
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking reviewer agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+
+        result = parse_json_output(output)
+        if result.get("pr_url"):
+            ctx.pr_url = result["pr_url"]
+        ctx.review_notes = output
+
+        status = result.get("status", "changes_requested")
+        if status == "approved":
+            print("Review approved.", flush=True)
+            return "approved"
+        print("Reviewer requested changes.", flush=True)
+        return "changes_requested"
+
+
+class SignOffStep(Step):
+    handles = "reviewing-signoff"
+
+    def run(self, ctx: PipelineContext) -> str:
+        print(f"Reviewer is signing off on {ctx.work_item_id}...", flush=True)
+        try:
+            output = call_agent(
+                "reviewer", "reviewer-sign-off",
+                substitutions={
+                    "$WORK_ITEM_ID": ctx.work_item_id,
+                    "$TASK_BRIEF": ctx.brief,
+                    "$PR_URL": ctx.pr_url,
+                    "$REVIEW_ASSIGNEE_EMAIL": ctx.review_assignee_email,
+                },
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking reviewer agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+
+        ctx.review_notes = output
+        result = parse_json_output(output)
+        status = result.get("status", "changes_requested")
+        if status == "approved":
+            print("Sign-off approved.", flush=True)
+            return "approved"
+        print("Sign-off requested further changes.", flush=True)
+        return "changes_requested"
+
+
+class FixStep(Step):
+    handles = "fixing"
+
+    def run(self, ctx: PipelineContext) -> str:
+        if ctx.fix_iteration >= MAX_FIX_ITERATIONS:
+            print(
+                f"Error: still failing after {MAX_FIX_ITERATIONS} fix iterations. "
+                f"Manual intervention needed.",
+                file=sys.stderr,
+            )
+            return "max_retries"
+        print(
+            f"Invoking developer to fix "
+            f"(iteration {ctx.fix_iteration + 1} of {MAX_FIX_ITERATIONS})...",
+            flush=True,
+        )
+        try:
+            fix_summary = call_agent(
+                "developer", "developer-fix", ctx.work_item_id,
+                substitutions={
+                    "$TASK_BRIEF": ctx.brief,
+                    "$WORK_SUMMARIES": _format_work_summaries(ctx.work_summaries),
+                    "$ISSUES": ctx.last_failure,
+                },
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking developer-fix agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+        ctx.fix_iteration += 1
+        ctx.work_summaries.append(fix_summary)
+        return "fix_done"
+
+
+class FixPrStep(Step):
+    handles = "fixing-pr"
+
+    def run(self, ctx: PipelineContext) -> str:
+        if ctx.review_fix_iteration >= MAX_REVIEW_FIX_ITERATIONS:
+            print(
+                f"Error: still failing review after {MAX_REVIEW_FIX_ITERATIONS} "
+                f"review fix iterations. Manual intervention needed.",
+                file=sys.stderr,
+            )
+            return "max_retries"
+        print(
+            f"Invoking developer to address review comments "
+            f"(iteration {ctx.review_fix_iteration + 1} of {MAX_REVIEW_FIX_ITERATIONS})...",
+            flush=True,
+        )
+        issues = (
+            f"Code review changes requested on PR {ctx.pr_url}.\n\n"
+            f"Read the open review threads on the PR and address each one.\n\n"
+            f"Reviewer summary:\n{ctx.review_notes}"
+        )
+        try:
+            fix_summary = call_agent(
+                "developer", "developer-fix", ctx.work_item_id,
+                substitutions={
+                    "$TASK_BRIEF": ctx.brief,
+                    "$WORK_SUMMARIES": _format_work_summaries(ctx.work_summaries),
+                    "$ISSUES": issues,
+                },
+            )
+        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+            print(f"Error invoking developer-fix agent:\n{e}", file=sys.stderr)
+            sys.exit(1)
+        ctx.review_fix_iteration += 1
+        ctx.work_summaries.append(fix_summary)
+        return "fix_done"
+
+
+# ---------------------------------------------------------------------------
+# Pipeline
+# ---------------------------------------------------------------------------
+
+class DevTeamPipeline:
+    """Drives the dev-team state machine from init (or a resumed state) to done."""
+
+    def __init__(self, ctx: PipelineContext, context_path: Path, workflow: WorkflowDefinition) -> None:
+        self.ctx = ctx
+        self.context_path = context_path
+        self.workflow = workflow
+        self.machine = StateMachine(workflow.transitions, initial=ctx.state)
+        validate_step = ValidateStep()
+        self.step_handlers: dict[str, Step] = {
+            "researching": ResearchStep(),
+            "implementing": ImplementStep(),
+            "validating": validate_step,
+            "validating-pr": validate_step,
+            "fixing": FixStep(),
+            "reviewing": ReviewStep(),
+            "reviewing-signoff": SignOffStep(),
+            "fixing-pr": FixPrStep(),
+        }
+
+    def run(self) -> None:
+        if self.machine.state == self.workflow.initial_state:
+            boot_trigger = next(iter(self.workflow.transitions[self.workflow.initial_state]))
+            self.machine.transition(boot_trigger)
+            self.ctx.state = self.machine.state
+            self.ctx.save(self.context_path)
+
+        while self.machine.state not in self.workflow.terminal_states:
+            step = self.step_handlers.get(self.machine.state)
+            if step is None:
+                raise RuntimeError(f"No handler for state '{self.machine.state}'")
+
+            trigger = step.run(self.ctx)
+
+            self.machine.transition(trigger)
+            self.ctx.state = self.machine.state
+            self.ctx.save(self.context_path)
+
+        # Callers check ctx.state and handle failure (sys.exit, cleanup, etc.).
+
+
+# ---------------------------------------------------------------------------
+# Utilities (unchanged from original)
+# ---------------------------------------------------------------------------
+
+def _find_repo_root() -> Path:
+    """Walk up from this file until a directory containing .claude/ is found."""
+    current = Path(__file__).resolve().parent
+    while True:
+        if (current / ".claude").is_dir():
+            return current
+        parent = current.parent
+        if parent == current:
+            raise RuntimeError(
+                f"Could not locate repo root: no .claude/ directory found "
+                f"in any ancestor of {Path(__file__).resolve()}"
+            )
+        current = parent
+
+
+REPO_ROOT = _find_repo_root()
+
+
+def _resolve_claude() -> list[str]:
+    """Return the command prefix needed to invoke the claude CLI.
+
+    On Windows, claude is often a .cmd batch wrapper. CreateProcess can't run
+    .cmd files directly — they need cmd.exe. shutil.which resolves the full
+    path (respecting PATHEXT), and we wrap with cmd /c if needed.
+    """
+    path = shutil.which("claude")
+    if path is None:
+        raise RuntimeError(
+            "claude CLI not found on PATH. "
+            "Ensure Claude Code is installed and claude.exe is accessible."
+        )
+    if sys.platform == "win32" and path.lower().endswith(".cmd"):
+        return ["cmd", "/c", path]
+    return [path]
+
+
+CLAUDE_CMD = _resolve_claude()
+
+
+def _parse_frontmatter(text: str) -> tuple[dict, str]:
+    """Split YAML frontmatter from body. Returns (metadata_dict, body).
+
+    Frontmatter is delimited by lines containing only '---'.
+    If no frontmatter is present, returns ({}, text).
+    """
+    lines = text.split("\n")
+    if not lines or lines[0].strip() != "---":
+        return {}, text
+
+    end = None
+    for i, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            end = i
+            break
+
+    if end is None:
+        return {}, text
+
+    frontmatter_lines = lines[1:end]
+    body = "\n".join(lines[end + 1:]).lstrip("\n")
+
+    metadata: dict = {}
+    i = 0
+    while i < len(frontmatter_lines):
+        line = frontmatter_lines[i]
+        if ":" in line and not line.startswith(" ") and not line.startswith("-"):
+            key, _, value = line.partition(":")
+            key = key.strip()
+            value = value.strip()
+            if not value:
+                items: list[str] = []
+                j = i + 1
+                while j < len(frontmatter_lines):
+                    item_line = frontmatter_lines[j].strip()
+                    if item_line.startswith("- "):
+                        items.append(item_line[2:].strip())
+                        j += 1
+                    else:
+                        break
+                if items:
+                    metadata[key] = items
+                    i = j
+                    continue
+            metadata[key] = value
+        i += 1
+
+    return metadata, body
+
+
+def call_agent(
+    agent_name: str,
+    skill_name: str,
+    *args: str,
+    stream: bool = True,
+    substitutions: dict[str, str] | None = None,
+) -> str:
+    """Invoke a Claude agent with a skill via the claude CLI.
+
+    Reads the agent definition for its model and system prompt, reads the skill
+    definition for its instructions, and calls `claude -p` with the combined prompt.
+
+    Args:
+        agent_name:     Name of the agent (matches .claude/agents/<name>.md).
+        skill_name:     Name of the skill (matches .claude/commands/<name>.md).
+        *args:          Arguments passed to the skill, substituted for $ARGUMENTS.
+        stream:         If True (default), print output to stdout as it arrives.
+                        Set to False for agents that return structured JSON.
+        substitutions:  Optional dict of {placeholder: value} pairs substituted into
+                        the skill body before $ARGUMENTS is resolved. Use for embedding
+                        structured content (e.g. {"$TASK_BRIEF": brief_text}).
+
+    Returns:
+        The full text output from the agent.
+
+    Raises:
+        FileNotFoundError: Agent or skill definition file not found.
+        RuntimeError: claude CLI not on PATH, or unexpected output format.
+        subprocess.CalledProcessError: claude CLI exited with non-zero status.
+    """
+    agent_path = REPO_ROOT / ".claude" / "agents" / f"{agent_name}.md"
+    skill_path = REPO_ROOT / ".claude" / "commands" / f"{skill_name}.md"
+
+    if not agent_path.exists():
+        raise FileNotFoundError(
+            f"Agent definition not found: .claude/agents/{agent_name}.md"
+        )
+    if not skill_path.exists():
+        raise FileNotFoundError(
+            f"Skill definition not found: .claude/commands/{skill_name}.md"
+        )
+
+    agent_meta, agent_body = _parse_frontmatter(agent_path.read_text(encoding="utf-8"))
+    _, skill_body = _parse_frontmatter(skill_path.read_text(encoding="utf-8"))
+
+    if substitutions:
+        for placeholder, value in substitutions.items():
+            skill_body = skill_body.replace(placeholder, value)
+    arguments_str = " ".join(args)
+    skill_body = skill_body.replace("$ARGUMENTS", arguments_str)
+
+    prompt = f"{agent_body}\n\n---\n\n{skill_body}"
+
+    raw_model = agent_meta.get("model", "sonnet")
+    model = MODEL_MAP.get(raw_model, raw_model)
+
+    # Pass -p without an argument so claude runs in print mode reading from stdin.
+    # Embedding the prompt inline as "-p <prompt>" hits the Windows 32 767-char
+    # CreateProcess limit once build/test output fills $ISSUES.
+    cmd = CLAUDE_CMD + [
+        "-p", "--model", model,
+        "--output-format", "stream-json", "--verbose",
+    ]
+    tools = agent_meta.get("tools")
+    if isinstance(tools, list) and tools:
+        cmd += ["--allowedTools", ",".join(tools)]
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+    log_dir = REPO_ROOT / ".claude" / "logs" / "dev-team"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"{timestamp}-{agent_name}-{skill_name}.jsonl"
+
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            cwd=REPO_ROOT,
+        )
+    except (FileNotFoundError, OSError) as exc:
+        raise RuntimeError(
+            f"Failed to start claude CLI: {exc}"
+        ) from exc
+
+    # Write the prompt to stdin in a background thread.  Without the thread the
+    # pipe buffer fills up before we start reading stdout, causing a deadlock.
+    def _write_prompt() -> None:
+        try:
+            proc.stdin.write(prompt)  # type: ignore[union-attr]
+            proc.stdin.close()        # type: ignore[union-attr]
+        except BrokenPipeError:
+            pass
+
+    stdin_thread = threading.Thread(target=_write_prompt, daemon=True)
+    stdin_thread.start()
+
+    result_text: str = ""
+    with log_path.open("w", encoding="utf-8") as log_file:
+        for line in proc.stdout:  # type: ignore[union-attr]
+            log_file.write(line)
+            log_file.flush()
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") == "result" and event.get("subtype") == "success":
+                result_text = event.get("result", "")
+                if stream:
+                    print(result_text, flush=True)
+
+    print(f"[{time.time():.1f}] Waiting for process to exit...", flush=True)
+    proc.wait()
+    print(f"[{time.time():.1f}] Reading stderr...", flush=True)
+    stderr_text = proc.stderr.read()  # type: ignore[union-attr]
+    if stderr_text:
+        print(f"[{time.time():.1f}] opening log path to write errors...")
+        with log_path.open("a", encoding="utf-8") as log_file:
+            print(f"[{time.time():.1f}] Writing errors...", flush=True)
+            log_file.write(json.dumps({"type": "stderr", "text": stderr_text}) + "\n")
+
+    if proc.returncode != 0:
+        raise subprocess.CalledProcessError(
+            proc.returncode,
+            proc.args,
+            stderr=f"{stderr_text}\n(exit code {proc.returncode})",
+        )
+
+    print(f"[{time.time():.1f}] call_agent complete", flush=True)
+    return result_text
+
+
+def _handle_pipeline_failure(ctx: PipelineContext) -> None:
+    """Assign the Jira issue to the human reviewer and add a failure comment."""
+    log_parts: list[str] = []
+    if ctx.build_log:
+        log_parts.append(f"Build log: {ctx.build_log}")
+    if ctx.test_log:
+        log_parts.append(f"Test log: {ctx.test_log}")
+    log_paths = "\n".join(log_parts) if log_parts else "(no logs recorded)"
+
+    print(f"Updating Jira for failed pipeline ({ctx.work_item_id})...", flush=True)
+    try:
+        call_agent(
+            "developer", "jira-update-failed", ctx.work_item_id,
+            substitutions={
+                "$REVIEW_ASSIGNEE_EMAIL": ctx.review_assignee_email,
+                "$LOG_PATHS": log_paths,
+            },
+        )
+    except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+        print(f"Warning: Jira failure update failed (continuing): {e}", file=sys.stderr)
+
+
+def _format_work_summaries(summaries: list[str]) -> str:
+    """Format one or more work summaries for embedding in a developer-fix prompt."""
+    if len(summaries) == 1:
+        return summaries[0]
+    parts = []
+    for i, s in enumerate(summaries, start=1):
+        label = "Implementation summary" if i == 1 else f"Fix summary {i - 1}"
+        parts.append(f"### {label}\n\n{s.strip()}")
+    return "\n\n---\n\n".join(parts)
+
+
+def run_validate_script(script_name: str) -> tuple[bool, Path, str]:
+    """Run a validate script from the scripts/ directory.
+
+    Logs full output to a timestamped file under .claude/logs/dev-team/.
+    Nothing is streamed to the console — callers print their own status line.
+    Returns (success, log_path, tail) where tail is the last 30 lines.
+    """
+    scripts_dir = REPO_ROOT / "scripts"
+    ext = ".cmd" if sys.platform == "win32" else ".sh"
+    script_path = scripts_dir / f"{script_name}{ext}"
+
+    if not script_path.exists():
+        raise FileNotFoundError(
+            f"Validate script not found: scripts/{script_name}{ext}"
+        )
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+    log_dir = REPO_ROOT / ".claude" / "logs" / "dev-team"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"{timestamp}-{script_name}.txt"
+
+    if sys.platform == "win32":
+        invoke = ["cmd", "/c", str(script_path)]
+    else:
+        invoke = [str(script_path)]
+
+    proc = subprocess.Popen(
+        invoke,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=REPO_ROOT,
+    )
+
+    lines: list[str] = []
+    with log_path.open("w", encoding="utf-8") as log_file:
+        for line in proc.stdout:  # type: ignore[union-attr]
+            log_file.write(line)
+            lines.append(line)
+
+    proc.wait()
+    tail = "".join(lines[-30:])
+    return proc.returncode == 0, log_path, tail
+
+
+def find_spec_file(work_item_id: str) -> Path:
+    """Find the unique _spec_*.md file that contains the work item ID.
+
+    Raises SystemExit(1) with a clear message on zero or multiple matches.
+    """
+    candidates = [
+        p
+        for p in REPO_ROOT.rglob("_spec_*.md")
+        if ".git" not in p.parts
+    ]
+
+    matches = [
+        p for p in candidates
+        if work_item_id in p.read_text(encoding="utf-8")
+    ]
+
+    if not matches:
+        print(
+            f"Error: no _spec_*.md file found containing '{work_item_id}'.\n"
+            f"Verify the task key is correct and you are on the right branch.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if len(matches) > 1:
+        paths = "\n  ".join(str(m.relative_to(REPO_ROOT)) for m in matches)
+        print(
+            f"Error: multiple spec files found containing '{work_item_id}' — "
+            f"cannot determine which to use:\n  {paths}\n"
+            f"Resolve the ambiguity (e.g. deduplicate the task key) and retry.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    return matches[0]
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="dev_team.py",
+        description="dev-team pipeline orchestrator",
+    )
+    parser.add_argument("work_item_id", metavar="work-item-id",
+                        help="Jira work item ID (e.g. ADR-172)")
+    parser.add_argument("--workflow", required=True, metavar="path",
+                        help="Path to a Mermaid stateDiagram-v2 workflow file")
+    args = parser.parse_args()
+
+    work_item_id = args.work_item_id
+    workflow_path = Path(args.workflow)
+    if not workflow_path.is_absolute():
+        workflow_path = REPO_ROOT / workflow_path
+
+    try:
+        workflow = parse_workflow(workflow_path)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Error loading workflow: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    log_dir = REPO_ROOT / ".claude" / "logs" / "dev-team"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    context_path = log_dir / f"{work_item_id}-context.md"
+
+    review_assignee_email = os.environ.get("REVIEW_ASSIGNEE_EMAIL", "")
+    if not review_assignee_email:
+        print(
+            "Error: REVIEW_ASSIGNEE_EMAIL environment variable is not set.\n"
+            "Set it to the Jira/email address of the human reviewer, e.g.:\n"
+            "  set REVIEW_ASSIGNEE_EMAIL=you@example.com",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if context_path.exists():
+        ctx = PipelineContext.load(context_path)
+        if ctx.state in workflow.terminal_states:
+            print(f"Previous run ended with state '{ctx.state}'.")
+            print(f"Delete {context_path} to run again.")
+            sys.exit(0 if ctx.state == "done" else 1)
+        print(f"Resuming {work_item_id} from state '{ctx.state}'...", flush=True)
+    else:
+        print(f"Searching for spec for {work_item_id}", flush=True)
+        spec_file = find_spec_file(work_item_id)
+        spec_path = str(spec_file.relative_to(REPO_ROOT))
+        print(f"Found {spec_file}", flush=True)
+        ctx = PipelineContext(work_item_id=work_item_id, spec_path=spec_path,
+                              state=workflow.initial_state)
+        ctx.save(context_path)
+
+    ctx.review_assignee_email = review_assignee_email
+
+    DevTeamPipeline(ctx, context_path, workflow).run()
+
+    if ctx.state == "failed":
+        _handle_pipeline_failure(ctx)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -21,7 +21,7 @@ then drives: fetch raw layout → compile → validate → store compiled layout
 
 1. Dequeue SQS message containing `rawLayoutId`
 2. Fetch `RawLayout` from `RawLayoutService` via `IRawLayoutRepository`
-3. Compile via `ILayoutCompilerClient` (stub: `StubLayoutCompilerClient`)
+3. Compile via `ILayoutCompilerClient` (real: `HttpLayoutCompilerClient` → `LayoutCompilerService` Lambda)
 4. Validate via `ILayoutValidationClient` (stub: `StubLayoutValidationClient`)
 5a. On validation failure: write result back via `IRawLayoutStatusWriter`; delete message
 5b. On success: store compiled layout via `ICompiledLayoutRepository`; publish notification via `INotificationPublisher`; delete message
@@ -29,8 +29,7 @@ then drives: fetch raw layout → compile → validate → store compiled layout
 
 **Stub implementations (current task):**
 
-- `StubLayoutCompilerClient` — derives a `CompiledLayout` from `RawLayout` elements; no real CSS
-- `StubLayoutValidationClient` — always returns `IsValid=true`; set `Validation:ForceInvalid=true` to exercise the failure path
+- `StubLayoutValidationClient` — always returns `IsValid=true`; give a layout element a `cssId` starting with `INVALID_` to exercise the failure path (the real `LayoutCompilerService` emits `.INVALID_<id>` in `CssDefinitions`, which the stub detects)
 - `StubNotificationPublisher` — no-op
 
 **Service-to-service auth:** When calling `RawLayoutService`, the HTTP clients attach a bearer

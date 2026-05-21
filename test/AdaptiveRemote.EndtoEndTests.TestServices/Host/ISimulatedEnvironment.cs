@@ -28,6 +28,8 @@ public interface ISimulatedEnvironment : IDisposable
 
     ServiceFixture LayoutProcessingService { get; }
 
+    ServiceFixture LayoutCompilerService { get; }
+
     LocalStackFixture LocalStack { get; }
 
     void EnsureHostStarted();
@@ -45,6 +47,8 @@ public interface ISimulatedEnvironment : IDisposable
     string? CompiledLayoutServiceLogs { get; }
 
     string? LayoutProcessingServiceLogs { get; }
+
+    string? LayoutCompilerServiceLogs { get; }
 
     /// <summary>
     /// Gets the test-time IR payloads that are programmed into the settings file.

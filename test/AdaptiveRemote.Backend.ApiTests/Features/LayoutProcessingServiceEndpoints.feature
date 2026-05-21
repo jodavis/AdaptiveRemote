@@ -51,8 +51,9 @@ Scenario: End-to-end layout processing validation failure path
     Given LayoutProcessingService is running
     And the client has a valid Authorization token
     When this layout is created via RawLayoutService:
-        # Invalid because it has a special "name" that is considered invalid
-        # for testing purposes
+        # The element's cssId starts with "INVALID_", which causes LayoutCompilerService to
+        # emit ".INVALID_up-btn { ... }" in CssDefinitions. StubLayoutValidationClient
+        # detects that prefix and returns a failure result, exercising the failure path.
         """
         {
             "userId": "test-user",
@@ -65,7 +66,7 @@ Scenario: End-to-end layout processing validation failure path
                     "label": "Up",
                     "speakPhrase": "up",
                     "reverse": "Down",
-                    "cssId": "up-btn",
+                    "cssId": "INVALID_up-btn",
                     "gridRow": 0,
                     "gridColumn": 0
                 }

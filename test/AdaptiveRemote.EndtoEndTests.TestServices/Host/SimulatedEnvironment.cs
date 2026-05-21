@@ -65,6 +65,7 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
         _lazyCompiledLayoutService = new(StartCompiledLayoutService);
         _lazyRawLayoutService = new(StartRawLayoutService);
         _lazyLayoutProcessingService = new(StartLayoutProcessingService);
+        _lazyLayoutCompilerService = new(StartLayoutCompilerService);
         _lazyLocalStackFixture = new(StartLocalStack);
     }
 
@@ -82,6 +83,9 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
 
     private Lazy<ServiceFixture> _lazyLayoutProcessingService;
     public ServiceFixture LayoutProcessingService => _lazyLayoutProcessingService.Value;
+
+    private Lazy<ServiceFixture> _lazyLayoutCompilerService;
+    public ServiceFixture LayoutCompilerService => _lazyLayoutCompilerService.Value;
 
     private Lazy<LocalStackFixture> _lazyLocalStackFixture;
     public LocalStackFixture LocalStack => _lazyLocalStackFixture.Value;
@@ -109,10 +113,18 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             ["RawLayoutService__BaseUrl"] = RawLayoutService.ServiceUrl,
             ["RawLayoutService__ServiceAccountToken"] = JwtAuthority.CreateToken("service-account-layout-processor"),
             ["CompiledLayoutService__BaseUrl"] = CompiledLayoutService.ServiceUrl,
+            ["LayoutCompilerService__BaseUrl"] = LayoutCompilerService.ServiceUrl,
 
             // Enable the orchestrator for pipeline tests
             ["Orchestrator__Enabled"] = "true",
         });
+        fixture.StartService();
+        return fixture;
+    }
+
+    private ServiceFixture StartLayoutCompilerService()
+    {
+        ServiceFixture fixture = new ServiceFixture("AdaptiveRemote.Backend.LayoutCompilerService", this);
         fixture.StartService();
         return fixture;
     }
@@ -148,6 +160,8 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
     public string? CompiledLayoutServiceLogs => _lazyCompiledLayoutService.IsValueCreated ? _lazyCompiledLayoutService.Value.LogFilePath : null;
 
     public string? LayoutProcessingServiceLogs => _lazyLayoutProcessingService.IsValueCreated ? _lazyLayoutProcessingService.Value.LogFilePath : null;
+
+    public string? LayoutCompilerServiceLogs => _lazyLayoutCompilerService.IsValueCreated ? _lazyLayoutCompilerService.Value.LogFilePath : null;
 
     public string? LogFolder => _nextLogLocation is not null 
         ? Path.GetDirectoryName(_nextLogLocation)
@@ -219,6 +233,18 @@ public sealed class SimulatedEnvironment : ISimulatedEnvironment
             if (_lazyLayoutProcessingService.IsValueCreated)
             {
                 _lazyLayoutProcessingService.Value.Dispose();
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+
+        try
+        {
+            if (_lazyLayoutCompilerService.IsValueCreated)
+            {
+                _lazyLayoutCompilerService.Value.Dispose();
             }
         }
         catch
