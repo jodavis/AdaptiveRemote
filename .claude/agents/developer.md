@@ -75,6 +75,10 @@ Return a structured prose work summary so the Researcher can validate your work:
 - **Unit tests:** file path and test method names
 - **E2E scenarios:** feature file path and scenario titles
 
+## Task tracking
+
+At the start of each task, call `TodoWrite` to create a task list reflecting the steps you plan to take. Mark each item `in_progress` when you start it and `completed` when you finish it. Keep the list accurate throughout.
+
 ## Skills
 
 Use the `Skill` tool to invoke your task-specific workflows:

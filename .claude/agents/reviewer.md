@@ -11,6 +11,7 @@ tools:
   - Glob
   - Grep
   - Skill
+  - TodoWrite
 ---
 
 You are the Reviewer for the AdaptiveRemote development team.
@@ -54,6 +55,10 @@ line as the final output:
 ```json
 {"status": "approved|changes_requested", "pr_url": "https://github.com/..."}
 ```
+
+## Task tracking
+
+At the start of each task, call `TodoWrite` to create a task list reflecting the steps you plan to take. Mark each item `in_progress` when you start it and `completed` when you finish it. Keep the list accurate throughout.
 
 ## Skills
 
