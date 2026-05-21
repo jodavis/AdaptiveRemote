@@ -21,6 +21,13 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# Reconfigure stdout/stderr to UTF-8 early so that Unicode characters in agent
+# output (e.g. arrows, bullets) don't crash on Windows cp1252 terminals.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 MODEL_MAP = {
     "haiku": "claude-haiku-4-5-20251001",
     "sonnet": "claude-sonnet-4-6",
@@ -137,6 +144,8 @@ class PipelineContext:
     pr_url: str = ""
     review_notes: str = ""
     last_failure: str = ""
+    build_log: str = ""
+    test_log: str = ""
     started: datetime.datetime = field(default_factory=datetime.datetime.now)
     last_updated: datetime.datetime = field(default_factory=datetime.datetime.now)
 
@@ -152,6 +161,8 @@ class PipelineContext:
             f"fix_iteration: {self.fix_iteration}",
             f"review_fix_iteration: {self.review_fix_iteration}",
             f"pr_url: {self.pr_url}",
+            f"build_log: {self.build_log}",
+            f"test_log: {self.test_log}",
             f"started: {self.started.isoformat()}",
             f"last_updated: {self.last_updated.isoformat()}",
             "---",
@@ -173,6 +184,14 @@ class PipelineContext:
         if self.last_failure:
             lines += ["", "## Last Failure", "", self.last_failure.strip()]
 
+        log_links: list[str] = []
+        if self.build_log:
+            log_links.append(f"- Build: {self.build_log}")
+        if self.test_log:
+            log_links.append(f"- Tests: {self.test_log}")
+        if log_links:
+            lines += ["", "## Logs", ""] + log_links
+
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -189,6 +208,8 @@ class PipelineContext:
             fix_iteration=int(meta.get("fix_iteration", 0)),
             review_fix_iteration=int(meta.get("review_fix_iteration", 0)),
             pr_url=meta.get("pr_url", ""),
+            build_log=meta.get("build_log", ""),
+            test_log=meta.get("test_log", ""),
         )
 
         try:
@@ -349,29 +370,41 @@ class ValidateStep(Step):
     def run(self, ctx: PipelineContext) -> str:
         print("Running scripts/validate-build...", flush=True)
         try:
-            build_ok, build_output = run_validate_script("validate-build")
+            build_ok, build_log, build_tail = run_validate_script("validate-build")
         except (FileNotFoundError, OSError) as e:
             print(f"Error running validate-build:\n{e}", file=sys.stderr)
             sys.exit(1)
 
+        ctx.build_log = str(build_log)
         if not build_ok:
-            print("Build failed. Invoking developer to fix...", flush=True)
-            ctx.last_failure = f"Build failed:\n\n{build_output}"
+            print(f"Build FAILED. Log: {build_log}", flush=True)
+            ctx.last_failure = (
+                f"Build failed.\n\n"
+                f"Full log (read this for details): {build_log}\n\n"
+                f"Last 30 lines:\n```\n{build_tail}\n```"
+            )
             return "build_failed"
+
+        print(f"Build clean. Log: {build_log}", flush=True)
 
         print("Running scripts/validate-tests...", flush=True)
         try:
-            tests_ok, tests_output = run_validate_script("validate-tests")
+            tests_ok, tests_log, tests_tail = run_validate_script("validate-tests")
         except (FileNotFoundError, OSError) as e:
             print(f"Error running validate-tests:\n{e}", file=sys.stderr)
             sys.exit(1)
 
+        ctx.test_log = str(tests_log)
         if not tests_ok:
-            print("Tests failed. Invoking developer to fix...", flush=True)
-            ctx.last_failure = f"Test failures:\n\n{tests_output}"
+            print(f"Tests FAILED. Log: {tests_log}", flush=True)
+            ctx.last_failure = (
+                f"Test failures.\n\n"
+                f"Full log (read this for details): {tests_log}\n\n"
+                f"Last 30 lines:\n```\n{tests_tail}\n```"
+            )
             return "tests_failed"
 
-        print("Build and tests clean. Committing and pushing...", flush=True)
+        print(f"Tests clean. Log: {tests_log}", flush=True)
         ctx.last_failure = ""
         _commit_and_push(ctx.work_item_id)
         return "clean"
@@ -787,11 +820,12 @@ def _format_work_summaries(summaries: list[str]) -> str:
     return "\n\n---\n\n".join(parts)
 
 
-def run_validate_script(script_name: str) -> tuple[bool, str]:
+def run_validate_script(script_name: str) -> tuple[bool, Path, str]:
     """Run a validate script from the scripts/ directory.
 
-    Selects the platform-appropriate extension (.cmd on Windows, .sh elsewhere).
-    Streams output to stdout and returns (success, combined_output).
+    Logs full output to a timestamped file under .claude/logs/dev-team/.
+    Nothing is streamed to the console — callers print their own status line.
+    Returns (success, log_path, tail) where tail is the last 30 lines.
     """
     scripts_dir = REPO_ROOT / "scripts"
     ext = ".cmd" if sys.platform == "win32" else ".sh"
@@ -801,6 +835,11 @@ def run_validate_script(script_name: str) -> tuple[bool, str]:
         raise FileNotFoundError(
             f"Validate script not found: scripts/{script_name}{ext}"
         )
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+    log_dir = REPO_ROOT / ".claude" / "logs" / "dev-team"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / f"{timestamp}-{script_name}.txt"
 
     if sys.platform == "win32":
         invoke = ["cmd", "/c", str(script_path)]
@@ -812,17 +851,20 @@ def run_validate_script(script_name: str) -> tuple[bool, str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         cwd=REPO_ROOT,
     )
 
-    chunks: list[str] = []
-    with proc.stdout:  # type: ignore[union-attr]
-        for line in proc.stdout:
-            print(line, end="", flush=True)
-            chunks.append(line)
+    lines: list[str] = []
+    with log_path.open("w", encoding="utf-8") as log_file:
+        for line in proc.stdout:  # type: ignore[union-attr]
+            log_file.write(line)
+            lines.append(line)
 
     proc.wait()
-    return proc.returncode == 0, "".join(chunks)
+    tail = "".join(lines[-30:])
+    return proc.returncode == 0, log_path, tail
 
 
 def find_spec_file(work_item_id: str) -> Path:
