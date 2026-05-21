@@ -6,8 +6,9 @@ namespace AdaptiveRemote.Backend.LayoutProcessingService.Services;
 /// <summary>
 /// Stub implementation of ILayoutValidationClient.
 /// Returns a valid ValidationResult for all inputs by default.
-/// When Validation:ForceInvalid is set to true (e.g. in integration tests), returns an
-/// invalid result with a single stub issue, enabling end-to-end testing of the failure path.
+/// Returns an invalid result when <see cref="CompiledLayout.CssDefinitions"/> contains
+/// ".INVALID_", which E2E tests trigger by giving a layout element a cssId starting with
+/// "INVALID_". The real LayoutCompilerService emits that prefix verbatim in CSS.
 /// To be replaced with a real Lambda-backed HTTP client in ADR-172.
 /// </summary>
 public class StubLayoutValidationClient : ILayoutValidationClient
@@ -21,9 +22,10 @@ public class StubLayoutValidationClient : ILayoutValidationClient
 
     public Task<ValidationResult> ValidateAsync(CompiledLayout compiled, CancellationToken ct)
     {
-        // This check allows tests to force an invalid result by using the
-        // StubLayoutCompilerClient with a special RawLayout name.
-        if (compiled.CssDefinitions == "INVALID")
+        // E2E tests trigger the failure path by giving an element a cssId that starts with
+        // "INVALID_". The real LayoutCompilerService emits ".INVALID_<id> { ... }" in CSS,
+        // which this stub detects to return a failure result without any production-code changes.
+        if (compiled.CssDefinitions.Contains(".INVALID_", StringComparison.Ordinal))
         {
             ValidationResult failure = new(
                 IsValid: false,
