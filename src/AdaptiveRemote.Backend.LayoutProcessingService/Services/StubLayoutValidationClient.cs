@@ -1,5 +1,4 @@
 using AdaptiveRemote.Contracts;
-using Microsoft.Extensions.Configuration;
 
 namespace AdaptiveRemote.Backend.LayoutProcessingService.Services;
 
@@ -13,13 +12,6 @@ namespace AdaptiveRemote.Backend.LayoutProcessingService.Services;
 /// </summary>
 public class StubLayoutValidationClient : ILayoutValidationClient
 {
-    private readonly bool _forceInvalid;
-
-    public StubLayoutValidationClient(IConfiguration configuration)
-    {
-        _forceInvalid = configuration.GetValue("Validation:ForceInvalid", defaultValue: false);
-    }
-
     public Task<ValidationResult> ValidateAsync(CompiledLayout compiled, CancellationToken ct)
     {
         // E2E tests trigger the failure path by giving an element a cssId that starts with
