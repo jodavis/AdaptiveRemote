@@ -8,11 +8,17 @@ argument-hint: <Jira task key> <path to spec file>
 Task key: the first token of `$ARGUMENTS`  
 Spec file: the second token of `$ARGUMENTS`
 
-The caller must also include in the prompt:
+**Original task brief:**
 
-- **Original task brief** — the full prose brief produced by `researcher-plan`
-- **Summary of work done** — what the Developer implemented (changed files, key decisions made)
-- **Links to new tests** — paths or test names for new unit tests and E2E scenarios
+$TASK_BRIEF
+
+---
+
+**Summary of work done:**
+
+$WORK_SUMMARIES
+
+---
 
 All of these are required. If any are missing, stop and tell the caller what is needed.
 

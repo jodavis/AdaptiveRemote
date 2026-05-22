@@ -17,7 +17,7 @@ $TASK_BRIEF
 
 ### 1 — Load standards
 
-Invoke the `developer-patterns` skill (loads all guidelines from `CONTRIBUTING.md`).
+Read `CONTRIBUTING.md` for code guidelines.
 Read `CLAUDE.md` for quality gates and operational conventions.
 
 ### 2 — Understand the task
@@ -35,7 +35,7 @@ in your work summary and resolve it conservatively.
 
 Write Gherkin scenarios that cover the exit criteria before writing any implementation code.
 Use existing steps whenever possible. When new steps are needed, follow the conventions in
-`developer-patterns`:
+`CONTRIBUTING.md`:
 
 - Generalized, human-readable `When` / `Then` / `Given` phrasing
 - Step definitions delegate logic to test service methods
@@ -58,8 +58,12 @@ After each layer, build and test only the code you have modified:
 
 ```bash
 dotnet build <project-path>
-dotnet test <test-project-path>
+dotnet test <test-project-path> --filter "FullyQualifiedName~<ClassName>"
 ```
+
+Where `<ClassName>` is the name of the class you just implemented. If the filter matches
+zero tests (e.g., at the very start before any test classes exist), run the full project
+test without `--filter`.
 
 Fix any build errors or new test failures before moving to the next layer.
 
@@ -74,7 +78,7 @@ git commit -m "$ARGUMENTS: <short description of what was implemented>"
 
 The message body (optional) can list the key decisions if they are non-obvious.
 
-Do not push — the pipeline pushes after validation passes.
+**Do not push** — the pipeline pushes after validation passes.
 
 ### 7 — Self-review
 
@@ -82,7 +86,7 @@ Review the diff as if you were doing a code review:
 
 - Does every exit criterion have demonstrable coverage (code + test)?
 - Are there missing test cases (branches, error paths, invalid inputs)?
-- Do all files follow CLAUDE.md naming, structure, and logging conventions?
+- Do all files follow CONTRIBUTING.md naming, structure, and logging conventions?
 - Is there any scope creep — changes not required by the brief?
 
 ### 8 — Report

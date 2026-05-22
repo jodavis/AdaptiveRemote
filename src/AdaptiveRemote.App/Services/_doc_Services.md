@@ -1,5 +1,7 @@
 # Services Folder Architecture & Design
 
+Summary: Describes the Services folder structure — public interfaces at the top level, subsystem implementations in subfolders, and DI/naming conventions.
+
 ## Overview
 The top-level `Services` folder organizes all public API interfaces for services, along with helpers and subsystem implementations. This structure enables clear separation between subsystem consumers and implementation details.
 

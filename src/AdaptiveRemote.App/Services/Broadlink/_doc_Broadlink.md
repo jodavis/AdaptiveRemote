@@ -1,5 +1,7 @@
 # Broadlink Subsystem Architecture & Design
 
+Summary: Describes the RM4 Mini driver for device discovery, authentication, and IR command delivery.
+
 ## Overview
 The Broadlink subsystem provides a driver for the Broadlink RM4 mini device, handling device discovery, authentication, and communication. It is based on the Python implementation at [mjg59/python-broadlink](https://github.com/mjg59/python-broadlink), but refactored for maintainability and debugging in C#.
 

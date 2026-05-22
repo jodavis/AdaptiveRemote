@@ -1,5 +1,7 @@
 # Mvvm Subsystem Architecture & Design
 
+Summary: Describes MvvmProperty<T>, a strongly-typed property change notification system that serves as the MVVM foundation without WPF dependencies.
+
 ## Overview
 The Mvvm subsystem provides foundational support for MVVM architecture in the UI. It enables strongly-typed property change notification for model classes, similar to WPF's `DependencyProperty`, but without WPF dependencies.
 

@@ -1,5 +1,7 @@
 # Modal Message Service — Design & Architecture
 
+Summary: Describes the modal overlay message service — FIFO queuing, keep-alive support, and ViewModel integration for conversation and programming flows.
+
 ## Overview
 The modal message service provides a single, centered overlay message visible on top of the remote
 control UI. It is used by both the conversation (speech synthesis) subsystem and the programming

@@ -1,5 +1,7 @@
 # Backend Development Guide
 
+Summary: Defines the local dev pattern, service ports, and verification steps for backend API and Lambda services.
+
 This document defines the standing development pattern for backend services introduced by
 Task 5 ([ADR-187](https://jodasoft.atlassian.net/browse/ADR-187)).
 

@@ -15,11 +15,10 @@ $TASK_BRIEF
 
 Read `CONTRIBUTING.md` in full. These are the standards against which you are reviewing.
 
-## Step 2 — Push latest changes to remote
+## Step 2 — Note recent changes
 
-The developer has made fixes since the last review. Ensure the latest commits are visible
-on the remote before reviewing. Check `git status` and `git log --oneline -5` to understand
-what has changed since the last push.
+The pipeline pushes the latest commits before invoking this sign-off. Check
+`git log --oneline -5` to understand what has changed since the previous review pass.
 
 ## Step 3 — Retrieve prior review threads
 
@@ -33,15 +32,19 @@ unresolved thread, note:
 
 For each unresolved review comment:
 
-1. Read the relevant section of the latest code
-2. Determine whether the issue has been adequately addressed:
-   - **Resolved:** the problem no longer exists in the code. Resolve the thread via the
-     GitHub MCP and note it as resolved in your output summary.
+1. Read the relevant section of the latest code and any developer replies in the thread.
+2. Determine the outcome:
+   - **Addressed satisfactorily:** the problem no longer exists in the code. Resolve the
+     thread via the GitHub MCP.
+   - **Developer disagreed (posted rationale):** read the developer's rationale.
+     - **Accept the rationale:** add a reply acknowledging it and resolve the thread.
+     - **Reject the rationale:** add a reply restating the requirement and explaining why
+       the rationale doesn't address the concern. Leave the thread unresolved.
    - **Partially addressed:** the developer made a change but the underlying problem
      remains or a different instance was missed. Add a follow-up comment explaining what
-     still needs to be done.
-   - **Not addressed:** the code is unchanged. Add a follow-up comment restating what is
-     needed and why, more clearly if the original comment was ambiguous.
+     still needs to be done. Leave the thread unresolved.
+   - **Not addressed:** the code is unchanged and no rationale was posted. Add a follow-up
+     comment restating what is needed and why. Leave the thread unresolved.
 
 ## Step 5 — Scan modified files for new issues
 
@@ -50,8 +53,8 @@ log). Scan **only those files** for new issues introduced by the developer's fix
 re-review unmodified code.
 
 Apply the same priority order as the first-pass review:
-1. Requirements, 2. Correctness/fault tolerance, 3. Security, 4. Performance,
-5. Documentation, 6. Code style (note only)
+1. Correctness/fault tolerance, 2. Security, 3. Performance,
+4. Documentation, 5. Code style (note only)
 
 Post new inline review comments for any new Priority 1–5 issues found in the modified
 files.
@@ -63,6 +66,10 @@ Use the GitHub MCP to submit a **pull request review** (not a plain PR comment) 
 inline review comments attached to the specific file and line. Submit with event type
 `COMMENT`. Do not use `APPROVE` or `REQUEST_CHANGES` — GitHub rejects those from the
 PR author's account, and the developer and reviewer agents share the same GitHub account.
+
+**Sign-off decision:** Set `approved` if all review threads are resolved (no unresolved
+threads remain) AND no new Priority 1–4 issues were found in the modified files.
+Set `changes_requested` if any threads remain unresolved or if new blocking issues were found.
 
 ## Step 6a — Hand off to human reviewer (approved only)
 

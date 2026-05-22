@@ -10,6 +10,7 @@ To start fresh, delete the context file:
 """
 
 import argparse
+import concurrent.futures
 import datetime
 import json
 import re
@@ -468,32 +469,122 @@ class ReviewStep(Step):
         return "changes_requested"
 
 
-class SignOffStep(Step):
-    handles = "reviewing-signoff"
+class SignoffStep(Step):
+    handles = "signoff"
 
     def run(self, ctx: PipelineContext) -> str:
-        print(f"Reviewer is signing off on {ctx.work_item_id}...", flush=True)
-        try:
-            output = call_agent(
-                "reviewer", "reviewer-sign-off",
-                substitutions={
-                    "$WORK_ITEM_ID": ctx.work_item_id,
-                    "$TASK_BRIEF": ctx.brief,
-                    "$PR_URL": ctx.pr_url,
-                },
-            )
-        except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
-            print(f"Error invoking reviewer agent:\n{e}", file=sys.stderr)
-            sys.exit(1)
+        print(f"Running parallel signoff for {ctx.work_item_id}...", flush=True)
 
-        ctx.review_notes = output
-        result = parse_json_output(output)
-        status = result.get("status", "changes_requested")
-        if status == "approved":
-            print("Sign-off approved.", flush=True)
-            return "approved"
-        print("Sign-off requested further changes.", flush=True)
-        return "changes_requested"
+        # Push first so the reviewer-sign-off agent can see the latest commits on the PR.
+        _commit_and_push(ctx.work_item_id)
+
+        failures: list[str] = []
+
+        def _run_scripts() -> tuple[bool, str]:
+            try:
+                build_ok, build_log, build_tail = run_validate_script("validate-build")
+            except (FileNotFoundError, OSError) as e:
+                return False, f"validate-build error: {e}"
+            if not build_ok:
+                return False, (
+                    f"Build failed.\n\n"
+                    f"Full log: {build_log}\n\n"
+                    f"Last 30 lines:\n```\n{build_tail}\n```"
+                )
+            try:
+                tests_ok, tests_log, tests_tail = run_validate_script("validate-tests")
+            except (FileNotFoundError, OSError) as e:
+                return False, f"validate-tests error: {e}"
+            if not tests_ok:
+                return False, (
+                    f"Test failures.\n\n"
+                    f"Full log: {tests_log}\n\n"
+                    f"Last 30 lines:\n```\n{tests_tail}\n```"
+                )
+            return True, ""
+
+        def _run_reviewer_signoff() -> tuple[bool, str, str]:
+            try:
+                output = call_agent(
+                    "reviewer", "reviewer-sign-off",
+                    substitutions={
+                        "$WORK_ITEM_ID": ctx.work_item_id,
+                        "$TASK_BRIEF": ctx.brief,
+                        "$PR_URL": ctx.pr_url,
+                    },
+                )
+            except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+                return False, "", f"reviewer-sign-off error: {e}"
+            result = parse_json_output(output)
+            pr_url = result.get("pr_url", "")
+            approved = result.get("status", "changes_requested") == "approved"
+            return approved, pr_url, output if not approved else ""
+
+        def _run_researcher_validate() -> tuple[bool, str]:
+            try:
+                output = call_agent(
+                    "researcher", "researcher-validate",
+                    ctx.work_item_id, ctx.spec_path,
+                    substitutions={
+                        "$TASK_BRIEF": ctx.brief,
+                        "$WORK_SUMMARIES": _format_work_summaries(ctx.work_summaries),
+                    },
+                )
+            except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+                return False, f"researcher-validate error: {e}"
+
+            # Parse the JSON array returned by researcher-validate
+            try:
+                for block in reversed(re.findall(r"```(?:json)?\s*\n([\s\S]*?)\n```", output)):
+                    try:
+                        criteria = json.loads(block.strip())
+                        if isinstance(criteria, list):
+                            failing = [
+                                c for c in criteria
+                                if c.get("status") in ("fail", "partial")
+                            ]
+                            if failing:
+                                details = "\n".join(
+                                    f"- [{c['status'].upper()}] {c['criterion']}: "
+                                    f"{c.get('finding', '')}"
+                                    for c in failing
+                                )
+                                return False, f"Exit criteria not fully met:\n{details}"
+                            return True, ""
+                    except (json.JSONDecodeError, KeyError):
+                        continue
+            except Exception:
+                pass
+            return True, ""  # No parseable JSON — treat as inconclusive pass
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            fut_scripts = executor.submit(_run_scripts)
+            fut_reviewer = executor.submit(_run_reviewer_signoff)
+            fut_researcher = executor.submit(_run_researcher_validate)
+
+            scripts_ok, scripts_failure = fut_scripts.result()
+            reviewer_ok, reviewer_pr_url, reviewer_failure = fut_reviewer.result()
+            researcher_ok, researcher_failure = fut_researcher.result()
+
+        if reviewer_pr_url:
+            ctx.pr_url = reviewer_pr_url
+
+        if not scripts_ok:
+            failures.append(scripts_failure)
+        if not reviewer_ok:
+            failures.append(f"Reviewer sign-off:\n{reviewer_failure}")
+        if not researcher_ok:
+            failures.append(researcher_failure)
+
+        if failures:
+            ctx.review_notes = "\n\n---\n\n".join(failures)
+            ctx.last_failure = ctx.review_notes
+            print("Signoff found issues; requesting further changes.", flush=True)
+            return "changes_requested"
+
+        ctx.last_failure = ""
+        print("Signoff approved.", flush=True)
+        return "approved"
 
 
 class FixStep(Step):
@@ -579,15 +670,13 @@ class DevTeamPipeline:
         self.context_path = context_path
         self.workflow = workflow
         self.machine = StateMachine(workflow.transitions, initial=ctx.state)
-        validate_step = ValidateStep()
         self.step_handlers: dict[str, Step] = {
             "researching": ResearchStep(),
             "implementing": ImplementStep(),
-            "validating": validate_step,
-            "validating-pr": validate_step,
+            "validating": ValidateStep(),
             "fixing": FixStep(),
             "reviewing": ReviewStep(context_path),
-            "reviewing-signoff": SignOffStep(),
+            "signoff": SignoffStep(),
             "fixing-pr": FixPrStep(),
         }
 

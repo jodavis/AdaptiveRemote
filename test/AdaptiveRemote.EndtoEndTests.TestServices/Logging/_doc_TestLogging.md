@@ -1,5 +1,7 @@
 # Test Logging Design
 
+Summary: Describes the logging channel for E2E test code â€” routes structured test logs through the app's ILogger pipeline and MSTest TestContext.
+
 Goal
 - Provide a logging channel for end-to-end test code so tests can write structured logs that are recorded by the application's `ILogger` pipeline and are also visible inside the test runner (`MSTest.TestContext`).
 
@@ -28,7 +30,7 @@ Where files live
   - `test/AdaptiveRemote.EndtoEndTests.TestServices/Logging/TestContextLoggerProvider.cs` (local sink that writes to `TestContext`)
 
 API shape (single source of truth)
-- [`ITestLogger`](../../../src/AdaptiveRemote.App/Services/Testing/ITestLogger.cs) (marshalable over JSON-RPC) — sinks implement this API and the intermediary dispatches to the registered sinks.
+- [`ITestLogger`](../../../src/AdaptiveRemote.App/Services/Testing/ITestLogger.cs) (marshalable over JSON-RPC) ï¿½ sinks implement this API and the intermediary dispatches to the registered sinks.
 
 ```csharp
 [RpcMarshalable]
@@ -79,5 +81,5 @@ Backward-compatibility and incremental rollout
 
 Open questions resolved
 - Dynamic sink registration: yes (attach on connect / unregister on disconnect).
-- Use .NET logging primitives: yes — implement an `ILoggerProvider` in the test process to avoid duplicating .NET logging semantics.
+- Use .NET logging primitives: yes ï¿½ implement an `ILoggerProvider` in the test process to avoid duplicating .NET logging semantics.
 - Dispatch semantics: provider currently waits for remote sinks to acknowledge operations to preserve ordering.

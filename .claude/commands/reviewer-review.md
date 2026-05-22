@@ -24,7 +24,8 @@ Re-read the task brief above and extract the exit criteria — the explicit list
 the implementation must do or must not do. You will check each one during review.
 
 Read the relevant `_doc_*.md` architecture files for any subsystem touched by this change.
-Use the area→file table in `CLAUDE.md` to find them.
+Use `grep -rl "^Summary:" src test --include="_doc_*.md"` to discover available docs, then
+read the `Summary:` line of each match to find the relevant ones.
 
 ## Step 3 — Verify PR exists
 
@@ -42,29 +43,22 @@ complete context of each change.
 Evaluate the diff against each dimension below, in priority order. For each issue you
 find, note the file, line number, and a clear description of the problem.
 
-### Priority 1 — Requirements
+### Priority 1 — Correctness and fault tolerance
 
-Check each exit criterion from the task brief:
-- Is it implemented?
-- Is it implemented correctly (not just partially)?
-- Are there edge cases the brief implied but the implementation misses?
-
-### Priority 2 — Correctness and fault tolerance
-
-- Are all exception paths handled? No swallowed exceptions, no empty `catch` blocks.
+- Are all exception paths handled? No swallowed exceptions, no empty `catch` blocks (unless there's a comment with a good justification).
 - Are `CancellationToken` parameters present in every async method signature? No default
   values — callers must pass explicitly.
 - Are there blocking calls (`.Result`, `.Wait()`, `Thread.Sleep`) on async code paths?
 - Does error handling propagate faithfully, or does it silently discard failures?
 
-### Priority 3 — Security
+### Priority 2 — Security
 
 - Is user input validated at system boundaries?
 - Are there SQL injection, command injection, or path traversal risks?
 - Is sensitive data (tokens, passwords, PII) logged or returned in error messages?
 - Are authentication/authorization checks present where the architecture requires them?
 
-### Priority 4 — Performance
+### Priority 3 — Performance
 
 - Are there N+1 query patterns (fetching inside a loop that could be batched)?
 - Is there synchronous I/O on async code paths?
@@ -73,13 +67,14 @@ Check each exit criterion from the task brief:
 - Are async-backed data fetches happening up front (fetch-first pattern) rather than
   scattered through processing logic?
 
-### Priority 5 — Documentation
+### Priority 4 — Documentation
 
 - Does new code conform to the design described in the relevant `_doc_*.md` files?
 - If the implementation changed the design (new interface, changed responsibility,
   new dependency), has the relevant `_doc_*.md` been updated?
+- Have new `_doc_*.md` files beed added where necessary?
 
-### Priority 6 — Code style (note, do not block)
+### Priority 5 — Code style (note, do not block)
 
 - Do naming conventions follow CONTRIBUTING.md (`ClassName_Method_Scenario_ExpectedResult`
   for tests, etc.)?
@@ -110,7 +105,7 @@ Do NOT use the regular PR comment endpoint (`POST /repos/{owner}/{repo}/issues/{
 ## Step 7 — Output
 
 Write a concise plain-text summary of all issues found (one bullet per issue, Priority
-1–5 first, style issues last). This summary will be passed to the developer so they can
+1–4 first, style issues last). This summary will be passed to the developer so they can
 address each point without re-reading the full PR thread.
 
 Then output the JSON result as the final line:
@@ -119,5 +114,5 @@ Then output the JSON result as the final line:
 {"status": "approved|changes_requested", "pr_url": "https://github.com/..."}
 ```
 
-Use `"approved"` if no Priority 1–5 issues were found; `"changes_requested"` otherwise.
+Use `"approved"` if no Priority 1–4 issues were found; `"changes_requested"` otherwise.
 Always include the PR URL even when approving.

@@ -1,5 +1,7 @@
 # Simulated Devices for E2E Testing
 
+Summary: Describes in-process device simulators used in E2E tests — implementing real wire protocols without physical hardware.
+
 ## Overview
 
 The AdaptiveRemote test suite includes in-process simulated devices that enable end-to-end testing without requiring physical hardware. These simulators implement the actual wire protocols used by real devices, allowing comprehensive testing of device discovery, authentication, command transmission, and error handling.

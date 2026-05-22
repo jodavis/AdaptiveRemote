@@ -1,5 +1,7 @@
 # Authentication — CompiledLayoutService (ADR-168)
 
+Summary: Describes JWT Bearer authentication via AWS Cognito for external API endpoints in the CompiledLayoutService.
+
 ## Overview
 
 External API endpoints are protected by JWT Bearer authentication backed by **AWS Cognito**.

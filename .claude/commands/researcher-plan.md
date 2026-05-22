@@ -30,20 +30,14 @@ If no section is found for the task key, stop and tell the caller:
 Identify which subsystems and areas this task touches based on the spec section and its
 surrounding design decisions. Read the relevant `_doc_*.md` files for those areas.
 
-Always read `src/_doc_Projects.md`. Read additional docs as needed:
+Always read `src/_doc_Projects.md`. To discover all other architecture docs, run:
 
-| Area | File |
-|------|------|
-| Services architecture | `src/AdaptiveRemote.App/Services/_doc_Services.md` |
-| Lifecycle | `src/AdaptiveRemote.App/Services/Lifecycle/_doc_Lifecycle.md` |
-| Commands | `src/AdaptiveRemote.App/Services/Commands/_doc_Commands.md` |
-| Broadlink / IR | `src/AdaptiveRemote.App/Services/Broadlink/_doc_Broadlink.md` |
-| Conversation | `src/AdaptiveRemote.App/Services/Conversation/_doc_Conversation.md` |
-| MVVM | `src/AdaptiveRemote.App/Mvvm/_doc_Mvvm.md` |
-| UI components | `src/AdaptiveRemote.App/Components/_doc_UI.md` |
-| E2E tests | `test/_doc_EndToEndTests.md` |
-| Simulated devices | `test/AdaptiveRemote.EndToEndTests.TestServices/_doc_SimulatedDevices.md` |
-| Backend | `src/_doc_BackendDevelopment.md` |
+```bash
+grep -rl "^Summary:" src test --include="_doc_*.md"
+```
+
+Read the `Summary:` line of each result to decide which docs are relevant to the task,
+then read the relevant ones in full.
 
 ### 3 — Read relevant source
 
@@ -55,7 +49,8 @@ to reuse, patterns established in adjacent code.
 
 If the task touches a framework or pattern not covered by local docs, use `WebSearch`,
 `WebFetch`, or Microsoft Learn to look up best practices. Common areas: .NET DI patterns,
-Blazor component lifecycle, MAUI platform-specific code, ASP.NET minimal API conventions.
+Blazor component lifecycle, MAUI platform-specific code, ASP.NET minimal API conventions,
+Machine Learning, Cloud services.
 
 ### 5 — Write the task brief
 
