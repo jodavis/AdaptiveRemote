@@ -54,12 +54,17 @@ For each issue:
 
 Address issues one at a time. After each fix:
 
-1. Build and test the affected code to confirm the fix works without introducing new failures:
+1. Build and test only the project(s) you changed to confirm the fix works without
+   introducing new failures:
 
    ```bash
    dotnet build <project-path>
    dotnet test <test-project-path>
    ```
+
+   **Scope:** Do **not** run `scripts/validate-build` or `scripts/validate-tests`. Those
+   are full pipeline validation scripts run by the orchestrator after this step — running
+   them here is redundant and slows the fix loop.
 
 2. Commit the fix immediately with a message describing the specific issue resolved:
 

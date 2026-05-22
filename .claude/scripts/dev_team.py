@@ -171,18 +171,18 @@ class PipelineContext:
         ]
 
         if self.brief:
-            lines += ["", "## Researcher Brief", "", self.brief.strip()]
+            lines += ["", "<!-- section:Researcher Brief -->", "", self.brief.strip()]
 
         if self.work_summaries:
-            lines += ["", "## Implementation Summary", "", self.work_summaries[0].strip()]
+            lines += ["", "<!-- section:Implementation Summary -->", "", self.work_summaries[0].strip()]
             for i, summary in enumerate(self.work_summaries[1:], start=1):
-                lines += ["", f"## Fix {i}", "", summary.strip()]
+                lines += ["", f"<!-- section:Fix {i} -->", "", summary.strip()]
 
         if self.review_notes:
-            lines += ["", "## Review Notes", "", self.review_notes.strip()]
+            lines += ["", "<!-- section:Review Notes -->", "", self.review_notes.strip()]
 
         if self.last_failure:
-            lines += ["", "## Last Failure", "", self.last_failure.strip()]
+            lines += ["", "<!-- section:Last Failure -->", "", self.last_failure.strip()]
 
         log_links: list[str] = []
         if self.build_log:
@@ -190,7 +190,7 @@ class PipelineContext:
         if self.test_log:
             log_links.append(f"- Tests: {self.test_log}")
         if log_links:
-            lines += ["", "## Logs", ""] + log_links
+            lines += ["", "<!-- section:Logs -->", ""] + log_links
 
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -236,16 +236,16 @@ class PipelineContext:
 
 
 def _parse_sections(body: str) -> dict[str, str]:
-    """Split a markdown body into {heading: content} by '## ' headings."""
+    """Split a markdown body into {heading: content} by '<!-- section:Name -->' sentinels."""
     sections: dict[str, str] = {}
     current_heading: str | None = None
     current_lines: list[str] = []
 
     for line in body.split("\n"):
-        if line.startswith("## "):
+        if line.startswith("<!-- section:") and line.endswith(" -->"):
             if current_heading is not None:
                 sections[current_heading] = "\n".join(current_lines).strip()
-            current_heading = line[3:].strip()
+            current_heading = line[len("<!-- section:"):-len(" -->")].strip()
             current_lines = []
         elif current_heading is not None:
             current_lines.append(line)
@@ -413,7 +413,33 @@ class ValidateStep(Step):
 class ReviewStep(Step):
     handles = "reviewing"
 
+    def __init__(self, context_path: Path) -> None:
+        self._context_path = context_path
+
     def run(self, ctx: PipelineContext) -> str:
+        if not ctx.pr_url:
+            print(f"Developer is creating PR for {ctx.work_item_id}...", flush=True)
+            try:
+                pr_output = call_agent(
+                    "developer", "developer-create-pr",
+                    substitutions={
+                        "$WORK_ITEM_ID": ctx.work_item_id,
+                        "$PR_URL": ctx.pr_url,
+                        "$TASK_BRIEF": ctx.brief,
+                        "$WORK_SUMMARIES": _format_work_summaries(ctx.work_summaries),
+                    },
+                )
+            except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
+                print(f"Error invoking developer-create-pr agent:\n{e}", file=sys.stderr)
+                sys.exit(1)
+            pr_result = parse_json_output(pr_output)
+            if pr_result.get("pr_url"):
+                ctx.pr_url = pr_result["pr_url"]
+                ctx.save(self._context_path)
+            else:
+                print("Error: developer-create-pr did not return a pr_url.", file=sys.stderr)
+                sys.exit(1)
+
         print(f"Reviewer is reviewing {ctx.work_item_id}...", flush=True)
         try:
             output = call_agent(
@@ -560,7 +586,7 @@ class DevTeamPipeline:
             "validating": validate_step,
             "validating-pr": validate_step,
             "fixing": FixStep(),
-            "reviewing": ReviewStep(),
+            "reviewing": ReviewStep(context_path),
             "reviewing-signoff": SignOffStep(),
             "fixing-pr": FixPrStep(),
         }

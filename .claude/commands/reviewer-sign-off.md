@@ -60,10 +60,22 @@ files.
 
 Use the GitHub MCP to submit a **pull request review** (not a plain PR comment) via
 `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews`. Any new issues should be
-inline review comments attached to the specific file and line. Submit with event type:
-- **APPROVE** if all prior threads are resolved (or resolved via this pass) and no new
-  Priority 1–5 issues were found in the modified files
-- **REQUEST_CHANGES** otherwise
+inline review comments attached to the specific file and line. Submit with event type
+`COMMENT`. Do not use `APPROVE` or `REQUEST_CHANGES` — GitHub rejects those from the
+PR author's account, and the developer and reviewer agents share the same GitHub account.
+
+## Step 6a — Hand off to human reviewer (approved only)
+
+If the review outcome is **approved**, do the following before writing the output summary:
+
+1. Convert the PR from draft to Ready for Review:
+   ```bash
+   gh pr ready $PR_URL
+   ```
+2. Call `mcp__jira__lookupJiraAccountId` with `$REVIEW_ASSIGNEE_EMAIL` to get the human reviewer's account ID.
+3. Assign the Jira issue to that account with `mcp__jira__editJiraIssue`.
+4. Call `mcp__github__add_pull_request_review_request` to request a review from `$REVIEW_ASSIGNEE_EMAIL` on `$PR_URL`.
+5. Add a brief Jira comment with `mcp__jira__addCommentToJiraIssue`: "PR ready for human review — reviewer requested on GitHub."
 
 ## Step 7 — Output
 

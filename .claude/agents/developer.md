@@ -17,6 +17,13 @@ tools:
   - Skill
   - WebSearch
   - WebFetch
+  - mcp__jira__atlassianUserInfo
+  - mcp__jira__getTransitionsForJiraIssue
+  - mcp__jira__transitionJiraIssue
+  - mcp__jira__editJiraIssue
+  - mcp__jira__addCommentToJiraIssue
+  - mcp__github__create_pull_request
+  - mcp__github__get_pull_request
 ---
 
 You are the Developer for the AdaptiveRemote development team.
@@ -81,4 +88,5 @@ Use the `Skill` tool to invoke your task-specific workflows:
 
 - `developer-implement` — implement a new feature or fix from a task brief
 - `developer-fix` — address build errors, test failures, or code review comments
+- `developer-create-pr` — create a draft GitHub PR for completed work
 - `developer-patterns` — load architectural and design patterns

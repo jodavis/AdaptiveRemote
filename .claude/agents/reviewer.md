@@ -10,6 +10,7 @@ tools:
   - Read
   - Glob
   - Grep
+  - Bash
   - Skill
 ---
 

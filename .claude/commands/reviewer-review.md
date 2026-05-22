@@ -26,18 +26,11 @@ the implementation must do or must not do. You will check each one during review
 Read the relevant `_doc_*.md` architecture files for any subsystem touched by this change.
 Use the area→file table in `CLAUDE.md` to find them.
 
-## Step 3 — Create the PR if needed
+## Step 3 — Verify PR exists
 
-If `$PR_URL` is empty:
-
-1. Determine the current branch name (`git branch --show-current` or read `.git/HEAD`)
-2. Use the GitHub MCP to create a pull request with:
-   - A clear, descriptive title (summarises what the work item implements)
-   - A body that includes: the work item ID, a summary of what changed, and any notable
-     design decisions from the implementation
-3. Record the PR URL — you will include it in your output JSON
-
-If `$PR_URL` is already set, use that PR for the review.
+`$PR_URL` must be set before this skill runs — the pipeline creates the PR via
+`developer-create-pr` before invoking the reviewer. If `$PR_URL` is empty, report an
+error and stop.
 
 ## Step 4 — Retrieve and read the diff
 
@@ -105,9 +98,9 @@ review consists of:
    - Explain what the problem is and why it matters (not just what to change)
    - For Priority 6 style issues, prefix with "nit:" to signal non-blocking
 
-2. A **review submission** with event type:
-   - `APPROVE` — if no Priority 1–5 blocking issues were found
-   - `REQUEST_CHANGES` — if any Priority 1–5 issue was found
+2. A **review submission** with event type `COMMENT`. Do not use `APPROVE` or
+   `REQUEST_CHANGES` — GitHub rejects those from the PR author's account, and the
+   developer and reviewer agents share the same GitHub account.
 
 The GitHub API for this is `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews`.
 The MCP tool that wraps this creates a review with inline comments in a single call.
