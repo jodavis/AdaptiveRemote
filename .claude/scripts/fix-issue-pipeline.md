@@ -1,8 +1,7 @@
 ```mermaid
 stateDiagram-v2
     [*] --> init
-    init --> spec-finding : start
-    spec-finding --> researching : spec_found
+    init --> researching : start
     researching --> implementing : research_done
     implementing --> validating : impl_done
     validating --> fixing : build_failed
@@ -25,8 +24,8 @@ The `signoff` state runs three tasks in parallel before making its decision:
 1. **`reviewer-sign-off`** — checks that all PR review threads have been resolved and scans
    modified files for new code quality issues (Priority 1–4). Resolves satisfied threads;
    leaves unresolved threads where the developer disagreed and the reviewer is pushing back.
-2. **`researcher-validate`** — checks each exit criterion from the spec against the
-   actual code and tests. Any `fail` or `partial` result counts as a failure.
+2. **`researcher-validate`** — checks each exit criterion proposed by the researcher against
+   the actual code and tests. Any `fail` or `partial` result counts as a failure.
 3. **Script validation** — runs `validate-build` then (if clean) `validate-tests`.
 
 All three must pass for `signoff` to emit `approved`. Any failure from any task emits

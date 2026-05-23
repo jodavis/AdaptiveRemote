@@ -1,12 +1,12 @@
 ---
 description: Validate completed work against a task's exit criteria, returning a structured pass/fail result for each criterion
-argument-hint: <Jira task key> <path to spec file>
+argument-hint: <task key> [path to spec file]
 ---
 
 ## Inputs
 
 Task key: the first token of `$ARGUMENTS`  
-Spec file: the second token of `$ARGUMENTS`
+Spec file: the second token of `$ARGUMENTS` (may be empty for GitHub issue tasks)
 
 **Original task brief:**
 
@@ -20,17 +20,22 @@ $WORK_SUMMARIES
 
 ---
 
-All of these are required. If any are missing, stop and tell the caller what is needed.
+Task key and task brief are required. If either is missing, stop and tell the caller what is needed.
 
 ---
 
 ## Steps
 
-### 1 — Re-read the authoritative exit criteria
+### 1 — Identify the authoritative exit criteria
 
+**If a spec file path is provided** (second token of `$ARGUMENTS` is non-empty):  
 Read the spec file and locate the section for the task key. Extract the exit criteria
 checklist as written in the spec — this is the authoritative source, not the task brief.
 If the spec has been updated since the brief was written, use the spec version.
+
+**If no spec file path is provided** (only one token in `$ARGUMENTS`):  
+Extract the exit criteria from the **Original task brief** above. These were proposed by
+the researcher at planning time and are the authoritative source for this run.
 
 ### 2 — Evaluate each criterion
 

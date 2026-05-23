@@ -136,7 +136,7 @@ class PipelineContext:
     """All mutable state for a dev-team pipeline run, persisted across resumptions."""
 
     work_item_id: str
-    spec_path: str
+    spec_path: str = ""
     state: str = "init"
     brief: str = ""
     work_summaries: list[str] = field(default_factory=list)
@@ -326,8 +326,25 @@ class Step(ABC):
         ...
 
 
+class FindSpecStep(Step):
+    handles = "spec-finding"
+
+    def run(self, ctx: PipelineContext) -> str:
+        if ctx.spec_path:
+            print("Spec path already set — skipping.", flush=True)
+            return "spec_found"
+        print(f"Searching for spec for {ctx.work_item_id}...", flush=True)
+        spec_file = find_spec_file(ctx.work_item_id)
+        ctx.spec_path = str(spec_file.relative_to(REPO_ROOT))
+        print(f"Found {spec_file}", flush=True)
+        return "spec_found"
+
+
 class ResearchStep(Step):
     handles = "researching"
+
+    def __init__(self, skill: str) -> None:
+        self._skill = skill
 
     def run(self, ctx: PipelineContext) -> str:
         if ctx.brief:
@@ -336,7 +353,7 @@ class ResearchStep(Step):
         print(f"Researcher is planning work for {ctx.work_item_id}...", flush=True)
         try:
             ctx.brief = call_agent(
-                "researcher", "researcher-plan",
+                "researcher", self._skill,
                 ctx.work_item_id, ctx.spec_path,
             )
         except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
@@ -665,13 +682,14 @@ class FixPrStep(Step):
 class DevTeamPipeline:
     """Drives the dev-team state machine from init (or a resumed state) to done."""
 
-    def __init__(self, ctx: PipelineContext, context_path: Path, workflow: WorkflowDefinition) -> None:
+    def __init__(self, ctx: PipelineContext, context_path: Path, workflow: WorkflowDefinition, research_skill: str) -> None:
         self.ctx = ctx
         self.context_path = context_path
         self.workflow = workflow
         self.machine = StateMachine(workflow.transitions, initial=ctx.state)
         self.step_handlers: dict[str, Step] = {
-            "researching": ResearchStep(),
+            "spec-finding": FindSpecStep(),
+            "researching": ResearchStep(research_skill),
             "implementing": ImplementStep(),
             "validating": ValidateStep(),
             "fixing": FixStep(),
@@ -1029,9 +1047,11 @@ def main() -> None:
         description="dev-team pipeline orchestrator",
     )
     parser.add_argument("work_item_id", metavar="work-item-id",
-                        help="Jira work item ID (e.g. ADR-172)")
+                        help="Work item ID (e.g. ADR-172 or GH-444)")
     parser.add_argument("--workflow", required=True, metavar="path",
                         help="Path to a Mermaid stateDiagram-v2 workflow file")
+    parser.add_argument("--research-skill", required=True, metavar="skill",
+                        help="Researcher skill to use (e.g. researcher-plan or researcher-issue)")
     args = parser.parse_args()
 
     work_item_id = args.work_item_id
@@ -1057,15 +1077,10 @@ def main() -> None:
             sys.exit(0 if ctx.state == "done" else 1)
         print(f"Resuming {work_item_id} from state '{ctx.state}'...", flush=True)
     else:
-        print(f"Searching for spec for {work_item_id}", flush=True)
-        spec_file = find_spec_file(work_item_id)
-        spec_path = str(spec_file.relative_to(REPO_ROOT))
-        print(f"Found {spec_file}", flush=True)
-        ctx = PipelineContext(work_item_id=work_item_id, spec_path=spec_path,
-                              state=workflow.initial_state)
+        ctx = PipelineContext(work_item_id=work_item_id, state=workflow.initial_state)
         ctx.save(context_path)
 
-    DevTeamPipeline(ctx, context_path, workflow).run()
+    DevTeamPipeline(ctx, context_path, workflow, research_skill=args.research_skill).run()
 
 
 if __name__ == "__main__":
