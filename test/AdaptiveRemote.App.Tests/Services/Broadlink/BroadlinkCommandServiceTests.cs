@@ -513,17 +513,7 @@ public class BroadlinkCommandServiceTests
             .Verifiable(Times.Exactly(2));
 
         // Both calls use the same message; expect it to be shown twice
-        MockModalMessageService
-            .Setup(x => x.ShowMessageAsync(
-                Phrases.Broadlink_ProgrammingCommand(commandName),
-                It.IsAny<Func<CancellationToken, Task>>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(delegate (string msg, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
-            {
-                return action(ct);
-            })
-            .Verifiable(Times.Exactly(2));
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName), Times.Exactly(2));
 
         Expect_Connection_CheckLearnedData(learnedData);
         Expect_PersistSettings_Set($"IRData:{commandName}", expectedBase64);
@@ -676,7 +666,7 @@ public class BroadlinkCommandServiceTests
             .WithStandardTaskBehavior()
             .Verifiable(Times.Once);
 
-    private void Expect_ModalMessageService_ShowMessage(string expectedMessage)
+    private void Expect_ModalMessageService_ShowMessage(string expectedMessage, Times? times = null)
         => MockModalMessageService
             .Setup(x => x.ShowMessageAsync(expectedMessage, It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .Returns(delegate (string message, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
@@ -684,7 +674,7 @@ public class BroadlinkCommandServiceTests
                 Assert.AreEqual(expectedMessage, message, "Modal message should have the expected text");
                 return action(ct);
             })
-            .Verifiable(Times.Once);
+            .Verifiable(times ?? Times.Once());
 
     private void Expect_Connection_CheckLearnedData(params byte[]?[] returnSequence)
     {
