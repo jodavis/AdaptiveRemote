@@ -101,10 +101,11 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
                 await previousCts.CancelAsync();
             }
 
-            await _learningSemaphore.WaitAsync(cancellationToken);
-
+            bool acquired = false;
             try
             {
+                await _learningSemaphore.WaitAsync(cancellationToken);
+                acquired = true;
                 await _modalMessageService.ShowMessageAsync(message, async ct =>
                 {
                     using CancellationTokenSource timeoutCts = new(learnTimeout);
@@ -147,7 +148,10 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
             finally
             {
                 Interlocked.CompareExchange(ref _currentLearnCts, null, learnCts);
-                _learningSemaphore.Release();
+                if (acquired)
+                {
+                    _learningSemaphore.Release();
+                }
             }
         };
 }
