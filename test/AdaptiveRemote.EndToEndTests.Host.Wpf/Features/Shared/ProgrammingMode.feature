@@ -107,3 +107,37 @@ Scenario: Programming a programmable command is cancelled
 	And I should see the 'Power' button is enabled
 	And I should not see any error messages in the logs
 
+Scenario: Programming a command is preempted by clicking a different programmable button
+	Given the application is in the Ready phase
+	When I click on the 'Learn' button
+	Then I should see the 'Mute' button is enabled
+	And I should see the 'Mute' button is not programmed
+	And I should see the 'Power' button is enabled
+	And I should see the 'Power' button is programmed
+
+	# Start learning Mute
+	When I click on the 'Mute' button
+	Then I should see a modal message containing
+		"""
+		<h1>Programming 'Mute'</h1>
+		<p>Point your remote at the Broadlink device and press Mute.</p>
+		"""
+
+	# Click Power while Mute's modal is showing — should cancel Mute and start Power
+	When I click on the 'Power' button
+	Then I should see a modal message containing
+		"""
+		<h1>Programming 'Power'</h1>
+		<p>Point your remote at the Broadlink device and press Power.</p>
+		"""
+
+	# Complete Power's learning cycle
+	When I send the IR signal for Power to the Broadlink device
+	Then I should see the 'Power' button is programmed
+	And I should not see a modal message
+
+	# Verify Mute was not programmed
+	When I click on the 'Learn' button
+	Then I should see the 'Mute' button is not programmed
+	And I should not see any error messages in the logs
+

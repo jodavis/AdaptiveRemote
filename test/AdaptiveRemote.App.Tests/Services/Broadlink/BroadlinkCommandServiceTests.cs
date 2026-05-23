@@ -408,11 +408,13 @@ public class BroadlinkCommandServiceTests
     }
 
     [TestMethod]
-    public void BroadlinkCommandService_ProgramAsync_WhileLearningAlreadyInProgress_ReturnsImmediately()
+    public void BroadlinkCommandService_ProgramAsync_WhileOtherLearningInProgress_CancelsPreviousAndStartsNew()
     {
         // Arrange
         const string commandName = "Mute";
         const string commandName2 = "Power";
+        byte[] learnedData = [0x01, 0x02, 0x03, 0x04];
+        string expectedBase64 = Convert.ToBase64String(learnedData);
         BroadlinkSettings settings = new() { LearnPollInterval = 0 };
 
         MockDefinitionService
@@ -430,45 +432,41 @@ public class BroadlinkCommandServiceTests
         IRCommand firstCommand = MockDefinitionService.Object.GetCommands<IRCommand>().First(c => c.Name == commandName);
         IRCommand secondCommand = MockDefinitionService.Object.GetCommands<IRCommand>().First(c => c.Name == commandName2);
 
-        // First learning cycle: ShowMessageAsync blocks (body not called), semaphore stays acquired
-        TaskCompletionSource firstTaskBlocker = new();
-        MockModalMessageService
-            .Setup(x => x.ShowMessageAsync(
-                Phrases.Broadlink_ProgrammingCommand(commandName),
-                It.IsAny<Func<CancellationToken, Task>>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(delegate (string message, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
+        // EnterLearningModeAsync: first call (Mute) blocks until its CT fires; second call (Power) completes immediately
+        int enterLearningCallCount = 0;
+        MockConnection
+            .Setup(x => x.EnterLearningModeAsync(It.IsAny<CancellationToken>()))
+            .Returns<CancellationToken>(ct =>
             {
-                // Return blocking task without running body, simulating a long-running learning cycle.
-                // The semaphore is held for the duration since the body's finally never runs.
-                return firstTaskBlocker.Task;
+                if (Interlocked.Increment(ref enterLearningCallCount) == 1)
+                {
+                    TaskCompletionSource tcs = new();
+                    ct.Register(() => tcs.TrySetCanceled(ct));
+                    return tcs.Task;
+                }
+                return Task.CompletedTask;
             })
-            .Verifiable(Times.Once);
+            .Verifiable(Times.Exactly(2));
 
-        // Second command's ShowMessageAsync must never be called — rejected before reaching it
-        MockModalMessageService
-            .Setup(x => x.ShowMessageAsync(
-                Phrases.Broadlink_ProgrammingCommand(commandName2),
-                It.IsAny<Func<CancellationToken, Task>>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()))
-            .Verifiable(Times.Never);
+        // First command's ShowMessageAsync runs body (so learnCts is linked and can be cancelled)
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName));
+        // Second command's ShowMessageAsync runs body normally
+        Expect_ModalMessageService_ShowMessage(Phrases.Broadlink_ProgrammingCommand(commandName2));
 
-        // Act – start first learning (semaphore acquired, modal is "showing")
+        Expect_Connection_CheckLearnedData(learnedData);
+        Expect_PersistSettings_Set($"IRData:{commandName2}", expectedBase64);
+
+        // Act – start first learning; it blocks at EnterLearningModeAsync
         Task firstTask = firstCommand.ProgramAsync!(default);
 
-        // Start second learning immediately — semaphore is held so it should be rejected
+        // Start second learning; it cancels the first and waits for the semaphore
         Task secondTask = secondCommand.ProgramAsync!(default);
 
-        // Assert – second task completes immediately without modal or device interaction
-        secondTask.Should().BeCompleteWithin(TimeSpan.FromMilliseconds(200),
-            because: "a concurrent ProgramAsync call while learning is in progress should return immediately");
-
-        // Unblock first task and wait for it to finish
-        firstTaskBlocker.SetResult();
-        firstTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(1),
-            because: "the first ProgramAsync call should complete once the modal task resolves");
+        // Assert – first task is cancelled (preempted), second task completes after learning
+        firstTask.Should().BeCanceledWithin(TimeSpan.FromSeconds(5),
+            because: "the first learning cycle should be cancelled when a new button is clicked");
+        secondTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(5),
+            because: "the second command should complete its full learning cycle after preempting the first");
 
         MockLogger.VerifyMessages(messageLogger =>
         {
@@ -477,10 +475,84 @@ public class BroadlinkCommandServiceTests
             messageLogger.BroadlinkCommandService_Authenticated(IPEndPoint.Parse("10.20.30.40:1234"));
             messageLogger.BroadlinkCommandService_Ready();
             messageLogger.CommandService_Programming(firstCommand);
+            messageLogger.BroadlinkCommandService_EnteringLearningMode(firstCommand);
             messageLogger.CommandService_Programming(secondCommand);
-            messageLogger.BroadlinkCommandService_LearningAlreadyInProgress(secondCommand);
+            messageLogger.BroadlinkCommandService_CancellingLearningForNewCommand(secondCommand);
+            messageLogger.CommandService_ProgramCancelled(firstCommand);
+            messageLogger.BroadlinkCommandService_EnteringLearningMode(secondCommand);
+            messageLogger.BroadlinkCommandService_PollingForLearnedData(secondCommand);
+            messageLogger.BroadlinkCommandService_LearnedDataReceived(secondCommand, learnedData.Length);
             messageLogger.CommandService_Programmed(secondCommand);
-            messageLogger.CommandService_Programmed(firstCommand);
+        });
+    }
+
+    [TestMethod]
+    public void BroadlinkCommandService_ProgramAsync_DuplicateClick_CancelsPreviousAndStartsSelf()
+    {
+        // Arrange — same command clicked twice while its own learning is in progress
+        const string commandName = "Mute";
+        byte[] learnedData = [0x01, 0x02, 0x03, 0x04];
+        string expectedBase64 = Convert.ToBase64String(learnedData);
+        BroadlinkSettings settings = new() { LearnPollInterval = 0 };
+        IRCommand command = SetupAndInitializeWithCommand(commandName, settings: settings);
+
+        // EnterLearningModeAsync: first call blocks until cancelled; second completes immediately
+        int enterLearningCallCount = 0;
+        MockConnection
+            .Setup(x => x.EnterLearningModeAsync(It.IsAny<CancellationToken>()))
+            .Returns<CancellationToken>(ct =>
+            {
+                if (Interlocked.Increment(ref enterLearningCallCount) == 1)
+                {
+                    TaskCompletionSource tcs = new();
+                    ct.Register(() => tcs.TrySetCanceled(ct));
+                    return tcs.Task;
+                }
+                return Task.CompletedTask;
+            })
+            .Verifiable(Times.Exactly(2));
+
+        // Both calls use the same message; expect it to be shown twice
+        MockModalMessageService
+            .Setup(x => x.ShowMessageAsync(
+                Phrases.Broadlink_ProgrammingCommand(commandName),
+                It.IsAny<Func<CancellationToken, Task>>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(delegate (string msg, Func<CancellationToken, Task> action, bool keepAlive, CancellationToken ct)
+            {
+                return action(ct);
+            })
+            .Verifiable(Times.Exactly(2));
+
+        Expect_Connection_CheckLearnedData(learnedData);
+        Expect_PersistSettings_Set($"IRData:{commandName}", expectedBase64);
+
+        // Act – start learning, then click the same button again
+        Task firstTask = command.ProgramAsync!(default);
+        Task secondTask = command.ProgramAsync!(default);
+
+        // Assert – first is cancelled; second completes successfully
+        firstTask.Should().BeCanceledWithin(TimeSpan.FromSeconds(5),
+            because: "a duplicate click cancels the in-progress learning and starts fresh");
+        secondTask.Should().BeCompleteWithin(TimeSpan.FromSeconds(5),
+            because: "the second click should complete its own learning cycle");
+
+        MockLogger.VerifyMessages(messageLogger =>
+        {
+            messageLogger.BroadlinkCommandService_SearchingForDevice();
+            messageLogger.BroadlinkCommandService_Authenticating(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Authenticated(IPEndPoint.Parse("10.20.30.40:1234"));
+            messageLogger.BroadlinkCommandService_Ready();
+            messageLogger.CommandService_Programming(command);
+            messageLogger.BroadlinkCommandService_EnteringLearningMode(command);
+            messageLogger.CommandService_Programming(command);
+            messageLogger.BroadlinkCommandService_CancellingLearningForNewCommand(command);
+            messageLogger.CommandService_ProgramCancelled(command);
+            messageLogger.BroadlinkCommandService_EnteringLearningMode(command);
+            messageLogger.BroadlinkCommandService_PollingForLearnedData(command);
+            messageLogger.BroadlinkCommandService_LearnedDataReceived(command, learnedData.Length);
+            messageLogger.CommandService_Programmed(command);
         });
     }
 

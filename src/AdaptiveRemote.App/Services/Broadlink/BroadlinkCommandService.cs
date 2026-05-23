@@ -14,11 +14,17 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
     private readonly IModalMessageService _modalMessageService;
 
     /// <summary>
-    /// Ensures that only one IR learning cycle runs at a time. The device
-    /// cannot handle concurrent learning requests; a second attempt while one
-    /// is in progress is silently ignored.
+    /// Ensures that only one IR learning cycle runs at a time. A new request
+    /// cancels any in-progress cycle before acquiring this semaphore.
     /// </summary>
     private readonly SemaphoreSlim _learningSemaphore = new(1, 1);
+
+    /// <summary>
+    /// CTS owned by the current semaphore holder. A new request exchanges this
+    /// field (via <see cref="Interlocked.Exchange{T}"/>) to cancel the previous
+    /// holder before waiting on the semaphore.
+    /// </summary>
+    private CancellationTokenSource? _currentLearnCts;
 
     private IDeviceConnection? _connection;
 
@@ -82,30 +88,33 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
             IDeviceConnection connection = _connection
                 ?? throw new InvalidOperationException(Phrases.Broadlink_NotConnected(command.Name));
 
-            // Prevent a second learning cycle from starting while one is already in progress.
-            // The device cannot handle concurrent learning; we silently skip the duplicate request.
-            if (!await _learningSemaphore.WaitAsync(0, cancellationToken))
-            {
-                Logger.BroadlinkCommandService_LearningAlreadyInProgress(command);
-                return;
-            }
-
             string message = Phrases.Broadlink_ProgrammingCommand(command.Label);
             TimeSpan pollInterval = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnPollInterval);
             TimeSpan learnTimeout = TimeSpan.FromSeconds(_broadlinkSettings.Value.LearnTimeout);
+
+            // Cancel any in-progress learning cycle, then wait for the semaphore it holds.
+            using CancellationTokenSource learnCts = new();
+            CancellationTokenSource? previousCts = Interlocked.Exchange(ref _currentLearnCts, learnCts);
+            if (previousCts is not null)
+            {
+                Logger.BroadlinkCommandService_CancellingLearningForNewCommand(command);
+                await previousCts.CancelAsync();
+            }
+
+            await _learningSemaphore.WaitAsync(cancellationToken);
 
             try
             {
                 await _modalMessageService.ShowMessageAsync(message, async ct =>
                 {
                     using CancellationTokenSource timeoutCts = new(learnTimeout);
-                    using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+                    using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token, learnCts.Token);
 
                     Logger.BroadlinkCommandService_EnteringLearningMode(command);
                     await connection.EnterLearningModeAsync(linkedCts.Token);
 
                     // Poll until data is received (early return), the user cancels (ct fires),
-                    // or the overall learning timeout fires (timeoutCts fires).
+                    // a new button is clicked (learnCts fires), or the learning timeout fires.
                     try
                     {
                         while (true)
@@ -128,7 +137,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
                             await Task.Delay(pollInterval, linkedCts.Token);
                         }
                     }
-                    catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+                    catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested && !learnCts.Token.IsCancellationRequested)
                     {
                         Logger.BroadlinkCommandService_LearningTimedOut(command);
                         throw Errors.Broadlink_LearningTimedOut(learnTimeout);
@@ -137,6 +146,7 @@ internal sealed class BroadlinkCommandService : CommandServiceBase<IRCommand>
             }
             finally
             {
+                Interlocked.CompareExchange(ref _currentLearnCts, null, learnCts);
                 _learningSemaphore.Release();
             }
         };
