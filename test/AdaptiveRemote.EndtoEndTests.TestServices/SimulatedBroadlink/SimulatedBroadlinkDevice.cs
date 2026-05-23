@@ -388,7 +388,6 @@ public sealed class SimulatedBroadlinkDevice : ISimulatedBroadlinkDevice
         lock (_learningLock)
         {
             _isInLearningMode = true;
-            _pendingLearnedData = null; // Clear any previous learned data
         }
 
         // Record the packet
