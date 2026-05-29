@@ -89,20 +89,20 @@ Repeat Phase 3 until the user says the document is ready.
 
 When the user says the document is ready:
 
-1. Re-read the spec from the perspective of an agent assigned to implement
-   it — one that has no context beyond what is written here. Ask: could you
-   implement every part without guessing at what is wanted? Include test
-   coverage in scope: if you could not write a unit test or E2E scenario
-   without guessing at the expected behavior, that is a gap.
-2. If you find gaps — missing decisions, ambiguous behavior, unspecified
-   error cases, unclear interfaces — list them all and ask clarifying
-   questions (all at once).
-   **PAUSE if you asked questions — wait for answers before editing.**
-3. Update the spec to fill the gaps from the user's answers.
-
-Repeat until you have no remaining questions that would require guessing
-to implement. Then tell the user the spec is implementation-ready and
-proceed to Phase 5.
+1. Spawn a Researcher subagent to review the spec:
+   - `subagent_type: researcher`
+   - Prompt: `"Invoke the researcher-spec-review skill with this spec file path: <path>"`
+   - Do not include any conversation context in the prompt — the Researcher
+     should have only the spec and the codebase to work from.
+2. If the Researcher returns questions, ask the user questions until you have enough
+   information to address all of them.
+   **PAUSE between questions as needed — wait for answers before editing.**
+   Then update the spec: integrate the answers naturally into the appropriate
+   sections (do not append a Q&A block). If the Researcher cited any external
+   resources, add them to the `## Related Docs` section.
+   Then repeat from step 1.
+3. When the Researcher returns `No blocking questions — spec is implementation-ready`,
+   tell the user the spec is implementation-ready and proceed to Phase 5.
 
 ---
 

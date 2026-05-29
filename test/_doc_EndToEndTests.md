@@ -1,5 +1,7 @@
 # End-to-End Test Architecture
 
+Summary: Describes the E2E test architecture — how host processes are started, controlled via StreamJsonRpc, and validated using Playwright/Reqnroll.
+
 ## Overview
 The E2E testing subsystem validates that AdaptiveRemote host applications (WPF, Console, and Headless) can start correctly, establish test control connections, execute commands, and shut down cleanly. These tests run as separate processes to validate the complete deployment artifacts.
 

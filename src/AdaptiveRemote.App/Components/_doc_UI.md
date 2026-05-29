@@ -1,5 +1,7 @@
 # UI Subsystem Architecture & Design
 
+Summary: Describes Blazor-based UI rendering, eye-gaze accessibility (large buttons, high-contrast), MVVM binding, and component organization.
+
 ## Overview
 The UI subsystem is responsible for rendering the application interface, handling user input (touch, mouse, eye-gaze), and displaying application state and progress. It is built with WPF (for hosting) and Blazor (for the main UI), with static assets managed in `wwwroot`.
 

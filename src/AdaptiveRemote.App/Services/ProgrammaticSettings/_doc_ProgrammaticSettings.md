@@ -1,5 +1,7 @@
 # ProgrammaticSettings File Format and Usage
 
+Summary: Describes the INI file format and service used to persist programmed IR command payloads (and other settings) across sessions.
+
 This document describes the file format and usage for storing programmed IR commands in AdaptiveRemote, as managed by the `ProgrammaticSettings` service.
 The service is generally available for any component to add data that must be persisted across sessions. IR commands are only the first use case.
 

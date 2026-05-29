@@ -1,5 +1,7 @@
 # Command Architecture & Design
 
+Summary: Describes the Command data object that decouples UI rendering, speech recognition, and command execution across subsystems.
+
 ## Overview
 The `Command` abstraction is a central data object representing a remote control command. It is designed to decouple the definition, display, execution, and invocation of commands across multiple subsystems. The base class is defined in [`Models/Command.cs`](../../Models/Command.cs).
 

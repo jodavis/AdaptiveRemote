@@ -1,6 +1,8 @@
 
 # Projects Overview
 
+Summary: Maps each project in the repo to its purpose, boundaries, and cross-platform constraints.
+
 This document describes the high-level organization of the AdaptiveRemote repository. It is intended for new developers and Copilot agents to understand where code should be implemented, the responsibilities and boundaries of each project, and conventions for cross-platform support.
 
 ## Project Structure and Responsibilities

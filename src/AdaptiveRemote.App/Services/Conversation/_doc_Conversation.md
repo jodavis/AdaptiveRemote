@@ -1,5 +1,7 @@
 # Conversation Subsystem Architecture & Design
 
+Summary: Describes speech recognition, synthesis, conversation state management, and command invocation for the speech interface.
+
 ## Overview
 The Conversation subsystem manages all speech-related functionality: listening to user instructions, mapping them to commands, invoking those commands, and providing spoken feedback. It is not responsible for executing commands directly, but invokes handlers provided by other subsystems. UI updates are handled via a ViewModel, not directly by the subsystem.
 

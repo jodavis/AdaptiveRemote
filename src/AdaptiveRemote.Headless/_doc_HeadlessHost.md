@@ -1,6 +1,8 @@
 
 # AdaptiveRemote.Headless Design Document
 
+Summary: Describes the headless console host that runs Blazor under Playwright for cross-platform automated E2E testing.
+
 ## Purpose
 AdaptiveRemote.Headless is a cross-platform .NET console host for the AdaptiveRemote.App Blazor application, designed to enable automated end-to-end (E2E) UI testing in headless environments (e.g., GitHub Copilot Agents, CI/CD pipelines, and Linux containers). It allows tests to validate AdaptiveRemote functionality without requiring a graphical desktop or Windows UI stack.
 
