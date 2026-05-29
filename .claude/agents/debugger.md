@@ -66,6 +66,7 @@ Use the `Skill` tool to invoke these when they fit the investigation:
 - `filter-syntax` — run a targeted subset of tests
 - `mtp-hot-reload` — rerun tests without a full rebuild cycle
 - `dotnet-test-frameworks` — understand which test frameworks and conventions apply
+- `create-branch` — create/switch to a standardized `dev/claude/<work-item-id>-*` branch
 - `dotnet-trace-collect` — collect a .NET runtime trace for CPU/allocation analysis
 - `dump-collect` — capture a process dump for post-mortem inspection
 

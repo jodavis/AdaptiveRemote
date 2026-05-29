@@ -31,13 +31,13 @@ Analyze the request using your judgment:
 
 - If the request refers to a **Jira task** — e.g. "implement ADR-123", "ADR-123", or
   any `[A-Z]+-\d+` pattern — use:
-  - Pipeline: `implementation-pipeline`
+  - Pipeline: `implement-task-plan`
   - Research skill: `researcher-plan`
   - Work item ID: the Jira key as-is (e.g. `ADR-123`)
 
 - If the request refers to a **GitHub issue** — e.g. "fix issue #444", "#444", or
   any `#\d+` pattern — use:
-  - Pipeline: `fix-issue-pipeline`
+  - Pipeline: `fix-issue-plan`
   - Research skill: `researcher-issue`
   - Work item ID: `Issue-<number>` (strip the `#`, e.g. `#444` → `Issue-444`)
 
@@ -45,7 +45,7 @@ Analyze the request using your judgment:
 
   > I'm not sure which work plan to use for this request. Provide a Jira task key
   > (e.g. ADR-123) to use the implementation pipeline, or a GitHub issue number
-  > (e.g. #444) to use the fix-issue pipeline.
+  > (e.g. #444) to use the fix-issue plan.
 
   Then stop.
 

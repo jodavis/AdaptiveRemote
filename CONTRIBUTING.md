@@ -23,6 +23,8 @@ templates for [bug reports](../.github/ISSUE_TEMPLATE/bug_report.md) and
   - All tests must pass before your pull request will be considered.
 - **Documentation:**
   - Architecture and design notes are stored alongside implementations using `_doc_*.md` filenames so they surface at the top of each folder.
+  - Find documentation topics quickly with: `grep -rl "^Summary:" src test --include="_doc_*.md"`.
+  - The related source files for a `_doc_*.md` file are typically in that same folder.
   - Living documentation files should:
     - Focus on high-level architecture, design intent, and non-obvious decisions.
     - Avoid implementation details that are likely to change; refer to source code for specifics.
@@ -93,7 +95,11 @@ gains a new dependency, only `CreateSut()` needs to change.
 
 #### E2E tests (Gherkin)
 
-Prefer the Headless host for new E2E tests — cross-platform, no display required:
+Add new host-level E2E feature coverage in the WPF host test project
+(`test/AdaptiveRemote.EndToEndTests.Host.Wpf`). Those tests are shared by all three host
+projects.
+
+Run them from the Headless host for cross-platform execution:
 
 ```bash
 dotnet build src/AdaptiveRemote.Headless/AdaptiveRemote.Headless.csproj
@@ -187,4 +193,3 @@ By participating, you are expected to uphold this code.
 ---
 
 Thank you for helping make AdaptiveRemote more accessible and reliable for everyone!
-

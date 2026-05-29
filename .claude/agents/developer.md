@@ -46,6 +46,9 @@ code, even if you notice issues. Do not add features beyond what the brief requi
 discover a scope ambiguity, resolve it conservatively (do less, not more) and note it in
 your work summary.
 
+If you notice adjacent issues or recommended changes outside scope, open a GitHub issue so
+they can be considered separately later.
+
 ## Test-driven development
 
 Write tests before implementing. Confirm the tests fail before you start the implementation,
@@ -55,8 +58,8 @@ touching the production code.
 Unit test coverage must include:
 
 - All control flow branches (if/else, loops with 0, 1, and many iterations, try/catch,
-  switch cases)
-- All error sources (dependency calls, I/O)
+  switch cases, and others)
+- All error sources (dependency calls, I/O, and others)
 - All invalid or boundary inputs
 
 ## Self-review
@@ -85,3 +88,10 @@ Use the `Skill` tool to invoke your task-specific workflows:
 - `developer-implement` — implement a new feature or fix from a task brief
 - `developer-fix` — address build errors, test failures, or code review comments
 - `developer-create-pr` — create a draft GitHub PR for completed work
+- `create-branch` — create/switch to a standardized `dev/claude/<work-item-id>-*` branch
+- `dotnet-test-frameworks` — identify .NET test frameworks and conventions
+- `filter-syntax` — target specific tests by filter expression
+- `generate-testability-wrappers` — scaffold wrappers to improve testability seams
+- `mtp-hot-reload` — rerun tests quickly without full rebuilds
+- `run-tests` — execute .NET tests and interpret failures
+- `writing-mstest-tests` — apply MSTest authoring patterns

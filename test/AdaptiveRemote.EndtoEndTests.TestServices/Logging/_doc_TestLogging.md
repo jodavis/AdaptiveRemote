@@ -30,7 +30,7 @@ Where files live
   - `test/AdaptiveRemote.EndtoEndTests.TestServices/Logging/TestContextLoggerProvider.cs` (local sink that writes to `TestContext`)
 
 API shape (single source of truth)
-- [`ITestLogger`](../../../src/AdaptiveRemote.App/Services/Testing/ITestLogger.cs) (marshalable over JSON-RPC) � sinks implement this API and the intermediary dispatches to the registered sinks.
+- [`ITestLogger`](../../../src/AdaptiveRemote.App/Services/Testing/ITestLogger.cs) (marshalable over JSON-RPC) — sinks implement this API and the intermediary dispatches to the registered sinks.
 
 ```csharp
 [RpcMarshalable]
@@ -81,5 +81,5 @@ Backward-compatibility and incremental rollout
 
 Open questions resolved
 - Dynamic sink registration: yes (attach on connect / unregister on disconnect).
-- Use .NET logging primitives: yes � implement an `ILoggerProvider` in the test process to avoid duplicating .NET logging semantics.
+- Use .NET logging primitives: yes — implement an `ILoggerProvider` in the test process to avoid duplicating .NET logging semantics.
 - Dispatch semantics: provider currently waits for remote sinks to acknowledge operations to preserve ordering.

@@ -35,16 +35,13 @@ a specific, narrow question. For example:
 
 Do not ask questions about comments you can already categorise clearly.
 
-## Step 4 — Output suggested guidelines
+## Step 4 — Update guidelines directly
 
-For each comment that is clearly a project guideline, output a suggested addition to
-`CONTRIBUTING.md` in this format:
+For each comment that is clearly a project guideline, edit `CONTRIBUTING.md` directly.
+Place each addition in the correct section and keep wording/style consistent with existing
+guidelines.
 
----
-**Section:** [which Code Guidelines section this belongs in]
-**Suggested addition:**
-> [exact text to add, written in the same style as existing CONTRIBUTING.md guidelines]
-**Rationale:** [why this should be a permanent guideline]
----
-
-Do not modify `CONTRIBUTING.md` directly. Present the suggestions for human approval first.
+After editing, output a concise summary listing:
+- The section updated
+- The exact guideline added
+- The review comment(s) that motivated it

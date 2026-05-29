@@ -29,10 +29,12 @@ Node ID (`PRRT_...` format) that only the GraphQL API provides.
 Extract the pull number from `$PR_URL` (last path segment), then run:
 
 ```bash
+OWNER="${GITHUB_REPOSITORY%%/*}"
+REPO="${GITHUB_REPOSITORY##*/}"
 gh api graphql -f query='
-  query {
-    repository(owner: "jodasoft", name: "AdaptiveRemote") {
-      pullRequest(number: <pull-number>) {
+  query($owner: String!, $repo: String!, $pullNumber: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $pullNumber) {
         reviewThreads(first: 100) {
           nodes {
             id
@@ -49,7 +51,7 @@ gh api graphql -f query='
         }
       }
     }
-  }'
+  }' -F owner="$OWNER" -F repo="$REPO" -F pullNumber=<pull-number>
 ```
 
 Each node's `id` field is the Node ID needed for `resolveReviewThread`. For each thread
@@ -97,7 +99,7 @@ files.
 Submit a **pull request review** (not a plain PR comment) using the `gh` CLI:
 
 ```bash
-gh api repos/jodasoft/AdaptiveRemote/pulls/<pull-number>/reviews \
+gh api "repos/${GITHUB_REPOSITORY}/pulls/<pull-number>/reviews" \
   --method POST \
   --field body='<overall summary>' \
   --field event='COMMENT' \
@@ -119,13 +121,13 @@ If the review outcome is **approved**, do the following before writing the outpu
 
 1. Convert the PR from draft to Ready for Review:
    ```bash
-   gh pr ready <pull-number> --repo jodasoft/AdaptiveRemote
+   gh pr ready <pull-number>
    ```
 2. Call `mcp__jira__lookupJiraAccountId` with `$REVIEW_ASSIGNEE_EMAIL` to get the human reviewer's account ID.
 3. Assign the Jira issue to that account with `mcp__jira__editJiraIssue`.
 4. Request a review from `$REVIEW_ASSIGNEE_EMAIL` on the PR:
    ```bash
-   gh pr edit <pull-number> --add-reviewer <github-username> --repo jodasoft/AdaptiveRemote
+   gh pr edit <pull-number> --add-reviewer <github-username>
    ```
 5. Add a brief Jira comment with `mcp__jira__addCommentToJiraIssue`: "PR ready for human review — reviewer requested on GitHub."
 

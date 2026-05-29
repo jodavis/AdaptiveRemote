@@ -26,13 +26,10 @@ git branch --show-current
 If the branch name contains `$ARGUMENTS` (the work item ID, e.g. `Issue-123`), the correct
 branch is already active — proceed to Step 1.
 
-Otherwise, derive a short slug from the task brief: take the first sentence of the task
-description, lowercase it, replace spaces and underscores with hyphens, strip any character
-that is not alphanumeric or a hyphen, and trim to 40 characters. Then create and switch to a
-new branch:
+Otherwise, invoke the shared branch-creation skill:
 
 ```bash
-git checkout -b dev/claude/$ARGUMENTS-<slug>
+/create-branch $ARGUMENTS "<task brief first sentence>"
 ```
 
 Do not push — the pipeline pushes after validation passes.
@@ -59,7 +56,8 @@ Write Gherkin scenarios that cover the exit criteria before writing any implemen
 Use existing steps whenever possible. When new steps are needed, follow the conventions in
 `CONTRIBUTING.md`:
 
-- Generalized, human-readable `When` / `Then` / `Given` phrasing
+- Generalized `When` / `Then` / `Given` phrasing where each step is something a human could
+  do or observe manually to reproduce the behavior
 - Step definitions delegate logic to test service methods
 
 Run the new scenarios and confirm they fail (nothing is implemented yet).

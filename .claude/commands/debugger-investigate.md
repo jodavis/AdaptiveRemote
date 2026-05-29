@@ -1,15 +1,15 @@
 ---
 description: Reproduce a GitHub issue bug, trace its root cause, and produce a root-cause report.
-argument-hint: <GH-NNN work item ID>
+argument-hint: <Issue-NNN work item ID>
 ---
 
 ## Inputs
 
-Work item ID: the first token of `$ARGUMENTS` (e.g. `GH-444`)
+Work item ID: the first token of `$ARGUMENTS` (e.g. `Issue-444`)
 
 If missing, stop and tell the caller:
 
-> Usage: `/debugger-investigate <GH-NNN>`
+> Usage: `/debugger-investigate <Issue-NNN>`
 
 ---
 
@@ -17,11 +17,11 @@ If missing, stop and tell the caller:
 
 ### 1 — Fetch the GitHub issue
 
-Derive the issue number by stripping the `GH-` prefix from the work item ID
-(e.g. `GH-444` → `444`). Fetch the issue title, body, and all comments:
+Derive the issue number by stripping the `Issue-` prefix from the work item ID
+(e.g. `Issue-444` → `444`). Fetch the issue title, body, and all comments:
 
 ```bash
-gh issue view <number> --repo jodasoft/AdaptiveRemote --comments
+gh issue view <number> --comments
 ```
 
 If the issue is not found, stop and report the error.
@@ -35,12 +35,10 @@ git branch --show-current
 ```
 
 If already on a `dev/claude/<work-item-id>-*` branch, continue. Otherwise create one
-before making any code changes. Derive the slug from the issue title: lowercase,
-hyphenated, 3–5 meaningful words, no filler words (e.g. "Fix learning mode showing
-multiple buttons" → `fix-learning-mode-buttons`). Create and switch:
+before making any code changes by invoking the shared skill:
 
 ```bash
-git checkout -b dev/claude/<work-item-id>-<slug>
+/create-branch <work-item-id> "<issue title>"
 ```
 
 ### 3 — Read architecture docs
@@ -70,6 +68,8 @@ needed" and continue at step 5b.
 Write a minimal Gherkin scenario in the headless host
 (`test/AdaptiveRemote.EndToEndTests.Host.Headless/Features/`) that exercises the
 reported bad behaviour. Follow the conventions in `test/_doc_EndToEndTests.md`.
+The scenario and each step must be actions or observations that a human can perform and
+verify manually.
 
 Run the new test. It should **pass** (confirming the bad behaviour is currently
 observable). If it does not pass — the behaviour has already changed — proceed to
@@ -132,7 +132,7 @@ Write the report and status object.
 ## Reproduction steps
 
 <Minimal steps that trigger the bug — enough for someone unfamiliar with the issue
-to observe it.>
+to observe it, and each step is something a human can perform manually.>
 
 ## Confirmed root cause
 
@@ -161,4 +161,13 @@ correct-assertion form already), output a brief explanation and then:
 
 ```json
 {"status": "not_reproduced", "reason": "<one sentence describing what was observed instead>"}
+```
+
+### 10 — Comment on the GitHub issue
+
+If status is `reproduced`, add a GitHub issue comment summarizing the confirmed root cause
+that the fix will address:
+
+```bash
+gh issue comment <number> --body "Root cause summary: <1-3 sentences. Include affected file/class and failing behavior>."
 ```

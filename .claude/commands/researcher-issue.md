@@ -1,15 +1,15 @@
 ---
 description: Produce a concise task brief for a GitHub issue, synthesized from the issue body and comments, the relevant architecture docs, and source code. Proposes exit criteria since none are written in the issue.
-argument-hint: <GH-NNN work item ID>
+argument-hint: <Issue-NNN work item ID>
 ---
 
 ## Inputs
 
-Work item ID: the first token of `$ARGUMENTS` (e.g. `GH-444`)
+Work item ID: the first token of `$ARGUMENTS` (e.g. `Issue-444`)
 
 If missing, stop and tell the caller:
 
-> Usage: `/researcher-issue <GH-NNN>`
+> Usage: `/researcher-issue <Issue-NNN>`
 
 ## Debug report
 
@@ -24,13 +24,15 @@ $DEBUG_REPORT
 
 ## Steps
 
-### 1 — Fetch the GitHub issue
+### 1 — Gather issue context (only if needed)
 
-Derive the issue number by stripping the `GH-` prefix from the work item ID
-(e.g. `GH-444` → `444`). Fetch the issue title, body, and all comments:
+Use `$DEBUG_REPORT` as the primary source of bug context.
+
+If `$DEBUG_REPORT` is empty, derive the issue number by stripping the `Issue-` prefix from
+the work item ID (e.g. `Issue-444` → `444`) and fetch issue details:
 
 ```bash
-gh issue view <number> --repo jodasoft/AdaptiveRemote --comments
+gh issue view <number> --comments
 ```
 
 If the issue is not found, stop and report the error.
@@ -40,9 +42,9 @@ If the issue is not found, stop and report the error.
 Read `.claude/commands/researcher-plan.md` and follow **steps 2 through 5** exactly, with
 two differences:
 
-- **Source of requirements (step 1 replacement):** Use the issue title, body, and comments
-  you fetched above instead of a spec file section. Let the issue content guide which
-  subsystems and areas are relevant.
+- **Source of requirements (step 1 replacement):** Use `$DEBUG_REPORT` findings first. If
+  issue details were fetched in step 1, use issue title/body/comments as supplemental
+  context. Let this combined context guide which subsystems and areas are relevant.
 
 - **Exit criteria (step 5 difference):** The issue contains no formal exit criteria. Instead
   of copying them verbatim, **propose** a concrete, checkable list synthesized from the issue

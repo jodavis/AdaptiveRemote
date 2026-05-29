@@ -38,7 +38,7 @@ error and stop.
 Fetch the PR diff using the `gh` CLI:
 
 ```bash
-gh pr diff <pull-number> --repo jodasoft/AdaptiveRemote
+gh pr diff <pull-number>
 ```
 
 Read all changed files in full to understand the complete context of each change.
@@ -92,7 +92,7 @@ find, note the file, line number, and a clear description of the problem.
 Create a **pull request review** (not a regular PR comment) using the `gh` CLI:
 
 ```bash
-gh api repos/jodasoft/AdaptiveRemote/pulls/<pull-number>/reviews \
+gh api "repos/${GITHUB_REPOSITORY}/pulls/<pull-number>/reviews" \
   --method POST \
   --field body='<overall summary>' \
   --field event='COMMENT' \
@@ -103,7 +103,7 @@ Notes:
 - Use `event: COMMENT`, not `APPROVE` or `REQUEST_CHANGES` — GitHub rejects those from
   the PR author's account, and the developer and reviewer agents share the same account.
 - Each entry in `comments` must use the **diff position** (line number within the unified
-  diff), not the source file line number. Run `gh pr diff <number> --repo jodasoft/AdaptiveRemote`
+  diff), not the source file line number. Run `gh pr diff <number>`
   and count lines from the start of each file's hunk to get the position.
 - Do NOT use `POST /repos/.../issues/{number}/comments` — that creates a plain conversation
   comment, not a structured review thread.
