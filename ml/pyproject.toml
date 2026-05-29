@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["."]
+addopts = "-m 'not e2e'"
+markers = ["e2e: End-to-end tests that invoke dvc repro; excluded from default run"]
