@@ -1,5 +1,5 @@
 ---
-description: First-pass code review for the AdaptiveRemote dev-team pipeline. Creates a GitHub PR if one does not exist, retrieves the PR diff, reviews all changes against requirements and quality criteria, and posts a GitHub PR review. Outputs a JSON result indicating approved or changes_requested.
+description: First-pass code review for the AdaptiveRemote dev-team pipeline. Retrieves the PR diff via git, reviews all changes against requirements and quality criteria, and returns a structured JSON review. The pipeline's top-level session posts it to GitHub. Outputs a JSON result indicating approved or changes_requested.
 ---
 
 You are performing the first-pass code review for work item $WORK_ITEM_ID.
@@ -7,7 +7,7 @@ You are performing the first-pass code review for work item $WORK_ITEM_ID.
 **Task brief:**
 $TASK_BRIEF
 
-**PR URL (empty = not yet created):** $PR_URL
+**Base branch:** $BASE_BRANCH
 
 **Spec file path:** $SPEC_PATH
 
@@ -27,23 +27,17 @@ Read the relevant `_doc_*.md` architecture files for any subsystem touched by th
 Use `grep -rl "^Summary:" src test --include="_doc_*.md"` to discover available docs, then
 read the `Summary:` line of each match to find the relevant ones.
 
-## Step 3 — Verify PR exists
+## Step 3 — Retrieve and read the diff
 
-`$PR_URL` must be set before this skill runs — the pipeline creates the PR via
-`developer-create-pr` before invoking the reviewer. If `$PR_URL` is empty, report an
-error and stop.
-
-## Step 4 — Retrieve and read the diff
-
-Fetch the PR diff using the `gh` CLI:
+Fetch the diff using git (no GitHub API needed):
 
 ```bash
-gh pr diff <pull-number>
+git diff origin/$BASE_BRANCH..HEAD
 ```
 
 Read all changed files in full to understand the complete context of each change.
 
-## Step 5 — Review the changes
+## Step 4 — Review the changes
 
 Evaluate the diff against each dimension below, in priority order. For each issue you
 find, note the file, line number, and a clear description of the problem.
@@ -77,7 +71,7 @@ find, note the file, line number, and a clear description of the problem.
 - Does new code conform to the design described in the relevant `_doc_*.md` files?
 - If the implementation changed the design (new interface, changed responsibility,
   new dependency), has the relevant `_doc_*.md` been updated?
-- Have new `_doc_*.md` files beed added where necessary?
+- Have new `_doc_*.md` files been added where necessary?
 
 ### Priority 5 — Code style (note, do not block)
 
@@ -87,38 +81,24 @@ find, note the file, line number, and a clear description of the problem.
 - Do tests use `MockBehavior.Strict` and `Expect_*` helpers?
 - Is there a `CreateSut()` method?
 
-## Step 6 — Post the GitHub PR review
-
-Create a **pull request review** (not a regular PR comment) using the `gh` CLI:
-
-```bash
-gh api "repos/${GITHUB_REPOSITORY}/pulls/<pull-number>/reviews" \
-  --method POST \
-  --field body='<overall summary>' \
-  --field event='COMMENT' \
-  --field comments='[{"path":"<file>","position":<diff-position>,"body":"<comment>"}]'
-```
-
-Notes:
-- Use `event: COMMENT`, not `APPROVE` or `REQUEST_CHANGES` — GitHub rejects those from
-  the PR author's account, and the developer and reviewer agents share the same account.
-- Each entry in `comments` must use the **diff position** (line number within the unified
-  diff), not the source file line number. Run `gh pr diff <number>`
-  and count lines from the start of each file's hunk to get the position.
-- Do NOT use `POST /repos/.../issues/{number}/comments` — that creates a plain conversation
-  comment, not a structured review thread.
-
-## Step 7 — Output
+## Step 5 — Format the review
 
 Write a concise plain-text summary of all issues found (one bullet per issue, Priority
-1–4 first, style issues last). This summary will be passed to the developer so they can
-address each point without re-reading the full PR thread.
+1–4 first, style issues last). For each file/line issue, add it to the `comments` array
+in the output JSON — the scrum master will post it as an inline thread comment on the PR.
 
-Then output the JSON result as the final line:
+## Step 6 — Output
+
+Output the review body, inline comments, and status as the final JSON line:
 
 ```json
-{"status": "approved|changes_requested", "pr_url": "https://github.com/..."}
+{"body": "<overall summary for the review body>", "comments": [{"path": "relative/file.py", "line": 42, "body": "Issue description"}, ...], "status": "approved|changes_requested"}
 ```
 
+The `body` is the overall review summary. The `comments` array contains one entry per
+inline issue, with `path` (relative file path), `line` (the line number), and `body`
+(the specific issue description). Omit `comments` or use an empty array if there are no
+inline issues. The scrum master will post this as a real GitHub PR review with inline
+thread comments.
+
 Use `"approved"` if no Priority 1–4 issues were found; `"changes_requested"` otherwise.
-Always include the PR URL even when approving.

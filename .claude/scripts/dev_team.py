@@ -143,7 +143,10 @@ class PipelineContext:
     fix_iteration: int = 0
     review_fix_iteration: int = 0
     pr_url: str = ""
+    base_branch: str = ""
     review_notes: str = ""
+    pr_details: dict = field(default_factory=dict)
+    signoff_notes: str = ""
     last_failure: str = ""
     build_log: str = ""
     test_log: str = ""
@@ -163,6 +166,7 @@ class PipelineContext:
             f"fix_iteration: {self.fix_iteration}",
             f"review_fix_iteration: {self.review_fix_iteration}",
             f"pr_url: {self.pr_url}",
+            f"base_branch: {self.base_branch}",
             f"build_log: {self.build_log}",
             f"test_log: {self.test_log}",
             f"started: {self.started.isoformat()}",
@@ -185,6 +189,12 @@ class PipelineContext:
 
         if self.review_notes:
             lines += ["", "<!-- section:Review Notes -->", "", self.review_notes.strip()]
+
+        if self.pr_details:
+            lines += ["", "<!-- section:PR Details -->", "", json.dumps(self.pr_details, ensure_ascii=False)]
+
+        if self.signoff_notes:
+            lines += ["", "<!-- section:Signoff Notes -->", "", self.signoff_notes.strip()]
 
         if self.last_failure:
             lines += ["", "<!-- section:Last Failure -->", "", self.last_failure.strip()]
@@ -213,6 +223,7 @@ class PipelineContext:
             fix_iteration=int(meta.get("fix_iteration", 0)),
             review_fix_iteration=int(meta.get("review_fix_iteration", 0)),
             pr_url=meta.get("pr_url", ""),
+            base_branch=meta.get("base_branch", ""),
             build_log=meta.get("build_log", ""),
             test_log=meta.get("test_log", ""),
         )
@@ -236,6 +247,13 @@ class PipelineContext:
             i += 1
         ctx.work_summaries = work_summaries
         ctx.review_notes = sections.get("Review Notes", "")
+        pr_details_raw = sections.get("PR Details", "")
+        if pr_details_raw:
+            try:
+                ctx.pr_details = json.loads(pr_details_raw)
+            except json.JSONDecodeError:
+                pass
+        ctx.signoff_notes = sections.get("Signoff Notes", "")
         ctx.last_failure = sections.get("Last Failure", "")
 
         return ctx
@@ -314,6 +332,15 @@ def parse_json_output(text: str) -> dict:
             continue
 
     return {}
+
+
+# ---------------------------------------------------------------------------
+# Pipeline milestone markers
+# ---------------------------------------------------------------------------
+
+def _milestone(msg: str) -> None:
+    """Print a [DEV-TEAM] marker line for the scrum master to act on."""
+    print(f"[DEV-TEAM] {msg}", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -490,28 +517,34 @@ class ReviewStep(Step):
         self._context_path = context_path
 
     def run(self, ctx: PipelineContext) -> str:
-        if not ctx.pr_url:
-            print(f"Developer is creating PR for {ctx.work_item_id}...", flush=True)
+        if not ctx.pr_details:
+            print(f"Developer is preparing PR details for {ctx.work_item_id}...", flush=True)
             try:
                 pr_output = call_agent(
-                    "developer", "developer-create-pr",
+                    "developer", "prepare-pr-details",
                     substitutions={
                         "$WORK_ITEM_ID": ctx.work_item_id,
-                        "$PR_URL": ctx.pr_url,
                         "$TASK_BRIEF": ctx.brief,
                         "$WORK_SUMMARIES": _format_work_summaries(ctx.work_summaries),
                     },
                 )
             except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
-                print(f"Error invoking developer-create-pr agent:\n{e}", file=sys.stderr)
+                print(f"Error invoking prepare-pr-details agent:\n{e}", file=sys.stderr)
                 sys.exit(1)
-            pr_result = parse_json_output(pr_output)
-            if pr_result.get("pr_url"):
-                ctx.pr_url = pr_result["pr_url"]
-                ctx.save(self._context_path)
-            else:
-                print("Error: developer-create-pr did not return a pr_url.", file=sys.stderr)
+
+            pr_details = parse_json_output(pr_output)
+            if not pr_details.get("title"):
+                print(
+                    "Error: prepare-pr-details did not return PR details (expected JSON "
+                    "with 'title' key).\n\nAgent output:\n" + pr_output,
+                    file=sys.stderr,
+                )
                 sys.exit(1)
+
+            ctx.pr_details = pr_details
+            ctx.base_branch = pr_details.get("base", "")
+            ctx.save(self._context_path)
+            _milestone("PR details ready")
 
         print(f"Reviewer is reviewing {ctx.work_item_id}...", flush=True)
         try:
@@ -521,7 +554,7 @@ class ReviewStep(Step):
                     "$WORK_ITEM_ID": ctx.work_item_id,
                     "$SPEC_PATH": ctx.spec_path,
                     "$TASK_BRIEF": ctx.brief,
-                    "$PR_URL": ctx.pr_url,
+                    "$BASE_BRANCH": ctx.base_branch,
                 },
             )
         except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
@@ -529,11 +562,11 @@ class ReviewStep(Step):
             sys.exit(1)
 
         result = parse_json_output(output)
-        if result.get("pr_url"):
-            ctx.pr_url = result["pr_url"]
-        ctx.review_notes = output
-
+        ctx.review_notes = json.dumps(result) if result else output
         status = result.get("status", "changes_requested")
+        ctx.save(self._context_path)
+        _milestone(f"Review ready: {status}")
+
         if status == "approved":
             print("Review approved.", flush=True)
             return "approved"
@@ -544,13 +577,19 @@ class ReviewStep(Step):
 class SignoffStep(Step):
     handles = "signoff"
 
+    def __init__(self, context_path: Path) -> None:
+        self._context_path = context_path
+
     def run(self, ctx: PipelineContext) -> str:
         print(f"Running parallel signoff for {ctx.work_item_id}...", flush=True)
 
         # Push first so the reviewer-sign-off agent can see the latest commits on the PR.
         _commit_and_push(ctx.work_item_id)
 
+        review_notes_str = ctx.review_notes if ctx.review_notes else "{}"
+
         failures: list[str] = []
+        sign_off_result: dict = {}
 
         def _run_scripts() -> tuple[bool, str]:
             try:
@@ -575,22 +614,23 @@ class SignoffStep(Step):
                 )
             return True, ""
 
-        def _run_reviewer_signoff() -> tuple[bool, str, str]:
+        def _run_reviewer_signoff() -> tuple[bool, str]:
+            nonlocal sign_off_result
             try:
                 output = call_agent(
                     "reviewer", "reviewer-sign-off",
                     substitutions={
                         "$WORK_ITEM_ID": ctx.work_item_id,
                         "$TASK_BRIEF": ctx.brief,
-                        "$PR_URL": ctx.pr_url,
+                        "$REVIEW_NOTES": review_notes_str,
                     },
                 )
             except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError) as e:
-                return False, "", f"reviewer-sign-off error: {e}"
+                return False, f"reviewer-sign-off error: {e}"
             result = parse_json_output(output)
-            pr_url = result.get("pr_url", "")
+            sign_off_result = result
             approved = result.get("status", "changes_requested") == "approved"
-            return approved, pr_url, output if not approved else ""
+            return approved, output if not approved else ""
 
         def _run_researcher_validate() -> tuple[bool, str]:
             try:
@@ -635,11 +675,12 @@ class SignoffStep(Step):
             fut_researcher = executor.submit(_run_researcher_validate)
 
             scripts_ok, scripts_failure = fut_scripts.result()
-            reviewer_ok, reviewer_pr_url, reviewer_failure = fut_reviewer.result()
+            reviewer_ok, reviewer_failure = fut_reviewer.result()
             researcher_ok, researcher_failure = fut_researcher.result()
 
-        if reviewer_pr_url:
-            ctx.pr_url = reviewer_pr_url
+        if sign_off_result:
+            ctx.signoff_notes = json.dumps(sign_off_result, ensure_ascii=False)
+            ctx.save(self._context_path)
 
         if not scripts_ok:
             failures.append(scripts_failure)
@@ -651,11 +692,14 @@ class SignoffStep(Step):
         if failures:
             ctx.review_notes = "\n\n---\n\n".join(failures)
             ctx.last_failure = ctx.review_notes
+            ctx.save(self._context_path)
             print("Signoff found issues; requesting further changes.", flush=True)
+            _milestone("Signoff: changes_requested")
             return "changes_requested"
 
         ctx.last_failure = ""
         print("Signoff approved.", flush=True)
+        _milestone("Signoff: approved")
         return "approved"
 
 
@@ -709,9 +753,8 @@ class FixPrStep(Step):
             flush=True,
         )
         issues = (
-            f"Code review changes requested on PR {ctx.pr_url}.\n\n"
-            f"Read the open review threads on the PR and address each one.\n\n"
-            f"Reviewer summary:\n{ctx.review_notes}"
+            f"Code review changes requested.\n\n"
+            f"Review findings:\n{ctx.review_notes}"
         )
         try:
             fix_summary = call_agent(
@@ -750,7 +793,7 @@ class DevTeamPipeline:
             "validating": ValidateStep(),
             "fixing": FixStep(),
             "reviewing": ReviewStep(context_path),
-            "signoff": SignoffStep(),
+            "signoff": SignoffStep(context_path),
             "fixing-pr": FixPrStep(),
         }
 
@@ -772,7 +815,9 @@ class DevTeamPipeline:
             self.ctx.state = self.machine.state
             self.ctx.save(self.context_path)
 
-        if self.machine.state == "failed":
+        if self.machine.state == "done":
+            _milestone("Done")
+        elif self.machine.state == "failed":
             sys.exit(1)
 
 
@@ -1158,7 +1203,7 @@ def run_validate_script(script_name: str) -> tuple[bool, Path, str]:
     if sys.platform == "win32":
         invoke = ["cmd", "/c", str(script_path)]
     else:
-        invoke = [str(script_path)]
+        invoke = ["bash", str(script_path)]
 
     proc = subprocess.Popen(
         invoke,

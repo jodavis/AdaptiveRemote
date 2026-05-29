@@ -17,14 +17,11 @@ If missing, stop and tell the caller:
 
 ### 1 — Fetch the GitHub issue
 
-Derive the issue number by stripping the `Issue-` prefix from the work item ID
-(e.g. `Issue-444` → `444`). Fetch the issue title, body, and all comments:
+Read the issue title, body, and all comments from the `<!-- section:Issue -->` section of
+the context file at `.claude/logs/dev-team/<work-item-id>-context.md`. This section was
+written by the top-level session (scrum master) before the pipeline started.
 
-```bash
-gh issue view <number> --comments
-```
-
-If the issue is not found, stop and report the error.
+If the section is missing, report an error and stop.
 
 ### 2 — Ensure a working branch
 
@@ -165,9 +162,7 @@ correct-assertion form already), output a brief explanation and then:
 
 ### 10 — Comment on the GitHub issue
 
-If status is `reproduced`, add a GitHub issue comment summarizing the confirmed root cause
-that the fix will address:
-
-```bash
-gh issue comment <number> --body "Root cause summary: <1-3 sentences. Include affected file/class and failing behavior>."
-```
+The top-level session handles GitHub issue comments. Write a `<!-- section:Debug Comment -->`
+section to the context file at `.claude/logs/dev-team/<work-item-id>-context.md` containing
+the summary you would have posted (1–3 sentences covering the confirmed root cause, affected
+file/class, and failing behaviour). The scrum master will post it as a GitHub issue comment.

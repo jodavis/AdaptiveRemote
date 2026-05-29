@@ -1,4 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "Write(.claude/logs/dev-team/*)",
+      "Write(.claude/scripts/*)",
+      "Write(.claude/commands/*)",
+      "Write(.claude/agents/*)"
+    ]
+  },
   "mcpServers": {
     "microsoft-learn": {
       "type": "sse",

@@ -87,7 +87,7 @@ Use the `Skill` tool to invoke your task-specific workflows:
 
 - `developer-implement` — implement a new feature or fix from a task brief
 - `developer-fix` — address build errors, test failures, or code review comments
-- `developer-create-pr` — create a draft GitHub PR for completed work
+- `prepare-pr-details` — prepare draft PR details for completed work
 - `create-branch` — create/switch to a standardized `dev/claude/<work-item-id>-*` branch
 - `dotnet-test-frameworks` — identify .NET test frameworks and conventions
 - `filter-syntax` — target specific tests by filter expression

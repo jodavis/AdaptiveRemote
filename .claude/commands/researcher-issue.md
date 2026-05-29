@@ -29,11 +29,16 @@ $DEBUG_REPORT
 Use `$DEBUG_REPORT` as the primary source of bug context.
 
 If `$DEBUG_REPORT` is empty, derive the issue number by stripping the `Issue-` prefix from
-the work item ID (e.g. `Issue-444` → `444`) and fetch issue details:
+the work item ID (e.g. `Issue-444` → `444`) and fetch issue details. Prefer `gh` CLI if
+available:
 
 ```bash
 gh issue view <number> --comments
 ```
+
+If `gh` is not available, use `mcp__github__issue_read` with `method: "get"` then
+`method: "get_comments"` (with `owner`, `repo`, and `issue_number`) to retrieve the same
+information.
 
 If the issue is not found, stop and report the error.
 
