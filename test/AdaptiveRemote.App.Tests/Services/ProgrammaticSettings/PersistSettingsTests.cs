@@ -9,10 +9,19 @@ public class PersistSettingsTests
     private static readonly string InputSettingsPath = Path.Combine($"%{TestSettingsDirEnvVar}%", "path", "to", "settings.ini");
     private static string ResolvedSettingsPath => Environment.ExpandEnvironmentVariables(InputSettingsPath);
 
+    private static string? _previousTestSettingsDirValue;
+
     [ClassInitialize]
     public static void ClassInitialize(TestContext context)
     {
+        _previousTestSettingsDirValue = Environment.GetEnvironmentVariable(TestSettingsDirEnvVar);
         Environment.SetEnvironmentVariable(TestSettingsDirEnvVar, Path.Combine(Path.GetTempPath(), "AdaptiveRemoteTests"));
+    }
+
+    [ClassCleanup]
+    public static void ClassCleanup()
+    {
+        Environment.SetEnvironmentVariable(TestSettingsDirEnvVar, _previousTestSettingsDirValue);
     }
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
