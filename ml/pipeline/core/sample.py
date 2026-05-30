@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +11,7 @@ class Sample(ABC):
     """Base class for all pipeline sample types.
 
     id: stable identifier.
-      TextSample: str(uuid4()) — no file, not user-visible.
+      TextSample: equals content_hash — content-addressable; no file, not user-visible.
       SampleWithPath subtypes: derived by each stage's _derive_id(); used as filename stem.
     seed: 0 for TextSample and deterministic stages; os.urandom(8) for stochastic stages.
     content_hash: sha256 hex digest.
@@ -40,12 +40,17 @@ class SampleWithPath(Sample, ABC):
 class TextSample(Sample):
     """Bootstrapped phrase variant; no output file.
 
-    Callers set id=str(uuid4()) and seed=0.
+    id is derived from content_hash (content-addressable; callers do not pass it).
+    seed=0 for all TextSamples.
     content_hash = sha256(content.encode('utf-8')).
     """
 
     content: str
     label: str
+    id: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.id = self.content_hash
 
 
 @dataclass

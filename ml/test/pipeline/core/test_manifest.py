@@ -20,7 +20,6 @@ from pipeline.core.manifest import Manifest, ManifestStore
 
 def _text_sample() -> TextSample:
     return TextSample(
-        id="abc123",
         seed=0,
         content_hash="deadbeef",
         content="okay turn on the tv",
@@ -80,7 +79,7 @@ class TestTextSampleRoundTrip:
         assert len(result.samples) == 1
         s = result.samples[0]
         assert isinstance(s, TextSample)
-        assert s.id == "abc123"
+        assert s.id == "deadbeef"
         assert s.seed == 0
         assert s.content_hash == "deadbeef"
         assert s.content == "okay turn on the tv"
@@ -370,7 +369,7 @@ class TestManifestLookup:
         sample = _text_sample()
         manifest = Manifest([sample])
 
-        result = manifest.by_id("abc123")
+        result = manifest.by_id("deadbeef")
 
         assert result is sample
 
@@ -398,31 +397,45 @@ class TestManifestLookup:
             ManifestStore().write(Manifest([]), tmp_path / "manifest.json")
 
     def test_duplicate_id_raises(self) -> None:
-        s1 = _text_sample()
-        s2 = TextSample(
-            id=s1.id,
+        s1 = AudioSample(
+            id="same-id",
             seed=1,
-            content_hash="otherhash",
-            content="other content",
-            label="OTHER",
+            content_hash="hash1",
+            path=Path("f1.wav"),
+            parent_content_hash="ph",
+            transcript="T",
+            applied_values={},
+        )
+        s2 = AudioSample(
+            id="same-id",
+            seed=2,
+            content_hash="hash2",
+            path=Path("f2.wav"),
+            parent_content_hash="ph",
+            transcript="T",
+            applied_values={},
         )
         with pytest.raises(ValueError, match="duplicate sample ids"):
             Manifest([s1, s2])
 
     def test_duplicate_content_hash_keeps_first(self) -> None:
-        s1 = TextSample(
+        s1 = AudioSample(
             id="id-first",
             seed=0,
             content_hash="shared-hash",
-            content="first",
-            label="A",
+            path=Path("f1.wav"),
+            parent_content_hash="ph",
+            transcript="T",
+            applied_values={},
         )
-        s2 = TextSample(
+        s2 = AudioSample(
             id="id-second",
             seed=0,
             content_hash="shared-hash",
-            content="second",
-            label="B",
+            path=Path("f2.wav"),
+            parent_content_hash="ph",
+            transcript="T",
+            applied_values={},
         )
         manifest = Manifest([s1, s2])
 
