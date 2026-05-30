@@ -5,8 +5,15 @@ namespace AdaptiveRemote.Services.ProgrammaticSettings;
 [TestClass]
 public class PersistSettingsTests
 {
-    private static readonly string InputSettingsPath = Path.Combine("%LocalAppData%", "path", "to", "settings.ini");
-    private static readonly string ResolvedSettingsPath = Environment.ExpandEnvironmentVariables(InputSettingsPath);
+    private const string TestSettingsDirEnvVar = "AR_TEST_SETTINGS_DIR";
+    private static readonly string InputSettingsPath = Path.Combine($"%{TestSettingsDirEnvVar}%", "path", "to", "settings.ini");
+    private static string ResolvedSettingsPath => Environment.ExpandEnvironmentVariables(InputSettingsPath);
+
+    [ClassInitialize]
+    public static void ClassInitialize(TestContext context)
+    {
+        Environment.SetEnvironmentVariable(TestSettingsDirEnvVar, Path.Combine(Path.GetTempPath(), "AdaptiveRemoteTests"));
+    }
 
     private readonly MockLogger<PersistSettings> MockLogger = new();
     private readonly MockFileSystem MockFileSystem = new();
