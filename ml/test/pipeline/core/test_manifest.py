@@ -393,3 +393,55 @@ class TestManifestLookup:
         assert manifest.samples == ()
         assert manifest.by_id("x") is None
         assert manifest.by_content_hash("x") is None
+
+    def test_write_empty_manifest_raises(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError, match="Cannot write empty manifest"):
+            ManifestStore().write(Manifest([]), tmp_path / "manifest.json")
+
+    def test_duplicate_id_raises(self) -> None:
+        s1 = _text_sample()
+        s2 = TextSample(
+            id=s1.id,
+            seed=1,
+            content_hash="otherhash",
+            content="other content",
+            label="OTHER",
+        )
+        with pytest.raises(ValueError, match="duplicate sample ids"):
+            Manifest([s1, s2])
+
+    def test_duplicate_content_hash_keeps_first(self) -> None:
+        s1 = TextSample(
+            id="id-first",
+            seed=0,
+            content_hash="shared-hash",
+            content="first",
+            label="A",
+        )
+        s2 = TextSample(
+            id="id-second",
+            seed=0,
+            content_hash="shared-hash",
+            content="second",
+            label="B",
+        )
+        manifest = Manifest([s1, s2])
+
+        assert manifest.by_content_hash("shared-hash") is s1
+
+    def test_read_missing_sample_type_raises(self, tmp_path: Path) -> None:
+        manifest_path = tmp_path / "manifest.json"
+        manifest_path.write_text(json.dumps({"version": 1, "samples": []}))
+        with pytest.raises(ValueError, match="Missing 'sample_type'"):
+            ManifestStore().read(manifest_path)
+
+    def test_write_mixed_sample_types_raises_correctly(self, tmp_path: Path) -> None:
+        text = _text_sample()
+        audio = _audio_sample()
+        # Bypass Manifest type-safety by injecting samples directly
+        m: Manifest = object.__new__(Manifest)
+        m._samples = (text, audio)  # type: ignore[attr-defined]
+        m._by_content_hash = {text.content_hash: text, audio.content_hash: audio}  # type: ignore[attr-defined]
+        m._by_id = {text.id: text, audio.id: audio}  # type: ignore[attr-defined]
+        with pytest.raises(ValueError, match="mixed sample types"):
+            ManifestStore().write(m, tmp_path / "manifest.json")
