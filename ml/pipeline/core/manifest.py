@@ -148,7 +148,6 @@ def _serialise(s: Sample) -> dict[str, Any]:
 def _deserialise(cls: type, e: dict[str, Any]) -> Sample:
     if cls is TextSample:
         return TextSample(
-            id=e["id"],
             seed=e["seed"],
             content_hash=e["content_hash"],
             content=e["content"],
