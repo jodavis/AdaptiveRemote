@@ -16,6 +16,13 @@ The motivation is that sub-agents spawned via `claude -p` cannot use authenticat
 connectors in cloud environments; centralizing those calls in the top-level session
 eliminates that constraint.
 
+## Repository for agent work
+
+These modifications will be made in
+[https://github.com/jodavis/dev-team-agents](https://github.com/jodavis/dev-team-agents), to keep them isolated from the working pipeline until they are operational. That plug-in is being developed based on the development pipeline in this repository.
+
+Code changes, pull requests, reviews, and validation should all be done in the `dev-team-agents` repository, until Task 9 (ADR-241) which adopts the new plug-in in this repository.
+
 ## Responsibilities & Boundaries
 
 - **Owns:** structured comment thread schema; scrum master milestone table; agent tool
