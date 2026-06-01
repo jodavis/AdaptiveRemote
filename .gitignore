@@ -369,3 +369,6 @@ FodyWeavers.xsd
 # Claude logs
 .claude/logs
 .claude/settings.local.json
+
+# Python environments
+.venv/

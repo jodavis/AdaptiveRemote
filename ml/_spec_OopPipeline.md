@@ -953,6 +953,7 @@ Implement `ml/pipeline/core/randomization.py`.
 - [ ] `NormalFilter`: Gaussian; `density(x) = gaussian_pdf(x)/gaussian_pdf(mean)`; raises `ValueError` for `std_dev <= 0`
 - [ ] `VariationGenerator`: `should_vary`, `generate` (rejection-sample with attempt indexing), `generate_int` (bitmask + attempt indexing; range=0 → return `min_val` immediately), `choose` (direct, no loop) — all hash formulas from spec
 - [ ] Unit tests: same seed → same value for all methods; stability across range widening; `generate` raises `ValueError` after 1000 iterations; `choose` is direct (no rejection loop); `generate_int` range=0; `NormalFilter` rejects `std_dev <= 0`; `should_vary` probability converges over many seeds; change constraints (make max higher and lower) with a value that changes and a value that doesn't change (find a seed that exhibits each behavior, one that gets higher or lower when max changes, another that stays in the lower range when max changes)
+- [ ] Update `ml/_doc_ml.md` as needed
 - [ ] `validate-build` and `validate-tests` pass
 
 ---
@@ -967,6 +968,7 @@ Implement `ml/pipeline/core/modifier_stage.py`. Depends on Task 2a.
 - [ ] GC: deletes files in `output_dir` not in `{sample.path.name for sample in output_samples}` and not named `manifest.json`
 - [ ] Unit tests: skip path preserves output file and id unchanged; constraint change → new id, same seed, updated content_hash, old file GC'd; new sample → `_derive_id` called, fresh seed; `_is_deterministic=True` → `output_seed=0`; GC removes orphaned files; find seeds where the same constraint change causes a change in one sample but not another
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -982,6 +984,7 @@ Implement `ml/pipeline/intent/` and the first two DVC entry-points.
 - [ ] `stages/intent_01_generate_phrases.py` and `intent_02_compute_vocab.py` entry-points
 - [ ] Unit tests: `PhraseVariator` determinism with fixed seed; output identical to original `VariationGenerator` for same inputs; `sanity_check` filters malformed variants; `VocabComputer` produces correct phoneme list from label words
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -994,6 +997,7 @@ Implement `ml/pipeline/speech/tts_stage.py` and `stages/speech_03_generate_sampl
 - [ ] Voice list fetched in entry-point; sorted for determinism; filtered per spec
 - [ ] Unit tests: `applied_values` keys and types; skip path; rate string formatted correctly; `TtsProvider` called with `input_sample.content`; `AudioSample.transcript` = `input_sample.label`; derived id format
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -1006,6 +1010,7 @@ Implement `ml/pipeline/io/` and `delay_stage.py`.
 - [ ] `stages/speech_04_add_delays.py` entry-point
 - [ ] Unit tests: both keys always present; 0.0 stored correctly; `AudioReader` converts stereo input to mono; derived id format
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -1018,6 +1023,7 @@ Implement `background_noise_stage.py` and `mic_noise_stage.py`. Depends on Task 
 - [ ] `stages/speech_05_add_background_noise.py` and `speech_06_add_mic_noise.py`
 - [ ] Unit tests: `BackgroundNoiseAugmentor` stores noise_file even when not applied; noise_start_s clamped to 0.0 when noise shorter than audio; all keys always present; derived id formats
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -1031,6 +1037,7 @@ Implement `SpectrogramStage`, `TokenStage`, `SetManifestSplitter` and their entr
 - [ ] `stages/speech_07_compute_tokens.py`, `speech_08_compute_spectrograms.py`, `speech_09_create_set_manifests.py`
 - [ ] Unit tests: `SpectrogramStage` and `TokenStage` skip-unchanged paths; `parent_id` set correctly; `SetManifestSplitter` percentages sum correctly; ids unchanged in split outputs
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -1043,6 +1050,7 @@ Implement `ModelTrainer` and `stages/speech_10_train_model.py`.
 - [ ] `speech_10_train_model.py` entry-point
 - [ ] Unit tests: filters correctly by `parent_id`; `KerasBackend.train` called with correct dataset; `KerasBackend.save` called after training
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -1056,6 +1064,7 @@ Implement `ModelEvaluator` and the final two entry-points.
 - [ ] `stages/speech_11_evaluate_model.py` and `speech_12_package_test_samples.py`
 - [ ] Unit tests: `evaluate()` writes correct files; `package_test_samples()` includes only correctly-predicted samples; both methods call `_run_predictions()` (shared, not duplicated)
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -1071,6 +1080,7 @@ Wire all stages in `dvc.yaml`; migrate `params.yaml`; delete old scripts.
 - [ ] Delete `ml/scripts/` tree (after Task 3 is merged)
 - [ ] `dvc repro` runs end-to-end without errors on the dev machine
 - [ ] `validate-build` and `validate-tests` pass
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ---
 
@@ -1083,6 +1093,7 @@ Add the full-pipeline integration test and pytest configuration. The test is pla
 - [ ] `pyproject.toml` configured: `addopts = "-m 'not e2e'"` excludes from default runs; CI calls `pytest -m e2e` explicitly
 - [ ] Assertions: `conventions.model_path(train_output_dir).exists()`; `metrics["wer"]` is finite
 - [ ] `validate-build` and `validate-tests` pass (unit tests only; E2E requires live internet)
+- [ ] Update `ml/_doc_ml.md` as needed
 
 ## Related Docs
 
