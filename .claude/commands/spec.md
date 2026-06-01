@@ -24,8 +24,8 @@ Read the relevant `_doc_*.md` files from the list above. Read all that apply
 to the feature area; at minimum read `src/_doc_Projects.md`. Also read any
 relevant source code in the workspace.
 
-Then ask the user a focused set of questions to fill gaps that the docs and
-feature description don't answer. Good questions cover:
+Then use the `AskUserQuestion` tool to ask the user focused questions that fill
+gaps the docs and feature description don't answer. Good questions cover:
 
 - Ownership and boundaries (what this feature owns vs. delegates)
 - Integration points with existing subsystems
@@ -33,13 +33,17 @@ feature description don't answer. Good questions cover:
 - Constraints (performance, accessibility, testability requirements)
 - Anything the planned implementation section will need to be concrete
 
-Ask all your questions at once — don't ask one at a time. Skip questions
-you can already answer from the docs, feature description, or source code.
+Skip questions you can already answer from the docs, feature description, or
+source code. For each question, provide 2–4 concrete option choices reflecting
+the most likely approaches; the user can always pick "Other" to write a custom
+answer. The tool accepts 1–4 questions per call — if you have more than 4,
+ask them in batches and wait for answers between batches.
 
 **PAUSE — wait for the user's answers before continuing.**
 
 If the answers raise new ambiguities that would materially affect the spec,
-ask one more targeted follow-up round. Otherwise proceed to Phase 2.
+use `AskUserQuestion` for one more targeted follow-up round. Otherwise proceed
+to Phase 2.
 
 ---
 
@@ -94,9 +98,10 @@ When the user says the document is ready:
    - Prompt: `"Invoke the researcher-spec-review skill with this spec file path: <path>"`
    - Do not include any conversation context in the prompt — the Researcher
      should have only the spec and the codebase to work from.
-2. If the Researcher returns questions, ask the user questions until you have enough
-   information to address all of them.
-   **PAUSE between questions as needed — wait for answers before editing.**
+2. If the Researcher returns questions, use the `AskUserQuestion` tool to ask
+   the user until you have enough information to address all of them. Provide
+   2–4 option choices per question; batch up to 4 questions per call.
+   **PAUSE between batches — wait for answers before editing.**
    Then update the spec: integrate the answers naturally into the appropriate
    sections (do not append a Q&A block). If the Researcher cited any external
    resources, add them to the `## Related Docs` section.
@@ -110,7 +115,10 @@ When the user says the document is ready:
 
 When Phase 4 is complete:
 
-1. Ask: "Is there a Jira epic for this feature? If so, share the epic key."
+1. Use `AskUserQuestion` to ask: "Is there a Jira epic for this feature?"
+   Provide options for "Yes — I'll provide the key", "No epic yet", and
+   "No — skip Jira entirely". If the user selects "Yes", follow up with
+   another `AskUserQuestion` (or ask for "Other" input) to collect the key.
    **PAUSE — wait for the answer before continuing.**
 2. Add a `## Tasks` section at the end of the spec file. Break the work
    into tasks sized to roughly one PR each. For each task write:
