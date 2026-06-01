@@ -7,10 +7,12 @@
 
 Extract the dev-team agents, skills, and orchestration scripts from the AdaptiveRemote repository into a standalone Claude Code Agent SDK plugin installable without committing any agent files to a target repository. A project-config layer — read from existing project files and environment variables — replaces hard-coded project references in agent definitions. Work-tracking and code-host integrations are exposed as swappable adapter skills so that different backends (Jira, GitHub Issues; GitHub PR) can be substituted per project. The plugin is self-updating: a `SessionStart` hook keeps the local installation current without manual update commands.
 
-## Repository
+## Repository for agent work
 
 The dev-team plugin is being developed in
 [https://github.com/jodavis/dev-team-agents](https://github.com/jodavis/dev-team-agents), based on the agent implementations that exist in this repository.
+
+Code changes, pull requests, reviews, and validation should all be done in the `dev-team-agents` repository, until Task 9 (ADR-241) which adopts the new plug-in in this repository.
 
 ## Responsibilities & Boundaries
 
