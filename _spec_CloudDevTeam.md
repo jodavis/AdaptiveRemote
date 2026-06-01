@@ -368,6 +368,8 @@ FixPrStep (dev_team.py)
 
 ## Tasks
 
+> **Prerequisite:** Tasks 2 and 3 from `_spec_DevTeamPortability.md` (ADR-264: verbatim pipeline copy; ADR-265: minimal plugin adoption) must complete and be locally validated before ADR-253 begins. CloudDevTeam implementation runs entirely in the `dev-team-agents` repository. Do not update AdaptiveRemote's plugin until all four tasks below are complete.
+
 ### [ADR-253](https://jodasoft.atlassian.net/browse/ADR-253): `dev_team.py` — review thread data model and context
 
 Add the `ReviewComment` and `ReviewThread` dataclasses; update `PipelineContext` to add

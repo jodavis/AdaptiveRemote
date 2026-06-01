@@ -12,7 +12,7 @@ Extract the dev-team agents, skills, and orchestration scripts from the Adaptive
 The dev-team plugin is being developed in
 [https://github.com/jodavis/dev-team-agents](https://github.com/jodavis/dev-team-agents), based on the agent implementations that exist in this repository.
 
-Code changes, pull requests, reviews, and validation should all be done in the `dev-team-agents` repository, until Task 9 (ADR-241) which adopts the new plug-in in this repository.
+All code changes are made in the `dev-team-agents` repository. Task 3 (ADR-265) adopts the plugin in AdaptiveRemote by deleting the per-repo `.claude/` files and validating locally. Tasks 4–5 run the pipeline from AdaptiveRemote to validate CloudDevTeam changes. Tasks 6–11 return to dev-team-agents for the full portability work.
 
 ## Responsibilities & Boundaries
 
@@ -285,33 +285,70 @@ _(None — all questions resolved during spec review.)_
 
 ---
 
-### 🧑 Task 1: Create the plugin GitHub repository ([ADR-233](https://jodasoft.atlassian.net/browse/ADR-233))
+### ✅ Task 1: Create the plugin GitHub repository ([ADR-233](https://jodasoft.atlassian.net/browse/ADR-233))
 
-Create the `dev-team` repository on GitHub and share the URL so agent tasks can target it.
-
-- [ ] Repository `dev-team` exists under the correct GitHub account/org
-- [ ] Repository is accessible for cloning and pushing
-- [ ] URL is recorded for use by subsequent tasks
+Repository `dev-team-agents` exists at [https://github.com/jodavis/dev-team-agents](https://github.com/jodavis/dev-team-agents). No action needed.
 
 ---
 
-### 🤖 Task 2: Scaffold plugin structure and auto-update hook ([ADR-234](https://jodasoft.atlassian.net/browse/ADR-234))
+### 🤖 Task 2: Verbatim pipeline copy to dev-team-agents ([ADR-264](https://jodasoft.atlassian.net/browse/ADR-264))
 
-In the new plugin repository: create the Claude Code plugin directory layout, `plugin.json` manifest, `hooks/hooks.json`, and implement `dev_team_update.py`.
+Copy all pipeline files from AdaptiveRemote into the dev-team-agents repository verbatim. No genericizing. No auto-update. This establishes the plugin directory structure and makes the pipeline testable in isolation before any code changes.
 
-- [ ] `.claude-plugin/plugin.json` is present and passes Claude Code plugin validation
-- [ ] `hooks/hooks.json` defines a `SessionStart` hook invoking `dev_team_update.py`
-- [ ] `dev_team_update.py` accepts `--data-dir` and `--threshold-hours`; reads/writes the timestamp file; runs `git pull --ff-only`; always exits 0
-- [ ] A session started within the threshold window skips the pull (verified via timestamp file)
-- [ ] A session started after the threshold runs `git pull` and updates the timestamp
+- [ ] Directory structure created in dev-team-agents: `agents/`, `commands/`, `scripts/`
+- [ ] All `.claude/agents/*.md` and `.claude/commands/*.md` from AdaptiveRemote are present verbatim
+- [ ] `dev_team.py`, `implement-task-plan.md`, `fix-issue-plan.md` present in `scripts/`
+- [ ] Stub `scripts/validate-build.cmd` and `scripts/validate-tests.cmd` exist (exit 0 — dev-team-agents has no build)
+- [ ] `dev_team.py` can be invoked with dev-team-agents as the cwd and exits without errors on a dry run
 
 ---
 
-### 🤖 Task 3: Port and genericize agents and commands ([ADR-235](https://jodasoft.atlassian.net/browse/ADR-235))
+### 🤖 Task 3: Minimal plugin adoption in AdaptiveRemote ([ADR-265](https://jodasoft.atlassian.net/browse/ADR-265))
 
-Copy all `.claude/agents/*.md` and `.claude/commands/*.md` from AdaptiveRemote into the plugin and remove all project-specific content (names, Jira keys, MCP server literals).
+The minimum code changes to make `dev_team.py` work as a Claude Code plugin, then install it manually and cut AdaptiveRemote over to it. The only code changes required are path resolution fixes — everything else in `dev_team.py` is already project-agnostic.
 
-> **Note for task brief:** This task is implemented using the dev-team pipeline in AdaptiveRemote (the plugin does not exist yet). The developer agent is invoked from AdaptiveRemote's context and must be given the plugin repo path explicitly. The agent reads source files from AdaptiveRemote's `.claude/` tree and writes the genericized versions directly to the plugin repo directory — both paths are supplied in the task brief.
+- [ ] `.claude-plugin/plugin.json` manifest is present and passes Claude Code plugin validation
+- [ ] `_find_repo_root()` walks up from `os.getcwd()` instead of `__file__`
+- [ ] `dev_team.py` accepts `--plugin-root`; agent and command files resolve from `<plugin-root>/agents/` and `<plugin-root>/commands/`
+- [ ] `dev-team.md` invokes `dev_team.py` using `${CLAUDE_PLUGIN_ROOT}` substitution and passes `--plugin-root ${CLAUDE_PLUGIN_ROOT}`
+- [ ] Plugin manually installed (cloned to `~/.claude/plugins/dev-team/`) and enabled in Claude Code settings
+- [ ] `AdaptiveRemote/.claude/agents/`, `.claude/commands/`, `.claude/scripts/` deleted from the AdaptiveRemote repo
+- [ ] A pipeline task from ADR-191 ("Refactoring the DVC pipeline") completes end-to-end from AdaptiveRemote using the plugin
+
+---
+
+> **Note:** CloudDevTeam tasks ADR-253 through ADR-256 (see `_spec_CloudDevTeam.md`) are implemented next, entirely in dev-team-agents. Do not update AdaptiveRemote's plugin until all four are complete.
+
+---
+
+### 🤖 Task 4: Local pipeline validation with CloudDevTeam changes ([ADR-266](https://jodasoft.atlassian.net/browse/ADR-266))
+
+After CloudDevTeam (ADR-253–256) is fully implemented in dev-team-agents, pull those changes into the local plugin and validate the modified pipeline end-to-end locally before attempting cloud execution.
+
+- [ ] `git pull` in the local plugin installation picks up all CloudDevTeam changes
+- [ ] A full researcher → developer → reviewer → sign-off cycle completes locally using an ADR-191 task
+- [ ] Review threads appear as GitHub PR comments (not flat inline comments)
+- [ ] Sub-agents do not attempt Jira MCP calls
+
+---
+
+### 🤖 Task 5: Cloud pipeline validation ([ADR-267](https://jodasoft.atlassian.net/browse/ADR-267))
+
+_Depends on Task 4 (ADR-266)._
+
+Run the pipeline in a cloud Claude Code session to confirm the ADR-246 connector centralization works in the target environment.
+
+- [ ] A full researcher → developer → reviewer → sign-off cycle completes in a cloud Claude Code session using an ADR-191 task
+- [ ] Authenticated connector calls (GitHub MCP, Jira MCP, `gh` CLI) are made only by the top-level scrum master session
+- [ ] Sub-agents do not attempt Jira or GitHub connector calls
+
+---
+
+### 🤖 Task 6: Port and genericize agents and commands ([ADR-235](https://jodasoft.atlassian.net/browse/ADR-235))
+
+Remove all project-specific content from the pipeline files copied in Task 2. The verbatim copy is done; this task is content-only cleanup.
+
+> **Note for task brief:** Pipeline files were copied verbatim in ADR-264. This task genericizes their content — no file copying required. The developer agent reads files from the dev-team-agents repo and edits them in place.
 
 - [ ] No literal `"AdaptiveRemote"`, `"ADR-"`, `mcp__jira__`, or `mcp__08e9ccd3__` remains in any agent or command file
 - [ ] All agent files load in Claude Code without errors
@@ -319,7 +356,7 @@ Copy all `.claude/agents/*.md` and `.claude/commands/*.md` from AdaptiveRemote i
 
 ---
 
-### 🤖 Task 4: Implement `config_loader.py` and `DevTeamConfig` ([ADR-236](https://jodasoft.atlassian.net/browse/ADR-236))
+### 🤖 Task 7: Implement `config_loader.py` and `DevTeamConfig` ([ADR-236](https://jodasoft.atlassian.net/browse/ADR-236))
 
 Implement config discovery (CLAUDE.md → CONTRIBUTING.md additive → env vars → defaults) and serialise the result to a temp file.
 
@@ -332,13 +369,10 @@ Implement config discovery (CLAUDE.md → CONTRIBUTING.md additive → env vars 
 
 ---
 
-### 🤖 Task 5: Refactor `dev_team.py` for plugin packaging ([ADR-237](https://jodasoft.atlassian.net/browse/ADR-237))
+### 🤖 Task 8: Refactor `dev_team.py` for plugin packaging ([ADR-237](https://jodasoft.atlassian.net/browse/ADR-237))
 
-Update `dev_team.py` to resolve paths from `os.getcwd()` and `--plugin-root`, add adapter concatenation to `call_agent()`, and update `dev-team.md`'s invocation line.
+Add adapter concatenation to `call_agent()` and update supporting infrastructure. Path resolution (`_find_repo_root()`, `--plugin-root`, `dev-team.md` invocation) was already done in ADR-265 and is not repeated here.
 
-- [ ] `_find_repo_root()` walks up from `os.getcwd()` and returns the consuming project root
-- [ ] `dev_team.py` accepts `--plugin-root`; resolves command files from `<plugin-root>/commands/`
-- [ ] `dev-team.md` invokes `dev_team.py` using `${CLAUDE_PLUGIN_ROOT}` substitution and passes `--plugin-root ${CLAUDE_PLUGIN_ROOT}`
 - [ ] `call_agent()` appends the correct adapter file content based on `DevTeamConfig.work_tracker` / `DevTeamConfig.code_host`
 - [ ] `<CONFIG_PATH>` in adapter content is replaced with the actual config file path before passing to the subprocess
 - [ ] Logs are written to `REPO_ROOT/.claude/dev-team/logs/`
@@ -346,7 +380,7 @@ Update `dev_team.py` to resolve paths from `os.getcwd()` and `--plugin-root`, ad
 
 ---
 
-### 🤖 Task 6: Work-tracking adapter skills (Jira and GitHub Issues) ([ADR-238](https://jodasoft.atlassian.net/browse/ADR-238))
+### 🤖 Task 9: Work-tracking adapter skills (Jira and GitHub Issues) ([ADR-238](https://jodasoft.atlassian.net/browse/ADR-238))
 
 Implement `adapters/work-tracking/jira.md` and `adapters/work-tracking/github-issues.md`.
 
@@ -358,7 +392,7 @@ Implement `adapters/work-tracking/jira.md` and `adapters/work-tracking/github-is
 
 ---
 
-### 🤖 Task 7: GitHub PR code-host adapter skill ([ADR-239](https://jodasoft.atlassian.net/browse/ADR-239))
+### 🤖 Task 10: GitHub PR code-host adapter skill ([ADR-239](https://jodasoft.atlassian.net/browse/ADR-239))
 
 Implement `adapters/code-host/github-pr.md`.
 
@@ -368,29 +402,29 @@ Implement `adapters/code-host/github-pr.md`.
 
 ---
 
-### 🧑 Task 8: Install plugin and configure environment ([ADR-240](https://jodasoft.atlassian.net/browse/ADR-240))
+### 🤖 Task 11: Add auto-update hook ([ADR-234](https://jodasoft.atlassian.net/browse/ADR-234))
 
-Install the plugin locally and set the required env vars. This task must complete before the adoption and validation tasks can run.
+_Deferred until cloud validation (Task 5) is confirmed. Only add the auto-update mechanism after pipeline reliability in cloud is established._
 
-- [ ] Plugin repo is cloned to `~/.claude/plugins/dev-team/` (or equivalent local path)
-- [ ] Plugin is enabled in Claude Code settings and appears in the session init message
+- [ ] `hooks/hooks.json` defines a `SessionStart` hook invoking `dev_team_update.py`
+- [ ] `dev_team_update.py` accepts `--data-dir` and `--threshold-hours`; reads/writes the timestamp file; runs `git pull --ff-only`; always exits 0
+- [ ] A session started within the threshold window skips the pull (verified via timestamp file)
+- [ ] A session started after the threshold runs `git pull` and updates the timestamp
+
+---
+
+### 🧑 Task 12: Configure environment ([ADR-240](https://jodasoft.atlassian.net/browse/ADR-240))
+
+Manual plugin installation is done in Task 3 (ADR-265). This task covers configuring the env vars required for the DevTeamPortability config layer, after `config_loader.py` is implemented.
+
 - [ ] The following env vars are set in the local environment: `DEV_TEAM_WORK_TRACKER`, `DEV_TEAM_CODE_HOST`, `DEV_TEAM_JIRA_PROJECT_KEY`, `DEV_TEAM_REPO`, `DEV_TEAM_MCP_PREFIX`
+- [ ] Config is verified by running `config_loader.py` and inspecting the output JSON
 
 ---
 
-### 🤖 Task 9: Adopt plugin in AdaptiveRemote ([ADR-241](https://jodasoft.atlassian.net/browse/ADR-241))
+### 🤖 Task 13: End-to-end pipeline validation ([ADR-242](https://jodasoft.atlassian.net/browse/ADR-242))
 
-Remove the per-repo agent files from AdaptiveRemote and add the copilot-instructions template.
-
-- [ ] `.claude/agents/`, `.claude/commands/`, and `.claude/scripts/` are deleted from AdaptiveRemote
-- [ ] `.github/copilot-instructions.md` is added using the plugin's template (instructs Copilot to read `CLAUDE.md`)
-- [ ] No remaining references to the deleted directories exist in any committed file
-
----
-
-### 🤖 Task 10: End-to-end pipeline validation ([ADR-242](https://jodasoft.atlassian.net/browse/ADR-242))
-
-Run the full pipeline in AdaptiveRemote with the installed plugin and confirm it produces a working PR.
+Run the full pipeline with auto-update enabled and confirm it produces a working PR.
 
 - [ ] Auto-update hook fires on session start (verified via log in `REPO_ROOT/.claude/dev-team/logs/`)
 - [ ] Given the plugin is installed and env vars are configured, when `/dev-team implement <a small task>` runs, then the full researcher → developer → reviewer pipeline completes and produces a PR
