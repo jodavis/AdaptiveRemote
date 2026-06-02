@@ -1,4 +1,11 @@
 {
+  "enabledPlugins": {
+    "dotnet@dotnet-agent-skills": false,
+    "dotnet-diag@dotnet-agent-skills": true,
+    "dotnet-aspnet@dotnet-agent-skills": false,
+    "dotnet-template-engine@dotnet-agent-skills": false,
+    "dev-team@dev-team-agents": true
+  },
   "mcpServers": {
     "microsoft-learn": {
       "type": "sse",
@@ -11,11 +18,5 @@
         "Authorization": "Bearer $GITHUB_PAT"
       }
     }
-  },
-  "enabledPlugins": {
-    "dotnet@dotnet-agent-skills": false,
-    "dotnet-diag@dotnet-agent-skills": true,
-    "dotnet-aspnet@dotnet-agent-skills": false,
-    "dotnet-template-engine@dotnet-agent-skills": false
   }
 }
