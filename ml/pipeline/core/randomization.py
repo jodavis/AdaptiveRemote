@@ -31,6 +31,10 @@ class MinMaxFilter(PassFilter):
     """Uniform over [min_val, max_val]. density() == 1.0 in range, 0.0 outside."""
 
     def __init__(self, min_val: float, max_val: float) -> None:
+        if min_val > max_val:
+            raise ValueError(
+                f"min_val must be <= max_val, got min_val={min_val}, max_val={max_val}"
+            )
         self._min_val = min_val
         self._max_val = max_val
 
@@ -64,6 +68,8 @@ class VariationGenerator:
 
     def should_vary(self, variable_name: str, frequency: float) -> bool:
         """True with probability frequency using sha256-based deterministic hash."""
+        if not 0.0 <= frequency <= 1.0:
+            raise ValueError(f"frequency must be in [0.0, 1.0], got {frequency}")
         raw = _hash_int(f"{self._seed}:{variable_name}:vary")
         return (raw / _TWO_TO_64) < frequency
 
@@ -103,5 +109,7 @@ class VariationGenerator:
 
     def choose(self, variable_name: str, options: Sequence[T]) -> T:
         """Direct selection via sha256 hash modulo len(options); no rejection loop."""
+        if not options:
+            raise ValueError("options must be non-empty")
         raw = _hash_int(f"{self._seed}:{variable_name}:0")
         return options[raw % len(options)]

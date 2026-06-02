@@ -54,6 +54,14 @@ class TestMinMaxFilterDensity:
         f = MinMaxFilter(3.0, 7.5)
         assert f.sample_domain() == (3.0, 7.5)
 
+    def test_min_greater_than_max_raises_value_error(self) -> None:
+        with pytest.raises(ValueError):
+            MinMaxFilter(8.0, 2.0)
+
+    def test_equal_min_max_constructs_successfully(self) -> None:
+        f = MinMaxFilter(5.0, 5.0)
+        assert f.density(5.0) == 1.0
+
 
 # ---------------------------------------------------------------------------
 # NormalFilter — density and domain
@@ -138,13 +146,19 @@ class TestVariationGeneratorShouldVary:
         assert abs(ratio - frequency) < 0.08
 
     def test_different_variable_names_are_independent(self) -> None:
-        g = VariationGenerator(0)
+        g = VariationGenerator(3)
         a = g.should_vary("prefix_delay_s", 0.5)
         b = g.should_vary("suffix_delay_s", 0.5)
-        # Both calls use the same seed but different variable names -> independent hashes
-        # Values may or may not differ; what matters is both are valid booleans
-        assert isinstance(a, bool)
-        assert isinstance(b, bool)
+        # Same seed, different variable names -> independent hashes -> different values
+        assert a != b
+
+    def test_frequency_below_zero_raises_value_error(self) -> None:
+        with pytest.raises(ValueError):
+            VariationGenerator(0).should_vary("x", -0.1)
+
+    def test_frequency_above_one_raises_value_error(self) -> None:
+        with pytest.raises(ValueError):
+            VariationGenerator(0).should_vary("x", 1.1)
 
 
 # ---------------------------------------------------------------------------
@@ -262,7 +276,9 @@ class TestVariationGeneratorGenerateIntStability:
         assert v_wide == 2
 
     def test_changing_seed_gets_higher_when_max_widened(self) -> None:
-        # seed=2: raw_0 & 15 == 3 (accepted for max=10), raw_0 & 31 == 11 (accepted for max=20).
+        # seed=2: raw_0 & 31 == 11 (accepted at n=0 for max=20), but for max=10 the value
+        # 11 > 10 is rejected; the narrow case loops to n=2 where raw_2 & 15 == 3 (<= 10).
+        # The two ranges draw from different attempt indices, so the values differ.
         v_narrow = VariationGenerator(2).generate_int("x", MinMaxFilter(0, 10))
         v_wide = VariationGenerator(2).generate_int("x", MinMaxFilter(0, 20))
         assert v_narrow == 3
@@ -321,12 +337,16 @@ class TestVariationGeneratorChoose:
     def test_different_variable_names_select_independently(self) -> None:
         options = ["x", "y", "z"]
         g = VariationGenerator(0)
-        # Different keys -> independent hash values
+        # Different keys -> independent hash values -> different selections
         a = g.choose("noise_file", options)
         b = g.choose("voice", options)
-        assert isinstance(a, str) and isinstance(b, str)
+        assert a != b
 
     def test_single_option_list_always_returns_it(self) -> None:
         only = ["only-choice"]
         for seed in [0, 1, 42, 999]:
             assert VariationGenerator(seed).choose("x", only) == "only-choice"
+
+    def test_empty_options_raises_value_error(self) -> None:
+        with pytest.raises(ValueError):
+            VariationGenerator(0).choose("x", [])
