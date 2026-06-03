@@ -172,8 +172,8 @@ class TestVariationGeneratorGenerate:
         assert v1 == v2
 
     def test_different_seeds_produce_different_values(self) -> None:
-        v0 = VariationGenerator(0).generate("speed", MinMaxFilter(0.0, 1.0))
-        v42 = VariationGenerator(42).generate("speed", MinMaxFilter(0.0, 1.0))
+        v0 = VariationGenerator(0).generate("speed", MinMaxFilter(0.0, 10.0))
+        v42 = VariationGenerator(42).generate("speed", MinMaxFilter(0.0, 10.0))
         assert v0 != v42
 
     def test_minmax_filter_value_in_range(self) -> None:
@@ -188,14 +188,22 @@ class TestVariationGeneratorGenerate:
         assert low <= val <= high
 
     def test_normal_filter_exact_value_is_deterministic(self) -> None:
-        # seed=0, "noise_vol", NormalFilter(5,2) -> 2.6291845902658038
+        # seed=0, "noise_vol", NormalFilter(5,2), precision=0 -> 7.0
         val = VariationGenerator(0).generate("noise_vol", NormalFilter(5.0, 2.0))
-        assert val == pytest.approx(2.6291845902658038)
+        assert val == 7.0
 
     def test_minmax_filter_exact_value_is_deterministic(self) -> None:
-        # seed=0, "speed", MinMaxFilter(0,1) -> 0.1042678383550995
-        val = VariationGenerator(0).generate("speed", MinMaxFilter(0.0, 1.0))
-        assert val == pytest.approx(0.1042678383550995)
+        # seed=0, "speed", MinMaxFilter(0,10), precision=0 -> 0.0
+        val = VariationGenerator(0).generate("speed", MinMaxFilter(0.0, 10.0))
+        assert val == 0.0
+
+    def test_precision_zero_returns_whole_number(self) -> None:
+        val = VariationGenerator(3).generate("x", MinMaxFilter(0.0, 100.0))
+        assert val == math.floor(val)
+
+    def test_precision_two_returns_at_most_two_decimal_places(self) -> None:
+        val = VariationGenerator(3).generate("x", MinMaxFilter(0.0, 10.0, precision=2))
+        assert round(val, 2) == val
 
     def test_different_variable_names_produce_independent_values(self) -> None:
         g = VariationGenerator(99)
@@ -298,6 +306,64 @@ class TestVariationGeneratorGenerateIntStability:
         v_narrow = VariationGenerator(5).generate_int("x", MinMaxFilter(0, 5))
         assert v_original == 7
         assert v_narrow == 1
+
+
+# ---------------------------------------------------------------------------
+# VariationGenerator — generate stability across range changes
+#
+# pow2_range for MinMaxFilter(0, N) is the smallest power-of-2 > N:
+#   N=5  -> pow2_range=8   (candidates 0..7, reject 6..7)
+#   N=6  -> pow2_range=8   (candidates 0..7, reject 7)
+#   N=7  -> pow2_range=8   (candidates 0..7, none rejected)
+#   N=10 -> pow2_range=16  (candidates 0..15, reject 11..15)
+#   N=15 -> pow2_range=16  (candidates 0..15, none rejected)
+#
+#   seed=0, "x": n=0 candidate = raw%8 = 2  (accepted for all ranges above)
+#   seed=0, "x": n=0 candidate = raw%16 = 10 (accepted for N>=10; for N=7, raw%8=2 so stable)
+#   seed=5, "x": n=0 candidate = raw%8 = 7  (rejected for N<7, accepted for N>=7)
+# ---------------------------------------------------------------------------
+
+class TestVariationGeneratorGenerateStability:
+    def test_stable_value_when_max_widens_within_same_pow2_range(self) -> None:
+        # seed=0: n=0 candidate=2; both MinMaxFilter(0,5) and MinMaxFilter(0,6) share
+        # pow2_range=8 and both accept 2 -> same value.
+        v_narrow = VariationGenerator(0).generate("x", MinMaxFilter(0, 5))
+        v_wide = VariationGenerator(0).generate("x", MinMaxFilter(0, 6))
+        assert v_narrow == 2.0
+        assert v_wide == 2.0
+
+    def test_value_changes_when_pow2_range_expands(self) -> None:
+        # seed=0: MinMaxFilter(0,7) pow2_range=8 -> candidate=2;
+        # MinMaxFilter(0,15) pow2_range=16 -> candidate=10 (bit-3 of raw is set, so
+        # raw%16 != raw%8).
+        v_narrow = VariationGenerator(0).generate("x", MinMaxFilter(0, 7))
+        v_wide = VariationGenerator(0).generate("x", MinMaxFilter(0, 15))
+        assert v_narrow == 2.0
+        assert v_wide == 10.0
+
+    def test_value_changes_when_rejected_candidate_becomes_accepted(self) -> None:
+        # seed=5: n=0 candidate=7; rejected for MinMaxFilter(0,5) (7>5), so first
+        # accepted hit is at a later attempt -> 1.0.  With MinMaxFilter(0,7) the same
+        # n=0 candidate=7 is now within range and accepted first -> 7.0.
+        v_strict = VariationGenerator(5).generate("x", MinMaxFilter(0, 5))
+        v_relaxed = VariationGenerator(5).generate("x", MinMaxFilter(0, 7))
+        assert v_strict == 1.0
+        assert v_relaxed == 7.0
+
+    def test_value_changes_when_max_narrowed_below_candidate(self) -> None:
+        # seed=0: [0,10] pow2_range=16, first accepted candidate=10 (within [0,10]).
+        # [0,5] pow2_range=8, candidate=2 (10 is outside [0,5], so earlier attempt wins).
+        v_wide = VariationGenerator(0).generate("x", MinMaxFilter(0, 10))
+        v_narrow = VariationGenerator(0).generate("x", MinMaxFilter(0, 5))
+        assert v_wide == 10.0
+        assert v_narrow == 2.0
+
+    def test_stable_value_when_max_narrowed_but_candidate_still_in_range(self) -> None:
+        # seed=1: first accepted candidate=2, which is within both [0,10] and [0,5].
+        v_wide = VariationGenerator(1).generate("x", MinMaxFilter(0, 10))
+        v_narrow = VariationGenerator(1).generate("x", MinMaxFilter(0, 5))
+        assert v_wide == 2.0
+        assert v_narrow == 2.0
 
 
 # ---------------------------------------------------------------------------

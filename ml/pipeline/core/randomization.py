@@ -16,6 +16,20 @@ def _hash_int(key: str) -> int:
 
 
 class PassFilter(ABC):
+    def __init__(self, precision: int = 0) -> None:
+        domain_low, domain_high = self.sample_domain()
+        scale = 10 ** precision
+        low_s = round(domain_low * scale)
+        high_s = round(domain_high * scale)
+        bias_s = max(0, -low_s)
+        shifted_high = high_s + bias_s
+        self._precision = precision
+        self._scale = scale
+        self._low_s = low_s
+        self._high_s = high_s
+        self._bias_s = bias_s
+        self._pow2_range = 1 << math.ceil(math.log2(shifted_high + 1)) if shifted_high > 0 else 1
+
     @abstractmethod
     def density(self, value: float) -> float:
         """Normalised density; max == 1.0. Acceptance probability in rejection sampling."""
@@ -30,13 +44,14 @@ class PassFilter(ABC):
 class MinMaxFilter(PassFilter):
     """Uniform over [min_val, max_val]. density() == 1.0 in range, 0.0 outside."""
 
-    def __init__(self, min_val: float, max_val: float) -> None:
+    def __init__(self, min_val: float, max_val: float, *, precision: int = 0) -> None:
         if min_val > max_val:
             raise ValueError(
                 f"min_val must be <= max_val, got min_val={min_val}, max_val={max_val}"
             )
         self._min_val = min_val
         self._max_val = max_val
+        super().__init__(precision)
 
     def density(self, value: float) -> float:
         return 1.0 if self._min_val <= value <= self._max_val else 0.0
@@ -48,11 +63,12 @@ class MinMaxFilter(PassFilter):
 class NormalFilter(PassFilter):
     """Gaussian. density(x) = gaussian_pdf(x)/gaussian_pdf(mean); peak == 1.0."""
 
-    def __init__(self, mean: float, std_dev: float) -> None:
+    def __init__(self, mean: float, std_dev: float, *, precision: int = 0) -> None:
         if std_dev <= 0:
             raise ValueError(f"std_dev must be positive, got {std_dev}")
         self._mean = mean
         self._std_dev = std_dev
+        super().__init__(precision)
 
     def density(self, value: float) -> float:
         z = (value - self._mean) / self._std_dev
@@ -74,12 +90,15 @@ class VariationGenerator:
         return (raw / _TWO_TO_64) < frequency
 
     def generate(self, variable_name: str, pass_filter: PassFilter) -> float:
-        """Rejection-sample deterministically using attempt-indexed sha256 hashes."""
-        domain_low, domain_high = pass_filter.sample_domain()
-        domain_width = domain_high - domain_low
+        """Rejection-sample using power-of-2 modulo for stability across domain changes."""
+        if pass_filter._high_s == pass_filter._low_s:
+            return pass_filter._low_s / pass_filter._scale
+        pow2_range = pass_filter._pow2_range
+        bias_s = pass_filter._bias_s
+        scale = pass_filter._scale
         for n in range(_MAX_ATTEMPTS):
             raw = _hash_int(f"{self._seed}:{variable_name}:{n}")
-            candidate = domain_low + (raw / _TWO_TO_64) * domain_width
+            candidate = (raw % pow2_range - bias_s) / scale
             accept_raw = _hash_int(f"{self._seed}:{variable_name}:{n}:accept")
             if (accept_raw / _TWO_TO_64) < pass_filter.density(candidate):
                 return candidate
