@@ -7,5 +7,5 @@ dotnet test --no-build "$SCRIPT_DIR/validate-unit-tests.proj"
 echo 'Testing E2E test projects...'
 dotnet test --no-build "$SCRIPT_DIR/validate-e2e-tests.proj"
 echo 'Testing Python unit tests...'
-cd ml
+cd ml || exit 1
 python3 -m pytest
