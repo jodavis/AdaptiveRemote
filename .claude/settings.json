@@ -1,4 +1,13 @@
 {
+  "extraKnownMarketplaces": {
+    "dev-team-agents": {
+      "source": {
+        "source": "github",
+        "repo": "jodavis/agent-plugins",
+        "ref": "feature/ADR-246-cloud-dev-team"
+      }
+    }
+  },
   "enabledPlugins": {
     "dotnet@dotnet-agent-skills": false,
     "dotnet-diag@dotnet-agent-skills": true,
@@ -10,13 +19,6 @@
     "microsoft-learn": {
       "type": "sse",
       "url": "https://learn.microsoft.com/api/mcp"
-    },
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp",
-      "headers": {
-        "Authorization": "Bearer $GITHUB_PAT"
-      }
     }
   }
 }
