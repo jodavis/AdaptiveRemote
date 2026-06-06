@@ -9,9 +9,9 @@ from typing import Any, ClassVar, Generic, TypeVar
 
 from pipeline.core.manifest import Manifest, ManifestStore
 from pipeline.core.randomization import VariationGenerator
-from pipeline.core.sample import SampleWithPath
+from pipeline.core.sample import Sample, SampleWithPath
 
-T_in = TypeVar("T_in")
+T_in = TypeVar("T_in", bound=Sample)
 T_out = TypeVar("T_out", bound=SampleWithPath)
 
 
@@ -51,7 +51,7 @@ class ModifierStage(ABC, Generic[T_in, T_out]):
         # Step 2: process each input sample
         output_samples: list[T_out] = []
         for input_sample in input_manifest.samples:
-            prev_out = prev_by_parent.get(input_sample.content_hash)  # type: ignore[arg-type]
+            prev_out = prev_by_parent.get(input_sample.content_hash)
 
             if prev_out is not None:
                 # 2b: previous output exists for this input — check if constraints changed
@@ -59,7 +59,7 @@ class ModifierStage(ABC, Generic[T_in, T_out]):
                     input_sample, VariationGenerator(prev_out.seed)
                 )
                 expected_hash = self._compute_content_hash(
-                    input_sample.content_hash, prev_out.seed, new_applied  # type: ignore[arg-type]
+                    input_sample.content_hash, prev_out.seed, new_applied
                 )
                 if expected_hash == prev_out.content_hash:
                     # Skip: file and id unchanged
@@ -72,7 +72,7 @@ class ModifierStage(ABC, Generic[T_in, T_out]):
                         output_id=new_id,
                         output_seed=prev_out.seed,
                         applied_values=new_applied,
-                        parent_content_hash=input_sample.content_hash,  # type: ignore[arg-type]
+                        parent_content_hash=input_sample.content_hash,
                     )
                     output_samples.append(result)
             else:
@@ -89,7 +89,7 @@ class ModifierStage(ABC, Generic[T_in, T_out]):
                     output_id=output_id,
                     output_seed=output_seed,
                     applied_values=new_applied,
-                    parent_content_hash=input_sample.content_hash,  # type: ignore[arg-type]
+                    parent_content_hash=input_sample.content_hash,
                 )
                 output_samples.append(result)
 
