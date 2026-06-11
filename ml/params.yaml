@@ -1,0 +1,11 @@
+pipeline:
+  variations_per_phrase: 20
+  subsample_rate: 1
+
+stages:
+  generate_phrases:
+    repeat_modifier_chance: 0.3
+    pleasantry_chance: 0.3
+    hesitation_chance: 0.3
+    spelling_variant_chance: 0.1
+    case_variant_chance: 0.2
