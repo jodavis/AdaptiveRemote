@@ -15,7 +15,7 @@ def manifest_path(output_dir: Path) -> Path:
 
 def split_manifest_path(output_dir: Path, split: str) -> Path:
     """split: 'train', 'val', or 'test'."""
-    return output_dir / f"{split}.json"
+    return output_dir / f"{split}_manifest.json"
 
 
 def sample_file_path(output_dir: Path, sample_id: str, ext: str) -> Path:
@@ -23,8 +23,8 @@ def sample_file_path(output_dir: Path, sample_id: str, ext: str) -> Path:
     return output_dir / f"{sample_id}.{ext}"
 
 
-def model_path(output_dir: Path) -> Path:
-    return output_dir / "speech_to_text_model.keras"
+def model_path(output_dir: Path, model_name: str) -> Path:
+    return output_dir / f"{model_name}_model.keras"
 
 
 def evaluation_predictions_path(output_dir: Path) -> Path:
