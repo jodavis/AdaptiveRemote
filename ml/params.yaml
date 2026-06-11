@@ -1,10 +1,10 @@
 pipeline:
   variations_per_phrase: 20
-  subsample_rate: 1
+  subsample_rate: 200
 
 stages:
   generate_phrases:
-    repeat_modifier_chance: 0.3
+    repeat_modifier_chance: 0.2
     pleasantry_chance: 0.3
     hesitation_chance: 0.3
     spelling_variant_chance: 0.1

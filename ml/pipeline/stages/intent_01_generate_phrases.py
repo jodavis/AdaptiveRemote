@@ -14,9 +14,8 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
-from pathlib import Path
-
 import yaml
+from pathlib import Path
 
 # Ensure ml/ is on the path when invoked directly
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
