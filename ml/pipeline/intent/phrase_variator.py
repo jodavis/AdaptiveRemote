@@ -3,8 +3,9 @@ from __future__ import annotations
 import hashlib
 import random
 import re
-from typing import Sequence
+from typing import Callable, Sequence
 
+from pipeline.core.randomization import MinMaxFilter, VariationGenerator
 from pipeline.core.sample import TextSample
 
 # ---------------------------------------------------------------------------
@@ -22,12 +23,6 @@ _REPEAT_MODIFIERS: dict[int, list[str]] = {
     8: ["eight", "eight times", "eight more times", "another eight", "another eight times"],
     9: ["nine", "nine times", "nine more times", "another nine", "another nine times"],
 }
-
-_REPEAT_MODIFIER_CHANCE = 0.25
-_PLEASANTRY_CHANCE = 0.3
-_HESITATION_CHANCE = 0.3
-_SPELLING_VARIANT_CHANCE = 0.3
-_CASE_VARIANT_CHANCE = 0.3
 
 _PLEASANTRIES = [
     "",
@@ -73,13 +68,25 @@ _SPELLING_VARIANTS: dict[str, list[str]] = {
 class PhraseVariator:
     """Generates surface-form variants of command phrases.
 
-    Ports _create_variation() and sanity_check() from the original
-    ml/scripts/intent_prediction/01_generate_phrases.py VariationGenerator class.
-    Every random.* call is replaced by self.rng.* — logic is otherwise identical.
+    Uses VariationGenerator (via vgen_factory) for all randomisation decisions,
+    giving stable reproducible output independent of parameter changes.
     """
 
-    def __init__(self, rng: random.Random) -> None:
-        self._rng = rng
+    def __init__(
+        self,
+        vgen_factory: Callable[[int], VariationGenerator],
+        repeat_modifier_chance: float,
+        pleasantry_chance: float,
+        hesitation_chance: float,
+        spelling_variant_chance: float,
+        case_variant_chance: float,
+    ) -> None:
+        self._vgen_factory = vgen_factory
+        self._repeat_modifier_chance = repeat_modifier_chance
+        self._pleasantry_chance = pleasantry_chance
+        self._hesitation_chance = hesitation_chance
+        self._spelling_variant_chance = spelling_variant_chance
+        self._case_variant_chance = case_variant_chance
 
     def generate(
         self,
@@ -90,11 +97,21 @@ class PhraseVariator:
 
         base_phrases: sequence of (phrase, command) tuples from the input CSV.
         Each valid variant becomes a TextSample with content=surface_form, label=command.
+
+        Seeding scheme: use random.Random(42) to draw one phrase_seed per base phrase
+        (one .randint call per phrase in iteration order). Then use
+        random.Random(phrase_seed) to draw one variant_seed per variant of that phrase.
+        Pass each variant_seed to vgen_factory for that variant's _create_variation() call.
         """
+        phrase_rng = random.Random(42)
         results: list[TextSample] = []
         for phrase, command in base_phrases:
+            phrase_seed = phrase_rng.randint(0, 2**31 - 1)
+            variant_rng = random.Random(phrase_seed)
             for _ in range(variations_per_phrase):
-                variation = self._create_variation(phrase)
+                variant_seed = variant_rng.randint(0, 2**31 - 1)
+                vgen = self._vgen_factory(variant_seed)
+                variation = self._create_variation(phrase, vgen)
                 variation["canonical_label"] = command
                 valid, _ = self.sanity_check([variation])
                 if valid:
@@ -115,19 +132,19 @@ class PhraseVariator:
     # Ported from VariationGenerator._create_variation()
     # ------------------------------------------------------------------
 
-    def _create_variation(self, phrase: str) -> dict:
-        """Create a single variation of a phrase (ported from original script)."""
+    def _create_variation(self, phrase: str, vgen: VariationGenerator) -> dict:
+        """Create a single variation of a phrase using vgen for all random decisions."""
         transformations: list[str] = []
         result = phrase
         repeat_count_used = 1
 
         # Add repeat modifier (for data variety only)
         repeat_modifier = ""
-        if self._rng.random() < _REPEAT_MODIFIER_CHANCE:
-            repeat_count_used = self._rng.choice(list(_REPEAT_MODIFIERS.keys()))
+        if vgen.should_vary("repeat_modifier_apply", self._repeat_modifier_chance):
+            repeat_count_used = vgen.choose("repeat_count", list(_REPEAT_MODIFIERS.keys()))
             modifiers = _REPEAT_MODIFIERS.get(repeat_count_used, [])
             if modifiers:
-                repeat_modifier = self._rng.choice(modifiers)
+                repeat_modifier = vgen.choose("repeat_modifier_text", modifiers)
             else:
                 repeat_modifier = ""
                 repeat_count_used = 1
@@ -136,8 +153,8 @@ class PhraseVariator:
             transformations.append(f"repeat_modifier:{repeat_count_used}")
 
         # Add pleasantry
-        if self._rng.random() < _PLEASANTRY_CHANCE:
-            pleasantry = self._rng.choice(_PLEASANTRIES)
+        if vgen.should_vary("pleasantry_apply", self._pleasantry_chance):
+            pleasantry = vgen.choose("pleasantry_text", _PLEASANTRIES)
             if pleasantry:
                 if (
                     pleasantry.startswith("could you")
@@ -150,7 +167,7 @@ class PhraseVariator:
                     result = f"{result}{pleasantry}"
                     transformations.append(f"suffix_pleasantry:{pleasantry}")
                 else:
-                    if self._rng.random() > 0.5:
+                    if vgen.should_vary("pleasantry_side", 0.5):
                         result = f"{result}, {pleasantry}"
                     else:
                         result = f"{pleasantry}, {result}"
@@ -160,22 +177,22 @@ class PhraseVariator:
         speech_to_detect = self._normalize_commas_and_whitespace(result)
 
         # Add hesitation
-        if self._rng.random() < _HESITATION_CHANCE:
-            hesitation = self._rng.choice([h for h in _HESITATIONS if h])
+        if vgen.should_vary("hesitation_apply", self._hesitation_chance):
+            hesitation = vgen.choose("hesitation_text", [h for h in _HESITATIONS if h])
             if hesitation:
                 words = result.split()
                 if len(words) > 1:
-                    pos = self._rng.randint(0, len(words))
+                    pos = vgen.generate_int("hesitation_pos", MinMaxFilter(0, len(words)))
                     words.insert(pos, hesitation)
                     result = " ".join(words)
                     transformations.append(f"hesitation:{hesitation}")
 
         # Apply spelling variations
-        if self._rng.random() < _SPELLING_VARIANT_CHANCE:
+        if vgen.should_vary("spelling_apply", self._spelling_variant_chance):
             for word, variants in _SPELLING_VARIANTS.items():
                 lower_result = result.lower()
                 if word in lower_result and len(variants) > 1:
-                    variant = self._rng.choice([v for v in variants if v != word])
+                    variant = vgen.choose(f"spelling_variant_{word}", [v for v in variants if v != word])
                     result_lower = lower_result.replace(word, variant, 1)
                     if result.isupper():
                         result = result_lower.upper()
@@ -186,8 +203,8 @@ class PhraseVariator:
                     transformations.append(f"spelling_variant:{word}->{variant}")
 
         # Random case variations
-        if self._rng.random() < _CASE_VARIANT_CHANCE:
-            case_transform = self._rng.choice(["lower", "upper", "title", "original"])
+        if vgen.should_vary("case_apply", self._case_variant_chance):
+            case_transform = vgen.choose("case_transform", ["lower", "upper", "title", "original"])
             if case_transform == "lower":
                 result = result.lower()
                 transformations.append("lowercase")
