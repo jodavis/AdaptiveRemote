@@ -1,0 +1,38 @@
+stages:
+  download_phoneme_dictionary:
+    cmd: python download_phoneme_dictionary.py
+    outs:
+      - data/phoneme_dictionary/
+
+  generate_phrases:
+    cmd: >-
+      python pipeline/stages/intent_01_generate_phrases.py
+      --input-phrases scripts/intent_prediction/01_input_phrases.csv
+      --output-dir data/intent_01_generate_phrases
+    deps:
+      - pipeline/
+      - scripts/intent_prediction/01_input_phrases.csv
+    outs:
+      - data/intent_01_generate_phrases/
+    params:
+      - pipeline.input_phrases_path
+      - pipeline.variations_per_phrase
+      - pipeline.subsample_rate
+      - stages.generate_phrases.repeat_modifier_chance
+      - stages.generate_phrases.pleasantry_chance
+      - stages.generate_phrases.hesitation_chance
+      - stages.generate_phrases.spelling_variant_chance
+      - stages.generate_phrases.case_variant_chance
+
+  compute_vocab:
+    cmd: >-
+      python pipeline/stages/intent_02_compute_vocab.py
+      --input-manifest-dir data/intent_01_generate_phrases
+      --output-dir data/intent_02_compute_vocab
+      --phoneme-dict data/phoneme_dictionary/cmudict-0.7b
+    deps:
+      - data/intent_01_generate_phrases/
+      - data/phoneme_dictionary/cmudict-0.7b
+      - pipeline/
+    outs:
+      - data/intent_02_compute_vocab/

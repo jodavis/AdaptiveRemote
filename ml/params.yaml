@@ -1,4 +1,5 @@
 pipeline:
+  input_phrases_path: scripts/intent_prediction/01_input_phrases.csv
   variations_per_phrase: 20
   subsample_rate: 200
 
