@@ -23,6 +23,7 @@
     <PackageReference Include="OpenTelemetry.Exporter.Console" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="MessagePack.Annotations" />
     <PackageReference Include="StreamJsonRpc" />
   </ItemGroup>
 

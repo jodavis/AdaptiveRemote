@@ -985,6 +985,23 @@ Implement `ml/pipeline/intent/` and the first two DVC entry-points.
 
 ---
 
+### [ADR-278](https://jodasoft.atlassian.net/browse/ADR-278) Task 3b: DVC wiring for intent stages
+
+Wire the first two intent stages in DVC as an early end-to-end proof that the OOP classes, manifest format, and pipeline conventions work correctly before the speech stages are implemented. This task initialises DVC inside `ml/`, configures the S3 remote, creates `dvc.yaml` covering the phoneme dictionary download and the two intent stages, writes the initial `params.yaml` with the pipeline keys those stages need, and verifies that `dvc repro` runs both stages successfully and `dvc push` uploads their outputs to S3.
+
+- [ ] `dvc init` run inside `ml/` (creates `ml/.dvc/`); `.dvc/` added to `ml/.gitignore`
+- [ ] S3 remote configured in `ml/.dvc/config`: `dvc remote add -d adr-ml-training-data s3://adr-ml-training-data/dvc` (matches repo-root `.dvc/config`)
+- [ ] `ml/params.yaml` created with all `pipeline.*` keys needed by the intent stages: `input_phrases_path`, `variations_per_phrase`, `subsample_rate`
+- [ ] `ml/dvc.yaml` created with three stages in dependency order:
+  - `download_phoneme_dictionary` — wraps `download_phoneme_dictionary.py`; output dir tracked by DVC
+  - `generate_phrases` — runs `intent_01_generate_phrases.py`; reads params `pipeline.input_phrases_path`, `pipeline.variations_per_phrase`, `pipeline.subsample_rate`; deps include `pipeline/` package directory and input phrases file; out: `data/intent_01_generate_phrases/`
+  - `compute_vocab` — runs `intent_02_compute_vocab.py`; deps include `data/intent_01_generate_phrases/` and the phoneme dictionary output dir; out: `data/intent_02_compute_vocab/`
+- [ ] `dvc repro` runs both intent stages end-to-end without errors on the dev machine
+- [ ] `dvc push` successfully uploads intent stage outputs to the S3 remote
+- [ ] `validate-build` and `validate-tests` pass
+
+---
+
 ### [ADR-225](https://jodasoft.atlassian.net/browse/ADR-225) Task 4: TTS stage
 
 Implement `ml/pipeline/speech/tts_stage.py` and `stages/speech_03_generate_samples.py`.
@@ -1061,12 +1078,12 @@ Implement `ModelEvaluator` and the final two entry-points.
 
 ### [ADR-231](https://jodasoft.atlassian.net/browse/ADR-231) Task 9: DVC wiring and old script cleanup
 
-Wire all stages in `dvc.yaml`; migrate `params.yaml`; delete old scripts.
+Extend the `dvc.yaml` and `params.yaml` from Task 3b to cover all 12 stages; delete old scripts.
 
 **⚠️ Script deletion must happen after Task 3 is merged** — the old `ml/scripts/` tree is the reference for `PhraseVariator`. Delete it only once Task 3's implementation is reviewed and merged.
 
-- [ ] Write `ml/dvc.yaml` from scratch: all 12 stages wired with correct `cmd`, `deps`, `outs`, `params`; `persist: true` on all `ModifierStage` output dirs
-- [ ] Write `ml/params.yaml`: all `pipeline.*` keys (including `input_phrases_path`, `variations_per_phrase`, `subsample_rate`, `n_mels`, `time_steps`, `input_token_length`, `epochs`, `batch_size`) and all `stages.*` variation-constraint keys
+- [ ] Extend `ml/dvc.yaml` with the remaining 9 stages (speech_03 through speech_12): correct `cmd`, `deps`, `outs`, `params`; `persist: true` on all `ModifierStage` output dirs
+- [ ] Extend `ml/params.yaml` with remaining `pipeline.*` keys (`n_mels`, `time_steps`, `input_token_length`, `epochs`, `batch_size`) and all `stages.*` variation-constraint keys
 - [ ] Retain `download_phoneme_dictionary.py` as a non-OOP stage
 - [ ] Delete `ml/scripts/` tree (after Task 3 is merged)
 - [ ] `dvc repro` runs end-to-end without errors on the dev machine
