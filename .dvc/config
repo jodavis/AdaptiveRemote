@@ -1,4 +1,0 @@
-[core]
-    remote = adr-ml-training-data
-[remote "adr-ml-training-data"]
-    url = s3://adr-ml-training-data/dvc
