@@ -7,6 +7,7 @@ from typing import Callable, Sequence
 
 from pipeline.core.randomization import MinMaxFilter, VariationGenerator
 from pipeline.core.sample import TextSample
+from pipeline.stages.params import GeneratePhraseParams
 
 # ---------------------------------------------------------------------------
 # Variation components (ported from ml/scripts/intent_prediction/01_generate_phrases.py)
@@ -75,18 +76,14 @@ class PhraseVariator:
     def __init__(
         self,
         vgen_factory: Callable[[int], VariationGenerator],
-        repeat_modifier_chance: float,
-        pleasantry_chance: float,
-        hesitation_chance: float,
-        spelling_variant_chance: float,
-        case_variant_chance: float,
+        params: GeneratePhraseParams,
     ) -> None:
         self._vgen_factory = vgen_factory
-        self._repeat_modifier_chance = repeat_modifier_chance
-        self._pleasantry_chance = pleasantry_chance
-        self._hesitation_chance = hesitation_chance
-        self._spelling_variant_chance = spelling_variant_chance
-        self._case_variant_chance = case_variant_chance
+        self._repeat_modifier_chance = params.repeat_modifier_chance
+        self._pleasantry_chance = params.pleasantry_chance
+        self._hesitation_chance = params.hesitation_chance
+        self._spelling_variant_chance = params.spelling_variant_chance
+        self._case_variant_chance = params.case_variant_chance
 
     def generate(
         self,

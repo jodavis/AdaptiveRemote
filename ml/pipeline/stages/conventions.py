@@ -39,3 +39,8 @@ def evaluation_metrics_path(output_dir: Path) -> Path:
 def test_samples_path(output_dir: Path) -> Path:
     """Zip written by ModelEvaluator.package_test_samples(): known-good audio fixtures."""
     return output_dir / "test_samples.zip"
+
+
+def params_path(project_root: Path) -> Path:
+    """Path to the shared DVC params file."""
+    return project_root / "params.yaml"

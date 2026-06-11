@@ -14,7 +14,6 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
-import yaml
 from pathlib import Path
 
 # Ensure ml/ is on the path when invoked directly
@@ -24,8 +23,9 @@ from pipeline.core.manifest import Manifest, ManifestStore
 from pipeline.core.randomization import VariationGenerator
 from pipeline.intent.phrase_variator import PhraseVariator
 from pipeline.stages import conventions
+from pipeline.stages.params import PipelineParams
 
-_PARAMS_PATH = Path(__file__).parents[2] / "params.yaml"
+_PROJECT_ROOT = Path(__file__).parents[2]
 
 
 def main() -> None:
@@ -35,17 +35,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Load DVC params
-    with open(_PARAMS_PATH, encoding="utf-8") as f:
-        params = yaml.safe_load(f)
-
-    variations_per_phrase: int = params["pipeline"]["variations_per_phrase"]
-    subsample_rate: int = params["pipeline"]["subsample_rate"]
-    stage_params = params["stages"]["generate_phrases"]
-    repeat_modifier_chance: float = stage_params["repeat_modifier_chance"]
-    pleasantry_chance: float = stage_params["pleasantry_chance"]
-    hesitation_chance: float = stage_params["hesitation_chance"]
-    spelling_variant_chance: float = stage_params["spelling_variant_chance"]
-    case_variant_chance: float = stage_params["case_variant_chance"]
+    params = PipelineParams.load(conventions.params_path(_PROJECT_ROOT))
 
     # Read input CSV
     base_phrases: list[tuple[str, str]] = []
@@ -57,16 +47,12 @@ def main() -> None:
     # Generate variants
     variator = PhraseVariator(
         vgen_factory=lambda seed: VariationGenerator(seed),
-        repeat_modifier_chance=repeat_modifier_chance,
-        pleasantry_chance=pleasantry_chance,
-        hesitation_chance=hesitation_chance,
-        spelling_variant_chance=spelling_variant_chance,
-        case_variant_chance=case_variant_chance,
+        params=params.generate_phrases,
     )
-    variants = variator.generate(base_phrases, variations_per_phrase)
+    variants = variator.generate(base_phrases, params.variations_per_phrase)
 
     # Apply subsample filter
-    subsampled = [s for i, s in enumerate(variants) if i % subsample_rate == 0]
+    subsampled = [s for i, s in enumerate(variants) if i % params.subsample_rate == 0]
 
     # Write manifest
     args.output_dir.mkdir(parents=True, exist_ok=True)

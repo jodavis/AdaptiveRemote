@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from pipeline.core.randomization import VariationGenerator
 from pipeline.core.sample import TextSample
 from pipeline.intent.phrase_variator import PhraseVariator
+from pipeline.stages.params import GeneratePhraseParams
 
 
 _BASE_PHRASES: list[tuple[str, str]] = [
@@ -22,13 +23,13 @@ _BASE_PHRASES: list[tuple[str, str]] = [
     ("volume up", "VOLUME_UP"),
 ]
 
-_DEFAULT_CHANCES = {
-    "repeat_modifier_chance": 0.3,
-    "pleasantry_chance": 0.3,
-    "hesitation_chance": 0.3,
-    "spelling_variant_chance": 0.1,
-    "case_variant_chance": 0.2,
-}
+_DEFAULT_PARAMS = GeneratePhraseParams(
+    repeat_modifier_chance=0.3,
+    pleasantry_chance=0.3,
+    hesitation_chance=0.3,
+    spelling_variant_chance=0.1,
+    case_variant_chance=0.2,
+)
 
 
 def _factory(seed: int) -> VariationGenerator:
@@ -36,10 +37,11 @@ def _factory(seed: int) -> VariationGenerator:
 
 
 def _make_variator(**overrides) -> PhraseVariator:
-    chances = {**_DEFAULT_CHANCES, **overrides}
+    import dataclasses
+    params = dataclasses.replace(_DEFAULT_PARAMS, **overrides)
     return PhraseVariator(
         vgen_factory=_factory,
-        **chances,
+        params=params,
     )
 
 
@@ -58,8 +60,8 @@ class TestPhraseVariatorDeterminism:
         def factory_b(seed: int) -> VariationGenerator:
             return VariationGenerator(seed + 999_999)
 
-        v1 = PhraseVariator(vgen_factory=factory_a, **_DEFAULT_CHANCES).generate(_BASE_PHRASES, 10)
-        v2 = PhraseVariator(vgen_factory=factory_b, **_DEFAULT_CHANCES).generate(_BASE_PHRASES, 10)
+        v1 = PhraseVariator(vgen_factory=factory_a, params=_DEFAULT_PARAMS).generate(_BASE_PHRASES, 10)
+        v2 = PhraseVariator(vgen_factory=factory_b, params=_DEFAULT_PARAMS).generate(_BASE_PHRASES, 10)
         contents1 = [s.content for s in v1]
         contents2 = [s.content for s in v2]
         assert contents1 != contents2
