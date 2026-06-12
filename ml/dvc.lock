@@ -1,14 +1,14 @@
 schema: '2.0'
 stages:
-  download_phoneme_dictionary:
-    cmd: python download_phoneme_dictionary.py
+  intent_00_download_phoneme_dictionary:
+    cmd: python pipeline/download_phoneme_dictionary.py --output-dir data/phoneme_dictionary
     outs:
     - path: data/phoneme_dictionary/
       hash: md5
       md5: df97fa089d42de195fe00e0c5400b9f1.dir
       size: 3716714
       nfiles: 1
-  generate_phrases:
+  intent_01_generate_phrases:
     cmd: python pipeline/stages/intent_01_generate_phrases.py --input-phrases 
       scripts/intent_prediction/01_input_phrases.csv --output-dir 
       data/intent_01_generate_phrases
@@ -39,7 +39,7 @@ stages:
       md5: 8fede188ad714f3a8f3e4c3cab89d4a1.dir
       size: 1366
       nfiles: 1
-  compute_vocab:
+  intent_02_compute_vocab:
     cmd: python pipeline/stages/intent_02_compute_vocab.py --input-manifest-dir 
       data/intent_01_generate_phrases --output-dir data/intent_02_compute_vocab 
       --phoneme-dict data/phoneme_dictionary/cmudict-0.7b
