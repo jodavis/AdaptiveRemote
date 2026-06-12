@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import string
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -62,9 +63,13 @@ class VocabComputer:
         # Collect unique words from all labels
         words: set[str] = set()
         for sample in manifest.samples:
-            for word in sample.label.split("_"):
-                if word:
-                    words.add(word)
+            for word in sample.content.split(" "):
+                # Filter out punctuation except apostrophes
+                filtered_word = "".join(
+                    c for c in word if c not in string.punctuation or c == "'"
+                )
+                if filtered_word:
+                    words.add(filtered_word)
 
         words_to_phonemes: dict[str, list[str]] = {}
         all_phonemes: set[str] = set()
