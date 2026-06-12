@@ -1,10 +1,14 @@
 stages:
-  download_phoneme_dictionary:
-    cmd: python download_phoneme_dictionary.py
+  intent_00_download_phoneme_dictionary:
+    cmd: >-
+      python pipeline/download_phoneme_dictionary.py
+      --output-dir data/phoneme_dictionary
+    deps:
+      - pipeline/download_phoneme_dictionary.py
     outs:
       - data/phoneme_dictionary/
 
-  generate_phrases:
+  intent_01_generate_phrases:
     cmd: >-
       python pipeline/stages/intent_01_generate_phrases.py
       --input-phrases scripts/intent_prediction/01_input_phrases.csv
@@ -24,7 +28,7 @@ stages:
       - stages.generate_phrases.spelling_variant_chance
       - stages.generate_phrases.case_variant_chance
 
-  compute_vocab:
+  intent_02_compute_vocab:
     cmd: >-
       python pipeline/stages/intent_02_compute_vocab.py
       --input-manifest-dir data/intent_01_generate_phrases
