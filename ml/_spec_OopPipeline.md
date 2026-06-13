@@ -2,6 +2,7 @@
 
 > **Status:** Implementation-ready
 > **Will become:** `_doc_MLPipeline.md` once implementation is complete
+> **Epic:** [ADR-191](https://jodasoft.atlassian.net/browse/ADR-191) Refactor DVC pipeline into proper OOP design patterns
 
 ## Overview
 

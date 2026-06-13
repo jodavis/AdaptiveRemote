@@ -29,8 +29,10 @@ class _FakePhonemeProvider:
     """Simple stub returning pre-defined phoneme lists."""
 
     _DATA: dict[str, list[str]] = {
-        "TV": ["T", "IY"],
+        "TURN": ["T", "ER", "N"],
         "ON": ["AO", "N"],
+        "THE": ["DH", "AH"],
+        "TV": ["T", "IY"],
         "VOLUME": ["V", "AH", "L", "Y", "UH", "M"],
         "UP": ["AH", "P"],
     }
@@ -52,19 +54,19 @@ class TestVocabComputer:
         computer = VocabComputer(_FakePhonemeProvider())
         result = computer.compute(manifest, tmp_path)
 
-        expected_phonemes = {"T", "IY", "AO", "N", "V", "AH", "L", "Y", "UH", "M", "P"}
+        expected_phonemes = {"T", "ER", "N", "AO", "DH", "AH", "IY", "V", "L", "Y", "UH", "M", "P"}
         assert expected_phonemes.issubset(set(result.phoneme_list))
 
-    def test_words_to_phonemes_maps_each_label_word(self, tmp_path: Path) -> None:
+    def test_words_to_phonemes_maps_each_content_word(self, tmp_path: Path) -> None:
         samples = [_make_text_sample("turn on the tv", "TV_ON")]
         manifest = Manifest(samples)
         computer = VocabComputer(_FakePhonemeProvider())
         result = computer.compute(manifest, tmp_path)
 
-        assert "TV" in result.words_to_phonemes
-        assert "ON" in result.words_to_phonemes
-        assert result.words_to_phonemes["TV"] == ["T", "IY"]
-        assert result.words_to_phonemes["ON"] == ["AO", "N"]
+        assert "turn" in result.words_to_phonemes
+        assert "on" in result.words_to_phonemes
+        assert result.words_to_phonemes["turn"] == ["T", "ER", "N"]
+        assert result.words_to_phonemes["on"] == ["AO", "N"]
 
     def test_ctc_blank_idx_equals_len_phoneme_list(self, tmp_path: Path) -> None:
         samples = [_make_text_sample("turn on the tv", "TV_ON")]
@@ -107,13 +109,14 @@ class TestVocabComputer:
 
         assert result.phoneme_list == sorted(result.phoneme_list)
 
-    def test_uses_label_not_content(self, tmp_path: Path) -> None:
-        """VocabComputer must extract words from label (TV_ON), not content."""
-        # Content has words "hello world" which aren't in _FakePhonemeProvider
-        # If VocabComputer used content, it would raise PhonemeNotFoundError
-        samples = [_make_text_sample("hello world", "TV_ON")]
+    def test_uses_content_not_label(self, tmp_path: Path) -> None:
+        """VocabComputer must extract words from content, not label."""
+        # Label TV_ON is not in _FakePhonemeProvider as a whole token; content words are
+        # If VocabComputer used label, it would raise PhonemeNotFoundError
+        samples = [_make_text_sample("turn on", "UNKNOWN_LABEL")]
         manifest = Manifest(samples)
         computer = VocabComputer(_FakePhonemeProvider())
-        # Should not raise — label words TV and ON are in the fake provider
+        # Should not raise — content words turn and on are in the fake provider
         result = computer.compute(manifest, tmp_path)
-        assert "TV" in result.words_to_phonemes
+        assert "turn" in result.words_to_phonemes
+        assert "on" in result.words_to_phonemes

@@ -1,0 +1,66 @@
+schema: '2.0'
+stages:
+  intent_00_download_phoneme_dictionary:
+    cmd: python pipeline/download_phoneme_dictionary.py --output-dir data/phoneme_dictionary
+    outs:
+    - path: data/phoneme_dictionary/
+      hash: md5
+      md5: df97fa089d42de195fe00e0c5400b9f1.dir
+      size: 3716714
+      nfiles: 1
+  intent_01_generate_phrases:
+    cmd: python pipeline/stages/intent_01_generate_phrases.py --input-phrases 
+      scripts/intent_prediction/01_input_phrases.csv --output-dir 
+      data/intent_01_generate_phrases
+    deps:
+    - path: pipeline/
+      hash: md5
+      md5: 45e682d012129af3114fe537b8eecac3.dir
+      size: 93510
+      nfiles: 26
+    - path: scripts/intent_prediction/01_input_phrases.csv
+      hash: md5
+      md5: e51aa089ecca384f1de076f1cd1c043a
+      size: 882
+    params:
+      params.yaml:
+        pipeline.input_phrases_path: 
+          scripts/intent_prediction/01_input_phrases.csv
+        pipeline.subsample_rate: 200
+        pipeline.variations_per_phrase: 20
+        stages.generate_phrases.case_variant_chance: 0.2
+        stages.generate_phrases.hesitation_chance: 0.3
+        stages.generate_phrases.pleasantry_chance: 0.3
+        stages.generate_phrases.repeat_modifier_chance: 0.2
+        stages.generate_phrases.spelling_variant_chance: 0.1
+    outs:
+    - path: data/intent_01_generate_phrases/
+      hash: md5
+      md5: 8fede188ad714f3a8f3e4c3cab89d4a1.dir
+      size: 1366
+      nfiles: 1
+  intent_02_compute_vocab:
+    cmd: python pipeline/stages/intent_02_compute_vocab.py --input-manifest-dir 
+      data/intent_01_generate_phrases --output-dir data/intent_02_compute_vocab 
+      --phoneme-dict data/phoneme_dictionary/cmudict-0.7b
+    deps:
+    - path: data/intent_01_generate_phrases/
+      hash: md5
+      md5: 8fede188ad714f3a8f3e4c3cab89d4a1.dir
+      size: 1366
+      nfiles: 1
+    - path: data/phoneme_dictionary/cmudict-0.7b
+      hash: md5
+      md5: 825f4ebd9183f2417df9f067a9cabe86
+      size: 3716714
+    - path: pipeline/
+      hash: md5
+      md5: 45e682d012129af3114fe537b8eecac3.dir
+      size: 93510
+      nfiles: 26
+    outs:
+    - path: data/intent_02_compute_vocab/
+      hash: md5
+      md5: 58b0c72ae25859dffe1f52ce5ea4b3c4.dir
+      size: 554
+      nfiles: 2
