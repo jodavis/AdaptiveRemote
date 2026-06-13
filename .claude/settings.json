@@ -11,8 +11,9 @@
       "source": {
         "source": "github",
         "repo": "jodavis/agent-plugins",
-        "ref": "feature/ADR-269-agent-orchestration"
-      }
+        "ref": "release/canary"
+      },
+      "autoUpdate": true
     }
   },
   "mcpServers": {
