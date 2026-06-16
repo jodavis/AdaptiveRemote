@@ -1,14 +1,3 @@
-"""DVC entry-point: generate TTS speech samples and write Manifest[AudioSample].
-
-Usage:
-    python speech_03_generate_samples.py
-        --input-manifest-dir DIR
-        --output-dir DIR
-
-Fetches the en-US female voice list from edge_tts, then runs TtsSampleGenerator
-to synthesize speech for every TextSample in the input manifest.
-"""
-
 from __future__ import annotations
 
 import argparse
