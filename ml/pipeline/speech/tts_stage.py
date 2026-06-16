@@ -88,12 +88,6 @@ class TtsSampleGenerator(ModifierStage[TextSample, AudioSample]):
 
 
 class EdgeTtsProvider:
-    """TtsProvider implementation backed by edge_tts.
-
-    Streams MP3 bytes from the edge_tts service, converts to WAV using
-    soundfile, and writes the result to output_path. Retries up to
-    _MAX_RETRIES times with exponential back-off on any transient failure.
-    """
 
     _MAX_RETRIES: int = 3
     _INITIAL_DELAY_S: float = 1.0
