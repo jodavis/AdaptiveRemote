@@ -9,8 +9,9 @@ produces a derived `AudioSample` manifest with per-sample variation applied.
 | Module | Stage class | Transform |
 |--------|-------------|-----------|
 | [`tts_stage.py`](tts_stage.py) | `TtsSampleGenerator` | `TextSample → AudioSample` via edge_tts |
+| [`delay_stage.py`](delay_stage.py) | `DelayAugmentor` | `AudioSample → AudioSample` (silence padding) |
 
-Planned stages (not yet implemented): `delay_stage.py`, `background_noise_stage.py`,
+Planned stages (not yet implemented): `background_noise_stage.py`,
 `mic_noise_stage.py`, `token_stage.py`, `spectrogram_stage.py`.
 
 ## Key design decisions
