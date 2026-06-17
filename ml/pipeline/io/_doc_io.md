@@ -10,7 +10,7 @@ decoupling stages from specific libraries and enabling stub injection in tests.
 |-------|------|
 | [`AudioData`](audio_io.py) | Named return type: `samples` (1-D mono float32 ndarray) + `sample_rate` (int) |
 | [`AudioReader`](audio_io.py) | Read an audio file and return `AudioData` |
-| [`AudioWriter`](audio_io.py) | Write a mono float32 array to a WAV file |
+| [`AudioWriter`](audio_io.py) | Write `AudioData` (mono float32 samples + sample rate) to a WAV file |
 
 **`AudioReader` contract:** `async def read(self, path: Path) -> AudioData`
 
@@ -19,7 +19,7 @@ decoupling stages from specific libraries and enabling stub injection in tests.
 count. Stereo-to-mono conversion is the implementation's responsibility. Consumers never
 handle channel reduction themselves.
 
-**`AudioWriter` contract:** `async def write(self, path: Path, data: np.ndarray, sample_rate: int) -> None`
+**`AudioWriter` contract:** `async def write(self, path: Path, audio: AudioData) -> None`
 
 Both are `Protocol` classes (structural typing; no inheritance required), following the
 same pattern as `TtsProvider` and `NoiseProvider`.
