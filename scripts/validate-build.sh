@@ -7,4 +7,4 @@ git add -A
 echo 'Cleaning src and test projects...'
 git clean -xdf src test
 echo 'Building solution...'
-dotnet build /warnaserror
+dotnet build --warnaserror
