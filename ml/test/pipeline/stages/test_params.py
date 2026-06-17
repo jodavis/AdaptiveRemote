@@ -10,7 +10,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from pipeline.stages.params import GeneratePhraseParams, PipelineParams
+from pipeline.stages.params import GeneratePhraseParams, GenerateSamplesParams, PipelineParams
 
 
 def _write_params(path: Path, data: dict) -> Path:
@@ -31,7 +31,11 @@ _VALID_DATA = {
             "hesitation_chance": 0.3,
             "spelling_variant_chance": 0.1,
             "case_variant_chance": 0.2,
-        }
+        },
+        "generate_speech_samples": {
+            "speech_rate_min": -10,
+            "speech_rate_max": 20,
+        },
     },
 }
 
@@ -73,6 +77,31 @@ class TestPipelineParamsLoad:
 
     def test_missing_stages_key_raises(self, tmp_path: Path) -> None:
         data = {k: v for k, v in _VALID_DATA.items() if k != "stages"}
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
+
+    def test_loads_generate_samples_fields(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        gs = params.generate_samples
+        assert gs.speech_rate_min == -10
+        assert gs.speech_rate_max == 20
+
+    def test_generate_samples_is_correct_type(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.generate_samples, GenerateSamplesParams)
+
+    def test_missing_generate_speech_samples_stage_raises(
+        self, tmp_path: Path
+    ) -> None:
+        data = {
+            "pipeline": _VALID_DATA["pipeline"],
+            "stages": {"generate_phrases": _VALID_DATA["stages"]["generate_phrases"]},
+        }
         params_file = _write_params(tmp_path, data)
         with pytest.raises(KeyError):
             PipelineParams.load(params_file)

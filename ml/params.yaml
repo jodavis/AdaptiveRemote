@@ -10,3 +10,6 @@ stages:
     hesitation_chance: 0.3
     spelling_variant_chance: 0.1
     case_variant_chance: 0.2
+  generate_speech_samples:
+    speech_rate_min: -10
+    speech_rate_max: 20

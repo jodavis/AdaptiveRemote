@@ -22,10 +22,17 @@ class GeneratePhraseParams:
 
 
 @dataclass
+class GenerateSamplesParams:
+    speech_rate_min: int
+    speech_rate_max: int
+
+
+@dataclass
 class PipelineParams:
     variations_per_phrase: int
     subsample_rate: int
     generate_phrases: GeneratePhraseParams
+    generate_samples: GenerateSamplesParams
 
     @classmethod
     def load(cls, path: Path) -> "PipelineParams":
@@ -33,16 +40,21 @@ class PipelineParams:
             raw = yaml.safe_load(f)
 
         pipeline = raw["pipeline"]
-        stage_raw = raw["stages"]["generate_phrases"]
+        stage_phrases = raw["stages"]["generate_phrases"]
+        stage_samples = raw["stages"]["generate_speech_samples"]
 
         return cls(
             variations_per_phrase=int(pipeline["variations_per_phrase"]),
             subsample_rate=int(pipeline["subsample_rate"]),
             generate_phrases=GeneratePhraseParams(
-                repeat_modifier_chance=float(stage_raw["repeat_modifier_chance"]),
-                pleasantry_chance=float(stage_raw["pleasantry_chance"]),
-                hesitation_chance=float(stage_raw["hesitation_chance"]),
-                spelling_variant_chance=float(stage_raw["spelling_variant_chance"]),
-                case_variant_chance=float(stage_raw["case_variant_chance"]),
+                repeat_modifier_chance=float(stage_phrases["repeat_modifier_chance"]),
+                pleasantry_chance=float(stage_phrases["pleasantry_chance"]),
+                hesitation_chance=float(stage_phrases["hesitation_chance"]),
+                spelling_variant_chance=float(stage_phrases["spelling_variant_chance"]),
+                case_variant_chance=float(stage_phrases["case_variant_chance"]),
+            ),
+            generate_samples=GenerateSamplesParams(
+                speech_rate_min=int(stage_samples["speech_rate_min"]),
+                speech_rate_max=int(stage_samples["speech_rate_max"]),
             ),
         )
