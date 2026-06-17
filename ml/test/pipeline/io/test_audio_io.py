@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import sys
 from pathlib import Path
 
@@ -46,8 +47,6 @@ class TestLibrosaAudioReader:
         wav_path = tmp_path / "stereo.wav"
         _write_stereo_wav(wav_path)
 
-        import asyncio
-
         reader = LibrosaAudioReader()
         data, _sr = asyncio.run(reader.read(wav_path))
 
@@ -56,8 +55,6 @@ class TestLibrosaAudioReader:
     def test_read_stereo_returns_float32_dtype(self, tmp_path: Path) -> None:
         wav_path = tmp_path / "stereo.wav"
         _write_stereo_wav(wav_path)
-
-        import asyncio
 
         reader = LibrosaAudioReader()
         data, _sr = asyncio.run(reader.read(wav_path))
@@ -68,8 +65,6 @@ class TestLibrosaAudioReader:
         wav_path = tmp_path / "mono.wav"
         _write_mono_wav(wav_path)
 
-        import asyncio
-
         reader = LibrosaAudioReader()
         data, _sr = asyncio.run(reader.read(wav_path))
 
@@ -79,8 +74,6 @@ class TestLibrosaAudioReader:
         wav_path = tmp_path / "mono.wav"
         _write_mono_wav(wav_path)
 
-        import asyncio
-
         reader = LibrosaAudioReader()
         data, _sr = asyncio.run(reader.read(wav_path))
 
@@ -89,8 +82,6 @@ class TestLibrosaAudioReader:
     def test_read_returns_correct_sample_rate(self, tmp_path: Path) -> None:
         wav_path = tmp_path / "mono.wav"
         _write_mono_wav(wav_path, sample_rate=22050)
-
-        import asyncio
 
         reader = LibrosaAudioReader()
         _data, sr = asyncio.run(reader.read(wav_path))
@@ -102,8 +93,6 @@ class TestLibrosaAudioReader:
         duration_s = 0.1
         wav_path = tmp_path / "stereo.wav"
         _write_stereo_wav(wav_path, sample_rate=sample_rate, duration_s=duration_s)
-
-        import asyncio
 
         reader = LibrosaAudioReader()
         data, _sr = asyncio.run(reader.read(wav_path))
@@ -119,8 +108,6 @@ class TestLibrosaAudioReader:
 
 class TestSoundfileAudioWriter:
     def test_write_creates_file(self, tmp_path: Path) -> None:
-        import asyncio
-
         writer = SoundfileAudioWriter()
         out_path = tmp_path / "out.wav"
         data = np.zeros(1600, dtype=np.float32)
@@ -129,8 +116,6 @@ class TestSoundfileAudioWriter:
         assert out_path.exists()
 
     def test_write_produces_readable_wav(self, tmp_path: Path) -> None:
-        import asyncio
-
         writer = SoundfileAudioWriter()
         out_path = tmp_path / "out.wav"
         data = np.linspace(0, 1, 1600, dtype=np.float32)
@@ -141,8 +126,6 @@ class TestSoundfileAudioWriter:
         assert read_data.ndim == 1
 
     def test_write_preserves_sample_count(self, tmp_path: Path) -> None:
-        import asyncio
-
         writer = SoundfileAudioWriter()
         out_path = tmp_path / "out.wav"
         data = np.zeros(3200, dtype=np.float32)
