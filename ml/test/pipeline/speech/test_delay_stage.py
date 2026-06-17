@@ -73,12 +73,12 @@ class _RecordingAudioWriter:
     """Stub AudioWriter that records write() calls and writes dummy bytes."""
 
     def __init__(self) -> None:
-        self.calls: list[tuple[Path, np.ndarray, int]] = []
+        self.calls: list[tuple[Path, AudioData]] = []
 
-    async def write(self, path: Path, data: np.ndarray, sample_rate: int) -> None:
-        self.calls.append((path, data, sample_rate))
+    async def write(self, path: Path, audio: AudioData) -> None:
+        self.calls.append((path, audio))
         # Write an actual WAV file so the skip path can check file existence
-        sf.write(str(path), data, sample_rate, format="WAV", subtype="PCM_16")
+        sf.write(str(path), audio.samples, audio.sample_rate, format="WAV", subtype="PCM_16")
 
 
 def _make_params(
@@ -264,8 +264,8 @@ class TestDeriveId:
     def test_derive_id_format_with_both_delays(self, tmp_path: Path) -> None:
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r77")
-        result = stage._derive_id(sample, {"prefix_delay_s": 0.04, "suffix_delay_s": 0.02})
-        assert result == "TV_ON_Jenny_r77_pre40_suf20"
+        result = stage._derive_id(sample, {"prefix_delay_s": 0.4, "suffix_delay_s": 0.2})
+        assert result == "TV_ON_Jenny_r77_pre4_suf2"
 
     def test_derive_id_zero_delays_returns_base_id(self, tmp_path: Path) -> None:
         """When both delays are 0.0, no suffixes are appended."""
@@ -274,39 +274,39 @@ class TestDeriveId:
         result = stage._derive_id(sample, {"prefix_delay_s": 0.0, "suffix_delay_s": 0.0})
         assert result == "TV_ON_Jenny_r100"
 
-    def test_derive_id_40ms_prefix_produces_pre40(self, tmp_path: Path) -> None:
+    def test_derive_id_100ms_prefix_produces_pre1(self, tmp_path: Path) -> None:
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r77")
-        result = stage._derive_id(sample, {"prefix_delay_s": 0.040, "suffix_delay_s": 0.0})
-        assert result == "TV_ON_Jenny_r77_pre40"
+        result = stage._derive_id(sample, {"prefix_delay_s": 0.1, "suffix_delay_s": 0.0})
+        assert result == "TV_ON_Jenny_r77_pre1"
 
     def test_derive_id_omits_suf_when_suffix_is_zero(self, tmp_path: Path) -> None:
         """When suffix delay is 0.0, no suf segment is appended."""
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r77")
-        result = stage._derive_id(sample, {"prefix_delay_s": 0.040, "suffix_delay_s": 0.0})
+        result = stage._derive_id(sample, {"prefix_delay_s": 0.4, "suffix_delay_s": 0.0})
         assert "suf" not in result
 
     def test_derive_id_omits_pre_when_prefix_is_zero(self, tmp_path: Path) -> None:
         """When prefix delay is 0.0, no pre segment is appended."""
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r77")
-        result = stage._derive_id(sample, {"prefix_delay_s": 0.0, "suffix_delay_s": 0.02})
-        assert result == "TV_ON_Jenny_r77_suf20"
+        result = stage._derive_id(sample, {"prefix_delay_s": 0.0, "suffix_delay_s": 0.2})
+        assert result == "TV_ON_Jenny_r77_suf2"
         assert "pre" not in result
 
     def test_derive_id_uses_input_id_as_prefix(self, tmp_path: Path) -> None:
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="VOLUME_UP_Aria_r110")
-        result = stage._derive_id(sample, {"prefix_delay_s": 0.04, "suffix_delay_s": 0.0})
+        result = stage._derive_id(sample, {"prefix_delay_s": 0.4, "suffix_delay_s": 0.0})
         assert result.startswith("VOLUME_UP_Aria_r110_")
 
-    def test_derive_id_truncates_to_milliseconds(self, tmp_path: Path) -> None:
-        """int() truncation: 0.0499 → 49ms not 50ms."""
+    def test_derive_id_truncates_fractional_tenths(self, tmp_path: Path) -> None:
+        """int() truncation: 0.49 × 10 = 4 (not 5)."""
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="X")
-        result = stage._derive_id(sample, {"prefix_delay_s": 0.0499, "suffix_delay_s": 0.0})
-        assert "pre49" in result
+        result = stage._derive_id(sample, {"prefix_delay_s": 0.49, "suffix_delay_s": 0.0})
+        assert "pre4" in result
 
 
 # ---------------------------------------------------------------------------
@@ -349,9 +349,9 @@ class TestGenerateOutput:
 
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
 
-        _path, written_data, _ = writer.calls[0]
+        _path, written_audio = writer.calls[0]
         expected_len = int(sample_rate * (duration_s + prefix_s))
-        assert len(written_data) == expected_len
+        assert len(written_audio.samples) == expected_len
 
     def test_output_audio_length_with_suffix_silence(self, tmp_path: Path) -> None:
         """100ms suffix added to 100ms audio → 200ms output."""
@@ -371,9 +371,9 @@ class TestGenerateOutput:
 
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
 
-        _path, written_data, _ = writer.calls[0]
+        _path, written_audio = writer.calls[0]
         expected_len = int(sample_rate * (duration_s + suffix_s))
-        assert len(written_data) == expected_len
+        assert len(written_audio.samples) == expected_len
 
     def test_output_audio_length_with_no_delays(self, tmp_path: Path) -> None:
         """No delays → output same length as input."""
@@ -390,8 +390,8 @@ class TestGenerateOutput:
 
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
 
-        _path, written_data, _ = writer.calls[0]
-        assert len(written_data) == int(sample_rate * duration_s)
+        _path, written_audio = writer.calls[0]
+        assert len(written_audio.samples) == int(sample_rate * duration_s)
 
     def test_transcript_preserved_in_output_sample(self, tmp_path: Path) -> None:
         stage, _, _ = _make_stage(tmp_path)
@@ -423,8 +423,8 @@ class TestGenerateOutput:
 
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
 
-        _path, written_data, _ = writer.calls[0]
-        assert np.all(written_data[:n_prefix] == 0.0)
+        _path, written_audio = writer.calls[0]
+        assert np.all(written_audio.samples[:n_prefix] == 0.0)
 
     def test_suffix_silence_is_zeros(self, tmp_path: Path) -> None:
         """The appended samples must be zero (silence)."""
@@ -446,8 +446,8 @@ class TestGenerateOutput:
 
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
 
-        _path, written_data, _ = writer.calls[0]
-        assert np.all(written_data[-n_suffix:] == 0.0)
+        _path, written_audio = writer.calls[0]
+        assert np.all(written_audio.samples[-n_suffix:] == 0.0)
 
 
 # ---------------------------------------------------------------------------

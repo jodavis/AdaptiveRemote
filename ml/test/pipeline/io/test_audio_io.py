@@ -111,16 +111,16 @@ class TestSoundfileAudioWriter:
     def test_write_creates_file(self, tmp_path: Path) -> None:
         writer = SoundfileAudioWriter()
         out_path = tmp_path / "out.wav"
-        data = np.zeros(1600, dtype=np.float32)
-        asyncio.run(writer.write(out_path, data, 16000))
+        audio = AudioData(samples=np.zeros(1600, dtype=np.float32), sample_rate=16000)
+        asyncio.run(writer.write(out_path, audio))
 
         assert out_path.exists()
 
     def test_write_produces_readable_wav(self, tmp_path: Path) -> None:
         writer = SoundfileAudioWriter()
         out_path = tmp_path / "out.wav"
-        data = np.linspace(0, 1, 1600, dtype=np.float32)
-        asyncio.run(writer.write(out_path, data, 16000))
+        audio = AudioData(samples=np.linspace(0, 1, 1600, dtype=np.float32), sample_rate=16000)
+        asyncio.run(writer.write(out_path, audio))
 
         read_data, sr = sf.read(str(out_path))
         assert sr == 16000
@@ -129,8 +129,8 @@ class TestSoundfileAudioWriter:
     def test_write_preserves_sample_count(self, tmp_path: Path) -> None:
         writer = SoundfileAudioWriter()
         out_path = tmp_path / "out.wav"
-        data = np.zeros(3200, dtype=np.float32)
-        asyncio.run(writer.write(out_path, data, 16000))
+        audio = AudioData(samples=np.zeros(3200, dtype=np.float32), sample_rate=16000)
+        asyncio.run(writer.write(out_path, audio))
 
         read_data, _ = sf.read(str(out_path))
         assert len(read_data) == 3200

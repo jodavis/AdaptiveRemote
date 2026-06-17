@@ -39,9 +39,9 @@ class AudioReader(Protocol):
 
 
 class AudioWriter(Protocol):
-    """Write a 1-D float32 array to a WAV file at the given path."""
+    """Write AudioData (1-D float32 samples + sample rate) to a WAV file at the given path."""
 
-    async def write(self, path: Path, data: np.ndarray, sample_rate: int) -> None: ...
+    async def write(self, path: Path, audio: AudioData) -> None: ...
 
 
 class LibrosaAudioReader:
@@ -72,10 +72,13 @@ class SoundfileAudioWriter:
     the event loop is not blocked during file I/O.
     """
 
-    async def write(self, path: Path, data: np.ndarray, sample_rate: int) -> None:
+    async def write(self, path: Path, audio: AudioData) -> None:
         import soundfile as sf  # deferred so unit tests without soundfile can import module
 
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(
-            None, lambda: sf.write(str(path), data, sample_rate, format="WAV", subtype="PCM_16")
+            None,
+            lambda: sf.write(
+                str(path), audio.samples, audio.sample_rate, format="WAV", subtype="PCM_16"
+            ),
         )

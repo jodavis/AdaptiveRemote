@@ -16,7 +16,7 @@ from pipeline.core.manifest import ManifestStore
 from pipeline.core.modifier_stage import ModifierStage
 from pipeline.core.randomization import MinMaxFilter, VariationGenerator
 from pipeline.core.sample import AudioSample
-from pipeline.io.audio_io import AudioReader, AudioWriter
+from pipeline.io.audio_io import AudioData, AudioReader, AudioWriter
 from pipeline.stages import conventions
 from pipeline.stages.params import AddDelaysParams
 
@@ -75,9 +75,9 @@ class DelayAugmentor(ModifierStage[AudioSample, AudioSample]):
         suffix_delay_s: float = applied_values["suffix_delay_s"]
         parts = [input_sample.id]
         if prefix_delay_s != 0.0:
-            parts.append(f"pre{int(prefix_delay_s * 1000)}")
+            parts.append(f"pre{int(prefix_delay_s * 10)}")
         if suffix_delay_s != 0.0:
-            parts.append(f"suf{int(suffix_delay_s * 1000)}")
+            parts.append(f"suf{int(suffix_delay_s * 10)}")
         return "_".join(parts)
 
     async def _generate_output(
@@ -109,7 +109,7 @@ class DelayAugmentor(ModifierStage[AudioSample, AudioSample]):
         self._output_dir.mkdir(parents=True, exist_ok=True)
         output_path = conventions.sample_file_path(self._output_dir, output_id, "wav")
 
-        await self._audio_writer.write(output_path, output_audio, audio.sample_rate)
+        await self._audio_writer.write(output_path, AudioData(samples=output_audio, sample_rate=audio.sample_rate))
 
         content_hash = self._compute_content_hash(
             parent_content_hash, output_seed, applied_values
