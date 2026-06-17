@@ -10,7 +10,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from pipeline.stages.params import GeneratePhraseParams, GenerateSamplesParams, PipelineParams
+from pipeline.stages.params import AddDelaysParams, GeneratePhraseParams, GenerateSamplesParams, PipelineParams
 
 
 def _write_params(path: Path, data: dict) -> Path:
@@ -35,6 +35,14 @@ _VALID_DATA = {
         "generate_speech_samples": {
             "speech_rate_min": -10,
             "speech_rate_max": 20,
+        },
+        "add_delays": {
+            "prefix_vary_probability": 0.333,
+            "prefix_min_s": 0.02,
+            "prefix_max_s": 0.15,
+            "suffix_vary_probability": 0.333,
+            "suffix_min_s": 0.02,
+            "suffix_max_s": 0.15,
         },
     },
 }
@@ -105,3 +113,43 @@ class TestPipelineParamsLoad:
         params_file = _write_params(tmp_path, data)
         with pytest.raises(KeyError):
             PipelineParams.load(params_file)
+
+    def test_missing_add_delays_stage_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["stages"]["add_delays"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
+
+
+class TestAddDelaysParamsLoad:
+    def test_loads_add_delays_fields(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        ad = params.add_delays
+        assert ad.prefix_vary_probability == pytest.approx(0.333)
+        assert ad.prefix_min_s == pytest.approx(0.02)
+        assert ad.prefix_max_s == pytest.approx(0.15)
+        assert ad.suffix_vary_probability == pytest.approx(0.333)
+        assert ad.suffix_min_s == pytest.approx(0.02)
+        assert ad.suffix_max_s == pytest.approx(0.15)
+
+    def test_add_delays_is_correct_type(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.add_delays, AddDelaysParams)
+
+    def test_add_delays_fields_are_floats(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        ad = params.add_delays
+        assert isinstance(ad.prefix_vary_probability, float)
+        assert isinstance(ad.prefix_min_s, float)
+        assert isinstance(ad.prefix_max_s, float)
+        assert isinstance(ad.suffix_vary_probability, float)
+        assert isinstance(ad.suffix_min_s, float)
+        assert isinstance(ad.suffix_max_s, float)
