@@ -41,16 +41,16 @@ stages:
     outs:
       - data/intent_02_compute_vocab/
 
-  speech_03_generate_samples:
+  speech_01_generate_samples:
     cmd: >-
-      python pipeline/stages/speech_03_generate_samples.py
+      python pipeline/stages/speech_01_generate_samples.py
       --input-manifest-dir data/intent_01_generate_phrases
-      --output-dir data/speech_03_generate_samples
+      --output-dir data/speech_01_generate_samples
     deps:
       - data/intent_01_generate_phrases/
       - pipeline/
     outs:
-      - data/speech_03_generate_samples/:
+      - data/speech_01_generate_samples/:
           persist: true
     params:
       - pipeline.subsample_rate
