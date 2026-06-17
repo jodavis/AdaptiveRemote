@@ -10,20 +10,32 @@ AudioWriter writes the supplied mono float32 array to a WAV file (PCM_16 subtype
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
 import numpy as np
 
 
-class AudioReader(Protocol):
-    """Read an audio file and return (samples, sample_rate).
+@dataclass
+class AudioData:
+    """Audio samples with their native sample rate.
 
-    The returned array is always 1-D mono float32. If the source file is stereo,
-    the implementation converts to mono before returning.
+    samples is always a 1-D mono float32 array. If the source file was stereo,
+    the AudioReader implementation converts to mono before returning.
     """
 
-    async def read(self, path: Path) -> tuple[np.ndarray, int]: ...
+    samples: np.ndarray
+    sample_rate: int
+
+
+class AudioReader(Protocol):
+    """Read an audio file and return AudioData (1-D mono float32 samples + sample rate).
+
+    If the source file is stereo, the implementation converts to mono before returning.
+    """
+
+    async def read(self, path: Path) -> AudioData: ...
 
 
 class AudioWriter(Protocol):
@@ -43,14 +55,14 @@ class LibrosaAudioReader:
     the event loop is not blocked during file I/O.
     """
 
-    async def read(self, path: Path) -> tuple[np.ndarray, int]:
+    async def read(self, path: Path) -> AudioData:
         import librosa  # deferred so unit tests without librosa installed can import module
 
         loop = asyncio.get_running_loop()
-        data, sample_rate = await loop.run_in_executor(
+        samples, sample_rate = await loop.run_in_executor(
             None, lambda: librosa.load(str(path), sr=None, mono=True, dtype=np.float32)
         )
-        return data, int(sample_rate)
+        return AudioData(samples=samples, sample_rate=int(sample_rate))
 
 
 class SoundfileAudioWriter:

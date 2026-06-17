@@ -12,7 +12,7 @@ import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from pipeline.io.audio_io import LibrosaAudioReader, SoundfileAudioWriter
+from pipeline.io.audio_io import AudioData, LibrosaAudioReader, SoundfileAudioWriter
 
 
 # ---------------------------------------------------------------------------
@@ -48,45 +48,46 @@ class TestLibrosaAudioReader:
         _write_stereo_wav(wav_path)
 
         reader = LibrosaAudioReader()
-        data, _sr = asyncio.run(reader.read(wav_path))
+        result = asyncio.run(reader.read(wav_path))
 
-        assert data.ndim == 1
+        assert isinstance(result, AudioData)
+        assert result.samples.ndim == 1
 
     def test_read_stereo_returns_float32_dtype(self, tmp_path: Path) -> None:
         wav_path = tmp_path / "stereo.wav"
         _write_stereo_wav(wav_path)
 
         reader = LibrosaAudioReader()
-        data, _sr = asyncio.run(reader.read(wav_path))
+        result = asyncio.run(reader.read(wav_path))
 
-        assert data.dtype == np.float32
+        assert result.samples.dtype == np.float32
 
     def test_read_mono_returns_one_dimensional_array(self, tmp_path: Path) -> None:
         wav_path = tmp_path / "mono.wav"
         _write_mono_wav(wav_path)
 
         reader = LibrosaAudioReader()
-        data, _sr = asyncio.run(reader.read(wav_path))
+        result = asyncio.run(reader.read(wav_path))
 
-        assert data.ndim == 1
+        assert result.samples.ndim == 1
 
     def test_read_mono_returns_float32_dtype(self, tmp_path: Path) -> None:
         wav_path = tmp_path / "mono.wav"
         _write_mono_wav(wav_path)
 
         reader = LibrosaAudioReader()
-        data, _sr = asyncio.run(reader.read(wav_path))
+        result = asyncio.run(reader.read(wav_path))
 
-        assert data.dtype == np.float32
+        assert result.samples.dtype == np.float32
 
     def test_read_returns_correct_sample_rate(self, tmp_path: Path) -> None:
         wav_path = tmp_path / "mono.wav"
         _write_mono_wav(wav_path, sample_rate=22050)
 
         reader = LibrosaAudioReader()
-        _data, sr = asyncio.run(reader.read(wav_path))
+        result = asyncio.run(reader.read(wav_path))
 
-        assert sr == 22050
+        assert result.sample_rate == 22050
 
     def test_read_stereo_sample_count_matches_original(self, tmp_path: Path) -> None:
         sample_rate = 16000
@@ -95,10 +96,10 @@ class TestLibrosaAudioReader:
         _write_stereo_wav(wav_path, sample_rate=sample_rate, duration_s=duration_s)
 
         reader = LibrosaAudioReader()
-        data, _sr = asyncio.run(reader.read(wav_path))
+        result = asyncio.run(reader.read(wav_path))
 
         expected_samples = int(sample_rate * duration_s)
-        assert len(data) == expected_samples
+        assert len(result.samples) == expected_samples
 
 
 # ---------------------------------------------------------------------------
