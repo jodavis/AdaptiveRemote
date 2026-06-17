@@ -8,12 +8,14 @@ decoupling stages from specific libraries and enabling stub injection in tests.
 
 | Class | Role |
 |-------|------|
-| [`AudioReader`](audio_io.py) | Read an audio file and return `(samples, sample_rate)` |
+| [`AudioData`](audio_io.py) | Named return type: `samples` (1-D mono float32 ndarray) + `sample_rate` (int) |
+| [`AudioReader`](audio_io.py) | Read an audio file and return `AudioData` |
 | [`AudioWriter`](audio_io.py) | Write a mono float32 array to a WAV file |
 
-**`AudioReader` contract:** `async def read(self, path: Path) -> tuple[np.ndarray, int]`
+**`AudioReader` contract:** `async def read(self, path: Path) -> AudioData`
 
-The returned array is always 1-D mono float32, regardless of the source file's channel
+`AudioData` is a dataclass with `samples: np.ndarray` and `sample_rate: int`. The
+`samples` array is always 1-D mono float32, regardless of the source file's channel
 count. Stereo-to-mono conversion is the implementation's responsibility. Consumers never
 handle channel reduction themselves.
 
