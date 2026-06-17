@@ -18,6 +18,7 @@ from pipeline.core.randomization import MinMaxFilter, VariationGenerator
 from pipeline.core.sample import AudioSample
 from pipeline.io.audio_io import AudioReader, AudioWriter
 from pipeline.stages import conventions
+from pipeline.stages.params import AddDelaysParams
 
 
 class DelayAugmentor(ModifierStage[AudioSample, AudioSample]):
@@ -40,21 +41,16 @@ class DelayAugmentor(ModifierStage[AudioSample, AudioSample]):
         audio_reader: AudioReader,
         audio_writer: AudioWriter,
         input_dir: Path,
-        prefix_vary_probability: float,
-        prefix_min_s: float,
-        prefix_max_s: float,
-        suffix_vary_probability: float,
-        suffix_min_s: float,
-        suffix_max_s: float,
+        params: AddDelaysParams,
     ) -> None:
         super().__init__(output_dir, manifest_store)
         self._audio_reader = audio_reader
         self._audio_writer = audio_writer
         self._input_dir = input_dir
-        self._prefix_vary_probability = prefix_vary_probability
-        self._prefix_filter = MinMaxFilter(prefix_min_s, prefix_max_s, precision=6)
-        self._suffix_vary_probability = suffix_vary_probability
-        self._suffix_filter = MinMaxFilter(suffix_min_s, suffix_max_s, precision=6)
+        self._prefix_vary_probability = params.prefix_vary_probability
+        self._prefix_filter = MinMaxFilter(params.prefix_min_s, params.prefix_max_s, precision=1)
+        self._suffix_vary_probability = params.suffix_vary_probability
+        self._suffix_filter = MinMaxFilter(params.suffix_min_s, params.suffix_max_s, precision=1)
 
     def _get_applied_values(
         self, sample: AudioSample, generator: VariationGenerator
@@ -77,9 +73,12 @@ class DelayAugmentor(ModifierStage[AudioSample, AudioSample]):
     def _derive_id(self, input_sample: AudioSample, applied_values: dict[str, Any]) -> str:
         prefix_delay_s: float = applied_values["prefix_delay_s"]
         suffix_delay_s: float = applied_values["suffix_delay_s"]
-        pre_ms = int(prefix_delay_s * 1000)
-        suf_ms = int(suffix_delay_s * 1000)
-        return f"{input_sample.id}_pre{pre_ms}_suf{suf_ms}"
+        parts = [input_sample.id]
+        if prefix_delay_s != 0.0:
+            parts.append(f"pre{int(prefix_delay_s * 1000)}")
+        if suffix_delay_s != 0.0:
+            parts.append(f"suf{int(suffix_delay_s * 1000)}")
+        return "_".join(parts)
 
     async def _generate_output(
         self,
@@ -93,24 +92,24 @@ class DelayAugmentor(ModifierStage[AudioSample, AudioSample]):
         suffix_delay_s: float = applied_values["suffix_delay_s"]
 
         input_path = self._input_dir / input_sample.path
-        audio_data, sample_rate = await self._audio_reader.read(input_path)
+        audio = await self._audio_reader.read(input_path)
 
-        n_prefix = int(prefix_delay_s * sample_rate)
-        n_suffix = int(suffix_delay_s * sample_rate)
+        n_prefix = int(prefix_delay_s * audio.sample_rate)
+        n_suffix = int(suffix_delay_s * audio.sample_rate)
 
         parts: list[np.ndarray] = []
         if n_prefix > 0:
             parts.append(np.zeros(n_prefix, dtype=np.float32))
-        parts.append(audio_data)
+        parts.append(audio.samples)
         if n_suffix > 0:
             parts.append(np.zeros(n_suffix, dtype=np.float32))
 
-        output_audio = np.concatenate(parts) if len(parts) > 1 else audio_data
+        output_audio = np.concatenate(parts) if len(parts) > 1 else audio.samples
 
         self._output_dir.mkdir(parents=True, exist_ok=True)
         output_path = conventions.sample_file_path(self._output_dir, output_id, "wav")
 
-        await self._audio_writer.write(output_path, output_audio, sample_rate)
+        await self._audio_writer.write(output_path, output_audio, audio.sample_rate)
 
         content_hash = self._compute_content_hash(
             parent_content_hash, output_seed, applied_values

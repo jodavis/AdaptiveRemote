@@ -18,7 +18,9 @@ from pipeline.core.manifest import Manifest, ManifestStore
 from pipeline.core.modifier_stage import ModifierStage
 from pipeline.core.randomization import VariationGenerator
 from pipeline.core.sample import AudioSample
+from pipeline.io.audio_io import AudioData
 from pipeline.speech.delay_stage import DelayAugmentor
+from pipeline.stages.params import AddDelaysParams
 
 
 # ---------------------------------------------------------------------------
@@ -60,11 +62,11 @@ class _RecordingAudioReader:
         self._sample_rate = sample_rate
         self._duration_s = duration_s
 
-    async def read(self, path: Path) -> tuple[np.ndarray, int]:
+    async def read(self, path: Path) -> AudioData:
         self.calls.append(path)
         n_samples = int(self._sample_rate * self._duration_s)
-        data = np.zeros(n_samples, dtype=np.float32)
-        return data, self._sample_rate
+        samples = np.zeros(n_samples, dtype=np.float32)
+        return AudioData(samples=samples, sample_rate=self._sample_rate)
 
 
 class _RecordingAudioWriter:
@@ -79,12 +81,31 @@ class _RecordingAudioWriter:
         sf.write(str(path), data, sample_rate, format="WAV", subtype="PCM_16")
 
 
+def _make_params(
+    prefix_vary_probability: float = 0.0,
+    prefix_min_s: float = 0.0,
+    prefix_max_s: float = 0.1,
+    suffix_vary_probability: float = 0.0,
+    suffix_min_s: float = 0.0,
+    suffix_max_s: float = 0.1,
+) -> AddDelaysParams:
+    return AddDelaysParams(
+        prefix_vary_probability=prefix_vary_probability,
+        prefix_min_s=prefix_min_s,
+        prefix_max_s=prefix_max_s,
+        suffix_vary_probability=suffix_vary_probability,
+        suffix_min_s=suffix_min_s,
+        suffix_max_s=suffix_max_s,
+    )
+
+
 def _make_stage(
     output_dir: Path,
     *,
     audio_reader: _RecordingAudioReader | None = None,
     audio_writer: _RecordingAudioWriter | None = None,
     input_dir: Path | None = None,
+    params: AddDelaysParams | None = None,
     prefix_vary_probability: float = 0.0,
     prefix_min_s: float = 0.0,
     prefix_max_s: float = 0.1,
@@ -98,18 +119,22 @@ def _make_stage(
         audio_writer = _RecordingAudioWriter()
     if input_dir is None:
         input_dir = output_dir
+    if params is None:
+        params = _make_params(
+            prefix_vary_probability=prefix_vary_probability,
+            prefix_min_s=prefix_min_s,
+            prefix_max_s=prefix_max_s,
+            suffix_vary_probability=suffix_vary_probability,
+            suffix_min_s=suffix_min_s,
+            suffix_max_s=suffix_max_s,
+        )
     stage = DelayAugmentor(
         output_dir=output_dir,
         manifest_store=ManifestStore(),
         audio_reader=audio_reader,
         audio_writer=audio_writer,
         input_dir=input_dir,
-        prefix_vary_probability=prefix_vary_probability,
-        prefix_min_s=prefix_min_s,
-        prefix_max_s=prefix_max_s,
-        suffix_vary_probability=suffix_vary_probability,
-        suffix_min_s=suffix_min_s,
-        suffix_max_s=suffix_max_s,
+        params=params,
     )
     return stage, audio_reader, audio_writer
 
@@ -179,11 +204,11 @@ class TestAppliedValues:
         stage, _, _ = _make_stage(
             tmp_path,
             prefix_vary_probability=1.0,
-            prefix_min_s=0.04,
-            prefix_max_s=0.04,
+            prefix_min_s=0.1,
+            prefix_max_s=0.1,
             suffix_vary_probability=0.0,
-            suffix_min_s=0.05,
-            suffix_max_s=0.1,
+            suffix_min_s=0.1,
+            suffix_max_s=0.5,
         )
         sample = _make_audio_sample()
         av = stage._get_applied_values(sample, VariationGenerator(42))
@@ -196,11 +221,11 @@ class TestAppliedValues:
         stage, _, _ = _make_stage(
             tmp_path,
             prefix_vary_probability=0.0,
-            prefix_min_s=0.05,
-            prefix_max_s=0.1,
+            prefix_min_s=0.1,
+            prefix_max_s=0.5,
             suffix_vary_probability=1.0,
-            suffix_min_s=0.04,
-            suffix_max_s=0.04,
+            suffix_min_s=0.1,
+            suffix_max_s=0.1,
         )
         sample = _make_audio_sample()
         av = stage._get_applied_values(sample, VariationGenerator(42))
@@ -211,8 +236,8 @@ class TestAppliedValues:
         stage, _, _ = _make_stage(
             tmp_path,
             prefix_vary_probability=1.0,
-            prefix_min_s=0.04,
-            prefix_max_s=0.04,
+            prefix_min_s=0.1,
+            prefix_max_s=0.1,
         )
         sample = _make_audio_sample()
         av = stage._get_applied_values(sample, VariationGenerator(42))
@@ -222,8 +247,8 @@ class TestAppliedValues:
         stage, _, _ = _make_stage(
             tmp_path,
             suffix_vary_probability=1.0,
-            suffix_min_s=0.04,
-            suffix_max_s=0.04,
+            suffix_min_s=0.1,
+            suffix_max_s=0.1,
         )
         sample = _make_audio_sample()
         av = stage._get_applied_values(sample, VariationGenerator(42))
@@ -242,28 +267,38 @@ class TestDeriveId:
         result = stage._derive_id(sample, {"prefix_delay_s": 0.04, "suffix_delay_s": 0.02})
         assert result == "TV_ON_Jenny_r77_pre40_suf20"
 
-    def test_derive_id_zero_delays_produce_pre0_suf0(self, tmp_path: Path) -> None:
+    def test_derive_id_zero_delays_returns_base_id(self, tmp_path: Path) -> None:
+        """When both delays are 0.0, no suffixes are appended."""
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r100")
         result = stage._derive_id(sample, {"prefix_delay_s": 0.0, "suffix_delay_s": 0.0})
-        assert result == "TV_ON_Jenny_r100_pre0_suf0"
+        assert result == "TV_ON_Jenny_r100"
 
     def test_derive_id_40ms_prefix_produces_pre40(self, tmp_path: Path) -> None:
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r77")
         result = stage._derive_id(sample, {"prefix_delay_s": 0.040, "suffix_delay_s": 0.0})
-        assert "_pre40_" in result
+        assert result == "TV_ON_Jenny_r77_pre40"
 
-    def test_derive_id_no_suffix_produces_suf0(self, tmp_path: Path) -> None:
+    def test_derive_id_omits_suf_when_suffix_is_zero(self, tmp_path: Path) -> None:
+        """When suffix delay is 0.0, no suf segment is appended."""
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r77")
         result = stage._derive_id(sample, {"prefix_delay_s": 0.040, "suffix_delay_s": 0.0})
-        assert result.endswith("_suf0")
+        assert "suf" not in result
+
+    def test_derive_id_omits_pre_when_prefix_is_zero(self, tmp_path: Path) -> None:
+        """When prefix delay is 0.0, no pre segment is appended."""
+        stage, _, _ = _make_stage(tmp_path)
+        sample = _make_audio_sample(sample_id="TV_ON_Jenny_r77")
+        result = stage._derive_id(sample, {"prefix_delay_s": 0.0, "suffix_delay_s": 0.02})
+        assert result == "TV_ON_Jenny_r77_suf20"
+        assert "pre" not in result
 
     def test_derive_id_uses_input_id_as_prefix(self, tmp_path: Path) -> None:
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="VOLUME_UP_Aria_r110")
-        result = stage._derive_id(sample, {"prefix_delay_s": 0.0, "suffix_delay_s": 0.0})
+        result = stage._derive_id(sample, {"prefix_delay_s": 0.04, "suffix_delay_s": 0.0})
         assert result.startswith("VOLUME_UP_Aria_r110_")
 
     def test_derive_id_truncates_to_milliseconds(self, tmp_path: Path) -> None:
@@ -271,7 +306,7 @@ class TestDeriveId:
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="X")
         result = stage._derive_id(sample, {"prefix_delay_s": 0.0499, "suffix_delay_s": 0.0})
-        assert "_pre49_" in result
+        assert "pre49" in result
 
 
 # ---------------------------------------------------------------------------
@@ -297,10 +332,10 @@ class TestGenerateOutput:
         assert len(writer.calls) == 1
 
     def test_output_audio_length_with_prefix_silence(self, tmp_path: Path) -> None:
-        """40ms prefix added to 100ms audio → 140ms output."""
+        """100ms prefix added to 100ms audio → 200ms output."""
         sample_rate = 16000
         duration_s = 0.1
-        prefix_s = 0.04
+        prefix_s = 0.1
         stage, _, writer = _make_stage(
             tmp_path,
             prefix_vary_probability=1.0,
@@ -319,10 +354,10 @@ class TestGenerateOutput:
         assert len(written_data) == expected_len
 
     def test_output_audio_length_with_suffix_silence(self, tmp_path: Path) -> None:
-        """20ms suffix added to 100ms audio → 120ms output."""
+        """100ms suffix added to 100ms audio → 200ms output."""
         sample_rate = 16000
         duration_s = 0.1
-        suffix_s = 0.02
+        suffix_s = 0.1
         stage, _, writer = _make_stage(
             tmp_path,
             prefix_vary_probability=0.0,
@@ -372,7 +407,7 @@ class TestGenerateOutput:
         """The prepended samples must be zero (silence)."""
         sample_rate = 16000
         duration_s = 0.1
-        prefix_s = 0.04
+        prefix_s = 0.1
         n_prefix = int(sample_rate * prefix_s)
 
         stage, _, writer = _make_stage(
@@ -395,7 +430,7 @@ class TestGenerateOutput:
         """The appended samples must be zero (silence)."""
         sample_rate = 16000
         duration_s = 0.1
-        suffix_s = 0.02
+        suffix_s = 0.1
         n_suffix = int(sample_rate * suffix_s)
 
         stage, _, writer = _make_stage(
