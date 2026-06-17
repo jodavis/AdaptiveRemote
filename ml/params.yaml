@@ -15,8 +15,8 @@ stages:
     speech_rate_max: 20
   add_delays:
     prefix_vary_probability: 0.333
-    prefix_min_s: 0.02
-    prefix_max_s: 0.15
+    prefix_min_s: 0.1
+    prefix_max_s: 0.5
     suffix_vary_probability: 0.333
-    suffix_min_s: 0.02
-    suffix_max_s: 0.15
+    suffix_min_s: 0.1
+    suffix_max_s: 0.5
