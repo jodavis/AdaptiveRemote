@@ -8,3 +8,6 @@ echo 'Cleaning src and test projects...'
 git clean -xdf src test
 echo 'Building solution...'
 dotnet build --warnaserror
+echo 'Installing Python requirements...'
+cd ml
+python3 -m pip install -r requirements.txt
