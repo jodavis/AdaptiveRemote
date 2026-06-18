@@ -9,6 +9,14 @@ noise_start_s bounds are derived from file durations: both the noise file and th
 audio sample file are read to compute max_start_s = noise_duration_s - audio_duration_s.
 When the noise file is shorter than the audio sample, max_start_s is negative and
 clamped to 0.0 (min and max both 0.0).
+
+_noise_dir is stored directly in the constructor and used to resolve noise file
+paths, eliminating redundant list_files() calls and the IndexError risk from an
+empty noise directory.
+
+_read_duration_s runs the async read in a thread executor when called from a running
+event loop, using the lambda form (executor.submit(lambda: asyncio.run(...))) to avoid
+passing a pre-created coroutine to asyncio.run in another thread.
 """
 
 from __future__ import annotations
@@ -42,22 +50,29 @@ class NoiseProvider(Protocol):
 def _read_duration_s(audio_reader: AudioReader, path: Path) -> float:
     """Read a file and return its duration in seconds.
 
-    Handles both a running event loop (uses a thread executor) and no loop
-    (uses asyncio.run()).
+    When called outside a running event loop, uses asyncio.run() directly.
+    When called from within a running event loop (e.g. from a synchronous
+    method invoked by an async caller), runs asyncio.run() in a thread executor
+    so the loop thread is not blocked. Uses the lambda form
+    (executor.submit(lambda: asyncio.run(_read()))) to create the coroutine
+    inside the worker thread, avoiding passing a pre-created coroutine across
+    threads.
     """
     async def _read() -> float:
         data = await audio_reader.read(path)
         return len(data.samples) / data.sample_rate
 
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError:
-        # No running loop — safe to call asyncio.run()
+        # No running loop — safe to call asyncio.run() directly
         return asyncio.run(_read())
 
-    # Inside a running loop — run in a thread to avoid blocking the loop
+    # Inside a running loop — run in a thread to avoid blocking the loop.
+    # The lambda creates the coroutine inside the worker thread so a fresh
+    # event loop is used per asyncio.run() call.
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(asyncio.run, _read())
+        future = executor.submit(lambda: asyncio.run(_read()))
         return future.result()
 
 
@@ -74,6 +89,10 @@ class BackgroundNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
 
     input_dir is the directory containing the input WAV files referenced by
     AudioSample.path. This is typically the output directory of the preceding stage.
+
+    noise_dir is the directory containing noise WAV files. Stored directly rather
+    than derived from NoiseProvider.list_files()[0].parent to avoid redundant
+    filesystem calls and IndexError on an empty directory.
     """
 
     def __init__(
@@ -83,6 +102,7 @@ class BackgroundNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
         audio_reader: AudioReader,
         audio_writer: AudioWriter,
         input_dir: Path,
+        noise_dir: Path,
         noise_provider: NoiseProvider,
         params: AddBackgroundNoiseParams,
     ) -> None:
@@ -90,6 +110,7 @@ class BackgroundNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
         self._audio_reader = audio_reader
         self._audio_writer = audio_writer
         self._input_dir = input_dir
+        self._noise_dir = noise_dir
         self._noise_provider = noise_provider
         self._vary_probability = params.vary_probability
         self._volume_filter = MinMaxFilter(params.volume_min, params.volume_max, precision=2)
@@ -97,13 +118,17 @@ class BackgroundNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
     def _get_applied_values(
         self, sample: AudioSample, generator: VariationGenerator
     ) -> dict[str, Any]:
-        # Always choose a noise file for hash stability
+        # Always choose a noise file for hash stability.
+        # list_files() is called once; _noise_dir resolves the full path.
         noise_files = sorted([p.name for p in self._noise_provider.list_files()])
         noise_file: str = generator.choose("noise_file", noise_files)
 
         if generator.should_vary("noise", self._vary_probability):
-            # Derive noise_start_s bounds from file durations
-            noise_path = self._noise_provider.list_files()[0].parent / noise_file
+            # noise_start_s bounds are derived from file durations. Both files are read
+            # synchronously here because _get_applied_values is a synchronous method.
+            # The durations are needed to clamp the start so the noise slice contains
+            # actual noise data rather than silence from an out-of-range offset.
+            noise_path = self._noise_dir / noise_file
             audio_path = self._input_dir / sample.path
 
             noise_duration_s = _read_duration_s(self._audio_reader, noise_path)
@@ -147,8 +172,7 @@ class BackgroundNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
         output_samples = audio.samples.copy()
 
         if noise_volume > 0.0:
-            # Resolve noise file path via provider
-            noise_path = self._noise_provider.list_files()[0].parent / noise_file
+            noise_path = self._noise_dir / noise_file
             noise_audio = await self._audio_reader.read(noise_path)
 
             start_sample = int(noise_start_s * noise_audio.sample_rate)
