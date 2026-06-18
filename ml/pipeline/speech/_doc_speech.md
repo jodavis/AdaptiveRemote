@@ -43,15 +43,11 @@ Consistent with `TtsProvider` in `tts_stage.py` — the protocol lives in the sa
 module as the stage that uses it. Unit tests supply `_FakeNoiseProvider`; the
 entry-point supplies `_DirectoryNoiseProvider` (globbing `*.wav` from `--noise-dir`).
 
-**`noise_file` is always chosen (hash stability), `noise_start_s`/`noise_volume` are
-0.0 when not applied.** `VariationGenerator.choose()` runs on the sorted filename list
-before the `should_vary` check so the content hash does not change if `vary_probability`
-is toggled. All three keys are always present in `applied_values`.
-
-**`noise_start_s` bounds are derived from file durations at runtime.** Both the noise
-file and the audio sample file are read in `_get_applied_values` when noise is applied.
-`max_start_s = noise_duration_s - audio_duration_s`; clamped to 0.0 when negative
-(i.e. noise file is shorter than audio).
+**`noise_file` is always chosen (hash stability), `noise_volume` is 0.0 when not applied.**
+`VariationGenerator.choose()` runs on the sorted filename list before the `should_vary`
+check so the content hash does not change if `vary_probability` is toggled. All three
+keys (`noise_file`, `noise_start_s`, `noise_volume`) are always present in `applied_values`.
+`noise_start_s` is always 0.0 — noise is mixed from the beginning of the noise file.
 
 **Gaussian noise in `MicrophoneNoiseAugmentor` is seeded from `output_seed`.** Uses
 `np.random.default_rng(output_seed).normal(0, amplitude, len(samples))` for

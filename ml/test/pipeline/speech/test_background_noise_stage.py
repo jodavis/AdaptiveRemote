@@ -265,35 +265,20 @@ class TestAppliedValues:
 
 
 # ---------------------------------------------------------------------------
-# TestAppliedValuesNoiseShorterThanAudio
+# TestNoiseStartS
 # ---------------------------------------------------------------------------
 
 
-class TestNoiseShorterThanAudio:
-    def test_noise_start_s_clamped_to_zero_when_noise_shorter_than_audio(
-        self, tmp_path: Path
-    ) -> None:
-        """When noise file is shorter than audio, max_start_s < 0 → clamped to 0.0."""
-        # noise is 0.1s, audio is 0.5s → max_start_s = -0.4s → clamp to 0.0
-        reader = _RecordingAudioReader(
-            sample_rate=16000,
-            audio_duration_s=0.5,
-            noise_duration_s=0.1,
-        )
-        noise_dir = tmp_path / "noise"
-        noise_dir.mkdir()
-        reader.register_noise_path(noise_dir / "short.wav")
-
+class TestNoiseStartS:
+    def test_noise_start_s_is_always_zero(self, tmp_path: Path) -> None:
+        """noise_start_s is always 0.0 — noise is mixed from the start of the file."""
         stage, _, _ = _make_stage(
             tmp_path,
-            noise_dir=noise_dir,
-            audio_reader=reader,
             vary_probability=1.0,
             volume_min=0.1,
             volume_max=0.1,
-            noise_filenames=["short.wav"],
         )
-        sample = _make_audio_sample(wav_dir=tmp_path)
+        sample = _make_audio_sample()
         av = stage._get_applied_values(sample, VariationGenerator(42))
         assert av["noise_start_s"] == 0.0
 
@@ -347,7 +332,7 @@ class TestDeriveId:
 
 class TestGenerateOutput:
     def test_generate_output_calls_audio_reader_for_input_and_noise(self, tmp_path: Path) -> None:
-        """When noise is applied (vary_probability=1.0), reader is called for both noise and audio."""
+        """When noise is applied (vary_probability=1.0), reader is called for both audio and noise."""
         noise_dir = tmp_path / "noise"
         _write_noise_wav(noise_dir, "traffic.wav")
 
@@ -365,12 +350,8 @@ class TestGenerateOutput:
         )
         sample = _make_audio_sample(wav_dir=tmp_path)
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
-        # Should have called reader at least 3 times:
-        # - noise file duration (in _get_applied_values)
-        # - audio duration (in _get_applied_values)
-        # - audio file (in _generate_output)
-        # - noise file (in _generate_output)
-        assert len(reader.calls) >= 3
+        # _generate_output reads the input audio file and the noise file — 2 calls total.
+        assert len(reader.calls) >= 2
 
     def test_generate_output_calls_audio_writer(self, tmp_path: Path) -> None:
         noise_dir = tmp_path / "noise"
