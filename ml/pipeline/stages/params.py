@@ -38,12 +38,28 @@ class AddDelaysParams:
 
 
 @dataclass
+class AddBackgroundNoiseParams:
+    vary_probability: float
+    volume_min: float
+    volume_max: float
+
+
+@dataclass
+class AddMicNoiseParams:
+    vary_probability: float
+    amplitude_min: float
+    amplitude_max: float
+
+
+@dataclass
 class PipelineParams:
     variations_per_phrase: int
     subsample_rate: int
     generate_phrases: GeneratePhraseParams
     generate_samples: GenerateSamplesParams
     add_delays: AddDelaysParams
+    add_background_noise: AddBackgroundNoiseParams
+    add_mic_noise: AddMicNoiseParams
 
     @classmethod
     def load(cls, path: Path) -> "PipelineParams":
@@ -54,6 +70,8 @@ class PipelineParams:
         stage_phrases = raw["stages"]["generate_phrases"]
         stage_samples = raw["stages"]["generate_speech_samples"]
         stage_delays = raw["stages"]["add_delays"]
+        stage_bg_noise = raw["stages"]["add_background_noise"]
+        stage_mic_noise = raw["stages"]["add_mic_noise"]
 
         return cls(
             variations_per_phrase=int(pipeline["variations_per_phrase"]),
@@ -76,5 +94,15 @@ class PipelineParams:
                 suffix_vary_probability=float(stage_delays["suffix_vary_probability"]),
                 suffix_min_s=float(stage_delays["suffix_min_s"]),
                 suffix_max_s=float(stage_delays["suffix_max_s"]),
+            ),
+            add_background_noise=AddBackgroundNoiseParams(
+                vary_probability=float(stage_bg_noise["vary_probability"]),
+                volume_min=float(stage_bg_noise["volume_min"]),
+                volume_max=float(stage_bg_noise["volume_max"]),
+            ),
+            add_mic_noise=AddMicNoiseParams(
+                vary_probability=float(stage_mic_noise["vary_probability"]),
+                amplitude_min=float(stage_mic_noise["amplitude_min"]),
+                amplitude_max=float(stage_mic_noise["amplitude_max"]),
             ),
         )
