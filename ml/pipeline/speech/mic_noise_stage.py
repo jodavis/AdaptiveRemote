@@ -74,12 +74,13 @@ class MicrophoneNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
 
         input_path = self._input_dir / input_sample.path
         audio = await self._audio_reader.read(input_path)
-        output_samples = audio.samples.copy()
 
         if amplitude > 0.0:
             rng = np.random.default_rng(output_seed)
-            noise = rng.normal(0, amplitude, len(output_samples)).astype(np.float32)
-            output_samples = np.clip(output_samples + noise, -1.0, 1.0).astype(np.float32)
+            noise = rng.normal(0, amplitude, len(audio.samples)).astype(np.float32)
+            output_samples: np.ndarray = np.clip(audio.samples + noise, -1.0, 1.0).astype(np.float32)
+        else:
+            output_samples = audio.samples
 
         self._output_dir.mkdir(parents=True, exist_ok=True)
         output_path = conventions.sample_file_path(self._output_dir, output_id, "wav")
