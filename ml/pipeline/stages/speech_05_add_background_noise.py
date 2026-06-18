@@ -21,13 +21,21 @@ class _DirectoryNoiseProvider:
 
     Lists all WAV files in the given directory. DVC wiring points this at the
     appropriate data/ path; this class requires no knowledge of the DVC layout.
+
+    Raises ValueError with the directory path if the directory contains no WAV
+    files, so that a misconfigured --noise-dir produces an actionable error
+    rather than the opaque ValueError("options must be non-empty") from
+    VariationGenerator.choose().
     """
 
     def __init__(self, noise_dir: Path) -> None:
         self._noise_dir = noise_dir
 
     def list_files(self) -> list[Path]:
-        return list(self._noise_dir.glob("*.wav"))
+        files = list(self._noise_dir.glob("*.wav"))
+        if not files:
+            raise ValueError(f"No WAV files found in noise directory: {self._noise_dir}")
+        return files
 
 
 def main() -> None:
@@ -52,6 +60,7 @@ def main() -> None:
         audio_reader=LibrosaAudioReader(),
         audio_writer=SoundfileAudioWriter(),
         input_dir=args.input_manifest_dir,
+        noise_dir=args.noise_dir,
         noise_provider=_DirectoryNoiseProvider(args.noise_dir),
         params=params.add_background_noise,
     )
