@@ -6,10 +6,8 @@ import asyncio
 import hashlib
 import sys
 from pathlib import Path
-from typing import Any
 
 import numpy as np
-import pytest
 import soundfile as sf
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -155,6 +153,7 @@ def _make_stage(
         audio_reader=audio_reader,
         audio_writer=audio_writer,
         input_dir=input_dir,
+        noise_dir=noise_dir,
         noise_provider=noise_provider,
         params=params,
     )
@@ -440,6 +439,7 @@ class TestGenerateOutput:
             audio_reader=_ConstantReader(),
             audio_writer=writer,
             input_dir=tmp_path,
+            noise_dir=noise_dir,
             noise_provider=_FakeNoiseProvider(noise_dir, ["traffic.wav"]),
             params=_make_params(vary_probability=0.0),
         )
