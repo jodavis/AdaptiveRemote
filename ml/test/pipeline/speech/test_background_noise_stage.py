@@ -52,30 +52,20 @@ def _make_audio_sample(
 
 
 class _RecordingAudioReader:
-    """Stub AudioReader that returns configured durations per path."""
+    """Stub AudioReader that records read() calls and returns silence."""
 
     def __init__(
         self,
         sample_rate: int = 16000,
         audio_duration_s: float = 0.5,
-        noise_duration_s: float = 2.0,
     ) -> None:
         self.calls: list[Path] = []
         self._sample_rate = sample_rate
         self._audio_duration_s = audio_duration_s
-        self._noise_duration_s = noise_duration_s
-        # If path stem ends with "noise", return noise duration, else audio duration
-        self._noise_paths: set[Path] = set()
-
-    def register_noise_path(self, path: Path) -> None:
-        self._noise_paths.add(path)
 
     async def read(self, path: Path) -> AudioData:
         self.calls.append(path)
-        if path in self._noise_paths or path.parent.name == "noise":
-            n_samples = int(self._sample_rate * self._noise_duration_s)
-        else:
-            n_samples = int(self._sample_rate * self._audio_duration_s)
+        n_samples = int(self._sample_rate * self._audio_duration_s)
         samples = np.zeros(n_samples, dtype=np.float32)
         return AudioData(samples=samples, sample_rate=self._sample_rate)
 
@@ -92,14 +82,27 @@ class _RecordingAudioWriter:
 
 
 class _FakeNoiseProvider:
-    """Fake NoiseProvider that returns a fixed list of noise file paths."""
+    """Fake NoiseProvider that returns a fixed list of (name, AudioData) tuples."""
 
-    def __init__(self, noise_dir: Path, filenames: list[str]) -> None:
-        self._noise_dir = noise_dir
-        self._filenames = filenames
+    def __init__(
+        self,
+        filenames: list[str],
+        sample_rate: int = 16000,
+        duration_s: float = 2.0,
+    ) -> None:
+        self._items = [
+            (
+                name,
+                AudioData(
+                    samples=(np.random.default_rng(i).random(int(sample_rate * duration_s)) * 2 - 1).astype(np.float32),
+                    sample_rate=sample_rate,
+                ),
+            )
+            for i, name in enumerate(filenames)
+        ]
 
-    def list_files(self) -> list[Path]:
-        return [self._noise_dir / name for name in self._filenames]
+    def list_files(self) -> list[tuple[str, AudioData]]:
+        return list(self._items)
 
 
 def _make_params(
@@ -116,7 +119,6 @@ def _make_params(
 
 def _make_stage(
     output_dir: Path,
-    noise_dir: Path | None = None,
     *,
     audio_reader: _RecordingAudioReader | None = None,
     audio_writer: _RecordingAudioWriter | None = None,
@@ -127,16 +129,14 @@ def _make_stage(
     volume_min: float = 0.0,
     volume_max: float = 0.3,
     noise_filenames: list[str] | None = None,
+    sample_rate: int = 16000,
 ) -> tuple[BackgroundNoiseAugmentor, _RecordingAudioReader, _RecordingAudioWriter]:
     if audio_reader is None:
-        audio_reader = _RecordingAudioReader()
+        audio_reader = _RecordingAudioReader(sample_rate=sample_rate)
     if audio_writer is None:
         audio_writer = _RecordingAudioWriter()
     if input_dir is None:
         input_dir = output_dir
-    if noise_dir is None:
-        noise_dir = output_dir / "noise"
-        noise_dir.mkdir(parents=True, exist_ok=True)
     if params is None:
         params = _make_params(
             vary_probability=vary_probability,
@@ -146,25 +146,24 @@ def _make_stage(
     if noise_provider is None:
         if noise_filenames is None:
             noise_filenames = ["traffic.wav"]
-        noise_provider = _FakeNoiseProvider(noise_dir, noise_filenames)
+        noise_provider = _FakeNoiseProvider(noise_filenames, sample_rate=sample_rate)
     stage = BackgroundNoiseAugmentor(
         output_dir=output_dir,
         manifest_store=ManifestStore(),
         audio_reader=audio_reader,
         audio_writer=audio_writer,
         input_dir=input_dir,
-        noise_dir=noise_dir,
         noise_provider=noise_provider,
         params=params,
     )
     return stage, audio_reader, audio_writer
 
 
-def _write_noise_wav(noise_dir: Path, filename: str, sample_rate: int = 16000, duration_s: float = 2.0) -> Path:
-    noise_dir.mkdir(parents=True, exist_ok=True)
-    path = noise_dir / filename
+def _write_audio_wav(dir: Path, filename: str, sample_rate: int = 16000, duration_s: float = 0.5) -> Path:
+    dir.mkdir(parents=True, exist_ok=True)
+    path = dir / filename
     n_samples = int(sample_rate * duration_s)
-    data = (np.random.default_rng(42).random(n_samples) * 2 - 1).astype(np.float32)
+    data = np.zeros(n_samples, dtype=np.float32)
     sf.write(str(path), data, sample_rate, format="WAV", subtype="PCM_16")
     return path
 
@@ -331,17 +330,42 @@ class TestDeriveId:
 
 
 class TestGenerateOutput:
-    def test_generate_output_calls_audio_reader_for_input_and_noise(self, tmp_path: Path) -> None:
-        """When noise is applied (vary_probability=1.0), reader is called for both audio and noise."""
-        noise_dir = tmp_path / "noise"
-        _write_noise_wav(noise_dir, "traffic.wav")
-
-        reader = _RecordingAudioReader(audio_duration_s=0.5, noise_duration_s=2.0)
-        reader.register_noise_path(noise_dir / "traffic.wav")
-
+    def test_generate_output_does_not_call_reader_when_volume_is_zero(self, tmp_path: Path) -> None:
+        """When noise not applied (volume=0), no audio reading occurs."""
+        reader = _RecordingAudioReader()
         stage, _, _ = _make_stage(
             tmp_path,
-            noise_dir=noise_dir,
+            audio_reader=reader,
+            vary_probability=0.0,
+        )
+        sample = _make_audio_sample()
+        asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert len(reader.calls) == 0
+
+    def test_generate_output_does_not_call_writer_when_volume_is_zero(self, tmp_path: Path) -> None:
+        """When noise not applied (volume=0), no file is written."""
+        stage, _, writer = _make_stage(
+            tmp_path,
+            vary_probability=0.0,
+        )
+        sample = _make_audio_sample()
+        asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert len(writer.calls) == 0
+
+    def test_generate_output_returns_input_when_volume_is_zero(self, tmp_path: Path) -> None:
+        """When noise not applied, transform returns the original input sample."""
+        stage, _, _ = _make_stage(tmp_path, vary_probability=0.0)
+        sample = _make_audio_sample(sample_id="MY_SAMPLE")
+        result = asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert result.samples[0].id == sample.id
+        assert result.samples[0].path == sample.path
+
+    def test_generate_output_calls_audio_reader_for_input_and_does_not_call_for_noise(self, tmp_path: Path) -> None:
+        """When noise is applied (vary_probability=1.0), reader is called for input only; noise comes from provider."""
+        _write_audio_wav(tmp_path, "TV_ON_Jenny_r100.wav")
+        reader = _RecordingAudioReader()
+        stage, _, _ = _make_stage(
+            tmp_path,
             audio_reader=reader,
             vary_probability=1.0,
             volume_min=0.1,
@@ -350,20 +374,16 @@ class TestGenerateOutput:
         )
         sample = _make_audio_sample(wav_dir=tmp_path)
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
-        # _generate_output reads the input audio file and the noise file — 2 calls total.
-        assert len(reader.calls) >= 2
+        # Only 1 call: the input audio file. Noise audio comes from the provider directly.
+        assert len(reader.calls) == 1
 
-    def test_generate_output_calls_audio_writer(self, tmp_path: Path) -> None:
-        noise_dir = tmp_path / "noise"
-        _write_noise_wav(noise_dir, "traffic.wav")
-
-        reader = _RecordingAudioReader(audio_duration_s=0.5, noise_duration_s=2.0)
-        reader.register_noise_path(noise_dir / "traffic.wav")
-
+    def test_generate_output_calls_audio_writer_when_noise_applied(self, tmp_path: Path) -> None:
+        _write_audio_wav(tmp_path, "TV_ON_Jenny_r100.wav")
         stage, _, writer = _make_stage(
             tmp_path,
-            noise_dir=noise_dir,
-            audio_reader=reader,
+            vary_probability=1.0,
+            volume_min=0.1,
+            volume_max=0.1,
             noise_filenames=["traffic.wav"],
         )
         sample = _make_audio_sample(wav_dir=tmp_path)
@@ -374,73 +394,30 @@ class TestGenerateOutput:
         """Background noise does not change the length of the audio."""
         sample_rate = 16000
         duration_s = 0.5
-        noise_dir = tmp_path / "noise"
-        _write_noise_wav(noise_dir, "traffic.wav", sample_rate=sample_rate, duration_s=2.0)
+        _write_audio_wav(tmp_path, "TV_ON_Jenny_r100.wav", sample_rate=sample_rate, duration_s=duration_s)
 
-        reader = _RecordingAudioReader(
-            sample_rate=sample_rate, audio_duration_s=duration_s, noise_duration_s=2.0
-        )
-        reader.register_noise_path(noise_dir / "traffic.wav")
-
+        reader = _RecordingAudioReader(sample_rate=sample_rate, audio_duration_s=duration_s)
         stage, _, writer = _make_stage(
             tmp_path,
-            noise_dir=noise_dir,
             audio_reader=reader,
             vary_probability=1.0,
             volume_min=0.1,
             volume_max=0.1,
             noise_filenames=["traffic.wav"],
+            sample_rate=sample_rate,
         )
         sample = _make_audio_sample(wav_dir=tmp_path, sample_rate=sample_rate, duration_s=duration_s)
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         _path, written_audio = writer.calls[0]
         assert len(written_audio.samples) == int(sample_rate * duration_s)
 
-    def test_output_audio_unchanged_when_volume_is_zero(self, tmp_path: Path) -> None:
-        """When noise not applied (volume=0), output samples equal input samples."""
-        sample_rate = 16000
-        duration_s = 0.1
-        noise_dir = tmp_path / "noise"
-        _write_noise_wav(noise_dir, "traffic.wav", sample_rate=sample_rate, duration_s=2.0)
-
-        # Use a special reader that returns a known nonzero signal for audio
-        class _ConstantReader:
-            async def read(self, path: Path) -> AudioData:
-                n = int(sample_rate * duration_s)
-                if path.parent.name == "noise":
-                    samples = np.ones(int(sample_rate * 2.0), dtype=np.float32) * 0.9
-                else:
-                    samples = np.full(n, 0.5, dtype=np.float32)
-                return AudioData(samples=samples, sample_rate=sample_rate)
-
-        writer = _RecordingAudioWriter()
-        stage = BackgroundNoiseAugmentor(
-            output_dir=tmp_path,
-            manifest_store=ManifestStore(),
-            audio_reader=_ConstantReader(),
-            audio_writer=writer,
-            input_dir=tmp_path,
-            noise_dir=noise_dir,
-            noise_provider=_FakeNoiseProvider(noise_dir, ["traffic.wav"]),
-            params=_make_params(vary_probability=0.0),
-        )
-        sample = _make_audio_sample(wav_dir=tmp_path, sample_rate=sample_rate, duration_s=duration_s)
-        asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
-        _path, written_audio = writer.calls[0]
-        # All samples should still be 0.5 (unchanged)
-        assert np.allclose(written_audio.samples, 0.5)
-
-    def test_transcript_preserved_in_output_sample(self, tmp_path: Path) -> None:
-        noise_dir = tmp_path / "noise"
-        _write_noise_wav(noise_dir, "traffic.wav")
-
-        reader = _RecordingAudioReader(audio_duration_s=0.5, noise_duration_s=2.0)
-        reader.register_noise_path(noise_dir / "traffic.wav")
-
+    def test_transcript_preserved_in_output_sample_when_noise_applied(self, tmp_path: Path) -> None:
+        _write_audio_wav(tmp_path, "TV_ON_Jenny_r100.wav")
         stage, _, _ = _make_stage(
             tmp_path,
-            noise_dir=noise_dir,
-            audio_reader=reader,
+            vary_probability=1.0,
+            volume_min=0.1,
+            volume_max=0.1,
             noise_filenames=["traffic.wav"],
         )
         sample = _make_audio_sample(transcript="VOLUME_UP", wav_dir=tmp_path)
@@ -448,6 +425,35 @@ class TestGenerateOutput:
             stage.transform(Manifest([sample]), tmp_path / "manifest.json")
         )
         assert result.samples[0].transcript == "VOLUME_UP"
+
+    def test_transcript_preserved_in_output_sample_when_not_applied(self, tmp_path: Path) -> None:
+        stage, _, _ = _make_stage(tmp_path, vary_probability=0.0)
+        sample = _make_audio_sample(transcript="CHANNEL_DOWN")
+        result = asyncio.run(
+            stage.transform(Manifest([sample]), tmp_path / "manifest.json")
+        )
+        assert result.samples[0].transcript == "CHANNEL_DOWN"
+
+    def test_sample_rate_mismatch_raises(self, tmp_path: Path) -> None:
+        """Raises ValueError when noise audio has a different sample rate than input audio."""
+        _write_audio_wav(tmp_path, "TV_ON_Jenny_r100.wav", sample_rate=16000)
+        # Provide noise at a different sample rate
+        noise_provider = _FakeNoiseProvider(["traffic.wav"], sample_rate=8000)
+        reader = _RecordingAudioReader(sample_rate=16000)  # Input is 16000
+        writer = _RecordingAudioWriter()
+        stage = BackgroundNoiseAugmentor(
+            output_dir=tmp_path,
+            manifest_store=ManifestStore(),
+            audio_reader=reader,
+            audio_writer=writer,
+            input_dir=tmp_path,
+            noise_provider=noise_provider,
+            params=_make_params(vary_probability=1.0, volume_min=0.1, volume_max=0.1),
+        )
+        sample = _make_audio_sample(wav_dir=tmp_path, sample_rate=16000)
+        import pytest
+        with pytest.raises(ValueError, match="sample.rate"):
+            asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
 
 
 # ---------------------------------------------------------------------------
@@ -457,16 +463,13 @@ class TestGenerateOutput:
 
 class TestSkipPath:
     def test_skip_path_does_not_call_audio_writer_on_second_run(self, tmp_path: Path) -> None:
-        noise_dir = tmp_path / "noise"
-        _write_noise_wav(noise_dir, "traffic.wav")
-
-        reader = _RecordingAudioReader(audio_duration_s=0.5, noise_duration_s=2.0)
-        reader.register_noise_path(noise_dir / "traffic.wav")
-
+        """When noise IS applied, second run skips writing (output unchanged)."""
+        _write_audio_wav(tmp_path, "TV_ON_Jenny_r100.wav")
         stage, _, writer = _make_stage(
             tmp_path,
-            noise_dir=noise_dir,
-            audio_reader=reader,
+            vary_probability=1.0,
+            volume_min=0.1,
+            volume_max=0.1,
             noise_filenames=["traffic.wav"],
         )
         sample = _make_audio_sample(wav_dir=tmp_path)
@@ -479,16 +482,13 @@ class TestSkipPath:
         assert len(writer.calls) == initial_count
 
     def test_skip_path_preserves_output_sample_id(self, tmp_path: Path) -> None:
-        noise_dir = tmp_path / "noise"
-        _write_noise_wav(noise_dir, "traffic.wav")
-
-        reader = _RecordingAudioReader(audio_duration_s=0.5, noise_duration_s=2.0)
-        reader.register_noise_path(noise_dir / "traffic.wav")
-
+        """When noise IS applied, second run returns the same output id."""
+        _write_audio_wav(tmp_path, "TV_ON_Jenny_r100.wav")
         stage, _, _ = _make_stage(
             tmp_path,
-            noise_dir=noise_dir,
-            audio_reader=reader,
+            vary_probability=1.0,
+            volume_min=0.1,
+            volume_max=0.1,
             noise_filenames=["traffic.wav"],
         )
         sample = _make_audio_sample(wav_dir=tmp_path)

@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from pipeline.core.manifest import ManifestStore
-from pipeline.io.audio_io import LibrosaAudioReader, SoundfileAudioWriter
+from pipeline.io.audio_io import AudioData, LibrosaAudioReader, SoundfileAudioWriter
 from pipeline.speech.background_noise_stage import BackgroundNoiseAugmentor
 from pipeline.stages import conventions
 from pipeline.stages.params import PipelineParams
@@ -19,23 +19,36 @@ _PROJECT_ROOT = Path(__file__).parents[2]
 class _DirectoryNoiseProvider:
     """NoiseProvider backed by a filesystem directory.
 
-    Lists all WAV files in the given directory. DVC wiring points this at the
-    appropriate data/ path; this class requires no knowledge of the DVC layout.
+    Loads all WAV files in the given directory at construction time, resampling
+    them to ``sample_rate`` so that all noise audio matches the pipeline sample
+    rate. This avoids per-sample I/O at augmentation time and ensures noise
+    files are at the correct sample rate before mixing.
 
     Raises ValueError with the directory path if the directory contains no WAV
-    files, so that a misconfigured --noise-dir produces an actionable error
-    rather than the opaque ValueError("options must be non-empty") from
-    VariationGenerator.choose().
+    files, so that a misconfigured --noise-dir produces an actionable error.
     """
 
-    def __init__(self, noise_dir: Path) -> None:
+    def __init__(self, noise_dir: Path, sample_rate: int) -> None:
         self._noise_dir = noise_dir
+        self._items: list[tuple[str, AudioData]] = self._load(noise_dir, sample_rate)
 
-    def list_files(self) -> list[Path]:
-        files = list(self._noise_dir.glob("*.wav"))
-        if not files:
-            raise ValueError(f"No WAV files found in noise directory: {self._noise_dir}")
-        return files
+    @staticmethod
+    def _load(noise_dir: Path, sample_rate: int) -> list[tuple[str, AudioData]]:
+        import librosa
+
+        wav_paths = sorted(noise_dir.glob("*.wav"))
+        if not wav_paths:
+            raise ValueError(f"No WAV files found in noise directory: {noise_dir}")
+
+        items: list[tuple[str, AudioData]] = []
+        for path in wav_paths:
+            # librosa.load with sr=sample_rate resamples on load if needed.
+            samples, sr = librosa.load(str(path), sr=sample_rate, mono=True, dtype="float32")
+            items.append((path.name, AudioData(samples=samples, sample_rate=int(sr))))
+        return items
+
+    def list_files(self) -> list[tuple[str, AudioData]]:
+        return list(self._items)
 
 
 def main() -> None:
@@ -60,8 +73,7 @@ def main() -> None:
         audio_reader=LibrosaAudioReader(),
         audio_writer=SoundfileAudioWriter(),
         input_dir=args.input_manifest_dir,
-        noise_dir=args.noise_dir,
-        noise_provider=_DirectoryNoiseProvider(args.noise_dir),
+        noise_provider=_DirectoryNoiseProvider(args.noise_dir, params.sample_rate),
         params=params.add_background_noise,
     )
 

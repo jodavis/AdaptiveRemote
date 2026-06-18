@@ -55,6 +55,7 @@ class AddMicNoiseParams:
 class PipelineParams:
     variations_per_phrase: int
     subsample_rate: int
+    sample_rate: int
     generate_phrases: GeneratePhraseParams
     generate_samples: GenerateSamplesParams
     add_delays: AddDelaysParams
@@ -76,6 +77,7 @@ class PipelineParams:
         return cls(
             variations_per_phrase=int(pipeline["variations_per_phrase"]),
             subsample_rate=int(pipeline["subsample_rate"]),
+            sample_rate=int(pipeline["sample_rate"]),
             generate_phrases=GeneratePhraseParams(
                 repeat_modifier_chance=float(stage_phrases["repeat_modifier_chance"]),
                 pleasantry_chance=float(stage_phrases["pleasantry_chance"]),

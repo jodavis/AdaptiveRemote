@@ -177,22 +177,23 @@ class TestAppliedValues:
 
 class TestDeriveId:
     def test_derive_id_format_with_noise_applied(self, tmp_path: Path) -> None:
-        """Format: {input.id}_mic{int(amplitude*1000)}"""
+        """Format: {input.id}_mic{int(amplitude*1000)} when amplitude > 0."""
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r100")
         result = stage._derive_id(sample, {"mic_noise_amplitude": 0.025})
         assert result == "TV_ON_Jenny_r100_mic25"
 
-    def test_derive_id_format_with_zero_amplitude(self, tmp_path: Path) -> None:
+    def test_derive_id_format_with_zero_amplitude_is_input_id(self, tmp_path: Path) -> None:
+        """When amplitude == 0 (no noise), id equals input id — no suffix added."""
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="TV_ON_Jenny_r100")
         result = stage._derive_id(sample, {"mic_noise_amplitude": 0.0})
-        assert result == "TV_ON_Jenny_r100_mic0"
+        assert result == "TV_ON_Jenny_r100"
 
     def test_derive_id_uses_input_id_as_prefix(self, tmp_path: Path) -> None:
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="VOLUME_UP_Aria_r110")
-        result = stage._derive_id(sample, {"mic_noise_amplitude": 0.0})
+        result = stage._derive_id(sample, {"mic_noise_amplitude": 0.01})
         assert result.startswith("VOLUME_UP_Aria_r110_")
 
     def test_derive_id_amplitude_int_conversion(self, tmp_path: Path) -> None:
@@ -202,11 +203,18 @@ class TestDeriveId:
         result = stage._derive_id(sample, {"mic_noise_amplitude": 0.05})
         assert result == "S_mic50"
 
-    def test_derive_id_always_has_mic_suffix(self, tmp_path: Path) -> None:
+    def test_derive_id_always_has_mic_suffix_when_nonzero(self, tmp_path: Path) -> None:
         stage, _, _ = _make_stage(tmp_path)
         sample = _make_audio_sample(sample_id="X")
         result = stage._derive_id(sample, {"mic_noise_amplitude": 0.01})
         assert "_mic" in result
+
+    def test_derive_id_no_mic_suffix_when_zero(self, tmp_path: Path) -> None:
+        """No _mic suffix when amplitude is zero."""
+        stage, _, _ = _make_stage(tmp_path)
+        sample = _make_audio_sample(sample_id="X")
+        result = stage._derive_id(sample, {"mic_noise_amplitude": 0.0})
+        assert "_mic" not in result
 
 
 # ---------------------------------------------------------------------------
@@ -215,14 +223,40 @@ class TestDeriveId:
 
 
 class TestGenerateOutput:
-    def test_generate_output_calls_audio_reader(self, tmp_path: Path) -> None:
-        stage, reader, _ = _make_stage(tmp_path)
+    def test_generate_output_does_not_call_reader_when_amplitude_is_zero(self, tmp_path: Path) -> None:
+        """When amplitude == 0, no audio reading occurs."""
+        stage, reader, _ = _make_stage(tmp_path, vary_probability=0.0)
+        sample = _make_audio_sample()
+        asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert len(reader.calls) == 0
+
+    def test_generate_output_does_not_call_writer_when_amplitude_is_zero(self, tmp_path: Path) -> None:
+        """When amplitude == 0, no file is written."""
+        stage, _, writer = _make_stage(tmp_path, vary_probability=0.0)
+        sample = _make_audio_sample()
+        asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert len(writer.calls) == 0
+
+    def test_generate_output_returns_input_when_amplitude_is_zero(self, tmp_path: Path) -> None:
+        """When amplitude == 0, transform returns the original input sample."""
+        stage, _, _ = _make_stage(tmp_path, vary_probability=0.0)
+        sample = _make_audio_sample(sample_id="MY_SAMPLE")
+        result = asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert result.samples[0].id == sample.id
+        assert result.samples[0].path == sample.path
+
+    def test_generate_output_calls_audio_reader_when_amplitude_nonzero(self, tmp_path: Path) -> None:
+        stage, reader, _ = _make_stage(
+            tmp_path, vary_probability=1.0, amplitude_min=0.01, amplitude_max=0.01
+        )
         sample = _make_audio_sample(wav_dir=tmp_path)
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         assert len(reader.calls) == 1
 
-    def test_generate_output_calls_audio_writer(self, tmp_path: Path) -> None:
-        stage, _, writer = _make_stage(tmp_path)
+    def test_generate_output_calls_audio_writer_when_amplitude_nonzero(self, tmp_path: Path) -> None:
+        stage, _, writer = _make_stage(
+            tmp_path, vary_probability=1.0, amplitude_min=0.01, amplitude_max=0.01
+        )
         sample = _make_audio_sample(wav_dir=tmp_path)
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         assert len(writer.calls) == 1
@@ -242,30 +276,6 @@ class TestGenerateOutput:
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         _path, written_audio = writer.calls[0]
         assert len(written_audio.samples) == int(sample_rate * duration_s)
-
-    def test_output_audio_unchanged_when_amplitude_is_zero(self, tmp_path: Path) -> None:
-        """When noise not applied (amplitude=0), output samples equal input samples."""
-        sample_rate = 16000
-        duration_s = 0.1
-
-        class _ConstantReader:
-            async def read(self, path: Path) -> AudioData:
-                n = int(sample_rate * duration_s)
-                return AudioData(samples=np.full(n, 0.5, dtype=np.float32), sample_rate=sample_rate)
-
-        writer = _RecordingAudioWriter()
-        stage = MicrophoneNoiseAugmentor(
-            output_dir=tmp_path,
-            manifest_store=ManifestStore(),
-            audio_reader=_ConstantReader(),
-            audio_writer=writer,
-            input_dir=tmp_path,
-            params=_make_params(vary_probability=0.0),
-        )
-        sample = _make_audio_sample(wav_dir=tmp_path, sample_rate=sample_rate, duration_s=duration_s)
-        asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
-        _path, written_audio = writer.calls[0]
-        assert np.allclose(written_audio.samples, 0.5)
 
     def test_gaussian_noise_added_when_amplitude_nonzero(self, tmp_path: Path) -> None:
         """When amplitude > 0, output should differ from input (noise was added)."""
@@ -293,13 +303,23 @@ class TestGenerateOutput:
         # Noise was added — not all zeros anymore
         assert not np.all(written_audio.samples == 0.0)
 
-    def test_transcript_preserved_in_output_sample(self, tmp_path: Path) -> None:
-        stage, _, _ = _make_stage(tmp_path)
+    def test_transcript_preserved_when_noise_applied(self, tmp_path: Path) -> None:
+        stage, _, _ = _make_stage(
+            tmp_path, vary_probability=1.0, amplitude_min=0.01, amplitude_max=0.01
+        )
         sample = _make_audio_sample(transcript="CHANNEL_UP", wav_dir=tmp_path)
         result = asyncio.run(
             stage.transform(Manifest([sample]), tmp_path / "manifest.json")
         )
         assert result.samples[0].transcript == "CHANNEL_UP"
+
+    def test_transcript_preserved_when_not_applied(self, tmp_path: Path) -> None:
+        stage, _, _ = _make_stage(tmp_path, vary_probability=0.0)
+        sample = _make_audio_sample(transcript="CHANNEL_DOWN")
+        result = asyncio.run(
+            stage.transform(Manifest([sample]), tmp_path / "manifest.json")
+        )
+        assert result.samples[0].transcript == "CHANNEL_DOWN"
 
 
 # ---------------------------------------------------------------------------
@@ -309,7 +329,10 @@ class TestGenerateOutput:
 
 class TestSkipPath:
     def test_skip_path_does_not_call_audio_writer_on_second_run(self, tmp_path: Path) -> None:
-        stage, _, writer = _make_stage(tmp_path)
+        """When noise IS applied, second run skips writing (output unchanged)."""
+        stage, _, writer = _make_stage(
+            tmp_path, vary_probability=1.0, amplitude_min=0.01, amplitude_max=0.01
+        )
         sample = _make_audio_sample(wav_dir=tmp_path)
 
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
@@ -320,7 +343,10 @@ class TestSkipPath:
         assert len(writer.calls) == initial_count
 
     def test_skip_path_preserves_output_sample_id(self, tmp_path: Path) -> None:
-        stage, _, _ = _make_stage(tmp_path)
+        """When noise IS applied, second run returns the same output id."""
+        stage, _, _ = _make_stage(
+            tmp_path, vary_probability=1.0, amplitude_min=0.01, amplitude_max=0.01
+        )
         sample = _make_audio_sample(wav_dir=tmp_path)
 
         result1 = asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))

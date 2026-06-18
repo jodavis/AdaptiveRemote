@@ -1,6 +1,7 @@
 """MicrophoneNoiseAugmentor: add Gaussian microphone noise to WAV audio samples.
 
 mic_noise_amplitude is stored as 0.0 when should_vary returns False.
+When amplitude == 0.0, the input sample is returned unchanged — no file is written.
 Gaussian noise is seeded from output_seed for reproducibility.
 """
 
@@ -23,8 +24,11 @@ from pipeline.stages.params import AddMicNoiseParams
 class MicrophoneNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
     """Augmentation stage that adds Gaussian microphone noise to WAV samples.
 
-    mic_noise_amplitude is stored as 0.0 when the noise is not applied. Gaussian
-    noise uses output_seed for reproducibility via numpy's default_rng.
+    mic_noise_amplitude is stored as 0.0 when the noise is not applied. When
+    amplitude == 0.0, the input sample is returned unchanged — no file is
+    written and no I/O occurs.
+
+    Gaussian noise uses output_seed for reproducibility via numpy's default_rng.
 
     input_dir is the directory containing the input WAV files referenced by
     AudioSample.path. This is typically the output directory of the preceding stage.
@@ -60,6 +64,9 @@ class MicrophoneNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
 
     def _derive_id(self, input_sample: AudioSample, applied_values: dict[str, Any]) -> str:
         amplitude: float = applied_values["mic_noise_amplitude"]
+        if amplitude == 0.0:
+            # No modification — return the input id unchanged.
+            return input_sample.id
         return f"{input_sample.id}_mic{int(amplitude * 1000)}"
 
     async def _generate_output(
@@ -72,15 +79,16 @@ class MicrophoneNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
     ) -> AudioSample:
         amplitude: float = applied_values["mic_noise_amplitude"]
 
+        # When not applied, return the input sample unchanged — no I/O.
+        if amplitude == 0.0:
+            return input_sample
+
         input_path = self._input_dir / input_sample.path
         audio = await self._audio_reader.read(input_path)
 
-        if amplitude > 0.0:
-            rng = np.random.default_rng(output_seed)
-            noise = rng.normal(0, amplitude, len(audio.samples)).astype(np.float32)
-            output_samples: np.ndarray = np.clip(audio.samples + noise, -1.0, 1.0).astype(np.float32)
-        else:
-            output_samples = audio.samples
+        rng = np.random.default_rng(output_seed)
+        noise = rng.normal(0, amplitude, len(audio.samples)).astype(np.float32)
+        output_samples: np.ndarray = np.clip(audio.samples + noise, -1.0, 1.0).astype(np.float32)
 
         self._output_dir.mkdir(parents=True, exist_ok=True)
         output_path = conventions.sample_file_path(self._output_dir, output_id, "wav")

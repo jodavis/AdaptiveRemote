@@ -30,6 +30,7 @@ _VALID_DATA = {
     "pipeline": {
         "variations_per_phrase": 20,
         "subsample_rate": 200,
+        "sample_rate": 16000,
     },
     "stages": {
         "generate_phrases": {
@@ -72,6 +73,20 @@ class TestPipelineParamsLoad:
 
         assert params.variations_per_phrase == 20
         assert params.subsample_rate == 200
+        assert params.sample_rate == 16000
+
+    def test_sample_rate_is_int(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+        assert isinstance(params.sample_rate, int)
+
+    def test_missing_sample_rate_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["pipeline"]["sample_rate"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
 
     def test_loads_generate_phrases_fields(self, tmp_path: Path) -> None:
         params_file = _write_params(tmp_path, _VALID_DATA)
