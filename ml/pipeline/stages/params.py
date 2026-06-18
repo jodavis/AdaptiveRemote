@@ -28,11 +28,22 @@ class GenerateSamplesParams:
 
 
 @dataclass
+class AddDelaysParams:
+    prefix_vary_probability: float
+    prefix_min_s: float
+    prefix_max_s: float
+    suffix_vary_probability: float
+    suffix_min_s: float
+    suffix_max_s: float
+
+
+@dataclass
 class PipelineParams:
     variations_per_phrase: int
     subsample_rate: int
     generate_phrases: GeneratePhraseParams
     generate_samples: GenerateSamplesParams
+    add_delays: AddDelaysParams
 
     @classmethod
     def load(cls, path: Path) -> "PipelineParams":
@@ -42,6 +53,7 @@ class PipelineParams:
         pipeline = raw["pipeline"]
         stage_phrases = raw["stages"]["generate_phrases"]
         stage_samples = raw["stages"]["generate_speech_samples"]
+        stage_delays = raw["stages"]["add_delays"]
 
         return cls(
             variations_per_phrase=int(pipeline["variations_per_phrase"]),
@@ -56,5 +68,13 @@ class PipelineParams:
             generate_samples=GenerateSamplesParams(
                 speech_rate_min=int(stage_samples["speech_rate_min"]),
                 speech_rate_max=int(stage_samples["speech_rate_max"]),
+            ),
+            add_delays=AddDelaysParams(
+                prefix_vary_probability=float(stage_delays["prefix_vary_probability"]),
+                prefix_min_s=float(stage_delays["prefix_min_s"]),
+                prefix_max_s=float(stage_delays["prefix_max_s"]),
+                suffix_vary_probability=float(stage_delays["suffix_vary_probability"]),
+                suffix_min_s=float(stage_delays["suffix_min_s"]),
+                suffix_max_s=float(stage_delays["suffix_max_s"]),
             ),
         )
