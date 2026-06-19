@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from pipeline.core.manifest import Manifest, ManifestStore
@@ -170,7 +172,6 @@ class TestGenerateOutput:
 
     def test_unknown_transcript_word_raises_key_error(self, tmp_path: Path) -> None:
         """A word not in vocab.words_to_phonemes raises KeyError immediately."""
-        import pytest
         vocab = _make_vocab(
             phoneme_list=["AH", "N", "T", "V"],
             words_to_phonemes={"TV_ON": ["T", "V"]},
