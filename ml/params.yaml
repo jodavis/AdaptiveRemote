@@ -2,6 +2,7 @@ pipeline:
   input_phrases_path: scripts/intent_prediction/01_input_phrases.csv
   variations_per_phrase: 20
   subsample_rate: 200
+  sample_rate: 16000
 
 stages:
   generate_phrases:
@@ -20,3 +21,11 @@ stages:
     suffix_vary_probability: 0.333
     suffix_min_s: 0.1
     suffix_max_s: 0.5
+  add_background_noise:
+    vary_probability: 0.5
+    volume_min: 0.0
+    volume_max: 0.3
+  add_mic_noise:
+    vary_probability: 0.5
+    amplitude_min: 0.001
+    amplitude_max: 0.05

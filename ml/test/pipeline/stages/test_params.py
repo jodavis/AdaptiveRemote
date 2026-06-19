@@ -10,7 +10,14 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from pipeline.stages.params import AddDelaysParams, GeneratePhraseParams, GenerateSamplesParams, PipelineParams
+from pipeline.stages.params import (
+    AddBackgroundNoiseParams,
+    AddDelaysParams,
+    AddMicNoiseParams,
+    GeneratePhraseParams,
+    GenerateSamplesParams,
+    PipelineParams,
+)
 
 
 def _write_params(path: Path, data: dict) -> Path:
@@ -23,6 +30,7 @@ _VALID_DATA = {
     "pipeline": {
         "variations_per_phrase": 20,
         "subsample_rate": 200,
+        "sample_rate": 16000,
     },
     "stages": {
         "generate_phrases": {
@@ -44,6 +52,16 @@ _VALID_DATA = {
             "suffix_min_s": 0.02,
             "suffix_max_s": 0.15,
         },
+        "add_background_noise": {
+            "vary_probability": 0.5,
+            "volume_min": 0.0,
+            "volume_max": 0.3,
+        },
+        "add_mic_noise": {
+            "vary_probability": 0.5,
+            "amplitude_min": 0.001,
+            "amplitude_max": 0.05,
+        },
     },
 }
 
@@ -55,6 +73,20 @@ class TestPipelineParamsLoad:
 
         assert params.variations_per_phrase == 20
         assert params.subsample_rate == 200
+        assert params.sample_rate == 16000
+
+    def test_sample_rate_is_int(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+        assert isinstance(params.sample_rate, int)
+
+    def test_missing_sample_rate_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["pipeline"]["sample_rate"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
 
     def test_loads_generate_phrases_fields(self, tmp_path: Path) -> None:
         params_file = _write_params(tmp_path, _VALID_DATA)
@@ -153,3 +185,71 @@ class TestAddDelaysParamsLoad:
         assert isinstance(ad.suffix_vary_probability, float)
         assert isinstance(ad.suffix_min_s, float)
         assert isinstance(ad.suffix_max_s, float)
+
+
+class TestAddBackgroundNoiseParamsLoad:
+    def test_loads_add_background_noise_fields(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        bn = params.add_background_noise
+        assert bn.vary_probability == pytest.approx(0.5)
+        assert bn.volume_min == pytest.approx(0.0)
+        assert bn.volume_max == pytest.approx(0.3)
+
+    def test_add_background_noise_is_correct_type(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.add_background_noise, AddBackgroundNoiseParams)
+
+    def test_add_background_noise_fields_are_floats(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        bn = params.add_background_noise
+        assert isinstance(bn.vary_probability, float)
+        assert isinstance(bn.volume_min, float)
+        assert isinstance(bn.volume_max, float)
+
+    def test_missing_add_background_noise_stage_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["stages"]["add_background_noise"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
+
+
+class TestAddMicNoiseParamsLoad:
+    def test_loads_add_mic_noise_fields(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        mn = params.add_mic_noise
+        assert mn.vary_probability == pytest.approx(0.5)
+        assert mn.amplitude_min == pytest.approx(0.001)
+        assert mn.amplitude_max == pytest.approx(0.05)
+
+    def test_add_mic_noise_is_correct_type(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.add_mic_noise, AddMicNoiseParams)
+
+    def test_add_mic_noise_fields_are_floats(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        mn = params.add_mic_noise
+        assert isinstance(mn.vary_probability, float)
+        assert isinstance(mn.amplitude_min, float)
+        assert isinstance(mn.amplitude_max, float)
+
+    def test_missing_add_mic_noise_stage_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["stages"]["add_mic_noise"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
