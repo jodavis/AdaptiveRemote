@@ -1,7 +1,8 @@
 """TokenStage: compute phoneme tokens from AudioSample transcripts.
 
 Deterministic stage (seed=0). Writes {id}.json with phonemes and tokens
-padded to input_token_length. Token index 0 is used for padding.
+padded to input_token_length. Padding uses vocab.ctc_blank_idx (== len(phoneme_list)),
+which cannot collide with any real phoneme index.
 """
 
 from __future__ import annotations
@@ -23,9 +24,11 @@ class TokenStage(ModifierStage[AudioSample, SampleTokens]):
 
     Writes {id}.json with:
       phonemes: list[str] — phoneme strings padded with "" to input_token_length
-      tokens:   list[int] — phoneme indices padded with 0 to input_token_length
+      tokens:   list[int] — phoneme indices padded with vocab.ctc_blank_idx to
+                            input_token_length. ctc_blank_idx == len(phoneme_list),
+                            so it cannot collide with any real phoneme index.
 
-    Token index 0 is used for padding (index into phoneme_list).
+    Raises KeyError if a transcript word is missing from vocab.words_to_phonemes.
     """
 
     _is_deterministic: bool = True
@@ -57,19 +60,27 @@ class TokenStage(ModifierStage[AudioSample, SampleTokens]):
         applied_values: dict[str, Any],
         parent_content_hash: str,
     ) -> SampleTokens:
-        # Collect phonemes for each word in the transcript
+        # Build index lookup once to avoid repeated list.index() calls
+        phoneme_to_idx = {p: i for i, p in enumerate(self._vocab.phoneme_list)}
+
+        # Collect phonemes for each word in the transcript; fail fast on unknown words
         phonemes: list[str] = []
         for word in input_sample.transcript.split():
-            word_phonemes = self._vocab.words_to_phonemes.get(word, [])
-            phonemes.extend(word_phonemes)
+            if word not in self._vocab.words_to_phonemes:
+                raise KeyError(
+                    f"Word '{word}' in transcript is not in vocab.words_to_phonemes"
+                )
+            phonemes.extend(self._vocab.words_to_phonemes[word])
 
-        # Compute token indices (1-based lookup into phoneme_list)
-        tokens = [self._vocab.phoneme_list.index(p) for p in phonemes]
+        # Compute token indices
+        tokens = [phoneme_to_idx[p] for p in phonemes]
 
-        # Pad to input_token_length
+        # Pad to input_token_length using ctc_blank_idx (== len(phoneme_list)),
+        # which cannot collide with any real phoneme index
+        pad_idx = self._vocab.ctc_blank_idx
         pad_len = max(0, self._input_token_length - len(phonemes))
         padded_phonemes = phonemes + [""] * pad_len
-        padded_tokens = tokens + [0] * pad_len
+        padded_tokens = tokens + [pad_idx] * pad_len
 
         # Truncate if longer than input_token_length
         padded_phonemes = padded_phonemes[: self._input_token_length]

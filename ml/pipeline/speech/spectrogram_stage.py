@@ -72,7 +72,7 @@ class SpectrogramStage(ModifierStage[AudioSample, SampleSpectrogram]):
             None,
             lambda: librosa.feature.melspectrogram(
                 y=audio.samples,
-                sr=self._sample_rate,
+                sr=audio.sample_rate,
                 n_mels=self._n_mels,
             ),
         )

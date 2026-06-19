@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import random
 from pathlib import Path
-from typing import Any
 
 from pipeline.core.manifest import Manifest, ManifestStore
 from pipeline.core.sample import AudioSample

@@ -153,18 +153,32 @@ class TestGenerateOutput:
         data = json.loads((tmp_path / f"{sample.id}.json").read_text())
         assert len(data["phonemes"]) == 20
 
-    def test_tokens_padding_value_is_zero(self, tmp_path: Path) -> None:
-        """Padding uses index 0."""
+    def test_tokens_padding_value_is_ctc_blank_idx(self, tmp_path: Path) -> None:
+        """Padding uses vocab.ctc_blank_idx (== len(phoneme_list)), not 0."""
+        phoneme_list = ["AH", "N", "T", "V"]
         vocab = _make_vocab(
-            phoneme_list=["AH", "N", "T", "V"],
+            phoneme_list=phoneme_list,
             words_to_phonemes={"TV_ON": ["T", "V"]},
         )
         stage = _make_stage(tmp_path, vocab=vocab, input_token_length=10)
         sample = _make_audio_sample(transcript="TV_ON")
         asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         data = json.loads((tmp_path / f"{sample.id}.json").read_text())
-        # Only 2 phonemes for "TV_ON", remaining 8 should be 0
-        assert data["tokens"][2:] == [0] * 8
+        # Only 2 phonemes for "TV_ON"; remaining 8 should equal ctc_blank_idx == 4
+        pad_idx = vocab.ctc_blank_idx
+        assert data["tokens"][2:] == [pad_idx] * 8
+
+    def test_unknown_transcript_word_raises_key_error(self, tmp_path: Path) -> None:
+        """A word not in vocab.words_to_phonemes raises KeyError immediately."""
+        import pytest
+        vocab = _make_vocab(
+            phoneme_list=["AH", "N", "T", "V"],
+            words_to_phonemes={"TV_ON": ["T", "V"]},
+        )
+        stage = _make_stage(tmp_path, vocab=vocab, input_token_length=10)
+        sample = _make_audio_sample(transcript="UNKNOWN_WORD")
+        with pytest.raises(KeyError, match="UNKNOWN_WORD"):
+            asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
 
     def test_tokens_are_phoneme_indices(self, tmp_path: Path) -> None:
         """Token values are indices into phoneme_list."""
