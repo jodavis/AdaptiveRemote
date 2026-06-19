@@ -52,6 +52,24 @@ class AddMicNoiseParams:
 
 
 @dataclass
+class ComputeSpectrogramsParams:
+    n_mels: int
+    time_steps: int
+
+
+@dataclass
+class ComputeTokensParams:
+    input_token_length: int
+
+
+@dataclass
+class CreateSetManifestsParams:
+    train_pct: int
+    val_pct: int
+    test_pct: int
+
+
+@dataclass
 class PipelineParams:
     variations_per_phrase: int
     subsample_rate: int
@@ -61,6 +79,9 @@ class PipelineParams:
     add_delays: AddDelaysParams
     add_background_noise: AddBackgroundNoiseParams
     add_mic_noise: AddMicNoiseParams
+    compute_spectrograms: ComputeSpectrogramsParams
+    compute_tokens: ComputeTokensParams
+    create_set_manifests: CreateSetManifestsParams
 
     @classmethod
     def load(cls, path: Path) -> "PipelineParams":
@@ -73,6 +94,9 @@ class PipelineParams:
         stage_delays = raw["stages"]["add_delays"]
         stage_bg_noise = raw["stages"]["add_background_noise"]
         stage_mic_noise = raw["stages"]["add_mic_noise"]
+        stage_spectrograms = raw["stages"]["compute_spectrograms"]
+        stage_tokens = raw["stages"]["compute_tokens"]
+        stage_set_manifests = raw["stages"]["create_set_manifests"]
 
         return cls(
             variations_per_phrase=int(pipeline["variations_per_phrase"]),
@@ -106,5 +130,17 @@ class PipelineParams:
                 vary_probability=float(stage_mic_noise["vary_probability"]),
                 amplitude_min=float(stage_mic_noise["amplitude_min"]),
                 amplitude_max=float(stage_mic_noise["amplitude_max"]),
+            ),
+            compute_spectrograms=ComputeSpectrogramsParams(
+                n_mels=int(stage_spectrograms["n_mels"]),
+                time_steps=int(stage_spectrograms["time_steps"]),
+            ),
+            compute_tokens=ComputeTokensParams(
+                input_token_length=int(stage_tokens["input_token_length"]),
+            ),
+            create_set_manifests=CreateSetManifestsParams(
+                train_pct=int(stage_set_manifests["train_pct"]),
+                val_pct=int(stage_set_manifests["val_pct"]),
+                test_pct=int(stage_set_manifests["test_pct"]),
             ),
         )

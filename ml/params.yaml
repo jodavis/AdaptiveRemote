@@ -29,3 +29,12 @@ stages:
     vary_probability: 0.5
     amplitude_min: 0.001
     amplitude_max: 0.05
+  compute_spectrograms:
+    n_mels: 80
+    time_steps: 400
+  compute_tokens:
+    input_token_length: 50
+  create_set_manifests:
+    train_pct: 80
+    val_pct: 10
+    test_pct: 10

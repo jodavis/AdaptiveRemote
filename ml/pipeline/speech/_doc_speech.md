@@ -12,8 +12,9 @@ produces a derived `AudioSample` manifest with per-sample variation applied.
 | [`delay_stage.py`](delay_stage.py) | `DelayAugmentor` | `AudioSample → AudioSample` (silence padding) |
 | [`background_noise_stage.py`](background_noise_stage.py) | `BackgroundNoiseAugmentor` | `AudioSample → AudioSample` (environmental noise mix) |
 | [`mic_noise_stage.py`](mic_noise_stage.py) | `MicrophoneNoiseAugmentor` | `AudioSample → AudioSample` (Gaussian mic noise) |
-
-Planned stages (not yet implemented): `token_stage.py`, `spectrogram_stage.py`.
+| [`token_stage.py`](token_stage.py) | `TokenStage` | `AudioSample → SampleTokens` (phoneme token sequences) |
+| [`spectrogram_stage.py`](spectrogram_stage.py) | `SpectrogramStage` | `AudioSample → SampleSpectrogram` (mel spectrogram NPY) |
+| [`set_splitter.py`](set_splitter.py) | `SetManifestSplitter` | Splits augmented manifest into train/val/test |
 
 ## Key design decisions
 

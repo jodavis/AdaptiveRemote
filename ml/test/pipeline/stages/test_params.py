@@ -14,6 +14,9 @@ from pipeline.stages.params import (
     AddBackgroundNoiseParams,
     AddDelaysParams,
     AddMicNoiseParams,
+    ComputeSpectrogramsParams,
+    ComputeTokensParams,
+    CreateSetManifestsParams,
     GeneratePhraseParams,
     GenerateSamplesParams,
     PipelineParams,
@@ -61,6 +64,18 @@ _VALID_DATA = {
             "vary_probability": 0.5,
             "amplitude_min": 0.001,
             "amplitude_max": 0.05,
+        },
+        "compute_spectrograms": {
+            "n_mels": 80,
+            "time_steps": 400,
+        },
+        "compute_tokens": {
+            "input_token_length": 50,
+        },
+        "create_set_manifests": {
+            "train_pct": 80,
+            "val_pct": 10,
+            "test_pct": 10,
         },
     },
 }
@@ -250,6 +265,101 @@ class TestAddMicNoiseParamsLoad:
         import copy
         data = copy.deepcopy(_VALID_DATA)
         del data["stages"]["add_mic_noise"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
+
+
+class TestComputeSpectrogramsParamsLoad:
+    def test_loads_compute_spectrograms_fields(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        cs = params.compute_spectrograms
+        assert cs.n_mels == 80
+        assert cs.time_steps == 400
+
+    def test_compute_spectrograms_is_correct_type(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.compute_spectrograms, ComputeSpectrogramsParams)
+
+    def test_compute_spectrograms_fields_are_ints(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        cs = params.compute_spectrograms
+        assert isinstance(cs.n_mels, int)
+        assert isinstance(cs.time_steps, int)
+
+    def test_missing_compute_spectrograms_stage_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["stages"]["compute_spectrograms"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
+
+
+class TestComputeTokensParamsLoad:
+    def test_loads_compute_tokens_fields(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        ct = params.compute_tokens
+        assert ct.input_token_length == 50
+
+    def test_compute_tokens_is_correct_type(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.compute_tokens, ComputeTokensParams)
+
+    def test_compute_tokens_field_is_int(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.compute_tokens.input_token_length, int)
+
+    def test_missing_compute_tokens_stage_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["stages"]["compute_tokens"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
+
+
+class TestCreateSetManifestsParamsLoad:
+    def test_loads_create_set_manifests_fields(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        csm = params.create_set_manifests
+        assert csm.train_pct == 80
+        assert csm.val_pct == 10
+        assert csm.test_pct == 10
+
+    def test_create_set_manifests_is_correct_type(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.create_set_manifests, CreateSetManifestsParams)
+
+    def test_create_set_manifests_fields_are_ints(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        csm = params.create_set_manifests
+        assert isinstance(csm.train_pct, int)
+        assert isinstance(csm.val_pct, int)
+        assert isinstance(csm.test_pct, int)
+
+    def test_missing_create_set_manifests_stage_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["stages"]["create_set_manifests"]
         params_file = _write_params(tmp_path, data)
         with pytest.raises(KeyError):
             PipelineParams.load(params_file)
