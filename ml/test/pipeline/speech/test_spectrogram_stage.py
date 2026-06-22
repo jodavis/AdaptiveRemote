@@ -170,6 +170,17 @@ class TestGenerateOutput:
         data = np.load(str(npy_path))
         assert data.shape == (n_mels, time_steps)
 
+    def test_output_npy_dtype_is_float32(self, tmp_path: Path) -> None:
+        """Spectrogram array is saved as float32 regardless of librosa output dtype."""
+        n_mels = 8
+        time_steps = 16
+        stage, _ = _make_stage(tmp_path, n_mels=n_mels, time_steps=time_steps)
+        sample = _make_audio_sample()
+        asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        npy_path = tmp_path / "TV_ON_Jenny_r100.npy"
+        data = np.load(str(npy_path))
+        assert data.dtype == np.float32
+
     def test_output_file_has_npy_extension(self, tmp_path: Path) -> None:
         stage, _ = _make_stage(tmp_path, n_mels=8, time_steps=16)
         sample = _make_audio_sample(sample_id="MY_SAMPLE")

@@ -106,4 +106,4 @@ class SpectrogramStage(ModifierStage[AudioSample, SampleSpectrogram]):
         else:
             log_s = log_s[:, : self._time_steps]
 
-        return log_s
+        return log_s.astype(np.float32)
