@@ -3,8 +3,11 @@
 Each AudioSample is transformed into a SampleTokens whose .json file contains
 {"phonemes": [...], "tokens": [...]} padded or truncated to input_token_length.
 
-The stage is deterministic (_is_deterministic = True) so output_seed is always
-0 and _get_applied_values returns an empty dict.
+The stage is deterministic (_is_deterministic = True) so output_seed is always 0.
+
+_get_applied_values returns {"input_token_length": ..., "phoneme_list": [...]} so
+that changing token length or vocab between runs changes the content_hash and
+triggers regen of any previously-cached outputs that used different configuration.
 
 Token lookup for missing words follows the skip-on-missing behaviour from the
 legacy script: words absent from VocabResult.words_to_phonemes are silently
@@ -35,6 +38,9 @@ class TokenStage(ModifierStage[AudioSample, SampleTokens]):
     A phoneme_to_idx dict is built at construction time from VocabResult.phoneme_list
     for O(1) per-phoneme lookup.
 
+    _get_applied_values includes input_token_length and phoneme_list so that changes
+    to either invalidate previously-cached outputs via content_hash comparison.
+
     Words absent from VocabResult.words_to_phonemes are silently skipped.
     """
 
@@ -57,7 +63,10 @@ class TokenStage(ModifierStage[AudioSample, SampleTokens]):
     def _get_applied_values(
         self, sample: AudioSample, generator: VariationGenerator
     ) -> dict[str, Any]:
-        return {}
+        return {
+            "input_token_length": self._input_token_length,
+            "phoneme_list": self._vocab.phoneme_list,
+        }
 
     def _derive_id(self, input_sample: AudioSample, applied_values: dict[str, Any]) -> str:
         return input_sample.id

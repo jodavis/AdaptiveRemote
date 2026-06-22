@@ -118,13 +118,31 @@ class TestDeriveId:
 
 
 class TestGetAppliedValues:
-    def test_get_applied_values_returns_empty_dict(self, tmp_path: Path) -> None:
+    def test_get_applied_values_includes_input_token_length(self, tmp_path: Path) -> None:
         from pipeline.core.randomization import VariationGenerator
 
-        stage = _make_stage(tmp_path)
+        stage = _make_stage(tmp_path, input_token_length=10)
         sample = _make_audio_sample()
         result = stage._get_applied_values(sample, VariationGenerator(0))
-        assert result == {}
+        assert result["input_token_length"] == 10
+
+    def test_get_applied_values_reflects_different_input_token_length(self, tmp_path: Path) -> None:
+        from pipeline.core.randomization import VariationGenerator
+
+        stage = _make_stage(tmp_path, input_token_length=20)
+        sample = _make_audio_sample()
+        result = stage._get_applied_values(sample, VariationGenerator(0))
+        assert result["input_token_length"] == 20
+
+    def test_get_applied_values_includes_phoneme_list(self, tmp_path: Path) -> None:
+        from pipeline.core.randomization import VariationGenerator
+
+        phoneme_list = ["AA", "EH", "IH", "OW", "UH"]
+        vocab = _make_vocab(phoneme_list=phoneme_list)
+        stage = _make_stage(tmp_path, vocab=vocab)
+        sample = _make_audio_sample()
+        result = stage._get_applied_values(sample, VariationGenerator(0))
+        assert result["phoneme_list"] == phoneme_list
 
 
 # ---------------------------------------------------------------------------
@@ -298,3 +316,31 @@ class TestSkipPath:
         result1 = asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         result2 = asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         assert result2.samples[0].parent_id == result1.samples[0].parent_id
+
+    def test_changing_input_token_length_triggers_regen(self, tmp_path: Path) -> None:
+        """When input_token_length changes between runs, output file is rewritten (regen path)."""
+        sample = _make_audio_sample(transcript="TV_ON")
+        stage1 = _make_stage(tmp_path, input_token_length=10)
+        asyncio.run(stage1.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        json_path = tmp_path / "TV_ON_Jenny_r100.json"
+        mtime_after_first = json_path.stat().st_mtime
+
+        stage2 = _make_stage(tmp_path, input_token_length=20)
+        asyncio.run(stage2.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        mtime_after_second = json_path.stat().st_mtime
+        assert mtime_after_second != mtime_after_first  # regen triggered
+
+    def test_changing_phoneme_list_triggers_regen(self, tmp_path: Path) -> None:
+        """When phoneme_list changes between runs, output file is rewritten (regen path)."""
+        sample = _make_audio_sample(transcript="TV_ON")
+        vocab1 = _make_vocab(phoneme_list=["AA", "EH", "IH"])
+        stage1 = _make_stage(tmp_path, vocab=vocab1, input_token_length=10)
+        asyncio.run(stage1.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        json_path = tmp_path / "TV_ON_Jenny_r100.json"
+        mtime_after_first = json_path.stat().st_mtime
+
+        vocab2 = _make_vocab(phoneme_list=["AA", "EH", "IH", "OW"])
+        stage2 = _make_stage(tmp_path, vocab=vocab2, input_token_length=10)
+        asyncio.run(stage2.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        mtime_after_second = json_path.stat().st_mtime
+        assert mtime_after_second != mtime_after_first  # regen triggered

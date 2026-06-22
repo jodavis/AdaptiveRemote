@@ -2,8 +2,11 @@
 
 Each AudioSample is transformed into a SampleSpectrogram whose .npy file
 contains an (n_mels, time_steps) float32 array. The stage is deterministic
-(_is_deterministic = True) so output_seed is always 0 and _get_applied_values
-returns an empty dict.
+(_is_deterministic = True) so output_seed is always 0.
+
+_get_applied_values returns {"n_mels": ..., "time_steps": ...} so that changing
+spectrogram dimensions between runs changes the content_hash and triggers regen
+of any previously-cached outputs that used different dimensions.
 
 The mel spectrogram computation (librosa) is offloaded to a thread pool
 executor so the asyncio event loop is not blocked by CPU-bound work.
@@ -31,6 +34,9 @@ class SpectrogramStage(ModifierStage[AudioSample, SampleSpectrogram]):
     Output shape: (n_mels, time_steps). Short spectrograms are zero-padded on
     the right; long spectrograms are truncated from the right.
 
+    _get_applied_values includes n_mels and time_steps so that changes to either
+    invalidate previously-cached outputs via content_hash comparison.
+
     input_dir is the directory containing the WAV files referenced by
     AudioSample.path — typically the output directory of the preceding stage.
     """
@@ -55,7 +61,7 @@ class SpectrogramStage(ModifierStage[AudioSample, SampleSpectrogram]):
     def _get_applied_values(
         self, sample: AudioSample, generator: VariationGenerator
     ) -> dict[str, Any]:
-        return {}
+        return {"n_mels": self._n_mels, "time_steps": self._time_steps}
 
     def _derive_id(self, input_sample: AudioSample, applied_values: dict[str, Any]) -> str:
         return input_sample.id

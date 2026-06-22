@@ -122,13 +122,29 @@ class TestDeriveId:
 
 
 class TestGetAppliedValues:
-    def test_get_applied_values_returns_empty_dict(self, tmp_path: Path) -> None:
+    def test_get_applied_values_includes_n_mels(self, tmp_path: Path) -> None:
         from pipeline.core.randomization import VariationGenerator
 
-        stage, _ = _make_stage(tmp_path)
+        stage, _ = _make_stage(tmp_path, n_mels=40, time_steps=32)
         sample = _make_audio_sample()
         result = stage._get_applied_values(sample, VariationGenerator(0))
-        assert result == {}
+        assert result["n_mels"] == 40
+
+    def test_get_applied_values_includes_time_steps(self, tmp_path: Path) -> None:
+        from pipeline.core.randomization import VariationGenerator
+
+        stage, _ = _make_stage(tmp_path, n_mels=40, time_steps=32)
+        sample = _make_audio_sample()
+        result = stage._get_applied_values(sample, VariationGenerator(0))
+        assert result["time_steps"] == 32
+
+    def test_get_applied_values_reflects_different_n_mels(self, tmp_path: Path) -> None:
+        from pipeline.core.randomization import VariationGenerator
+
+        stage, _ = _make_stage(tmp_path, n_mels=80, time_steps=32)
+        sample = _make_audio_sample()
+        result = stage._get_applied_values(sample, VariationGenerator(0))
+        assert result["n_mels"] == 80
 
 
 # ---------------------------------------------------------------------------
@@ -238,3 +254,27 @@ class TestSkipPath:
         result1 = asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         result2 = asyncio.run(stage.transform(Manifest([sample]), tmp_path / "manifest.json"))
         assert result2.samples[0].parent_id == result1.samples[0].parent_id
+
+    def test_changing_n_mels_triggers_regen(self, tmp_path: Path) -> None:
+        """When n_mels changes between runs, audio reader is called again (regen path)."""
+        reader = _RecordingAudioReader()
+        stage1, _ = _make_stage(tmp_path, n_mels=8, time_steps=16, audio_reader=reader)
+        sample = _make_audio_sample()
+        asyncio.run(stage1.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert len(reader.calls) == 1
+
+        stage2, _ = _make_stage(tmp_path, n_mels=16, time_steps=16, audio_reader=reader)
+        asyncio.run(stage2.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert len(reader.calls) == 2  # regen triggered by n_mels change
+
+    def test_changing_time_steps_triggers_regen(self, tmp_path: Path) -> None:
+        """When time_steps changes between runs, audio reader is called again (regen path)."""
+        reader = _RecordingAudioReader()
+        stage1, _ = _make_stage(tmp_path, n_mels=8, time_steps=16, audio_reader=reader)
+        sample = _make_audio_sample()
+        asyncio.run(stage1.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert len(reader.calls) == 1
+
+        stage2, _ = _make_stage(tmp_path, n_mels=8, time_steps=32, audio_reader=reader)
+        asyncio.run(stage2.transform(Manifest([sample]), tmp_path / "manifest.json"))
+        assert len(reader.calls) == 2  # regen triggered by time_steps change
