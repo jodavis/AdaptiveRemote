@@ -55,8 +55,8 @@ class SetManifestSplitter:
         rng.shuffle(samples)
 
         n = len(samples)
-        train_end = round(n * train_pct / 100)
-        val_end = train_end + round(n * val_pct / 100)
+        train_end = int(n * train_pct / 100)
+        val_end = train_end + int(n * val_pct / 100)
 
         train_samples = samples[:train_end]
         val_samples = samples[train_end:val_end]
