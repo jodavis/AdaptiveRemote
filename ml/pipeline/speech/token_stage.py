@@ -13,6 +13,7 @@ skipped (no error, no contribution to the phoneme sequence).
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import Any, ClassVar
@@ -71,11 +72,14 @@ class TokenStage(ModifierStage[AudioSample, SampleTokens]):
     ) -> SampleTokens:
         phonemes, tokens = self._compute_tokens(input_sample.transcript)
 
+        loop = asyncio.get_running_loop()
         self._output_dir.mkdir(parents=True, exist_ok=True)
         output_path = conventions.sample_file_path(self._output_dir, output_id, "json")
         payload = {"phonemes": phonemes, "tokens": tokens}
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f)
+        await loop.run_in_executor(
+            None,
+            lambda: output_path.write_text(json.dumps(payload), encoding="utf-8"),
+        )
 
         content_hash = self._compute_content_hash(parent_content_hash, output_seed, applied_values)
 
