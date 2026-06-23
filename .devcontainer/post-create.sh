@@ -21,9 +21,11 @@ if [ -f "$PLAYWRIGHT_PS1" ]; then
 else
     echo "==> [post-create] WARNING: playwright.ps1 not found; falling back to dotnet tool..."
     dotnet tool install --global Microsoft.Playwright.CLI 2>/dev/null || true
+    # Global tools install to ~/.dotnet/tools which may not be on PATH yet.
+    export PATH="$HOME/.dotnet/tools:$PATH"
     playwright install chromium --with-deps
 fi
 
 echo "==> [post-create] Done. Quality gates:"
-echo "  scripts/validate-build   — clean build, zero warnings"
-echo "  scripts/validate-tests   — unit + headless E2E tests"
+echo "  scripts/validate-build.sh   — clean build, zero warnings"
+echo "  scripts/validate-tests.sh   — unit + headless E2E tests"
