@@ -70,6 +70,12 @@ class CreateSetManifestsParams:
 
 
 @dataclass
+class TrainModelParams:
+    epochs: int
+    batch_size: int
+
+
+@dataclass
 class PipelineParams:
     variations_per_phrase: int
     subsample_rate: int
@@ -82,6 +88,7 @@ class PipelineParams:
     compute_spectrograms: ComputeSpectrogramsParams
     compute_tokens: ComputeTokensParams
     create_set_manifests: CreateSetManifestsParams
+    train_model: TrainModelParams
 
     @classmethod
     def load(cls, path: Path) -> "PipelineParams":
@@ -97,6 +104,7 @@ class PipelineParams:
         stage_spectrograms = raw["stages"]["compute_spectrograms"]
         stage_tokens = raw["stages"]["compute_tokens"]
         stage_set_manifests = raw["stages"]["create_set_manifests"]
+        stage_train_model = raw["stages"]["train_model"]
 
         return cls(
             variations_per_phrase=int(pipeline["variations_per_phrase"]),
@@ -142,5 +150,9 @@ class PipelineParams:
                 train_pct=int(stage_set_manifests["train_pct"]),
                 val_pct=int(stage_set_manifests["val_pct"]),
                 test_pct=int(stage_set_manifests["test_pct"]),
+            ),
+            train_model=TrainModelParams(
+                epochs=int(stage_train_model["epochs"]),
+                batch_size=int(stage_train_model["batch_size"]),
             ),
         )
