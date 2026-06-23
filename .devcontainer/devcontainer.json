@@ -1,0 +1,30 @@
+{
+    "name": "AdaptiveRemote Dev Container",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "workspaceFolder": "/workspaces/AdaptiveRemote",
+    "mounts": [
+        "source=adaptiveremote-claude-home,target=/home/vscode/.claude,type=volume"
+    ],
+    "remoteUser": "vscode",
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+    "containerEnv": {
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+        "DOTNET_NOLOGO": "1",
+        "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "python.defaultInterpreterPath": "/opt/ml-env/bin/python3"
+            },
+            "extensions": [
+                "ms-dotnettools.csdevkit",
+                "ms-python.python"
+            ]
+        }
+    }
+}
