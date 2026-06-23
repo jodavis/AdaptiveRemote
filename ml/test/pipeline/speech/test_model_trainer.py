@@ -781,3 +781,55 @@ class TestDefaultKerasBackendImportable:
         # This will fail only if someone adds a module-level TF import
         backend = DefaultKerasBackend()
         assert backend is not None
+
+
+# ---------------------------------------------------------------------------
+# TestZeroSampleWarning
+# ---------------------------------------------------------------------------
+
+
+class TestZeroSampleWarning:
+    """ModelTrainer.train() logs a warning when filtering produces zero (spec, token) pairs."""
+
+    def test_warning_logged_when_no_pairs(self, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+        """A warning is emitted when train_manifest has no matching entries in either manifest."""
+        import logging
+
+        n_mels, time_steps = 2, 3
+
+        train_sample = _make_audio_sample("train_001")
+        train_manifest: Manifest[AudioSample] = Manifest([train_sample])
+
+        # Manifests contain only a val sample — no match for train_001
+        spec_val = _make_spectrogram_sample("val_only", n_mels, time_steps)
+        tok_val = _make_token_sample("val_only")
+        spectrogram_manifest: Manifest[SampleSpectrogram] = Manifest([spec_val])
+        token_manifest: Manifest[SampleTokens] = Manifest([tok_val])
+
+        spectrogram_dir = tmp_path / "spectrograms"
+        token_dir = tmp_path / "tokens"
+        output_dir = tmp_path / "output"
+
+        backend = _RecordingKerasBackend()
+        trainer = ModelTrainer(
+            keras_backend=backend,
+            n_mels=n_mels,
+            time_steps=time_steps,
+            epochs=1,
+            batch_size=1,
+        )
+
+        with caplog.at_level(logging.WARNING, logger="pipeline.speech.model_trainer"):
+            trainer.train(
+                train_manifest=train_manifest,
+                vocab=_make_vocab(),
+                spectrogram_manifest=spectrogram_manifest,
+                token_manifest=token_manifest,
+                spectrogram_dir=spectrogram_dir,
+                token_dir=token_dir,
+                output_dir=output_dir,
+            )
+
+        assert any("zero" in record.message.lower() or "no" in record.message.lower() for record in caplog.records), (
+            "Expected a warning about zero training samples"
+        )

@@ -134,22 +134,16 @@ class DefaultKerasBackend:
         epochs: int,
     ) -> list[float]:
         """Fit the model and return per-epoch loss values."""
-        import tensorflow as tf  # deferred
-
         history = model.fit(dataset, epochs=epochs)
         loss_values: list[float] = history.history.get("loss", [])
         return [float(v) for v in loss_values]
 
     def predict(self, model: Any, dataset: Any) -> np.ndarray:
         """Run model.predict() and return the raw output array."""
-        import tensorflow as tf  # deferred
-
         return model.predict(dataset)
 
     def save(self, model: Any, path: Path) -> None:
         """Save the model in Keras .keras format."""
-        import tensorflow as tf  # deferred
-
         path.parent.mkdir(parents=True, exist_ok=True)
         model.save(str(path))
 
@@ -235,6 +229,12 @@ class ModelTrainer:
             tok_array = np.array(tok_data["tokens"], dtype=np.int32)
 
             pairs.append((spec_array, tok_array))
+
+        if not pairs:
+            _logger.warning(
+                "ModelTrainer.train(): no (spectrogram, token) pairs found for train split — "
+                "model will be trained on zero samples."
+            )
 
         num_classes = vocab.ctc_blank_idx + 1  # ctc_blank_idx = len(phoneme_list)
 
