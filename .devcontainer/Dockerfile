@@ -69,5 +69,10 @@ ENV PATH="/opt/ml-env/bin:$PATH"
 
 USER vscode
 
+# Create ~/.claude as vscode so Docker initialises the named volume with the
+# correct ownership. Without this the volume root is owned by root and the
+# vscode user cannot write auth credentials after login.
+RUN mkdir -p /home/vscode/.claude
+
 WORKDIR /workspaces/AdaptiveRemote
 SHELL ["/bin/bash", "-l", "-c"]
