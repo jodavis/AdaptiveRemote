@@ -1,0 +1,39 @@
+name: Devcontainer Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.devcontainer/**'
+      - 'ml/requirements.txt'
+  pull_request:
+    branches:
+      - main
+      - 'feature/*'
+    paths:
+      - '.devcontainer/**'
+      - 'ml/requirements.txt'
+
+jobs:
+  devcontainer-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Build devcontainer image
+      run: docker build -f .devcontainer/Dockerfile . --tag adaptiveremote-devcontainer
+
+    - name: Smoke test installed tools
+      run: |
+        docker run --rm adaptiveremote-devcontainer bash -lc '
+          set -e
+          dotnet --version
+          gh --version
+          node --version
+          python3 --version
+          python3 -c "import numpy, pandas, tensorflow, dvc; print(\"ML packages OK\")"
+          which claude
+        '
