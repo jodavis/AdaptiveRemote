@@ -45,8 +45,12 @@ RUN npm install -g @anthropic-ai/claude-code
 
 # 6. Python ML stack in isolated venv at /opt/ml-env
 #    World-readable so the vscode user can use python/pip from it.
+#    python3-venv is a separate package from python3 on Debian/Ubuntu.
 COPY ml/requirements.txt /tmp/ml-requirements.txt
-RUN python3 -m venv /opt/ml-env \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3-venv \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m venv /opt/ml-env \
     && /opt/ml-env/bin/pip install --upgrade pip setuptools wheel \
     && /opt/ml-env/bin/pip install -r /tmp/ml-requirements.txt \
     && /opt/ml-env/bin/pip cache purge \
