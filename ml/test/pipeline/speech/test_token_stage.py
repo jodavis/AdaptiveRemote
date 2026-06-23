@@ -323,12 +323,12 @@ class TestSkipPath:
         stage1 = _make_stage(tmp_path, input_token_length=10)
         asyncio.run(stage1.transform(Manifest([sample]), tmp_path / "manifest.json"))
         json_path = tmp_path / "TV_ON_Jenny_r100.json"
-        mtime_after_first = json_path.stat().st_mtime
+        content_after_first = json_path.read_text(encoding="utf-8")
 
         stage2 = _make_stage(tmp_path, input_token_length=20)
         asyncio.run(stage2.transform(Manifest([sample]), tmp_path / "manifest.json"))
-        mtime_after_second = json_path.stat().st_mtime
-        assert mtime_after_second != mtime_after_first  # regen triggered
+        content_after_second = json_path.read_text(encoding="utf-8")
+        assert content_after_second != content_after_first  # regen triggered; tokens list grows
 
     def test_changing_phoneme_list_triggers_regen(self, tmp_path: Path) -> None:
         """When phoneme_list changes between runs, output file is rewritten (regen path)."""
@@ -337,10 +337,10 @@ class TestSkipPath:
         stage1 = _make_stage(tmp_path, vocab=vocab1, input_token_length=10)
         asyncio.run(stage1.transform(Manifest([sample]), tmp_path / "manifest.json"))
         json_path = tmp_path / "TV_ON_Jenny_r100.json"
-        mtime_after_first = json_path.stat().st_mtime
+        content_after_first = json_path.read_text(encoding="utf-8")
 
         vocab2 = _make_vocab(phoneme_list=["AA", "EH", "IH", "OW"])
         stage2 = _make_stage(tmp_path, vocab=vocab2, input_token_length=10)
         asyncio.run(stage2.transform(Manifest([sample]), tmp_path / "manifest.json"))
-        mtime_after_second = json_path.stat().st_mtime
-        assert mtime_after_second != mtime_after_first  # regen triggered
+        content_after_second = json_path.read_text(encoding="utf-8")
+        assert content_after_second != content_after_first  # regen triggered; tokens reflect new vocab
