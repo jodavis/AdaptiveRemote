@@ -74,5 +74,10 @@ USER vscode
 # vscode user cannot write auth credentials after login.
 RUN mkdir -p /home/vscode/.claude
 
+# Pre-bake Claude Code user settings template into the image at a path outside
+# the named volume. post-create.sh copies it to ~/.claude/settings.json on first
+# container creation, so the plugin marketplace and permissions are pre-configured.
+COPY --chown=vscode:vscode .devcontainer/claude-settings.json /home/vscode/.claude-defaults/settings.json
+
 WORKDIR /workspaces/AdaptiveRemote
 SHELL ["/bin/bash", "-l", "-c"]

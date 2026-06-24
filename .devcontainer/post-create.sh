@@ -26,6 +26,17 @@ else
     playwright install chromium --with-deps
 fi
 
+echo "==> [post-create] Step 4: Seeding Claude Code user settings (first-run only)..."
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+CLAUDE_DEFAULTS="/home/vscode/.claude/settings.json"
+
+if [ ! -f "$CLAUDE_SETTINGS" ]; then
+    cp "$CLAUDE_DEFAULTS" "$CLAUDE_SETTINGS"
+    echo "==> [post-create] Installed default settings to ~/.claude/settings.json"
+else
+    echo "==> [post-create] ~/.claude/settings.json already exists — not overwriting."
+fi
+
 echo "==> [post-create] Done. Quality gates:"
 echo "  scripts/validate-build.sh   — clean build, zero warnings"
 echo "  scripts/validate-tests.sh   — unit + headless E2E tests"
