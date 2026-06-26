@@ -36,7 +36,7 @@ After the summary, include:
 - **Key Classes / Interfaces:** the public surface — classes, interfaces, and their responsibilities
 - **Data Flow:** how data moves through the subsystem
 
-Omit sections that don't apply. Do not add sections not listed here.
+Omit sections that don't apply. Do not add sections not listed here. Do not go into implementation details, just link to the source files for implementation details.
 
 ## Updating an existing doc
 

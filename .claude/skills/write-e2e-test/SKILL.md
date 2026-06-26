@@ -37,4 +37,4 @@ grep -rEn "\[(Given|When|Then)\(" test/ --include="*.cs"
 
 ## Step definition rules
 
-Step definitions must delegate logic to test service methods — they must not contain application logic. The step definition's only job is to translate the human-readable step into a call to the appropriate service method.
+Step definitions must delegate logic to test service methods — they must not contain application logic. The step definition's only job is to translate the human-readable step into a call to the appropriate service method, verifying inputs have valid values when necessary. 
