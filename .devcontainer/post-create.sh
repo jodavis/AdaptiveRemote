@@ -28,7 +28,7 @@ fi
 
 echo "==> [post-create] Step 4: Seeding Claude Code user settings (first-run only)..."
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
-CLAUDE_DEFAULTS="/home/vscode/.claude/settings.json"
+CLAUDE_DEFAULTS="/home/vscode/.claude-defaults/settings.json"
 
 if [ ! -f "$CLAUDE_SETTINGS" ]; then
     cp "$CLAUDE_DEFAULTS" "$CLAUDE_SETTINGS"
