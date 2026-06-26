@@ -3,6 +3,7 @@ pyyaml>=6.0
 soundfile>=0.13.1
 edge-tts>=6.1.9
 librosa>=0.10
+numba>=0.59.0
 numpy==2.5.0
 pandas==3.0.3
 tensorflow==2.21.0
