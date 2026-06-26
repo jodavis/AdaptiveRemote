@@ -1,0 +1,36 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash(git:*)",
+            "Bash(dotnet:*)",
+            "Bash(npm:*)",
+            "Bash(node:*)",
+            "Bash(pwsh:*)",
+            "Bash(find:*)",
+            "Bash(grep:*)",
+            "Bash(ls:*)",
+            "Bash(xargs:*)",
+            "Bash(mkdir:*)",
+            "Bash(cp:*)",
+            "Bash(mv:*)",
+            "Bash(cat:*)",
+            "Bash(echo:*)",
+            "Bash(curl:*)",
+            "Bash(gh:*)",
+            "Bash(jq:*)",
+            "Bash(sed:*)",
+            "Bash(awk:*)",
+            "Bash(sort:*)",
+            "Bash(head:*)",
+            "Bash(tail:*)",
+            "Bash(wc:*)",
+            "WebFetch(*)",
+            "WebSearch(*)",
+            "Monitor",
+            "mcp__microsoft-learn__*",
+            "mcp__github__*",
+            "mcp__jira__*",
+            "mcp__claude_ai_Atlassian_Rovo__*"
+        ]
+    }
+}
