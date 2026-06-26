@@ -67,6 +67,8 @@ RUN echo 'export PATH="/opt/ml-env/bin:$PATH"' >> /etc/profile.d/ml-env.sh \
     && chmod +x /etc/profile.d/ml-env.sh
 ENV PATH="/opt/ml-env/bin:$PATH"
 
+COPY --chmod=755 .devcontainer/git-askpass.sh /usr/local/bin/git-askpass
+
 USER vscode
 
 # Create ~/.claude as vscode so Docker initialises the named volume with the

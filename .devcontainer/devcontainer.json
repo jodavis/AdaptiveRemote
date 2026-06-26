@@ -14,7 +14,8 @@
         "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
         "DOTNET_NOLOGO": "1",
         "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}",
-        "GH_TOKEN": "${localEnv:GH_TOKEN}"
+        "GH_TOKEN": "${localEnv:GH_TOKEN}",
+        "GIT_ASKPASS": "/usr/local/bin/git-askpass"
     },
     "customizations": {
         "vscode": {
