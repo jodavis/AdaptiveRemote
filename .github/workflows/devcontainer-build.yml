@@ -1,39 +1,60 @@
-name: Devcontainer Build
+name: Devcontainer Validate
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - '.devcontainer/**'
-      - 'ml/requirements.txt'
+    branches: [main]
   pull_request:
-    branches:
-      - main
-      - 'feature/*'
-    paths:
-      - '.devcontainer/**'
-      - 'ml/requirements.txt'
 
 jobs:
-  devcontainer-build:
+  gate:
     runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Decide whether validation is needed
+      id: decide
+      env:
+        BASE_REF: ${{ github.base_ref }}
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        if [[ "$EVENT_NAME" == "push" ]] || [[ "$BASE_REF" == "main" ]]; then
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        git fetch origin "$BASE_REF" --depth=1
+        if git diff --name-only "origin/$BASE_REF" HEAD \
+            | grep -qE '^(\.devcontainer/|ml/requirements\.txt$|Directory\.Packages\.props$)'; then
+          echo "run=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "run=false" >> "$GITHUB_OUTPUT"
+        fi
+
+  devcontainer-validate:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Required for Nerdbank.GitVersioning
 
-    - name: Build devcontainer image
-      run: docker build -f .devcontainer/Dockerfile . --tag adaptiveremote-devcontainer
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Smoke test installed tools
-      run: |
-        docker run --rm adaptiveremote-devcontainer bash -lc '
-          set -e
-          dotnet --version
-          gh --version
-          node --version
-          python3 --version
-          python3 -c "import numpy, pandas, tensorflow, dvc; print(\"ML packages OK\")"
-          which claude
-        '
+    - name: Build and validate devcontainer
+      uses: devcontainers/ci@v0.3
+      with:
+        imageName: ghcr.io/${{ github.repository }}/devcontainer
+        cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+        runCmd: bash scripts/validate.sh
