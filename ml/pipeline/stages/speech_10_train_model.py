@@ -9,7 +9,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from pipeline.core.manifest import ManifestStore
 from pipeline.intent.vocab_computer import VocabResult
-from pipeline.speech.model_trainer import DefaultKerasBackend, ModelTrainer
+from pipeline.speech.model_trainer import ModelTrainer
+from pipeline.speech.tensorflow_backend import TensorflowModelBuilder
 from pipeline.stages import conventions
 from pipeline.stages.params import PipelineParams
 
@@ -54,7 +55,7 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     trainer = ModelTrainer(
-        keras_backend=DefaultKerasBackend(),
+        backend=TensorflowModelBuilder(),
         n_mels=params.compute_spectrograms.n_mels,
         time_steps=params.compute_spectrograms.time_steps,
         epochs=params.train_model.epochs,

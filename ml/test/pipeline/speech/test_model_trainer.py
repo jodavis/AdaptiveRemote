@@ -1,6 +1,6 @@
 """Unit tests for ModelTrainer.
 
-Tests use inner-class stubs (not unittest.mock) for KerasBackend,
+Tests use inner-class stubs for MachineLearningModelBuilder and MachineLearningModel,
 following the pattern used by other test files in this directory.
 
 ModelTrainer.train() is synchronous — no asyncio.run() needed.
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from pipeline.core.manifest import Manifest
 from pipeline.core.sample import AudioSample, SampleSpectrogram, SampleTokens
 from pipeline.intent.vocab_computer import VocabResult
-from pipeline.speech.model_trainer import DefaultKerasBackend, ModelTrainer
+from pipeline.speech.model_trainer import ModelTrainer
 from pipeline.stages import conventions
 
 
@@ -100,48 +100,64 @@ def _write_json_tokens(path: Path, tokens: list[int] | None = None) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Stub KerasBackend implementations
+# Stub MachineLearningModel / MachineLearningModelBuilder implementations
 # ---------------------------------------------------------------------------
 
 
-class _RecordingKerasBackend:
-    """Stub that records calls without invoking TensorFlow."""
+class _RecordingModel:
+    """Stub MachineLearningModel that records calls without invoking TensorFlow."""
 
-    def __init__(self, model_obj: object | None = None) -> None:
-        self._model = model_obj or object()
-        self.build_ctc_model_calls: list[tuple[int, int, int]] = []
-        self.train_calls: list[tuple[Any, Any, int]] = []
-        self.save_calls: list[tuple[Any, Path]] = []
+    def __init__(self) -> None:
+        self.train_calls: list[tuple[Any, int]] = []
+        self.save_calls: list[Path] = []
         self.per_epoch_loss: list[float] = [0.5, 0.4, 0.3]
 
-    def build_ctc_model(self, num_classes: int, n_mels: int, time_steps: int) -> Any:
-        self.build_ctc_model_calls.append((num_classes, n_mels, time_steps))
-        return self._model
-
-    def train(self, model: Any, dataset: Any, epochs: int) -> list[float]:
-        self.train_calls.append((model, dataset, epochs))
+    def train(self, dataset: Any, epochs: int) -> list[float]:
+        self.train_calls.append((dataset, epochs))
         return self.per_epoch_loss
 
-    def predict(self, model: Any, dataset: Any) -> np.ndarray:
+    def predict(self, dataset: Any) -> np.ndarray:
         return np.zeros((1, 3))
 
-    def save(self, model: Any, path: Path) -> None:
-        self.save_calls.append((model, path))
-
-    def load(self, path: Path) -> Any:
-        return self._model
+    def save(self, path: Path) -> None:
+        self.save_calls.append(path)
 
 
-class _CapturingDatasetBackend(_RecordingKerasBackend):
-    """Stub that captures the dataset items passed to train()."""
+class _RecordingModelBuilder:
+    """Stub MachineLearningModelBuilder that captures build_ctc_model arguments."""
+
+    def __init__(self, model: _RecordingModel | None = None) -> None:
+        self.model = model if model is not None else _RecordingModel()
+        self.build_ctc_model_calls: list[tuple[int, int, int]] = []
+
+    def build_ctc_model(self, num_classes: int, n_mels: int, time_steps: int) -> _RecordingModel:
+        self.build_ctc_model_calls.append((num_classes, n_mels, time_steps))
+        return self.model
+
+    def load(self, path: Path) -> _RecordingModel:
+        return self.model
+
+
+class _CapturingDatasetBuilder(_RecordingModelBuilder):
+    """Builder whose model captures the dataset passed to train()."""
 
     def __init__(self) -> None:
         super().__init__()
         self.captured_items: list[Any] = []
 
-    def train(self, model: Any, dataset: Any, epochs: int) -> list[float]:
-        self.captured_items = list(dataset)
-        return super().train(model, dataset, epochs)
+    def build_ctc_model(self, num_classes: int, n_mels: int, time_steps: int) -> _RecordingModel:
+        base_model = super().build_ctc_model(num_classes, n_mels, time_steps)
+        outer = self
+
+        class _CapturingModel(_RecordingModel):
+            def train(self, dataset: Any, epochs: int) -> list[float]:
+                outer.captured_items = list(dataset)
+                return super().train(dataset, epochs)
+
+        capturing = _CapturingModel()
+        capturing.per_epoch_loss = base_model.per_epoch_loss
+        self.model = capturing
+        return capturing
 
 
 # ---------------------------------------------------------------------------
@@ -153,7 +169,7 @@ class TestFiltersByParentId:
     """ModelTrainer.train() must only include samples whose parent_id is in train_manifest."""
 
     def test_only_train_parent_ids_included(self, tmp_path: Path) -> None:
-        """Dataset passed to KerasBackend.train contains only train-split entries."""
+        """Dataset passed to model.train contains only train-split entries."""
         n_mels, time_steps = 2, 3
 
         train_sample = _make_audio_sample("train_001")
@@ -176,9 +192,9 @@ class TestFiltersByParentId:
         _write_npy(spectrogram_dir / spec_train.path, n_mels, time_steps)
         _write_json_tokens(token_dir / tok_train.path)
 
-        backend = _CapturingDatasetBackend()
+        backend = _CapturingDatasetBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -212,16 +228,13 @@ class TestFiltersByParentId:
         spectrogram_manifest: Manifest[SampleSpectrogram] = Manifest([spec_val])
         token_manifest: Manifest[SampleTokens] = Manifest([tok_val])
 
-        # Write files for spec / token that shouldn't be loaded
         spectrogram_dir = tmp_path / "spectrograms"
         token_dir = tmp_path / "tokens"
         output_dir = tmp_path / "output"
 
-        # Write the spectrogram for the train sample (no file, so dataset will be empty)
-        # — but since train_sample is NOT in spectrogram_manifest, dataset must be empty
-        backend = _CapturingDatasetBackend()
+        backend = _CapturingDatasetBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -265,9 +278,9 @@ class TestFiltersByParentId:
         _write_json_tokens(token_dir / tok_a.path)
         _write_json_tokens(token_dir / tok_b.path)
 
-        backend = _CapturingDatasetBackend()
+        backend = _CapturingDatasetBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -289,12 +302,12 @@ class TestFiltersByParentId:
 
 
 # ---------------------------------------------------------------------------
-# TestCallsKerasBackendTrain
+# TestCallsModelTrain
 # ---------------------------------------------------------------------------
 
 
-class TestCallsKerasBackendTrain:
-    """KerasBackend.train is called with the dataset, epochs count, and the built model."""
+class TestCallsModelTrain:
+    """model.train is called with the dataset and epochs count after build_ctc_model."""
 
     def test_train_called_once(self, tmp_path: Path) -> None:
         n_mels, time_steps = 2, 3
@@ -312,9 +325,9 @@ class TestCallsKerasBackendTrain:
         _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
         _write_json_tokens(token_dir / tok.path)
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=5,
@@ -331,7 +344,7 @@ class TestCallsKerasBackendTrain:
             output_dir=output_dir,
         )
 
-        assert len(backend.train_calls) == 1
+        assert len(backend.model.train_calls) == 1
 
     def test_train_called_with_correct_epoch_count(self, tmp_path: Path) -> None:
         n_mels, time_steps = 2, 3
@@ -349,10 +362,10 @@ class TestCallsKerasBackendTrain:
         _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
         _write_json_tokens(token_dir / tok.path)
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         expected_epochs = 7
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=expected_epochs,
@@ -369,57 +382,17 @@ class TestCallsKerasBackendTrain:
             output_dir=output_dir,
         )
 
-        _, _, actual_epochs = backend.train_calls[0]
+        _, actual_epochs = backend.model.train_calls[0]
         assert actual_epochs == expected_epochs
 
-    def test_train_called_with_model_from_build_ctc_model(self, tmp_path: Path) -> None:
-        """The model passed to backend.train is the same object returned by build_ctc_model."""
-        n_mels, time_steps = 2, 3
-        sentinel_model = object()
-        train_sample = _make_audio_sample("s001")
-        train_manifest: Manifest[AudioSample] = Manifest([train_sample])
-        spec = _make_spectrogram_sample("s001", n_mels, time_steps)
-        tok = _make_token_sample("s001")
-        spectrogram_manifest: Manifest[SampleSpectrogram] = Manifest([spec])
-        token_manifest: Manifest[SampleTokens] = Manifest([tok])
-
-        spectrogram_dir = tmp_path / "spectrograms"
-        token_dir = tmp_path / "tokens"
-        output_dir = tmp_path / "output"
-
-        _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
-        _write_json_tokens(token_dir / tok.path)
-
-        backend = _RecordingKerasBackend(model_obj=sentinel_model)
-        trainer = ModelTrainer(
-            keras_backend=backend,
-            n_mels=n_mels,
-            time_steps=time_steps,
-            epochs=1,
-            batch_size=1,
-        )
-
-        trainer.train(
-            train_manifest=train_manifest,
-            vocab=_make_vocab(),
-            spectrogram_manifest=spectrogram_manifest,
-            token_manifest=token_manifest,
-            spectrogram_dir=spectrogram_dir,
-            token_dir=token_dir,
-            output_dir=output_dir,
-        )
-
-        actual_model, _, _ = backend.train_calls[0]
-        assert actual_model is sentinel_model
-
 
 # ---------------------------------------------------------------------------
-# TestCallsKerasBackendSave
+# TestCallsModelSave
 # ---------------------------------------------------------------------------
 
 
-class TestCallsKerasBackendSave:
-    """KerasBackend.save is called after training with the conventions model path."""
+class TestCallsModelSave:
+    """model.save is called after training with the conventions model path."""
 
     def test_save_called_once(self, tmp_path: Path) -> None:
         n_mels, time_steps = 2, 3
@@ -437,9 +410,9 @@ class TestCallsKerasBackendSave:
         _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
         _write_json_tokens(token_dir / tok.path)
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -456,7 +429,7 @@ class TestCallsKerasBackendSave:
             output_dir=output_dir,
         )
 
-        assert len(backend.save_calls) == 1
+        assert len(backend.model.save_calls) == 1
 
     def test_save_called_with_conventions_model_path(self, tmp_path: Path) -> None:
         n_mels, time_steps = 2, 3
@@ -474,9 +447,9 @@ class TestCallsKerasBackendSave:
         _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
         _write_json_tokens(token_dir / tok.path)
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -493,49 +466,9 @@ class TestCallsKerasBackendSave:
             output_dir=output_dir,
         )
 
-        _, saved_path = backend.save_calls[0]
+        saved_path = backend.model.save_calls[0]
         expected_path = conventions.model_path(output_dir, "speech_to_text")
         assert saved_path == expected_path
-
-    def test_save_called_with_trained_model(self, tmp_path: Path) -> None:
-        """The model passed to save is the same object returned by build_ctc_model."""
-        n_mels, time_steps = 2, 3
-        sentinel_model = object()
-        train_sample = _make_audio_sample("s001")
-        train_manifest: Manifest[AudioSample] = Manifest([train_sample])
-        spec = _make_spectrogram_sample("s001", n_mels, time_steps)
-        tok = _make_token_sample("s001")
-        spectrogram_manifest: Manifest[SampleSpectrogram] = Manifest([spec])
-        token_manifest: Manifest[SampleTokens] = Manifest([tok])
-
-        spectrogram_dir = tmp_path / "spectrograms"
-        token_dir = tmp_path / "tokens"
-        output_dir = tmp_path / "output"
-
-        _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
-        _write_json_tokens(token_dir / tok.path)
-
-        backend = _RecordingKerasBackend(model_obj=sentinel_model)
-        trainer = ModelTrainer(
-            keras_backend=backend,
-            n_mels=n_mels,
-            time_steps=time_steps,
-            epochs=1,
-            batch_size=1,
-        )
-
-        trainer.train(
-            train_manifest=train_manifest,
-            vocab=_make_vocab(),
-            spectrogram_manifest=spectrogram_manifest,
-            token_manifest=token_manifest,
-            spectrogram_dir=spectrogram_dir,
-            token_dir=token_dir,
-            output_dir=output_dir,
-        )
-
-        saved_model, _ = backend.save_calls[0]
-        assert saved_model is sentinel_model
 
     def test_save_called_after_train(self, tmp_path: Path) -> None:
         """save() is called after train() — ordering verified via call log."""
@@ -556,18 +489,18 @@ class TestCallsKerasBackendSave:
 
         call_log: list[str] = []
 
-        class _OrderTrackingBackend(_RecordingKerasBackend):
-            def train(self, model: Any, dataset: Any, epochs: int) -> list[float]:
+        class _OrderTrackingModel(_RecordingModel):
+            def train(self, dataset: Any, epochs: int) -> list[float]:
                 call_log.append("train")
-                return super().train(model, dataset, epochs)
+                return super().train(dataset, epochs)
 
-            def save(self, model: Any, path: Path) -> None:
+            def save(self, path: Path) -> None:
                 call_log.append("save")
-                super().save(model, path)
+                super().save(path)
 
-        backend = _OrderTrackingBackend()
+        backend = _RecordingModelBuilder(model=_OrderTrackingModel())
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -611,9 +544,9 @@ class TestReturnsModelPath:
         _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
         _write_json_tokens(token_dir / tok.path)
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -650,9 +583,9 @@ class TestReturnsModelPath:
         _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
         _write_json_tokens(token_dir / tok.path)
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -704,9 +637,9 @@ class TestBuildCtcModelArgs:
             ctc_blank_idx=len(phoneme_list),
         )
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -725,7 +658,6 @@ class TestBuildCtcModelArgs:
 
         assert len(backend.build_ctc_model_calls) == 1
         num_classes, _, _ = backend.build_ctc_model_calls[0]
-        # num_classes = len(phoneme_list) + 1 (CTC blank = ctc_blank_idx is already len(phoneme_list))
         assert num_classes == len(phoneme_list) + 1
 
     def test_n_mels_and_time_steps_passed_to_build(self, tmp_path: Path) -> None:
@@ -744,9 +676,9 @@ class TestBuildCtcModelArgs:
         _write_npy(spectrogram_dir / spec.path, n_mels, time_steps)
         _write_json_tokens(token_dir / tok.path)
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
@@ -766,21 +698,6 @@ class TestBuildCtcModelArgs:
         _, called_n_mels, called_time_steps = backend.build_ctc_model_calls[0]
         assert called_n_mels == n_mels
         assert called_time_steps == time_steps
-
-
-# ---------------------------------------------------------------------------
-# TestDefaultKerasBackendImportable
-# ---------------------------------------------------------------------------
-
-
-class TestDefaultKerasBackendImportable:
-    """DefaultKerasBackend can be imported and instantiated without TensorFlow installed."""
-
-    def test_can_instantiate_without_tensorflow(self) -> None:
-        """Import and instantiate without raising ImportError (TF import is deferred)."""
-        # This will fail only if someone adds a module-level TF import
-        backend = DefaultKerasBackend()
-        assert backend is not None
 
 
 # ---------------------------------------------------------------------------
@@ -810,9 +727,9 @@ class TestZeroSampleWarning:
         token_dir = tmp_path / "tokens"
         output_dir = tmp_path / "output"
 
-        backend = _RecordingKerasBackend()
+        backend = _RecordingModelBuilder()
         trainer = ModelTrainer(
-            keras_backend=backend,
+            backend=backend,
             n_mels=n_mels,
             time_steps=time_steps,
             epochs=1,
