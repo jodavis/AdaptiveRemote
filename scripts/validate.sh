@@ -16,6 +16,7 @@ check_tool pwsh
 check_tool node
 check_tool python3
 check_tool claude
+check_tool dvc
 
 "$SCRIPT_DIR/validate-build.sh"
 "$SCRIPT_DIR/validate-tests.sh"

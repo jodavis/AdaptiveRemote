@@ -1,6 +1,6 @@
 @echo off
 echo Checking required tools...
-for %%T in (dotnet pwsh node python3 claude) do (
+for %%T in (dotnet pwsh node python3 claude dvc) do (
     where %%T >nul 2>&1 || (
         echo ERROR: Required tool '%%T' is not installed or not on PATH.
         exit /b 1

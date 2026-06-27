@@ -3,19 +3,9 @@
     "dotnet@dotnet-agent-skills": false,
     "dotnet-diag@dotnet-agent-skills": true,
     "dotnet-aspnet@dotnet-agent-skills": false,
-    "dotnet-template-engine@dotnet-agent-skills": false,
-    "dev-team@jodavis-agent-plugins": true
+    "dotnet-template-engine@dotnet-agent-skills": false
   },
-  "extraKnownMarketplaces": {
-    "jodavis-agent-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "jodavis/agent-plugins",
-        "ref": "release/canary"
-      },
-      "autoUpdate": true
-    }
-  },
+  "extraKnownMarketplaces": {},
   "mcpServers": {
     "microsoft-learn": {
       "type": "sse",

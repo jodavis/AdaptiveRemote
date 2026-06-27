@@ -374,3 +374,6 @@ dotnet/
 
 # Local configuration files
 *.local.*
+
+# Python virtual environments
+.venv/

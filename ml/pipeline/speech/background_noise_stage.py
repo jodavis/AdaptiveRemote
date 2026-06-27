@@ -98,43 +98,43 @@ class BackgroundNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
     ) -> AudioSample:
         noise_volume: float = applied_values["noise_volume"]
 
-        # When not applied, return the input sample unchanged — no I/O.
-        if noise_volume == 0.0:
-            return input_sample
-
-        noise_file: str = applied_values["noise_file"]
-        noise_start_s: float = applied_values["noise_start_s"]
-
         input_path = self._input_dir / input_sample.path
         audio = await self._audio_reader.read(input_path)
 
-        # Look up the pre-loaded noise audio from the provider.
-        noise_items = self._noise_provider.list_files()
-        noise_audio = next(data for name, data in noise_items if name == noise_file)
+        if noise_volume > 0.0:
+            noise_file: str = applied_values["noise_file"]
+            noise_start_s: float = applied_values["noise_start_s"]
 
-        if noise_audio.sample_rate != audio.sample_rate:
-            raise ValueError(
-                f"Noise file '{noise_file}' has sample_rate {noise_audio.sample_rate} Hz "
-                f"but input audio has sample_rate {audio.sample_rate} Hz. "
-                f"Configure _DirectoryNoiseProvider with the pipeline sample_rate so that "
-                f"noise files are resampled at load time."
-            )
+            # Look up the pre-loaded noise audio from the provider.
+            noise_items = self._noise_provider.list_files()
+            noise_audio = next(data for name, data in noise_items if name == noise_file)
 
-        start_sample = int(noise_start_s * noise_audio.sample_rate)
-        n_needed = len(audio.samples)
-        noise_slice = noise_audio.samples[start_sample: start_sample + n_needed]
+            if noise_audio.sample_rate != audio.sample_rate:
+                raise ValueError(
+                    f"Noise file '{noise_file}' has sample_rate {noise_audio.sample_rate} Hz "
+                    f"but input audio has sample_rate {audio.sample_rate} Hz. "
+                    f"Configure _DirectoryNoiseProvider with the pipeline sample_rate so that "
+                    f"noise files are resampled at load time."
+                )
 
-        # Zero-pad if noise slice is shorter than audio
-        if len(noise_slice) < n_needed:
-            noise_slice = np.pad(noise_slice, (0, n_needed - len(noise_slice)))
+            start_sample = int(noise_start_s * noise_audio.sample_rate)
+            n_needed = len(audio.samples)
+            noise_slice = noise_audio.samples[start_sample: start_sample + n_needed]
 
-        output_samples: np.ndarray = np.clip(
-            audio.samples + noise_volume * noise_slice, -1.0, 1.0
-        ).astype(np.float32)
+            # Zero-pad if noise slice is shorter than audio
+            if len(noise_slice) < n_needed:
+                noise_slice = np.pad(noise_slice, (0, n_needed - len(noise_slice)))
+
+            out_samples: np.ndarray = np.clip(
+                audio.samples + noise_volume * noise_slice, -1.0, 1.0
+            ).astype(np.float32)
+            output_audio = AudioData(samples=out_samples, sample_rate=audio.sample_rate)
+        else:
+            output_audio = audio  # pass-through: no noise applied
 
         self._output_dir.mkdir(parents=True, exist_ok=True)
         output_path = conventions.sample_file_path(self._output_dir, output_id, "wav")
-        await self._audio_writer.write(output_path, AudioData(samples=output_samples, sample_rate=audio.sample_rate))
+        await self._audio_writer.write(output_path, output_audio)
 
         content_hash = self._compute_content_hash(
             parent_content_hash, output_seed, applied_values

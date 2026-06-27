@@ -24,6 +24,7 @@
             "Bash(head:*)",
             "Bash(tail:*)",
             "Bash(wc:*)",
+            "Bash(dvc:*)",
             "WebFetch(*)",
             "WebSearch(*)",
             "Monitor",
@@ -32,5 +33,6 @@
             "mcp__jira__*",
             "mcp__claude_ai_Atlassian_Rovo__*"
         ]
-    }
+    },
+    "remoteControlAtStartup": true
 }

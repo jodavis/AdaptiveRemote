@@ -56,3 +56,112 @@ stages:
       - pipeline.subsample_rate
       - stages.generate_speech_samples.speech_rate_min
       - stages.generate_speech_samples.speech_rate_max
+
+  speech_02_add_delays:
+    cmd: >-
+      python pipeline/stages/speech_02_add_delays.py
+      --input-manifest-dir data/speech_01_generate_samples
+      --output-dir data/speech_02_add_delays
+    deps:
+      - data/speech_01_generate_samples/
+      - pipeline/
+    outs:
+      - data/speech_02_add_delays/:
+          persist: true
+    params:
+      - stages.add_delays.prefix_vary_probability
+      - stages.add_delays.prefix_min_s
+      - stages.add_delays.prefix_max_s
+      - stages.add_delays.suffix_vary_probability
+      - stages.add_delays.suffix_min_s
+      - stages.add_delays.suffix_max_s
+
+  speech_03_download_background_noise:
+    cmd: >-
+      python pipeline/download_background_noise.py
+      --output-dir data/speech_03_background_noise
+    deps:
+      - pipeline/download_background_noise.py
+    outs:
+      - data/speech_03_background_noise/
+
+  speech_05_add_background_noise:
+    cmd: >-
+      python pipeline/stages/speech_05_add_background_noise.py
+      --input-manifest-dir data/speech_02_add_delays
+      --noise-dir data/speech_03_background_noise
+      --output-dir data/speech_05_add_background_noise
+    deps:
+      - data/speech_02_add_delays/
+      - data/speech_03_background_noise/
+      - pipeline/
+    outs:
+      - data/speech_05_add_background_noise/:
+          persist: true
+    params:
+      - pipeline.sample_rate
+      - stages.add_background_noise.vary_probability
+      - stages.add_background_noise.volume_min
+      - stages.add_background_noise.volume_max
+
+  speech_06_add_mic_noise:
+    cmd: >-
+      python pipeline/stages/speech_06_add_mic_noise.py
+      --input-manifest-dir data/speech_05_add_background_noise
+      --output-dir data/speech_06_add_mic_noise
+    deps:
+      - data/speech_05_add_background_noise/
+      - pipeline/
+    outs:
+      - data/speech_06_add_mic_noise/:
+          persist: true
+    params:
+      - stages.add_mic_noise.vary_probability
+      - stages.add_mic_noise.amplitude_min
+      - stages.add_mic_noise.amplitude_max
+
+  speech_07_compute_tokens:
+    cmd: >-
+      python pipeline/stages/speech_07_compute_tokens.py
+      --input-manifest-dir data/speech_06_add_mic_noise
+      --vocab-dir data/intent_02_compute_vocab
+      --output-dir data/speech_07_compute_tokens
+    deps:
+      - data/speech_06_add_mic_noise/
+      - data/intent_02_compute_vocab/
+      - pipeline/
+    outs:
+      - data/speech_07_compute_tokens/:
+          persist: true
+    params:
+      - stages.compute_tokens.input_token_length
+
+  speech_08_compute_spectrograms:
+    cmd: >-
+      python pipeline/stages/speech_08_compute_spectrograms.py
+      --input-manifest-dir data/speech_06_add_mic_noise
+      --output-dir data/speech_08_compute_spectrograms
+    deps:
+      - data/speech_06_add_mic_noise/
+      - pipeline/
+    outs:
+      - data/speech_08_compute_spectrograms/:
+          persist: true
+    params:
+      - stages.compute_spectrograms.n_mels
+      - stages.compute_spectrograms.time_steps
+
+  speech_09_create_set_manifests:
+    cmd: >-
+      python pipeline/stages/speech_09_create_set_manifests.py
+      --input-manifest-dir data/speech_06_add_mic_noise
+      --output-dir data/speech_09_create_set_manifests
+    deps:
+      - data/speech_06_add_mic_noise/
+      - pipeline/
+    outs:
+      - data/speech_09_create_set_manifests/
+    params:
+      - stages.create_set_manifests.train_pct
+      - stages.create_set_manifests.val_pct
+      - stages.create_set_manifests.test_pct

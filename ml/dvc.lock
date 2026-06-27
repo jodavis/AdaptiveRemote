@@ -1,7 +1,13 @@
 schema: '2.0'
 stages:
   intent_00_download_phoneme_dictionary:
-    cmd: python pipeline/download_phoneme_dictionary.py --output-dir data/phoneme_dictionary
+    cmd: python pipeline/download_phoneme_dictionary.py --output-dir 
+      data/phoneme_dictionary
+    deps:
+    - path: pipeline/download_phoneme_dictionary.py
+      hash: md5
+      md5: 9ea18566a134b8f7da1ae087aac2a4b4
+      size: 890
     outs:
     - path: data/phoneme_dictionary/
       hash: md5
@@ -15,13 +21,13 @@ stages:
     deps:
     - path: pipeline/
       hash: md5
-      md5: 45e682d012129af3114fe537b8eecac3.dir
-      size: 93510
-      nfiles: 26
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
     - path: scripts/intent_prediction/01_input_phrases.csv
       hash: md5
-      md5: e51aa089ecca384f1de076f1cd1c043a
-      size: 882
+      md5: f4273227aed65cff33a67f05a5ecdff4
+      size: 830
     params:
       params.yaml:
         pipeline.input_phrases_path: 
@@ -55,12 +61,219 @@ stages:
       size: 3716714
     - path: pipeline/
       hash: md5
-      md5: 45e682d012129af3114fe537b8eecac3.dir
-      size: 93510
-      nfiles: 26
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
     outs:
     - path: data/intent_02_compute_vocab/
       hash: md5
-      md5: 58b0c72ae25859dffe1f52ce5ea4b3c4.dir
-      size: 554
+      md5: f566c4a323998593923b423a7efbbd9d.dir
+      size: 528
       nfiles: 2
+  speech_01_generate_samples:
+    cmd: python pipeline/stages/speech_01_generate_samples.py 
+      --input-manifest-dir data/intent_01_generate_phrases --output-dir 
+      data/speech_01_generate_samples
+    deps:
+    - path: data/intent_01_generate_phrases/
+      hash: md5
+      md5: 8fede188ad714f3a8f3e4c3cab89d4a1.dir
+      size: 1366
+      nfiles: 1
+    - path: pipeline/
+      hash: md5
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
+    params:
+      params.yaml:
+        pipeline.subsample_rate: 200
+        stages.generate_speech_samples.speech_rate_max: 20
+        stages.generate_speech_samples.speech_rate_min: -10
+    outs:
+    - path: data/speech_01_generate_samples/
+      hash: md5
+      md5: 9da0225cb8e37b7d935114cea2d179c2.dir
+      size: 484025
+      nfiles: 7
+  speech_02_add_delays:
+    cmd: python pipeline/stages/speech_02_add_delays.py --input-manifest-dir 
+      data/speech_01_generate_samples --output-dir data/speech_02_add_delays
+    deps:
+    - path: data/speech_01_generate_samples/
+      hash: md5
+      md5: 9da0225cb8e37b7d935114cea2d179c2.dir
+      size: 484025
+      nfiles: 7
+    - path: pipeline/
+      hash: md5
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
+    params:
+      params.yaml:
+        stages.add_delays.prefix_max_s: 0.5
+        stages.add_delays.prefix_min_s: 0.1
+        stages.add_delays.prefix_vary_probability: 0.333
+        stages.add_delays.suffix_max_s: 0.5
+        stages.add_delays.suffix_min_s: 0.1
+        stages.add_delays.suffix_vary_probability: 0.333
+    outs:
+    - path: data/speech_02_add_delays/
+      hash: md5
+      md5: 6973c6d93d68f642f0dc64669b2bc183.dir
+      size: 584866
+      nfiles: 7
+  speech_03_download_background_noise:
+    cmd: python pipeline/download_background_noise.py --output-dir 
+      data/speech_03_background_noise
+    deps:
+    - path: pipeline/download_background_noise.py
+      hash: md5
+      md5: b9560414632b2c23d4205b02026caeeb
+      size: 3873
+    outs:
+    - path: data/speech_03_background_noise/
+      hash: md5
+      md5: 3cf5a3ede3a9f8921b5b7386b4d68502.dir
+      size: 363560134
+      nfiles: 5
+  speech_05_add_background_noise:
+    cmd: python pipeline/stages/speech_05_add_background_noise.py 
+      --input-manifest-dir data/speech_02_add_delays --noise-dir 
+      data/speech_03_background_noise --output-dir 
+      data/speech_05_add_background_noise
+    deps:
+    - path: data/speech_02_add_delays/
+      hash: md5
+      md5: 6973c6d93d68f642f0dc64669b2bc183.dir
+      size: 584866
+      nfiles: 7
+    - path: data/speech_03_background_noise/
+      hash: md5
+      md5: 3cf5a3ede3a9f8921b5b7386b4d68502.dir
+      size: 363560134
+      nfiles: 5
+    - path: pipeline/
+      hash: md5
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
+    params:
+      params.yaml:
+        pipeline.sample_rate: 16000
+        stages.add_background_noise.vary_probability: 0.5
+        stages.add_background_noise.volume_max: 0.3
+        stages.add_background_noise.volume_min: 0.0
+    outs:
+    - path: data/speech_05_add_background_noise/
+      hash: md5
+      md5: 4b73fdfadf22df3258e8b07f860ed72c.dir
+      size: 391106
+      nfiles: 7
+  speech_06_add_mic_noise:
+    cmd: python pipeline/stages/speech_06_add_mic_noise.py --input-manifest-dir 
+      data/speech_05_add_background_noise --output-dir 
+      data/speech_06_add_mic_noise
+    deps:
+    - path: data/speech_05_add_background_noise/
+      hash: md5
+      md5: 4b73fdfadf22df3258e8b07f860ed72c.dir
+      size: 391106
+      nfiles: 7
+    - path: pipeline/
+      hash: md5
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
+    params:
+      params.yaml:
+        stages.add_mic_noise.amplitude_max: 0.05
+        stages.add_mic_noise.amplitude_min: 0.001
+        stages.add_mic_noise.vary_probability: 0.5
+    outs:
+    - path: data/speech_06_add_mic_noise/
+      hash: md5
+      md5: 87af4be50cf9d517d529e888846bbab6.dir
+      size: 390865
+      nfiles: 7
+  speech_07_compute_tokens:
+    cmd: python pipeline/stages/speech_07_compute_tokens.py --input-manifest-dir
+      data/speech_06_add_mic_noise --vocab-dir data/intent_02_compute_vocab 
+      --output-dir data/speech_07_compute_tokens
+    deps:
+    - path: data/intent_02_compute_vocab/
+      hash: md5
+      md5: f566c4a323998593923b423a7efbbd9d.dir
+      size: 528
+      nfiles: 2
+    - path: data/speech_06_add_mic_noise/
+      hash: md5
+      md5: 87af4be50cf9d517d529e888846bbab6.dir
+      size: 390865
+      nfiles: 7
+    - path: pipeline/
+      hash: md5
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
+    params:
+      params.yaml:
+        stages.compute_tokens.input_token_length: 50
+    outs:
+    - path: data/speech_07_compute_tokens/
+      hash: md5
+      md5: 8288cf919bcf8ff23adb8913e62a3976.dir
+      size: 3693
+      nfiles: 7
+  speech_08_compute_spectrograms:
+    cmd: python pipeline/stages/speech_08_compute_spectrograms.py 
+      --input-manifest-dir data/speech_06_add_mic_noise --output-dir 
+      data/speech_08_compute_spectrograms
+    deps:
+    - path: data/speech_06_add_mic_noise/
+      hash: md5
+      md5: 87af4be50cf9d517d529e888846bbab6.dir
+      size: 390865
+      nfiles: 7
+    - path: pipeline/
+      hash: md5
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
+    params:
+      params.yaml:
+        stages.compute_spectrograms.n_mels: 128
+        stages.compute_spectrograms.time_steps: 256
+    outs:
+    - path: data/speech_08_compute_spectrograms/
+      hash: md5
+      md5: 4de3ddebdc239fbe09001e81da188de3.dir
+      size: 789524
+      nfiles: 7
+  speech_09_create_set_manifests:
+    cmd: python pipeline/stages/speech_09_create_set_manifests.py 
+      --input-manifest-dir data/speech_06_add_mic_noise --output-dir 
+      data/speech_09_create_set_manifests
+    deps:
+    - path: data/speech_06_add_mic_noise/
+      hash: md5
+      md5: 87af4be50cf9d517d529e888846bbab6.dir
+      size: 390865
+      nfiles: 7
+    - path: pipeline/
+      hash: md5
+      md5: 3e999698dbf0334dda24dd8c816ffc86.dir
+      size: 209583
+      nfiles: 57
+    params:
+      params.yaml:
+        stages.create_set_manifests.test_pct: 10
+        stages.create_set_manifests.train_pct: 70
+        stages.create_set_manifests.val_pct: 20
+    outs:
+    - path: data/speech_09_create_set_manifests/
+      hash: md5
+      md5: d7fb2f7d40e3139d2a12f118b11ff44f.dir
+      size: 2479
+      nfiles: 3

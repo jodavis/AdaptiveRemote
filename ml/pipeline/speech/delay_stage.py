@@ -91,6 +91,9 @@ class DelayAugmentor(ModifierStage[AudioSample, AudioSample]):
         prefix_delay_s: float = applied_values["prefix_delay_s"]
         suffix_delay_s: float = applied_values["suffix_delay_s"]
 
+        if prefix_delay_s == 0.0 and suffix_delay_s == 0.0:
+            return input_sample;
+
         input_path = self._input_dir / input_sample.path
         audio = await self._audio_reader.read(input_path)
 

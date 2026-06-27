@@ -70,7 +70,7 @@ def main() -> None:
     stage = BackgroundNoiseAugmentor(
         output_dir=args.output_dir,
         manifest_store=store,
-        audio_reader=LibrosaAudioReader(),
+        audio_reader=LibrosaAudioReader(params.sample_rate),
         audio_writer=SoundfileAudioWriter(),
         input_dir=args.input_manifest_dir,
         noise_provider=_DirectoryNoiseProvider(args.noise_dir, params.sample_rate),

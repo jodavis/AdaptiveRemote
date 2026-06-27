@@ -51,16 +51,23 @@ class LibrosaAudioReader:
     ``mono=True``. The returned array is always dtype float32, as librosa normalises
     to float32 by default.
 
+    Pass ``sample_rate`` to resample on load (e.g. to match a pipeline target rate).
+    Omit or pass ``None`` to preserve the file's native sample rate.
+
     The synchronous librosa.load() call is offloaded to a thread pool executor so that
     the event loop is not blocked during file I/O.
     """
+
+    def __init__(self, sample_rate: int | None = None) -> None:
+        self._sample_rate = sample_rate
 
     async def read(self, path: Path) -> AudioData:
         import librosa  # deferred so unit tests without librosa installed can import module
 
         loop = asyncio.get_running_loop()
+        sr_arg = self._sample_rate
         samples, sample_rate = await loop.run_in_executor(
-            None, lambda: librosa.load(str(path), sr=None, mono=True, dtype=np.float32)
+            None, lambda: librosa.load(str(path), sr=sr_arg, mono=True, dtype=np.float32)
         )
         return AudioData(samples=samples, sample_rate=int(sample_rate))
 

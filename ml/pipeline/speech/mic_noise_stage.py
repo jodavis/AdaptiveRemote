@@ -79,20 +79,20 @@ class MicrophoneNoiseAugmentor(ModifierStage[AudioSample, AudioSample]):
     ) -> AudioSample:
         amplitude: float = applied_values["mic_noise_amplitude"]
 
-        # When not applied, return the input sample unchanged — no I/O.
-        if amplitude == 0.0:
-            return input_sample
-
         input_path = self._input_dir / input_sample.path
         audio = await self._audio_reader.read(input_path)
 
-        rng = np.random.default_rng(output_seed)
-        noise = rng.normal(0, amplitude, len(audio.samples)).astype(np.float32)
-        output_samples: np.ndarray = np.clip(audio.samples + noise, -1.0, 1.0).astype(np.float32)
+        if amplitude > 0.0:
+            rng = np.random.default_rng(output_seed)
+            noise = rng.normal(0, amplitude, len(audio.samples)).astype(np.float32)
+            out_samples: np.ndarray = np.clip(audio.samples + noise, -1.0, 1.0).astype(np.float32)
+            output_audio = AudioData(samples=out_samples, sample_rate=audio.sample_rate)
+        else:
+            output_audio = audio  # pass-through: no noise applied
 
         self._output_dir.mkdir(parents=True, exist_ok=True)
         output_path = conventions.sample_file_path(self._output_dir, output_id, "wav")
-        await self._audio_writer.write(output_path, AudioData(samples=output_samples, sample_rate=audio.sample_rate))
+        await self._audio_writer.write(output_path, output_audio)
 
         content_hash = self._compute_content_hash(
             parent_content_hash, output_seed, applied_values
