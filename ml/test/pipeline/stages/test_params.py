@@ -20,6 +20,7 @@ from pipeline.stages.params import (
     GeneratePhraseParams,
     GenerateSamplesParams,
     PipelineParams,
+    TrainModelParams,
 )
 
 
@@ -76,6 +77,10 @@ _VALID_DATA = {
             "train_pct": 70,
             "val_pct": 20,
             "test_pct": 10,
+        },
+        "train_model": {
+            "epochs": 10,
+            "batch_size": 32,
         },
     },
 }
@@ -360,6 +365,38 @@ class TestCreateSetManifestsParamsLoad:
         import copy
         data = copy.deepcopy(_VALID_DATA)
         del data["stages"]["create_set_manifests"]
+        params_file = _write_params(tmp_path, data)
+        with pytest.raises(KeyError):
+            PipelineParams.load(params_file)
+
+
+class TestTrainModelParamsLoad:
+    def test_loads_train_model_fields(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        tm = params.train_model
+        assert tm.epochs == 10
+        assert tm.batch_size == 32
+
+    def test_train_model_is_correct_type(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        assert isinstance(params.train_model, TrainModelParams)
+
+    def test_train_model_fields_are_ints(self, tmp_path: Path) -> None:
+        params_file = _write_params(tmp_path, _VALID_DATA)
+        params = PipelineParams.load(params_file)
+
+        tm = params.train_model
+        assert isinstance(tm.epochs, int)
+        assert isinstance(tm.batch_size, int)
+
+    def test_missing_train_model_stage_raises(self, tmp_path: Path) -> None:
+        import copy
+        data = copy.deepcopy(_VALID_DATA)
+        del data["stages"]["train_model"]
         params_file = _write_params(tmp_path, data)
         with pytest.raises(KeyError):
             PipelineParams.load(params_file)

@@ -1,6 +1,6 @@
 ## Summary: ml/pipeline/speech
 
-Speech pipeline stages for the OOP pipeline. The directory contains two cohorts:
+Speech pipeline stages for the OOP pipeline. The directory contains three cohorts:
 
 - **Augmentation stages** — `ModifierStage` subtypes that take an `AudioSample` (or
   `TextSample`) manifest and produce a derived `AudioSample` manifest with per-sample
@@ -12,6 +12,8 @@ Speech pipeline stages for the OOP pipeline. The directory contains two cohorts:
   different extension), and `_get_applied_values` returns `{}`.
 - **Splitter** — `SetManifestSplitter`, a plain (non-stage) class that partitions a
   fully-augmented `AudioSample` manifest into train/val/test subsets.
+- **Training** — `ModelTrainer`, a plain class that trains a CTC speech-to-text Keras
+  model from the featurised manifests and split produced by earlier pipeline stages.
 
 ## Stages
 
@@ -24,6 +26,8 @@ Speech pipeline stages for the OOP pipeline. The directory contains two cohorts:
 | [`spectrogram_stage.py`](spectrogram_stage.py) | `SpectrogramStage` | `AudioSample → SampleSpectrogram` (log-mel `.npy`) |
 | [`token_stage.py`](token_stage.py) | `TokenStage` | `AudioSample → SampleTokens` (phoneme token `.json`) |
 | [`set_splitter.py`](set_splitter.py) | `SetManifestSplitter` | Split augmented manifest into train/val/test |
+| [`model_trainer.py`](model_trainer.py) | `ModelTrainer` | Train CTC model from filtered spectrogram/token manifests |
+| [`manifest_filter.py`](manifest_filter.py) | `lookup_sample_triplets` | Match split, spectrogram, and token manifests into `(AudioSample, SampleSpectrogram, SampleTokens)` triples; shared by training, evaluation, and testing |
 
 ## Key design decisions
 
@@ -105,3 +109,44 @@ sufficient and avoids adding a numpy dependency on a non-numerical operation.
 `train_manifest.json`, `val_manifest.json`, and `test_manifest.json` (the `_manifest`
 suffix is required by `conventions.split_manifest_path`). `AudioSample.id` values are
 preserved unchanged — no re-assignment in split outputs.
+
+### ModelTrainer and ml_model protocols
+
+**`MachineLearningModelBuilder` as the TF seam.** `ModelTrainer` accepts a
+`MachineLearningModelBuilder` (defined in [`ml_model.py`](ml_model.py)) and never imports
+TensorFlow directly. `TensorflowModelBuilder` (in [`tensorflow_backend.py`](tensorflow_backend.py))
+is the production implementation; because it lives in a separate module, TF is imported at
+module level there and does not affect unit tests that only import `model_trainer.py`.
+`MachineLearningModel` (also in `ml_model.py`) is returned by `build_ctc_model` and owns
+`train`, `predict`, and `save`. This mirrors the `TtsProvider`, `NoiseProvider`, and
+`AudioReader` patterns used elsewhere in the pipeline.
+
+**`ModelTrainer.train()` is synchronous.** The entry-point (`speech_10_train_model.py`)
+calls it directly — no `asyncio.run()` wrapper is needed.
+
+**Entry-point scripts bridge `PipelineParams` to stage implementations.** `ModelTrainer`
+receives numeric parameters via its constructor and does not read `PipelineParams` directly.
+This pattern applies uniformly across all pipeline stages.
+
+**Filtering is delegated to `lookup_sample_triplets`.** `spectrogram_manifest` and
+`token_manifest` are the full combined manifests (all splits). `train_manifest` is the
+train-split subset. `lookup_sample_triplets` joins them by `parent_id` and is shared with
+evaluation and testing stages.
+
+**Dataset construction is `_build_dataset`'s responsibility.** `ModelTrainer._build_dataset()`
+stacks spectrogram and token arrays into numpy arrays, constructs a `tf.data.Dataset`
+via `from_tensor_slices`, and applies `.batch(batch_size).prefetch(tf.data.AUTOTUNE)`.
+`MachineLearningModel.train()` receives an already-batched, already-prefetched dataset.
+
+**Empty-pair guard.** If filtering produces zero `(spectrogram, token)` pairs, a
+`WARNING` is logged before calling `build_ctc_model` / `train`. This surfaces
+misconfiguration (e.g. wrong manifest directories, split-manifest mismatch) that would
+otherwise cause Keras to silently fit on zero steps.
+
+### manifest_filter
+
+**`lookup_sample_triplets` is the shared manifest-join utility.** It accepts a split
+`Manifest[AudioSample]` (train, val, or test) plus the full spectrogram and token
+manifests, and returns `list[tuple[AudioSample, SampleSpectrogram, SampleTokens]]`.
+Samples with no matching spectrogram or token entry are skipped with a `WARNING`. The
+function is split-agnostic — callers pass whichever split subset they need.

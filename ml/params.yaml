@@ -38,3 +38,6 @@ stages:
     train_pct: 70
     val_pct: 20
     test_pct: 10
+  train_model:
+    epochs: 10
+    batch_size: 32
