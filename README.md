@@ -1,41 +1,41 @@
-Adaptive Remote
+ADAPTIVE REMOTE
 ===============
 
-This project is a remote control application for TV and other AV equipment. It is
-designed to enable people with limited or total loss of mobility to still control
-what they watch on TV.
+THIS PROJECT IS A REMOTE CONTROL APPLICATION FOR TV AND OTHER AV EQUIPMENT. IT IS
+DESIGNED TO ENABLE PEOPLE WITH LIMITED OR TOTAL LOSS OF MOBILITY TO STILL CONTROL
+WHAT THEY WATCH ON TV.
 
-The application accepts voice commands for people who still have the power of speech. 
-It also has a large-button UI that can be activated by normal touch/mouse actions as 
-well as specialized eye-gaze hardware.
+THE APPLICATION ACCEPTS VOICE COMMANDS FOR PEOPLE WHO STILL HAVE THE POWER OF SPEECH. 
+IT ALSO HAS A LARGE-BUTTON UI THAT CAN BE ACTIVATED BY NORMAL TOUCH/MOUSE ACTIONS AS 
+WELL AS SPECIALIZED EYE-GAZE HARDWARE.
 
-Commands are sent to the devices over IP where supported. They can also be sent as
-infrared signals for older devices that don't connect to a network.
+COMMANDS ARE SENT TO THE DEVICES OVER IP WHERE SUPPORTED. THEY CAN ALSO BE SENT AS
+INFRARED SIGNALS FOR OLDER DEVICES THAT DON'T CONNECT TO A NETWORK.
 
 
-Getting Started
+GETTING STARTED
 ---------------
-The project requires Windows OS and [.NET8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
+THE PROJECT REQUIRES WINDOWS OS AND [.NET8](HTTPS://DOTNET.MICROSOFT.COM/EN-US/DOWNLOAD/DOTNET/8.0).
 
-The application can be run from two projects. `AdaptiveRemote` is the main GUI application.
-`AdaptiveRemote.Console` is the same GUI application, but launched as a console app that 
-logs output to the terminal.
+THE APPLICATION CAN BE RUN FROM TWO PROJECTS. `ADAPTIVEREMOTE` IS THE MAIN GUI APPLICATION.
+`ADAPTIVEREMOTE.CONSOLE` IS THE SAME GUI APPLICATION, BUT LAUNCHED AS A CONSOLE APP THAT 
+LOGS OUTPUT TO THE TERMINAL.
 
-To build and run the application, clone the repository and `dotnet run` from either the
-`AdaptiveRemote` or `AdaptiveRemote.Console` project directories. You can also open the
-solution in Visual Studio 2022 or later and run either project.
+TO BUILD AND RUN THE APPLICATION, CLONE THE REPOSITORY AND `DOTNET RUN` FROM EITHER THE
+`ADAPTIVEREMOTE` OR `ADAPTIVEREMOTE.CONSOLE` PROJECT DIRECTORIES. YOU CAN ALSO OPEN THE
+SOLUTION IN VISUAL STUDIO 2022 OR LATER AND RUN EITHER PROJECT.
 
-Unit tests are in the `AdaptiveRemote.Tests` project. You can run them using `dotnet test` 
-from that directory or through Visual Studio's Test Explorer.
+UNIT TESTS ARE IN THE `ADAPTIVEREMOTE.TESTS` PROJECT. YOU CAN RUN THEM USING `DOTNET TEST` 
+FROM THAT DIRECTORY OR THROUGH VISUAL STUDIO'S TEST EXPLORER.
 
-Design documentation
+DESIGN DOCUMENTATION
 --------------------
-Architecture and design notes are stored alongside implementations using `_doc_*.md` filenames so they surface at the top of each folder. See:
-- `src/_doc_Projects.md`: High-level project organization and boundaries
-- `src/AdaptiveRemote/Services/_doc_Services.md`: Services folder organization and API conventions
-- `src/AdaptiveRemote/Services/Lifecycle/_doc_Lifecycle.md`: Lifecycle subsystem
-- `src/AdaptiveRemote/Services/Commands/_doc_Commands.md`: Remote control command model subsystem
-- `src/AdaptiveRemote/Services/Broadlink/_doc_Broadlink.md`: Broadlink RM4 mini device driver for handling `IRCommand`
-- `src/AdaptiveRemote/Services/Conversation/_doc_Conversation.md`: Speech recognition and conversation subsystem
-- `src/AdaptiveRemote/Mvvm/_doc_Mvvm.md`: MVVM property change notification subsystem
-- `src/AdaptiveRemote/Components/_doc_UI.md`: Visual user interface subsystem
+ARCHITECTURE AND DESIGN NOTES ARE STORED ALONGSIDE IMPLEMENTATIONS USING `_DOC_*.MD` FILENAMES SO THEY SURFACE AT THE TOP OF EACH FOLDER. SEE:
+- `SRC/_DOC_PROJECTS.MD`: HIGH-LEVEL PROJECT ORGANIZATION AND BOUNDARIES
+- `SRC/ADAPTIVEREMOTE/SERVICES/_DOC_SERVICES.MD`: SERVICES FOLDER ORGANIZATION AND API CONVENTIONS
+- `SRC/ADAPTIVEREMOTE/SERVICES/LIFECYCLE/_DOC_LIFECYCLE.MD`: LIFECYCLE SUBSYSTEM
+- `SRC/ADAPTIVEREMOTE/SERVICES/COMMANDS/_DOC_COMMANDS.MD`: REMOTE CONTROL COMMAND MODEL SUBSYSTEM
+- `SRC/ADAPTIVEREMOTE/SERVICES/BROADLINK/_DOC_BROADLINK.MD`: BROADLINK RM4 MINI DEVICE DRIVER FOR HANDLING `IRCOMMAND`
+- `SRC/ADAPTIVEREMOTE/SERVICES/CONVERSATION/_DOC_CONVERSATION.MD`: SPEECH RECOGNITION AND CONVERSATION SUBSYSTEM
+- `SRC/ADAPTIVEREMOTE/MVVM/_DOC_MVVM.MD`: MVVM PROPERTY CHANGE NOTIFICATION SUBSYSTEM
+- `SRC/ADAPTIVEREMOTE/COMPONENTS/_DOC_UI.MD`: VISUAL USER INTERFACE SUBSYSTEM
