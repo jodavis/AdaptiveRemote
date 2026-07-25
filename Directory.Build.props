@@ -9,6 +9,13 @@
     <PackageProjectUrl>https://github.com/jodavis/AdaptiveRemote</PackageProjectUrl>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <Deterministic>true</Deterministic>
+    <!-- The .NET SDK's bundled Microsoft.Build.Tasks.Git cannot parse the "relativeworktrees"
+         git config extension that newer git versions set on worktree checkouts (fixed upstream
+         in the 10.0.2xx SDK line but not present in the SDK pinned here: see
+         https://github.com/dotnet/sourcelink/issues/1468). Disabling source-control-manager
+         queries avoids the build failure; SourceRevisionId/RepositoryUrl embedding is not used
+         by this project. -->
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
   <ItemGroup>
