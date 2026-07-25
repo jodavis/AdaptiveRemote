@@ -18,4 +18,5 @@ check_tool python3
 check_tool claude
 
 "$SCRIPT_DIR/validate-build.sh"
+"$SCRIPT_DIR/validate-ml-build.sh"
 "$SCRIPT_DIR/validate-tests.sh"
