@@ -1,0 +1,6 @@
+# mypy --strict configuration (ADR-281). Scoped to ml/pipeline/ and ml/test/ only —
+# see scripts/validate-ml-build.sh/.cmd, which run `mypy --strict pipeline test` from
+# this directory so this config file is auto-discovered.
+[tool.mypy]
+files = ["pipeline", "test"]
+strict = true

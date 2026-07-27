@@ -15,7 +15,9 @@ check_tool dotnet
 check_tool pwsh
 check_tool node
 check_tool python3
+check_tool mypy
 check_tool claude
 
 "$SCRIPT_DIR/validate-build.sh"
+"$SCRIPT_DIR/validate-ml-build.sh"
 "$SCRIPT_DIR/validate-tests.sh"
