@@ -26,6 +26,13 @@
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />
     <!-- Development Tools -->
     <PackageVersion Include="Nerdbank.GitVersioning" Version="3.9.50" />
+    <!-- Referencing Microsoft.SourceLink.GitHub explicitly (rather than relying on the .NET
+         SDK's implicit SourceLink import) sets the PkgMicrosoft_SourceLink_Common MSBuild
+         property, which suppresses the SDK's own bundled Microsoft.Build.Tasks.Git import in
+         favor of this package's newer transitive Microsoft.Build.Tasks.Git dependency. The
+         SDK-bundled version does not recognize newer git repository extensions (e.g.
+         relativeWorktrees) and hard-errors instead of ignoring them. -->
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.301" />
     <PackageVersion Include="Nerdbank.MessagePack" Version="1.2.4" />
     <!-- Code Analysis -->
     <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.300" />

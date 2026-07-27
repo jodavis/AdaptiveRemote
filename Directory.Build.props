@@ -16,6 +16,10 @@
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" PrivateAssets="all" />
     <PackageReference Include="MessagePack" />
     <PackageReference Include="Nerdbank.MessagePack" />
+    <!-- Override the .NET SDK's bundled Microsoft.Build.Tasks.Git, which does not recognize
+         newer git repository extensions (e.g. relativeWorktrees) and hard-errors instead of
+         ignoring them. -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
   </ItemGroup>
 
   <PropertyGroup>
