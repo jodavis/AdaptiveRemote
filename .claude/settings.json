@@ -1,4 +1,16 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(gh api repos/*/pulls/*/reviews*)",
+      "Bash(gh pr review *)",
+      "mcp__github__pull_request_review_write",
+      "mcp__github__add_comment_to_pending_review",
+      "mcp__github__add_reply_to_pull_request_comment",
+      "mcp__plugin_github_github__pull_request_review_write",
+      "mcp__plugin_github_github__add_comment_to_pending_review",
+      "mcp__plugin_github_github__add_reply_to_pull_request_comment"
+    ]
+  },
   "enabledPlugins": {
     "dotnet@dotnet-agent-skills": false,
     "dotnet-diag@dotnet-agent-skills": true,
