@@ -7,9 +7,13 @@ import json
 from pathlib import Path
 from typing import Any, Generic, Iterator, TypeVar
 
-from pipeline.core.sample import Sample
+from pipeline.core.sample import AudioSample, Sample, SampleSpectrogram, SampleTokens, TextSample
 
 S = TypeVar("S", bound=Sample)
+
+_SAMPLE_TYPES_BY_NAME: dict[str, type[Sample]] = {
+    cls.__name__: cls for cls in (TextSample, AudioSample, SampleSpectrogram, SampleTokens)
+}
 
 
 class Manifest(Generic[S]):
@@ -65,6 +69,7 @@ class ManifestStore:
         }
         path.write_text(json.dumps(payload))
 
-    def read(self, path: Path, sample_type: type[S]) -> Manifest[S]:
+    def read(self, path: Path) -> Manifest[Sample]:
         payload = json.loads(path.read_text())
-        return Manifest[S]([sample_type(**data) for data in payload["samples"]])
+        sample_type = _SAMPLE_TYPES_BY_NAME[payload["sample_type"]]
+        return Manifest[Sample]([sample_type(**data) for data in payload["samples"]])
