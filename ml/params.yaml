@@ -1,0 +1,43 @@
+pipeline:
+  input_phrases_path: scripts/intent_prediction/01_input_phrases.csv
+  variations_per_phrase: 20
+  subsample_rate: 200
+  sample_rate: 16000
+
+stages:
+  generate_phrases:
+    repeat_modifier_chance: 0.2
+    pleasantry_chance: 0.3
+    hesitation_chance: 0.3
+    spelling_variant_chance: 0.1
+    case_variant_chance: 0.2
+  generate_speech_samples:
+    speech_rate_min: -10
+    speech_rate_max: 20
+  add_delays:
+    prefix_vary_probability: 0.333
+    prefix_min_s: 0.1
+    prefix_max_s: 0.5
+    suffix_vary_probability: 0.333
+    suffix_min_s: 0.1
+    suffix_max_s: 0.5
+  add_background_noise:
+    vary_probability: 0.5
+    volume_min: 0.0
+    volume_max: 0.3
+  add_mic_noise:
+    vary_probability: 0.5
+    amplitude_min: 0.001
+    amplitude_max: 0.05
+  compute_spectrograms:
+    n_mels: 128
+    time_steps: 256
+  compute_tokens:
+    input_token_length: 50
+  create_set_manifests:
+    train_pct: 70
+    val_pct: 20
+    test_pct: 10
+  train_model:
+    epochs: 10
+    batch_size: 32

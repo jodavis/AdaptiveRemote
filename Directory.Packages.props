@@ -21,6 +21,7 @@
     <PackageVersion Include="I8Beef.TiVo" Version="1.0.0.14" />
     <PackageVersion Include="MessagePack" Version="2.5.301" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.58.0" />
+    <PackageVersion Include="MessagePack.Annotations" Version="2.5.301" />
     <PackageVersion Include="StreamJsonRpc" Version="2.24.84" />
     <PackageVersion Include="System.Speech" Version="8.0.0" />
     <PackageVersion Include="System.Text.Json" Version="8.0.5" />

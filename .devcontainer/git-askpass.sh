@@ -4,5 +4,5 @@
 # password prompts and a placeholder for username prompts.
 case "$1" in
     Username*) echo "x-token-auth" ;;
-    Password*) echo "${GITHUB_TOKEN}" ;;
+    Password*) echo "${GH_TOKEN}" ;;
 esac
