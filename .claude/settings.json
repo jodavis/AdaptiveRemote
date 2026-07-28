@@ -1,4 +1,7 @@
 {
+  "env": {
+    "REVIEW_ASSIGNEE_EMAIL": "jodasoft@outlook.com"
+  },
   "enabledPlugins": {
     "dotnet@dotnet-agent-skills": false,
     "dotnet-diag@dotnet-agent-skills": true,
