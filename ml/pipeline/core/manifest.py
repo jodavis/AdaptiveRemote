@@ -73,5 +73,9 @@ class ManifestStore:
 
     def read(self, path: Path) -> Manifest[Sample]:
         payload = json.loads(path.read_text())
-        sample_type = _SAMPLE_TYPES_BY_NAME[payload["sample_type"]]
+        sample_type_name = payload["sample_type"]
+        try:
+            sample_type = _SAMPLE_TYPES_BY_NAME[sample_type_name]
+        except KeyError:
+            raise ValueError(f"Unknown sample type in manifest: {sample_type_name!r}") from None
         return Manifest[Sample]([sample_type(**data) for data in payload["samples"]])

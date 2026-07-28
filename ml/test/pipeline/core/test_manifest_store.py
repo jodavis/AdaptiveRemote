@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -76,6 +77,28 @@ def test_write_empty_manifest_raises_value_error(tmp_path: Path) -> None:
     # Act
     with pytest.raises(ValueError):
         store.write(manifest, path)
+
+
+def test_read_unrecognized_sample_type_raises_value_error(tmp_path: Path) -> None:
+    # Arrange
+    store = ManifestStore()
+    path = tmp_path / "manifest.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "sample_type": "NotARealSampleType",
+                "samples": [],
+            }
+        )
+    )
+
+    # Act
+    with pytest.raises(ValueError) as exc_info:
+        store.read(path)
+
+    # Assert
+    assert "NotARealSampleType" in str(exc_info.value)
 
 
 def test_write_mixed_sample_types_raises_value_error(tmp_path: Path) -> None:
