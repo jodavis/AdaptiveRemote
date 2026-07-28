@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from pipeline.core.manifest import Manifest
-from pipeline.core.sample import TextSample
+from pipeline.core.sample import AudioSample, TextSample
 
 
 def test_by_name_sample_present_returns_sample() -> None:
@@ -23,6 +23,24 @@ def test_add_duplicate_name_raises_value_error() -> None:
     sample1 = TextSample(content_hash="hash_1", content="Turn on the TV")
     sample2 = TextSample(content_hash="hash_1", content="Turn on the television")
     manifest = Manifest[TextSample]([sample1])
+
+    # Act
+    with pytest.raises(ValueError) as exc_info:
+        manifest.add(sample2)
+
+    # Assert
+    assert "hash_1" in str(exc_info.value)
+
+
+def test_add_duplicate_content_hash_different_names_raises_value_error() -> None:
+    # Arrange
+    # AudioSample's `name` is assigned by the caller (unlike TextSample,
+    # whose __post_init__ derives `name` from `content_hash`), so this is
+    # the sample type needed to exercise a content_hash collision that is
+    # not already caught by the duplicate-name check.
+    sample1 = AudioSample(name="name_1", content_hash="hash_1", path="a.wav")
+    sample2 = AudioSample(name="name_2", content_hash="hash_1", path="b.wav")
+    manifest = Manifest[AudioSample]([sample1])
 
     # Act
     with pytest.raises(ValueError) as exc_info:

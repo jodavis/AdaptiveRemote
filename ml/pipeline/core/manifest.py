@@ -33,6 +33,8 @@ class Manifest(Generic[S]):
     def add(self, sample: S) -> None:
         if sample.name in self._by_name:
             raise ValueError(f"Duplicate sample name: {sample.name!r}")
+        if sample.content_hash in self._by_content_hash:
+            raise ValueError(f"Duplicate sample content_hash: {sample.content_hash!r}")
         self._by_name[sample.name] = sample
         self._by_content_hash[sample.content_hash] = sample
 
