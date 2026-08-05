@@ -2,3 +2,4 @@ numpy==2.5.0
 pandas==3.0.3
 tensorflow==2.21.0
 dvc==3.67.1
+mypy==2.3.0
