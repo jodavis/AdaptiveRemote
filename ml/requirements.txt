@@ -4,3 +4,5 @@ tensorflow==2.21.0
 dvc==3.67.1
 mypy==2.3.0
 pytest==9.1.1
+librosa==1.0.0
+soundfile==0.14.0
